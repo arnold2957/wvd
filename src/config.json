@@ -1,8 +1,22 @@
 {
-    "_FARMTARGET": "贸易水路-船2",
-    "_RANDOMLYOPENCHEST": true,
-    "_SPELLSKILLCONFIG": [],
+    "_FARMTARGET": "贸易水路-船一 shiphold",
+    "_RANDOMLYOPENCHEST": false,
+    "_SPELLSKILLCONFIG": [
+        "maferu",
+        "PS",
+        "mahalito",
+        "LAZELOS",
+        "SB",
+        "mamigal",
+        "LAERLIK",
+        "maerlik",
+        "mazelos",
+        "HA",
+        "LAMIGAL"
+    ],
     "SYSTEM_AUTO_COMBAT_ENABLED": false,
     "ADB_PATH": "C:/Program Files/BlueStacks_nxt/HD-Adb.exe",
-    "_RESTINTERVEL": "0"
+    "_RESTINTERVEL": "0",
+    "_SKIPRECOVER": false,
+    "_RANDOMLYPERSONOPENCHEST": false
 }

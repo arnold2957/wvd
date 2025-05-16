@@ -12,12 +12,12 @@ import time
 CONFIG_FILE = 'config.json'
 
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["贸易水路-一号街", "贸易水路-船一shiphold", "贸易水路-船二lounge","土洞(强化石5-9)" ]
+DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)-测试版", "卢比肯的洞窟 Le Bicken Cave"]
 
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS"]
 ESOTERIC_AOE_SKILLS = ["SAoLABADIOS"]
-PHYSICAL_SKILLS = ["PS"]
+PHYSICAL_SKILLS = ["PS","HA","SB"]
 
 ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS)) 
 
@@ -36,9 +36,9 @@ class RedirectConsole:
 class ConfigPanelApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry('450x450')
+        self.root.geometry('450x460')
         self.root.resizable(False, False)
-        self.root.title("WvD 巫术daphne自动刷怪 v0.03 @德德Dellyla(B站)")
+        self.root.title("WvD 巫术daphne自动刷怪 v0.35 @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -59,6 +59,7 @@ class ConfigPanelApp:
         # --- UI 变量 ---
         self.farm_target_var = tk.StringVar(value=self.config.get("_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""))
         self.randomly_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYOPENCHEST", False))
+        self.randomly_people_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYPERSONOPENCHEST", False))
         self.skip_recover_var = tk.BooleanVar(value=self.config.get("_SKIPRECOVER", False))
         self.system_auto_combat_var = tk.BooleanVar(value=self.config.get("SYSTEM_AUTO_COMBAT_ENABLED", False))
         self.rest_intervel_var = tk.StringVar(value=self.config.get("_RESTINTERVEL", 0))
@@ -106,6 +107,7 @@ class ConfigPanelApp:
         self.config["ADB_PATH"] = self.adb_path_var.get()
         self.config["_FARMTARGET"] = self.farm_target_var.get()
         self.config["_RANDOMLYOPENCHEST"] = self.randomly_open_chest_var.get()
+        self.config["_RANDOMLYPERSONOPENCHEST"] = self.randomly_people_open_chest_var.get()
         self.config["SYSTEM_AUTO_COMBAT_ENABLED"] = self.system_auto_combat_var.get()
         self.config["_RESTINTERVEL"] = self.rest_intervel_var.get()
         self.config["_SKIPRECOVER"] = self.skip_recover_var.get()
@@ -176,18 +178,29 @@ class ConfigPanelApp:
         self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
 
         # 第3行 开箱子设置
+        frame_row3 = ttk.Frame(main_frame)
+        frame_row3.grid(row=3, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
-            main_frame,
-            text="开箱子时随机乱按",
+            frame_row3,
+            text="开箱时随机乱按",
+            variable=self.randomly_people_open_chest_var,
+            command=self.save_config
+        )
+        self.random_chest_check.grid(row=0, column=0,  sticky=tk.W, pady=5)
+        self.random_people_open_check = ttk.Checkbutton(
+            frame_row3,
+            text="开箱时随机人选",
             variable=self.randomly_open_chest_var,
             command=self.save_config
         )
-        self.random_chest_check.grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.random_people_open_check.grid(row=0, column=1,  sticky=tk.W, pady=5)
+
+
 
         # 第4行 跳过恢复
         self.skip_recover_check = ttk.Checkbutton(
             main_frame,
-            text="完全跳过战后和开箱子后恢复",
+            text="不进行战后和开箱子后恢复",
             variable=self.skip_recover_var,
             command=self.save_config
         )
@@ -196,7 +209,7 @@ class ConfigPanelApp:
         # 第5行 休息设置
         frame_row5 = ttk.Frame(main_frame)
         frame_row5.grid(row=5, column=0, sticky="ew", pady=5)
-        ttk.Label(frame_row5, text="\"休息与清包\"的间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame_row5, text="旅店休息间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
         vcmd = root.register(lambda x: ((x=="")or(x.isdigit())))
         self.rest_intervel_entry = ttk.Entry(frame_row5,
                                              textvariable=self.rest_intervel_var,
@@ -204,13 +217,13 @@ class ConfigPanelApp:
                                              validatecommand=(vcmd, '%P'),
                                              width=8)
         self.rest_intervel_entry.grid(row=0, column=1)
-        button_save_rest_intervel = ttk.Button(
+        self.button_save_rest_intervel = ttk.Button(
             frame_row5,
             text="保存",
             command = self.save_config,
             width=5
             )
-        button_save_rest_intervel.grid(row=0, column=2)
+        self.button_save_rest_intervel.grid(row=0, column=2)
 
         # 第6行 启动! 以及继续
         button_frame = ttk.Frame(main_frame)
@@ -382,12 +395,20 @@ class ConfigPanelApp:
             self.adb_path_change_button.configure(state="disabled")
             self.farm_target_combo.configure(state="disabled")
             self.random_chest_check.configure(state="disabled")
+            self.random_people_open_check.configure(state="disabled")
             self.system_auto_check.configure(state="disabled")
+            self.skip_recover_check.configure(state="disabled")
+            self.rest_intervel_entry.configure(state="disabled")
+            self.button_save_rest_intervel.configure(state="disabled")
         else:
             self.adb_path_change_button.configure(state="normal")
             self.farm_target_combo.configure(state="readonly") 
             self.random_chest_check.configure(state="normal")
+            self.random_people_open_check.configure(state="normal")
             self.system_auto_check.configure(state="normal")
+            self.skip_recover_check.configure(state="normal")
+            self.rest_intervel_entry.configure(state="normal")
+            self.button_save_rest_intervel.configure(state="normal")
         """设置所有控件的状态"""
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -473,6 +494,7 @@ class ConfigPanelApp:
         setting = FarmSetting()
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
         setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
+        setting._RANDOMLYPERSONOPENCHEST = self.randomly_people_open_chest_var.get()
         setting._SKIPRECOVER = self.skip_recover_var.get()
         setting._FORCESTOPING = self.stop_event
         setting._SPELLSKILLCONFIG = [(s,d) for (s,d) in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
@@ -480,19 +502,22 @@ class ConfigPanelApp:
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         StreetFarm = Factory()
         match self.farm_target_var.get():
-            case "贸易水路-船一shiphold":
+            case "贸易水路-船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
                 StreetFarm(setting)
-            case "贸易水路-船二lounge":
+            case "贸易水路-船二 lounge":
                 setting._FARMTARGET = 'lounge'
                 StreetFarm(setting)
-            case "贸易水路-一号街":
+            case "贸易水路-一号街 1stDist":
                 setting._FARMTARGET = 'Dist'
                 StreetFarm(setting)
             case "土洞(强化石5-9)":
                 setting._FARMTARGET = 'DOE'
                 setting._DUNGTARGET = 'DOEtarget'
                 setting._DUNGWAITTIMEOUT = 0
+                StreetFarm(setting)
+            case "卢比肯的洞窟 Le Bicken Cave":
+                setting._FARMTARGET = 'LBC'
                 StreetFarm(setting)
         
         # self.continue_btn.grid()

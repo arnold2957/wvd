@@ -1,9 +1,22 @@
 {
     "ADB_PATH": "C:/Program Files/BlueStacks_nxt/HD-Adb.exe",
-    "_FARMTARGET": "土洞(强化石5-9)",
+    "_FARMTARGET": "贸易水路-船一 shiphold",
     "_RANDOMLYOPENCHEST": true,
-    "_SPELLSKILLCONFIG": [],
-    "SYSTEM_AUTO_COMBAT_ENABLED": true,
-    "_RESTINTERVEL": "1000",
-    "_SKIPRECOVER": true
+    "_SPELLSKILLCONFIG": [
+        "maerlik",
+        "LAERLIK",
+        "SB",
+        "PS",
+        "mamigal",
+        "LAMIGAL",
+        "mazelos",
+        "mahalito",
+        "HA",
+        "maferu",
+        "LAZELOS"
+    ],
+    "SYSTEM_AUTO_COMBAT_ENABLED": false,
+    "_RESTINTERVEL": "0",
+    "_SKIPRECOVER": false,
+    "_RANDOMLYPERSONOPENCHEST": true
 }

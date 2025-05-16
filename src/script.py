@@ -21,6 +21,7 @@ class FarmSetting:
     _SPELLSKILLCONFIG = [
         ('LAERLIK','OK'),
         ('LAMIGAL','OK'),
+        ('LAZELOS','OK'),
         ('SAoLABADIOS','OK'),
         ('SAoLAERLIK','OK'),
         ('maerlik','left2right'),
@@ -28,7 +29,9 @@ class FarmSetting:
         ('mahalito','left2right'),
         ('mazelos','left2right'),
         ('mamigal','left2right'),
-        ('PS','left2right')
+        ('PS','left2right'),
+        ('HA','left2right'),
+        ('BS','left2right')
         ]
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
@@ -78,20 +81,23 @@ def Factory():
         screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
-        threshold = 0.8
+        threshold = 0.80
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
         pos = None
         if max_val >= threshold:
-            cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            # cv2.imwrite("Matched Result.png", screenshot)
-
             pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
+
+        #print(max_val)
+            if max_val<=0.9:
+                print(f"警告: {pathOfTarget}的匹配程度超过了80%但不足90%, 当前为{max_val*100:.2f}%")
+        # cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+        # cv2.imwrite("Matched Result.png", screenshot)
         return pos
     def CheckIf_MultiRect(pathOfScreen, pathOfTarget):
         print('检查', pathOfTarget)
         pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
         template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
-        screenshot = pathOfScreen 
+        screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
         threshold = 0.8
@@ -126,17 +132,17 @@ def Factory():
         template = cv2.imread(template_path)
         if template is None:
             raise ValueError("无法加载模板图片！")
-        
+
         h, w = template.shape[:2]  # 获取模板尺寸
         coordinates = []
-        
+
         # 按指定顺序读取截图文件
         img = input
-                
+
         # 执行模板匹配
         result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
-        
+
         if max_val > threshold:
             # 返回中心坐标（相对于截图左上角）
             center_x = max_loc[0] + w // 2
@@ -221,7 +227,7 @@ def Factory():
                 t = float(device.shell("date +%s.%N").strip())
                 s = ScreenShot()
                 x = getCursorCoordinates(s,'cursor.png')
-                if x != None:  
+                if x != None:
                     ts.append(t-t0)
                     xs.append(x/900)
                     print(t-t0,x)
@@ -279,17 +285,18 @@ def Factory():
 
             if setting._FORCESTOPING.is_set():
                 return State.Quit, DungeonState.Quit, screen
-            
+
             if Press(CheckIf(screen,'retry')):
                     print("网络不太给力啊.")
                     # print("ka le.")
                     Sleep(2)
-            
+
             identifyConfig = [
-                ('flee',    DungeonState.Combat),
+                ('flee',          DungeonState.Combat),
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
-                ('mapFlag',       DungeonState.Map),
+                ('whowillopenit', DungeonState.Chest),
+                ('mapFlag',       DungeonState.Map)
                 ]
             for pattern, state in identifyConfig:
                 if CheckIf(screen, pattern):
@@ -299,19 +306,23 @@ def Factory():
                 Press([400,800])
                 Sleep(1)
                 screen = ScreenShot()
-            
+
             if Press(CheckIf(screen, "Return")):
                 Sleep(2)
                 return IdentifyState()
-            
+
             if Press(CheckIf(screen,"returntoTown")) or Press(CheckIf(screen,"openworldmap")):
                 PressReturn()
                 return IdentifyState()
+            
+            if Press(CheckIf(screen,"RoyalCityLuknalia")):
+                return IdentifyState()
+            
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
 
-            if counter>10:
+            if counter>5:
                 print("看起来遇到了一些不太寻常的情况...")
                 if (CheckIf(screen,'RiseAgain')):
                     print("这就把你拉起来.")
@@ -339,7 +350,14 @@ def Factory():
                     print("但是, 我拒绝.")
                     # print("And what, must we give in return?")
                     Sleep(2)
-            if counter>= 50:
+                if (CheckIf(screen,'multipeopledead')):
+                    print("死了好几个, 惨哦")
+                    # print("Corpses strew the screen")
+                    Press(CheckIf(screen,'skull'))
+                    Sleep(2)
+                PressReturn()
+                PressReturn()
+            if counter>= 25:
                 print("看起来遇到了一些非同寻常的情况...重启游戏吧")
                 package_name = "jp.co.drecom.wizardry.daphne"
                 mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
@@ -350,7 +368,7 @@ def Factory():
                 Sleep(5)
                 setting._DUNGTARGETMARKED = False
                 counter = 0
-            
+
             Press([1,1])
             Press([1,1])
             Press([1,1])
@@ -369,51 +387,45 @@ def Factory():
         while not CheckIf(ScreenShot(), 'Stay'):
             Press([183,1467]) # 点击两个按钮中间的地方不会在常规情况下打断正常的跳过逻辑, 反而能在升级的时候正确的关闭页面
             Sleep(1)
-        def putItemInStorage():
-            Sleep(1)
-            while pos:=CheckIf(ScreenShot(),'item'):
-                Press(pos)
-                Sleep(1)
-                Press(CheckIf(ScreenShot(),'putinstorage'))
-                Sleep(1)
-        Press([850,1167])
-        Sleep(1)
-        if CheckIf(ScreenShot(),'bag'):
-            print("背包整理.")
-            Sleep(1)
-            for i in range(3):
-                Press([340+210*i,1290])
-                putItemInStorage()
-            for i in range(3):
-                Press([340+210*i,1360])
-                putItemInStorage()
-            PressReturn()
         PressReturn()
     def StateEoT():
-        while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
-            Sleep(1)
         match setting._FARMTARGET:
             case "shiphold":
+                while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
+                    Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'TradeWaterway')):
                     Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'shiphold')):
                     Sleep(1)
             case "lounge":
+                while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
+                    Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'TradeWaterway')):
                     Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'lounge')):
                     Sleep(1)
+            case "LBC":
+                while not Press(CheckIf(screen:=ScreenShot(),'intoWorldMap')):
+                    Press(CheckIf(screen,'closePartyInfo'))
+                    Sleep(1)
+                while not Press(CheckIf(ScreenShot(),'LBC')):
+                    Sleep(1)
             case "Dist":
+                while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
+                    Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'TradeWaterway')):
                     Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'Dist')):
                     device.shell(f"input swipe 650 250 650 900")
                     Sleep(1)
             case "DOE":
+                while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
+                    Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'DOE')):
                     Sleep(1)
                 while not Press(CheckIf(ScreenShot(), 'DOEB1F')):
                     Sleep(1)
+        Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
         nonlocal setting
@@ -433,6 +445,8 @@ def Factory():
                     if doubleCheck == 'OK':
                         Sleep(1)
                         Press(CheckIf(ScreenShot(),'OK'))
+                        Press([850,1100])
+                        Press([850,1100])
                     elif doubleCheck == 'left2right':
                         Sleep(1)
                         Press([150,750])
@@ -447,7 +461,7 @@ def Factory():
             if not castSpellSkill:
                 Press([850,1100])
                 Press([850,1100])
-                Sleep(3) 
+                Sleep(3)
     def StateMap_FindSwipeClick(target,operation):
         searchDir = [
             [100,100,700,1500],
@@ -470,26 +484,27 @@ def Factory():
                     print(f'找到了 {target}! {targetPos}')
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
-                    Press([100,100])
+                    Press([1,230])
                     points = CheckIf_MultiRect(ScreenShot(),target)
                     targetPos = sorted(points, key=lambda p: p[1], reverse=False)[0]
                     Press(targetPos)
+                    Sleep(1)
             else:
                 if targetPos:=CheckIf(map,target):
                     print(f'找到了 {target}! {targetPos}')
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
-                    Press([100,100])
+                    Press([1,230])
                     targetPos = CheckIf(ScreenShot(),target)
                     Press(targetPos)
             if targetPos:
-                if operation == 'markspot':
+                if operation == 'MarkSpot':
                     Press(CheckIf(ScreenShot(),'markspot'))
                     return True
-                elif operation == 'autoMove':
+                elif operation == 'AutoMove':
                     Press([280,1433])
                     return True
-            
+
             device.shell(f"input swipe {searchDir[i][0]} {searchDir[i][1]} {searchDir[i][2]} {searchDir[i][3]}")
             Sleep(2)
         return False
@@ -514,66 +529,96 @@ def Factory():
                     break
             lastscreen = screen
         return dungState
-    def StateMap(readyToLeave,waitTimer):
+    def StateMap(targetComplete,waitTimer):
         normalPlace = ['harken','chest','marker','leaveDung']
+        target = setting._DUNGTARGET
+        alreadyPressReturnTarget = True # 假设
         # 地图已经打开.
         map = ScreenShot()
         if not CheckIf(map,'mapFlag'):
-                return None,readyToLeave # 发生了错误
-        if not readyToLeave:
+                return None,targetComplete # 发生了错误
+        if not targetComplete:
             if target not in normalPlace:
-                if CheckIf(map, target+'_coord'): # 到达目标地点了
-                    print('开始等待...等待...')
-                    PressReturn()
-                    PressReturn()
-                    while 1:
-                        print(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
-                        if CheckIf(ScreenShot(),'flee'):
-                            return DungeonState.Combat,readyToLeave
-                        if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
-                            readyToLeave = True
-                            break
-                else:
-                    if not MarkDungeonTarget:
-                        StateMap_FindSwipeClick(target, 'MarkSpot')
-                        MarkDungeonTarget=True
-                    target = 'marker'
-            # 然后所有都是常规target
-            else:
+                if not setting._DUNGTARGETMARKED:
+                    StateMap_FindSwipeClick(target, 'MarkSpot')
+                    setting._DUNGTARGETMARKED=True
+                target = 'marker'
+            # 然后所有都是常规target 断开这个if-else可以体现最新的情况.
+            if target in normalPlace:
                 if StateMap_FindSwipeClick(target, 'AutoMove'):
-                    return StateMoving_CheckFrozen(),readyToLeave
+                    return StateMoving_CheckFrozen(),targetComplete
                 else:
-                    readyToLeave = True
-
-        if readyToLeave:
-            if not alreadyPressReturnTarget:
-                targetReturn = {
-                    "aa": "aa",
-                    "bb": "bb",
-                    }
-                StateMap_FindSwipeClick(targetReturn(target),'AutoMove')
-                alreadyPressReturnTarget = True
+                    print("没有找到目标或已经抵达目标地点.")
+                    if target!='marker':
+                        targetComplete = True
+                    else:
+                        print('开始等待...等待...')
+                        PressReturn()
+                        PressReturn()
+                        while 1:
+                            if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
+                                print("等得够久了.")
+                                targetComplete = True
+                                # alreadyPressReturnTarget = False
+                                break
+                            print(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
+                            if CheckIf(ScreenShot(),'flee'):
+                                return DungeonState.Combat,targetComplete
+        if targetComplete:
+            print("地下城已经完成, 返回中...")
+            # if not alreadyPressReturnTarget:
+            targetSpecialQuit = [
+                "DOE",
+                "LBC",
+                ]
+            if setting._FARMTARGET in targetSpecialQuit:
+                targetQuit = setting._FARMTARGET+"_quit"
             else:
-                PressReturn()
-                Press(CheckIf(ScreenShot(),'resume'))
-        return StateMoving_CheckFrozen(),readyToLeave
-
-
+                targetQuit = 'harken'
+            if targetQuit:
+                if StateMap_FindSwipeClick(targetQuit,'AutoMove'):
+                    return StateMoving_CheckFrozen(),targetComplete
+            #    alreadyPressReturnTarget = True
+            # else:
+            #     PressReturn()
+            #     Press(CheckIf(ScreenShot(),'resume'))
+        return StateMoving_CheckFrozen(),targetComplete
     def StateChest():
         Press(CheckIf(ScreenShot(),'chestFlag'))
-        screen = ScreenShot()
-        if CheckIf(screen,'whowillopenit'):
-            Press([200+(setting._CHESTCOUNTER%3)*200, 1200+((setting._CHESTCOUNTER)//3)%2*400])
-            setting._CHESTCOUNTER += 1
-            Sleep(1)
-
-        Sleep(1)
-        if setting._RANDOMLYOPENCHEST:
-            while CheckIf(ScreenShot(), 'chestOpening'):
-                Press([430,1000])
-        else:
+        tryOpenCounter = 0
+        while 1:
+            if CheckIf(ScreenShot(),'whowillopenit'):
+                if setting._RANDOMLYPERSONOPENCHEST or tryOpenCounter>10:
+                    Press([200+(setting._CHESTCOUNTER%3)*200, 1200+((setting._CHESTCOUNTER)//3)%2*150])
+                else:
+                    Press([200,1200])
+                setting._CHESTCOUNTER += 1
+                Sleep(1)
+            Press([1,1])
             if CheckIf(ScreenShot(),'chestOpening'):
-                ChestOpen()
+                Sleep(1)
+                if setting._RANDOMLYOPENCHEST:
+                    while 1:
+                        screen = ScreenShot()
+                        if Press(CheckIf(screen,'Retry')):
+                            Sleep(1)
+                            screen = ScreenShot()
+                        if CheckIf(screen, 'chestOpening'):
+                            Press([430,1000])
+                        else:
+                            break
+                else:
+                    if CheckIf(ScreenShot(),'chestOpening'):
+                        ChestOpen()
+                return None
+            if CheckIf(ScreenShot(),'dungFlag'):
+                return DungeonState.Dungeon
+            if CheckIf(ScreenShot(),'flee'):
+                return DungeonState.Combat
+            if CheckIf(ScreenShot(),'retry'):
+                return None
+            ## todo: 换个简易版本的identify
+            tryOpenCounter += 1
 
     def StreetFarm(set):
         nonlocal setting
@@ -582,6 +627,9 @@ def Factory():
         while 1:
             print("======================")
             Sleep(1)
+            if setting._FORCESTOPING.is_set():
+                print("即将中断脚本...")
+                break
             print('当前状态: ', state)
             match state:
                 case None:
@@ -606,11 +654,13 @@ def Factory():
                 case State.Dungeon:
                     dungState = None
                     inDung = True
-                    readyToLeave = False
+                    targetComplete = False
                     waitTimer = time.time()
                     while inDung:
                         print("----------------------")
-                        _, dungState,_ = IdentifyState()
+                        if setting._FORCESTOPING.is_set():
+                            print("即将中断脚本...")
+                            dungState = DungeonState.Quit
                         print("当前状态(地下城): ", dungState)
 
                         match dungState:
@@ -623,6 +673,7 @@ def Factory():
                             case DungeonState.Dungeon:
                                 Press([1,1]) # interrupt auto moving
                                 if not setting._SKIPRECOVER:
+                                    Press([1,1])
                                     Press([450,1300])
                                     Sleep(1)
                                     if CheckIf(ScreenShot(), 'trait'):
@@ -637,17 +688,87 @@ def Factory():
                                         PressReturn()
                                 Press([777,150])
                                 Sleep(1)
-                                dungState = DungeonState.Map         
+                                dungState = DungeonState.Map
                             case DungeonState.Map:
-                                dungState, readyToLeave = StateMap(readyToLeave,waitTimer)
+                                dungState, targetComplete = StateMap(targetComplete,waitTimer)
                             case DungeonState.Chest:
-                                StateChest()
+                                dungState = StateChest()
                             case DungeonState.Combat:
                                 StateCombat()
-                    PressReturn()
+                                dungState = None
                     state = None
         setting._FINISHINGCALLBACK()
     return StreetFarm
+
+# client = AdbClient(host="127.0.0.1", port=5037)
+# device = client.device("emulator-5554")
+# setting = None
+# ##################################################################
+# def Sleep(t=1):
+#     time.sleep(t)
+# def ScreenShot():
+#     # print('ScreenShot')
+#     screenshot = device.screencap()
+
+#     screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
+#     image = cv2.imdecode(screenshot_np, cv2.IMREAD_COLOR)
+
+#     #cv2.imwrite('screen.png', image)
+
+#     return image
+# def CheckIf(pathOfScreen, pathOfTarget):
+#     print('检查',pathOfTarget)
+#     pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
+#     template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
+#     screenshot = pathOfScreen
+#     result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+
+#     threshold = 0.8
+#     _, max_val, _, max_loc = cv2.minMaxLoc(result)
+#     pos = None
+#     print(max_val)
+#     if max_val >= threshold:
+#         cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+#         # cv2.imwrite("Matched Result.png", screenshot)
+
+#         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
+#     return pos
+# def CheckIf_MultiRect(pathOfScreen, pathOfTarget):
+#     print('检查', pathOfTarget)
+#     pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
+#     template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
+#     screenshot = pathOfScreen
+#     result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+
+#     threshold = 0.8
+#     ys, xs = np.where(result >= threshold)
+#     h, w = template.shape[:2]
+#     rectangles = list([])
+
+#     for (x, y) in zip(xs, ys):
+#         rectangles.append([x, y, w, h])
+#         rectangles.append([x, y, w, h]) # 复制两次, 这样groupRectangles可以保留那些单独的矩形.
+#     rectangles, _ = cv2.groupRectangles(rectangles, groupThreshold=1, eps=0.5)
+#     pos_list = []
+#     for rect in rectangles:
+#         x, y, rw, rh = rect
+#         center_x = x + rw // 2
+#         center_y = y + rh // 2
+#         pos_list.append([center_x, center_y])
+#         # cv2.rectangle(screenshot, (x, y), (x + w, y + h), (0, 255, 0), 2)
+#     # cv2.imwrite("Matched_Result.png", screenshot)
+#     return pos_list
+# def Press(pos):
+#     if pos!=None:
+#         print(f'按了{pos[0]} {pos[1]}')
+#         device.shell(f"input tap {pos[0]} {pos[1]}")
+#         return True
+#     return False
+# def PressReturn():
+#     device.shell('input keyevent KEYCODE_BACK')
+
+# Press([1,230])
+
 
 # Press(CheckIf(ScreenShot(),'ruins'))
 # Press(CheckIf(ScreenShot(),'cursedWheel'))
