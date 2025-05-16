@@ -1,0 +1,9 @@
+{
+    "ADB_PATH": "C:/Program Files/BlueStacks_nxt/HD-Adb.exe",
+    "_FARMTARGET": "土洞(强化石5-9)",
+    "_RANDOMLYOPENCHEST": true,
+    "_SPELLSKILLCONFIG": [],
+    "SYSTEM_AUTO_COMBAT_ENABLED": true,
+    "_RESTINTERVEL": "1000",
+    "_SKIPRECOVER": true
+}

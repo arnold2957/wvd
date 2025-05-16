@@ -1,0 +1,507 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext, filedialog
+import json
+import os
+import sys
+from script import *
+from threading import Thread,Event
+import subprocess
+import socket
+import time
+
+CONFIG_FILE = 'config.json'
+
+# --- 预定义的技能和目标 ---
+DUNGEON_TARGETS = ["贸易水路-一号街", "贸易水路-船一shiphold", "贸易水路-船二lounge","土洞(强化石5-9)" ]
+
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL"]
+ESOTERIC_AOE_SKILLS = ["SAoLABADIOS"]
+PHYSICAL_SKILLS = ["PS"]
+
+ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS)) 
+
+class RedirectConsole:
+    def __init__(self, widget):
+        self.widget = widget
+
+    def write(self, message):
+        self.widget.config(state=tk.NORMAL)
+        self.widget.insert(tk.END, message)
+        self.widget.config(state=tk.DISABLED)
+        self.widget.see(tk.END)
+
+    def flush(self):
+        pass
+class ConfigPanelApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.geometry('450x450')
+        self.root.resizable(False, False)
+        self.root.title("WvD 巫术daphne自动刷怪 v0.03 @德德Dellyla(B站)")
+
+        self.adb_active = False
+
+        self.thread = None
+        self.continue_trigger = Event()
+        self.stop_event = Event()
+
+        # --- ttk Style ---
+        self.style = ttk.Style()
+        # 你可以尝试不同的主题, 如 'clam', 'alt', 'default', 'classic'
+        # self.style.theme_use('clam')
+        self.style.configure("Active.TButton", foreground="green")
+        # "Inactive.TButton" 可以不特别定义，恢复到默认的 "TButton" 即可
+        # 或者显式定义: self.style.configure("Inactive.TButton", foreground="black") # 或其他默认颜色
+
+        self.config = self.load_config()
+
+        # --- UI 变量 ---
+        self.farm_target_var = tk.StringVar(value=self.config.get("_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""))
+        self.randomly_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYOPENCHEST", False))
+        self.skip_recover_var = tk.BooleanVar(value=self.config.get("_SKIPRECOVER", False))
+        self.system_auto_combat_var = tk.BooleanVar(value=self.config.get("SYSTEM_AUTO_COMBAT_ENABLED", False))
+        self.rest_intervel_var = tk.StringVar(value=self.config.get("_RESTINTERVEL", 0))
+        self.adb_path_var = tk.StringVar(value=self.config.get("ADB_PATH", ""))
+
+        self._spell_skill_config_internal = list(self.config.get("_SPELLSKILLCONFIG", []))
+
+        self.skill_buttons_map = [] # 用于存储按钮和它们关联的技能列表
+
+        self.create_widgets()
+        self.update_combat_buttons_state() # 初始化时更新按钮状态 (包括启用/禁用)
+        self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
+        self.update_current_skills_display() # 初始化时更新技能显示
+        
+
+    def load_config(self):
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    loaded_config = json.load(f)
+                    # 确保关键字段存在
+                    defaults = self.get_default_config()
+                    for key, value in defaults.items():
+                        loaded_config.setdefault(key, value)
+                    return loaded_config
+            except json.JSONDecodeError:
+                messagebox.showerror("错误", f"无法解析 {CONFIG_FILE}。将使用默认配置。")
+                return self.get_default_config()
+            except Exception as e:
+                messagebox.showerror("错误", f"加载配置时发生错误: {e}。将使用默认配置。")
+                return self.get_default_config()
+        else:
+            return self.get_default_config()
+
+    def get_default_config(self):
+        return {
+            "ADB_PATH": "",
+            "_FARMTARGET": DUNGEON_TARGETS[0] if DUNGEON_TARGETS else "默认地牢",
+            "_RANDOMLYOPENCHEST": False,
+            "_SPELLSKILLCONFIG": [],
+            "SYSTEM_AUTO_COMBAT_ENABLED": False
+        }
+
+    def save_config(self):
+        self.config["ADB_PATH"] = self.adb_path_var.get()
+        self.config["_FARMTARGET"] = self.farm_target_var.get()
+        self.config["_RANDOMLYOPENCHEST"] = self.randomly_open_chest_var.get()
+        self.config["SYSTEM_AUTO_COMBAT_ENABLED"] = self.system_auto_combat_var.get()
+        self.config["_RESTINTERVEL"] = self.rest_intervel_var.get()
+        self.config["_SKIPRECOVER"] = self.skip_recover_var.get()
+
+        if self.system_auto_combat_var.get():
+            self.config["_SPELLSKILLCONFIG"] = []
+        else:
+            self.config["_SPELLSKILLCONFIG"] = list(set(self._spell_skill_config_internal))
+
+        try:
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, ensure_ascii=False, indent=4)
+            print("配置已保存。")
+        except Exception as e:
+            messagebox.showerror("错误", f"保存配置时发生错误: {e}")
+
+    def create_widgets(self):
+        logger = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white')
+        logger.place(x=250, y=10, width=200, height=430)
+        sys.stdout = RedirectConsole(logger)
+
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # 第0行 设定adb路径
+        frame_row0 = ttk.Frame(main_frame)
+        frame_row0.grid(row=0, column=0, sticky="ew", pady=5)  # 首行框架
+        self.adb_status_label = ttk.Label(frame_row0)
+        self.adb_status_label.grid(row=0, column=0,)
+        # 隐藏的Entry用于存储变量
+        adb_entry = ttk.Entry(frame_row0, textvariable=self.adb_path_var)
+        adb_entry.grid_remove()
+        def selectADB_PATH():
+            path = filedialog.askopenfilename(
+                title="选择ADB执行文件",
+                filetypes=[("Executable", "*.exe"), ("All files", "*.*")]
+            )
+            if path:
+                self.adb_path_var.set(path)
+                self.save_config()
+        # 浏览按钮
+        self.adb_path_change_button = ttk.Button(
+            frame_row0,
+            text="修改",
+            command=selectADB_PATH,
+            width = 5,
+        )
+        self.adb_path_change_button.grid(row=0,column=1)
+        # 初始化标签状态
+        def update_adb_status(*args):
+            if self.adb_path_var.get():
+                self.adb_status_label.config(text="已设定ADB路径", foreground="green")
+            else:
+                self.adb_status_label.config(text="未设定ADB路径", foreground="red")
+        
+        self.adb_path_var.trace_add("write", lambda *args: update_adb_status())
+        update_adb_status()  # 初始调用
+
+        # 第1行 分割线.
+        ttk.Separator(main_frame, orient='horizontal').grid(row=1, column=0, columnspan=3, sticky='ew', pady=10)
+
+        # 第2行 地下城目标
+        frame_row2 = ttk.Frame(main_frame)
+        frame_row2.grid(row=2, column=0, sticky="ew", pady=5)  # 第二行框架
+        ttk.Label(frame_row2, text="地下城目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.farm_target_combo = ttk.Combobox(frame_row2, textvariable=self.farm_target_var, values=DUNGEON_TARGETS, state="readonly")
+        self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
+
+        # 第3行 开箱子设置
+        self.random_chest_check = ttk.Checkbutton(
+            main_frame,
+            text="开箱子时随机乱按",
+            variable=self.randomly_open_chest_var,
+            command=self.save_config
+        )
+        self.random_chest_check.grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        # 第4行 跳过恢复
+        self.skip_recover_check = ttk.Checkbutton(
+            main_frame,
+            text="完全跳过战后和开箱子后恢复",
+            variable=self.skip_recover_var,
+            command=self.save_config
+        )
+        self.skip_recover_check.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        # 第5行 休息设置
+        frame_row5 = ttk.Frame(main_frame)
+        frame_row5.grid(row=5, column=0, sticky="ew", pady=5)
+        ttk.Label(frame_row5, text="\"休息与清包\"的间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        vcmd = root.register(lambda x: ((x=="")or(x.isdigit())))
+        self.rest_intervel_entry = ttk.Entry(frame_row5,
+                                             textvariable=self.rest_intervel_var,
+                                             validate="key",
+                                             validatecommand=(vcmd, '%P'),
+                                             width=8)
+        self.rest_intervel_entry.grid(row=0, column=1)
+        button_save_rest_intervel = ttk.Button(
+            frame_row5,
+            text="保存",
+            command = self.save_config,
+            width=5
+            )
+        button_save_rest_intervel.grid(row=0, column=2)
+
+        # 第6行 启动! 以及继续
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=5, sticky=tk.W)
+        
+        s = ttk.Style()
+        s.configure('start.TButton', font=('微软雅黑', 15))
+        self.start_stop_btn = ttk.Button(
+            button_frame,
+            text="脚本, 启动!",
+            command=self.toggle_start_stop,
+            style='start.TButton'
+        )
+        self.start_stop_btn.grid(row=0, column=0, padx=2)
+
+        self.continue_btn = ttk.Button(
+            button_frame,
+            text="继续",
+            command=self.continue_execution,
+        )
+        self.continue_btn.grid(row=0, column=1, padx=2)
+        self.continue_btn.grid_remove()
+
+        # 第7行 分割线
+        ttk.Separator(main_frame, orient='horizontal').grid(row=7, column=0, columnspan=3, sticky='ew', pady=10)
+
+        # 第8行 技能配置 文本
+        ttk.Label(main_frame, text="技能配置:", font=('Arial', 10, 'bold')).grid(row=8, column=0, sticky=tk.W, pady=5)
+
+        # 第9行 系统自动战斗
+        self.system_auto_check = ttk.Checkbutton(
+            main_frame,
+            text="启用系统自动战斗",
+            variable=self.system_auto_combat_var,
+            command=self.toggle_system_auto_combat
+        )
+        self.system_auto_check.grid(row=9, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        # 第10行 技能按钮框架
+        self.skills_button_frame = ttk.Frame(main_frame)
+        self.skills_button_frame.grid(row=10, column=0, columnspan=2, sticky=tk.W)
+
+        self.btn_enable_all = ttk.Button(self.skills_button_frame, text="启用所有技能", command=lambda: self.update_spell_config(ALL_SKILLS, "all"))
+        self.btn_enable_all.grid(row=0, column=0, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_all, "skills": ALL_SKILLS, "name": "all"})
+
+        self.btn_enable_horizontal_aoe = ttk.Button(self.skills_button_frame, text="启用所有横排AOE", command=lambda: self.update_spell_config(ROW_AOE_SKILLS, "horizontal_aoe"))
+        self.btn_enable_horizontal_aoe.grid(row=0, column=1, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_horizontal_aoe, "skills": ROW_AOE_SKILLS, "name": "horizontal_aoe"})
+
+        self.btn_enable_full_aoe = ttk.Button(self.skills_button_frame, text="启用所有全体AOE", command=lambda: self.update_spell_config(FULL_AOE_SKILLS, "full_aoe"))
+        self.btn_enable_full_aoe.grid(row=1, column=0, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_full_aoe, "skills": FULL_AOE_SKILLS, "name": "full_aoe"})
+
+        self.btn_enable_esoteric_aoe = ttk.Button(self.skills_button_frame, text="启用秘术AOE", command=lambda: self.update_spell_config(ESOTERIC_AOE_SKILLS, "esoteric_aoe"))
+        self.btn_enable_esoteric_aoe.grid(row=1, column=1, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_esoteric_aoe, "skills": ESOTERIC_AOE_SKILLS, "name": "esoteric_aoe"})
+
+        self.btn_enable_physical = ttk.Button(self.skills_button_frame, text="启用体术", command=lambda: self.update_spell_config(PHYSICAL_SKILLS, "physical_skills"))
+        self.btn_enable_physical.grid(row=2, column=0, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_physical, "skills": PHYSICAL_SKILLS, "name": "physical_skills"})
+
+        # 第11行 技能选择结果展示
+        self.current_skills_label_var = tk.StringVar()
+        current_skills_display = ttk.Label(main_frame, textvariable=self.current_skills_label_var, wraplength=230)
+        current_skills_display.grid(row=11, column=0, columnspan=2, sticky=tk.W+tk.E, pady=5)
+
+    def update_current_skills_display(self):
+        if self.system_auto_combat_var.get():
+            self.current_skills_label_var.set(f"启用系统自动战斗")
+        else:
+            # 显示去重后的技能列表
+            unique_skills = list(dict.fromkeys(self._spell_skill_config_internal))
+            self.current_skills_label_var.set(f"当前技能: {unique_skills}")
+
+    def toggle_system_auto_combat(self):
+        is_system_auto = self.system_auto_combat_var.get()
+        if is_system_auto:
+            self._spell_skill_config_internal = ["systemAuto"]
+        else:
+            # 确保不是 ['systemAuto']，如果是，则清空
+            if self._spell_skill_config_internal == ["systemAuto"]:
+                 self._spell_skill_config_internal = []
+        self.update_combat_buttons_state() # 会调用 update_skill_button_visuals 和 update_current_skills_display
+        self.save_config()
+
+
+    def update_combat_buttons_state(self):
+        is_system_auto = self.system_auto_combat_var.get()
+        button_state = tk.DISABLED if is_system_auto else tk.NORMAL
+
+        for item in self.skill_buttons_map:
+            item["button"].config(state=button_state)
+
+        # 如果是从 "systemAuto" 切换回来，并且 _spell_skill_config_internal 还是 ['systemAuto']
+        # 则清空它，因为此时用户可以手动选择技能了。
+        if not is_system_auto and self._spell_skill_config_internal == ["systemAuto"]:
+            self._spell_skill_config_internal = []
+
+        self.update_skill_button_visuals() # 更新按钮颜色
+        self.update_current_skills_display() # 更新技能显示
+
+
+    def update_spell_config(self, skills_to_process, category_name):
+        if self.system_auto_combat_var.get():
+            return
+
+        current_skill_set = set(self._spell_skill_config_internal)
+        skills_to_process_set = set(skills_to_process)
+
+        if category_name == "all":
+            # "启用所有技能" 按钮：如果当前所有技能都已启用，再次点击则清空所有技能。否则，启用所有技能。
+            if skills_to_process_set.issubset(current_skill_set) and len(skills_to_process_set) == len(current_skill_set) and len(current_skill_set) > 0 : # 确保不是空集对空集
+                self._spell_skill_config_internal = []
+                print("已取消所有技能。")
+            else:
+                self._spell_skill_config_internal = list(skills_to_process_set)
+                print(f"已启用所有技能: {self._spell_skill_config_internal}")
+        else:
+            # 其他技能按钮：如果该类别的所有技能都已启用，则移除这些技能。否则，添加这些技能。
+            is_fully_active = skills_to_process_set.issubset(current_skill_set)
+
+            if is_fully_active:
+                self._spell_skill_config_internal = [s for s in self._spell_skill_config_internal if s not in skills_to_process_set]
+                print(f"已禁用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+            else:
+                for skill in skills_to_process:
+                    if skill not in self._spell_skill_config_internal:
+                        self._spell_skill_config_internal.append(skill)
+                print(f"已启用/添加 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+
+        # 保证唯一性，但保留顺序（如果重要的话，使用 dict.fromkeys）
+        self._spell_skill_config_internal = list(dict.fromkeys(self._spell_skill_config_internal))
+
+        self.update_current_skills_display()
+        self.update_skill_button_visuals()
+        self.save_config()
+
+    def update_skill_button_visuals(self):
+        """根据当前 _spell_skill_config_internal 更新技能按钮的样式"""
+        if self.system_auto_combat_var.get():
+            # 如果是系统自动战斗，所有按钮都应该是默认样式（因为它们被禁用了）
+            for item in self.skill_buttons_map:
+                item["button"].configure(style="TButton") # 恢复默认样式
+            return
+
+        current_skill_set = set(self._spell_skill_config_internal)
+
+        for item in self.skill_buttons_map:
+            button = item["button"]
+            skills_for_button = set(item["skills"])
+            category_name = item["name"]
+
+            # 特殊处理 "all" 按钮
+            if category_name == "all":
+                # 如果 ALL_SKILLS 中的所有技能都在 current_skill_set 中，并且数量一致
+                if skills_for_button and skills_for_button.issubset(current_skill_set) and len(skills_for_button) == len(current_skill_set) and len(current_skill_set) > 0:
+                    button.configure(style="Active.TButton")
+                else:
+                    button.configure(style="TButton")
+            else:
+                # 检查该按钮对应的所有技能是否都在当前配置中
+                if skills_for_button and skills_for_button.issubset(current_skill_set):
+                    button.configure(style="Active.TButton")
+                else:
+                    button.configure(style="TButton") # 恢复默认样式
+    def set_controls_state(self, state):
+        if state == tk.DISABLED:
+            self.adb_path_change_button.configure(state="disabled")
+            self.farm_target_combo.configure(state="disabled")
+            self.random_chest_check.configure(state="disabled")
+            self.system_auto_check.configure(state="disabled")
+        else:
+            self.adb_path_change_button.configure(state="normal")
+            self.farm_target_combo.configure(state="readonly") 
+            self.random_chest_check.configure(state="normal")
+            self.system_auto_check.configure(state="normal")
+        """设置所有控件的状态"""
+        if not self.system_auto_combat_var.get():
+            widgets = [
+                *[item["button"] for item in self.skill_buttons_map]
+            ]
+            for widget in widgets:
+                if isinstance(widget, ttk.Widget):
+                    widget.state([state.lower()] if state != tk.NORMAL else ['!disabled'])
+
+    def toggle_start_stop(self):
+        if self.thread and (not self.thread.is_alive()):
+            self.thread.join()
+            self.thread = None
+            self.stop_event.clear()
+        if self.thread is None:
+            self.start_stop_btn.config(text="中断")
+            self.set_controls_state(tk.DISABLED)
+            self.thread = Thread(target=self.dungeonLoop)
+            self.thread.start()
+        else: # self.thread is NOT None
+            if self.thread.is_alive():
+                print("等待当前步骤执行完毕, 执行完毕后将中断脚本. 这可能需要一些时间...")
+                self.stop_event.set()
+
+    def finishingcallback(self):
+        print("已中断.")
+        self.start_stop_btn.config(text="脚本, 启动!")
+        self.set_controls_state(tk.NORMAL)
+        self.continue_btn.grid_remove()
+
+    def continue_execution(self):
+        self.continue_btn.grid_remove()
+        self.continue_trigger.set()
+
+    def start_adb_server(self):
+        def check_adb_connection():
+            try:
+                # 创建socket检测端口连接
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)  # 设置超时时间
+                result = sock.connect_ex(("127.0.0.1", 5037))
+                return result == 0  # 返回0表示连接成功
+            except Exception as e:
+                print(f"连接检测异常: {str(e)}")
+                return False
+            finally:
+                sock.close()
+        try:
+            if not check_adb_connection():
+                print("开始启动ADB服务, 路径:",self.adb_path_var.get())
+                # 启动adb服务（非阻塞模式）
+                subprocess.Popen(
+                    [self.adb_path_var.get(), "start-server"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=True
+                )
+                print("ADB 服务启动中...")
+                
+                # 循环检测连接（最多重试5次）
+                for _ in range(5):
+                    if check_adb_connection():
+                        print("ADB 连接成功")
+                        return True
+                    time.sleep(1)  # 每次检测间隔1秒
+                
+                print("ADB 连接超时")
+                return False
+            else:
+                return True
+        except Exception as e:
+            print(f"启动ADB失败: {str(e)}")
+            return False
+
+    def dungeonLoop(self):
+        if not self.adb_active:
+            self.adb_active = self.start_adb_server()
+            if not self.adb_active:
+                self.finishingcallback()
+                return
+
+        print("目标地下城:",self.farm_target_var.get())
+        setting = FarmSetting()
+        setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
+        setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
+        setting._SKIPRECOVER = self.skip_recover_var.get()
+        setting._FORCESTOPING = self.stop_event
+        setting._SPELLSKILLCONFIG = [(s,d) for (s,d) in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
+        setting._FINISHINGCALLBACK = self.finishingcallback
+        setting._RESTINTERVEL = int(self.rest_intervel_var.get())
+        StreetFarm = Factory()
+        match self.farm_target_var.get():
+            case "贸易水路-船一shiphold":
+                setting._FARMTARGET = 'shiphold'
+                StreetFarm(setting)
+            case "贸易水路-船二lounge":
+                setting._FARMTARGET = 'lounge'
+                StreetFarm(setting)
+            case "贸易水路-一号街":
+                setting._FARMTARGET = 'Dist'
+                StreetFarm(setting)
+            case "土洞(强化石5-9)":
+                setting._FARMTARGET = 'DOE'
+                setting._DUNGTARGET = 'DOEtarget'
+                setting._DUNGWAITTIMEOUT = 0
+                StreetFarm(setting)
+        
+        # self.continue_btn.grid()
+        # self.continue_trigger.clear()
+        # print('wait!')
+        # self.continue_trigger.wait()
+        # print("got!")
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = ConfigPanelApp(root)
+    root.mainloop()
