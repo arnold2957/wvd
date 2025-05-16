@@ -74,9 +74,9 @@ def Factory():
         #cv2.imwrite('screen.png', image)
 
         return image
-    def CheckIf(pathOfScreen, pathOfTarget):
-        print('检查',pathOfTarget)
-        pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
+    def CheckIf(pathOfScreen, shortPathOfTarget):
+        print('检查',shortPathOfTarget)
+        pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
         template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
         screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
@@ -89,7 +89,7 @@ def Factory():
 
         #print(max_val)
             if max_val<=0.9:
-                print(f"警告: {pathOfTarget}的匹配程度超过了80%但不足90%, 当前为{max_val*100:.2f}%")
+                print(f"警告: {shortPathOfTarget}的匹配程度超过了80%但不足90%, 当前为{max_val*100:.2f}%")
         # cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
         # cv2.imwrite("Matched Result.png", screenshot)
         return pos
@@ -313,9 +313,11 @@ def Factory():
 
             if Press(CheckIf(screen,"returntoTown")) or Press(CheckIf(screen,"openworldmap")):
                 PressReturn()
+                Sleep(2)
                 return IdentifyState()
             
             if Press(CheckIf(screen,"RoyalCityLuknalia")):
+                Sleep(2)
                 return IdentifyState()
             
 
@@ -357,7 +359,7 @@ def Factory():
                     Sleep(2)
                 PressReturn()
                 PressReturn()
-            if counter>= 25:
+            if counter>= 20:
                 print("看起来遇到了一些非同寻常的情况...重启游戏吧")
                 package_name = "jp.co.drecom.wizardry.daphne"
                 mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
@@ -442,20 +444,15 @@ def Factory():
             for skillspell, doubleCheck in setting._SPELLSKILLCONFIG:
                 if Press(CheckIf(screen, 'spellskill/'+skillspell)):
                     print('使用了技能', skillspell)
-                    if doubleCheck == 'OK':
-                        Sleep(1)
-                        Press(CheckIf(ScreenShot(),'OK'))
-                        Press([850,1100])
-                        Press([850,1100])
-                    elif doubleCheck == 'left2right':
-                        Sleep(1)
-                        Press([150,750])
-                        Press([300,750])
-                        Press([450,750])
-                        Press([550,750])
-                        Press([650,750])
-                        Press([750,750])
-                        Sleep(3)
+                    Sleep(1)
+                    Press(CheckIf(ScreenShot(),'OK'))
+                    Press([150,750])
+                    Press([300,750])
+                    Press([450,750])
+                    Press([550,750])
+                    Press([650,750])
+                    Press([750,750])
+                    Sleep(3)
                     castSpellSkill = True
                     break
             if not castSpellSkill:
