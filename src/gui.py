@@ -12,11 +12,11 @@ import time
 CONFIG_FILE = 'config.json'
 
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)-测试版", "卢比肯的洞窟 Le Bicken Cave"]
+DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)-测试版", "卢比肯的洞窟 Le Bicken Cave", "7000G"]
 
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS"]
-ESOTERIC_AOE_SKILLS = ["SAoLABADIOS"]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
+ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 PHYSICAL_SKILLS = ["PS","HA","SB"]
 
 ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS)) 
@@ -84,7 +84,7 @@ class ConfigPanelApp:
         "**********************\n"\
         "旅店休息间隔是间隔多少次地下城休息. 0代表一直休息, 1代表间隔一次休息, 以此类推.\n" \
         "**********************\n"\
-        "现在可用的体术(\"技能\")包括 精密攻击, 眩晕突袭, 以及 强袭.\n" \
+        "现在可用的体术(\"技能\")包括 精密攻击PS, 眩晕突袭SB, 以及 强袭HA.\n" \
         "**********************\n")
         
 
@@ -196,14 +196,14 @@ class ConfigPanelApp:
         self.random_chest_check = ttk.Checkbutton(
             frame_row3,
             text="开箱时随机乱按",
-            variable=self.randomly_people_open_chest_var,
+            variable=self.randomly_open_chest_var,
             command=self.save_config
         )
         self.random_chest_check.grid(row=0, column=0,  sticky=tk.W, pady=5)
         self.random_people_open_check = ttk.Checkbutton(
             frame_row3,
             text="开箱时随机人选",
-            variable=self.randomly_open_chest_var,
+            variable=self.randomly_people_open_chest_var,
             command=self.save_config
         )
         self.random_people_open_check.grid(row=0, column=1,  sticky=tk.W, pady=5)
@@ -491,7 +491,13 @@ class ConfigPanelApp:
                 print("ADB 连接超时")
                 return False
             else:
-                return True
+                client = AdbClient(host="127.0.0.1", port=5037)
+                device = client.device("emulator-5554")
+                if device!=None:
+                    return True
+                else:
+                    print("创建adb链接失败.")
+                    return False
         except Exception as e:
             print(f"启动ADB失败: {str(e)}")
             return False
@@ -510,10 +516,10 @@ class ConfigPanelApp:
         setting._RANDOMLYPERSONOPENCHEST = self.randomly_people_open_chest_var.get()
         setting._SKIPRECOVER = self.skip_recover_var.get()
         setting._FORCESTOPING = self.stop_event
-        setting._SPELLSKILLCONFIG = [(s,d) for (s,d) in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
+        setting._SPELLSKILLCONFIG = [s for s in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
-        StreetFarm = Factory()
+        StreetFarm,QuestFarm = Factory()
         match self.farm_target_var.get():
             case "贸易水路-船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
@@ -524,7 +530,7 @@ class ConfigPanelApp:
             case "贸易水路-一号街 1stDist":
                 setting._FARMTARGET = 'Dist'
                 StreetFarm(setting)
-            case "土洞(强化石5-9)":
+            case "土洞(强化石5-9)-测试版":
                 setting._FARMTARGET = 'DOE'
                 setting._DUNGTARGET = 'DOEtarget'
                 setting._DUNGWAITTIMEOUT = 0
@@ -532,6 +538,10 @@ class ConfigPanelApp:
             case "卢比肯的洞窟 Le Bicken Cave":
                 setting._FARMTARGET = 'LBC'
                 StreetFarm(setting)
+            case "7000G":
+                setting._FARMTARGET = '7000G'
+                QuestFarm(setting)
+
         
         # self.continue_btn.grid()
         # self.continue_trigger.clear()

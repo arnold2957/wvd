@@ -19,19 +19,24 @@ class FarmSetting:
     _DUNGCOUNTER = 0
     _CHESTCOUNTER = 0
     _SPELLSKILLCONFIG = [
-        ('LAERLIK','OK'),
-        ('LAMIGAL','OK'),
-        ('LAZELOS','OK'),
-        ('SAoLABADIOS','OK'),
-        ('SAoLAERLIK','OK'),
-        ('maerlik','left2right'),
-        ('maferu','left2right'),
-        ('mahalito','left2right'),
-        ('mazelos','left2right'),
-        ('mamigal','left2right'),
-        ('PS','left2right'),
-        ('HA','left2right'),
-        ('BS','left2right')
+        'LAERLIK',
+        'LAMIGAL',
+        'LAZELOS',
+        "LAFOROS",
+        "LACONES",
+        'SAoLABADIOS',
+        'SAoLAERLIK',
+        'SAoLAFOROS',
+        'maerlik',
+        'macones',
+        'maferu',
+        'mahalito',
+        'mazelos',
+        'mamigal',
+        "maforos",
+        'PS',
+        'HA',
+        'SB',
         ]
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
@@ -74,10 +79,30 @@ def Factory():
         #cv2.imwrite('screen.png', image)
 
         return image
-    def CheckIf(pathOfScreen, shortPathOfTarget):
+    def ScreenShotAfterRetry():
+        for counter in range(100):
+            img = ScreenShot()
+            if retry_pos := CheckIf(img, 'retry'):
+                Press(retry_pos)
+                Sleep(1)
+            else:
+                return img
+        return None
+    def CheckIf(pathOfScreen, shortPathOfTarget, outputMatchResult = False):
+        nonlocal setting
         print('检查',shortPathOfTarget)
         pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
-        template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
+        try:
+            # 尝试读取图片
+            template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
+            if template is None:
+            # 手动抛出异常
+                raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {pathOfTarget}(注意: 路径中不能包含中文.)")
+        except Exception as e:
+            setting._FORCESTOPING.set()
+            print(f"加载图片失败: {str(e)}")
+            return None
+
         screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
@@ -87,11 +112,13 @@ def Factory():
         if max_val >= threshold:
             pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
 
-        #print(max_val)
             if max_val<=0.9:
                 print(f"警告: {shortPathOfTarget}的匹配程度超过了80%但不足90%, 当前为{max_val*100:.2f}%")
-        # cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-        # cv2.imwrite("Matched Result.png", screenshot)
+        
+        if outputMatchResult:
+            print(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
+            cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+            cv2.imwrite("Matched Result.png", screenshot)
         return pos
     def CheckIf_MultiRect(pathOfScreen, pathOfTarget):
         print('检查', pathOfTarget)
@@ -118,6 +145,42 @@ def Factory():
             # cv2.rectangle(screenshot, (x, y), (x + w, y + h), (0, 255, 0), 2)
         # cv2.imwrite("Matched_Result.png", screenshot)
         return pos_list
+    def CheckIf_FocusCursor(pathOfScreen, pathOfTarget):
+        try:
+            # 尝试读取图片
+            template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
+            if template is None:
+            # 手动抛出异常
+                raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {pathOfTarget}(注意: 路径中不能包含中文.)")
+        except Exception as e:
+            setting._FORCESTOPING.set()
+            print(f"加载图片失败: {str(e)}")
+            return None
+
+        screenshot = cv2.imread(pathOfScreen, cv2.IMREAD_COLOR)
+        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+
+        threshold = 0.80
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        if max_val >= threshold:
+            # cropped = img[y:y+height, x:x+width]
+            cropped = screenshot[max_loc[1]:max_loc[1]+template.shape[0], max_loc[0]:max_loc[0]+template.shape[1]]
+
+            SIZE = 15
+            left = (template.shape[1] - SIZE) // 2
+            right =  left+ SIZE
+            top = (template.shape[0] - SIZE) // 2
+            bottom =  top + SIZE
+            midimg_scn = cropped[top:bottom, left:right]
+            miding_ptn = template[top:bottom, left:right]
+            gray1 = cv2.cvtColor(midimg_scn, cv2.COLOR_BGR2GRAY)
+            gray2 = cv2.cvtColor(miding_ptn, cv2.COLOR_BGR2GRAY)
+            mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+            print(mean_diff)
+
+            if mean_diff<0.1:
+                return True
+        return False
     def Press(pos):
         if pos!=None:
             # print(f'按了{pos[0]} {pos[1]}')
@@ -129,7 +192,7 @@ def Factory():
     ##################################################################
     def getCursorCoordinates(input, template_path, threshold=0.8):
         """在本地图片中查找模板位置"""
-        template = cv2.imread(template_path)
+        template = cv2.imread(resource_path(fr'resources/images/{template_path}.png'))
         if template is None:
             raise ValueError("无法加载模板图片！")
 
@@ -218,6 +281,7 @@ def Factory():
 
         return p_opt[0], p_opt[1]
     def ChestOpen():
+        print("开始智能开箱(?)...")
         ts = []
         xs = []
         t0 = float(device.shell("date +%s.%N").strip())
@@ -226,7 +290,7 @@ def Factory():
                 Sleep(0.2)
                 t = float(device.shell("date +%s.%N").strip())
                 s = ScreenShot()
-                x = getCursorCoordinates(s,'cursor.png')
+                x = getCursorCoordinates(s,'cursor')
                 if x != None:
                     ts.append(t-t0)
                     xs.append(x/900)
@@ -242,7 +306,7 @@ def Factory():
 
             t = float(device.shell("date +%s.%N").strip())
             s = ScreenShot()
-            x = getCursorCoordinates(s,'cursor.png')
+            x = getCursorCoordinates(s,'cursor')
             target = findWidestRectMid(s)
             print('理论点',triangularWave(t-t0,p,c)*900)
             print('起始点', x)
@@ -344,6 +408,10 @@ def Factory():
                     print("等我买? 你白等了, 我不买.")
                     # print("wait for paurch? Wait for someone else.")
                     Sleep(2)
+                if Press(CheckIf(screen,'adventurersbones')):
+                    print("是骨头!")
+                    # print("")
+                    Sleep(2)
                 if Press(CheckIf(screen,'buyNothing')):
                     print("有骨头的话我会买的. 但是现在我没有骨头的识别图片啊.")
                     # print("No Bones No Buy.")
@@ -351,6 +419,10 @@ def Factory():
                 if Press(CheckIf(screen,'Nope')):
                     print("但是, 我拒绝.")
                     # print("And what, must we give in return?")
+                    Sleep(2)
+                if Press(CheckIf(screen,'dontGiveAntitoxin')):
+                    print("但是, 我拒绝.")
+                    # print("")
                     Sleep(2)
                 if (CheckIf(screen,'multipeopledead')):
                     print("死了好几个, 惨哦")
@@ -387,7 +459,7 @@ def Factory():
         while not Press(CheckIf(ScreenShot(), 'OK')):
             Sleep(2)
         while not CheckIf(ScreenShot(), 'Stay'):
-            Press([183,1467]) # 点击两个按钮中间的地方不会在常规情况下打断正常的跳过逻辑, 反而能在升级的时候正确的关闭页面
+            Press([299,1464]) # 点击两个按钮中间的地方不会在常规情况下打断正常的跳过逻辑, 反而能在升级的时候正确的关闭页面
             Sleep(1)
         PressReturn()
     def StateEoT():
@@ -410,7 +482,9 @@ def Factory():
                 while not Press(CheckIf(screen:=ScreenShot(),'intoWorldMap')):
                     Press(CheckIf(screen,'closePartyInfo'))
                     Sleep(1)
+                
                 while not Press(CheckIf(ScreenShot(),'LBC')):
+                    device.shell(f"input swipe 100 100 700 1500")
                     Sleep(1)
             case "Dist":
                 while not Press(CheckIf(ScreenShot(), 'EdgeOfTown')):
@@ -441,7 +515,7 @@ def Factory():
             Sleep(5)
         else:
             castSpellSkill = False
-            for skillspell, doubleCheck in setting._SPELLSKILLCONFIG:
+            for skillspell in setting._SPELLSKILLCONFIG:
                 if Press(CheckIf(screen, 'spellskill/'+skillspell)):
                     print('使用了技能', skillspell)
                     Sleep(1)
@@ -581,7 +655,8 @@ def Factory():
             #     Press(CheckIf(ScreenShot(),'resume'))
         return StateMoving_CheckFrozen(),targetComplete
     def StateChest():
-        Press(CheckIf(ScreenShot(),'chestFlag'))
+        while Press(CheckIf(ScreenShot(),'chestFlag')):
+            Sleep(1) # 感觉对的但是好像那里不对 先这样吧
         tryOpenCounter = 0
         while 1:
             if CheckIf(ScreenShot(),'whowillopenit'):
@@ -695,76 +770,141 @@ def Factory():
                                 dungState = None
                     state = None
         setting._FINISHINGCALLBACK()
-    return StreetFarm
+    def QuestFarm(set):
+        nonlocal setting
+        setting = set
+        match setting._FARMTARGET:
+            case '7000G':                    
+                stepNo = 1 #IdentifyStep(stepNo)
+                while 1:
+                    starttime = time.time()
+                    match stepNo:
+                        case 1:
+                            print("第一步: 开始诅咒之旅...")
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'cursedWheel')):
+                                Press(CheckIf(ScreenShotAfterRetry(),'ruins'))
+                                Sleep(1)
+                            while not CheckIf(ScreenShotAfterRetry(),'impregnableFortress'):
+                                Press(CheckIf(ScreenShotAfterRetry(),'cursedWheelTapRight'))
+                                Sleep(1)
+                            if not Press(CheckIf(ScreenShotAfterRetry(),'FortressArrival')):
+                                device.shell(f"input swipe 450 1200 450 200")
+                                while not Press(CheckIf(ScreenShotAfterRetry(),'FortressArrival')):
+                                    device.shell(f"input swipe 50 1200 50 1300")
+                            while pos:= CheckIf(ScreenShotAfterRetry(), 'leap'):
+                                Press(pos)
+                                Sleep(2)
+                                Press(CheckIf(ScreenShotAfterRetry(),'FortressArrival'))
+                            # 拉个灰度吧 但是
+                            stepNo = 2
+                        case 2:
+                            print("第二步: 从要塞返回主城...")
+                            print("25秒时间应该足够了...")
+                            Sleep(25)
+                            frozen = True
+                            while frozen:
+                                print("有没有卡死?")
+                                if not Press(CheckIf(ScreenShotAfterRetry(),'leaveDung')):
+                                    print("我看你多半是卡死了. 重启吧.")
+                                    package_name = "jp.co.drecom.wizardry.daphne"
+                                    mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
+                                    device.shell(f"am force-stop {package_name}")
+                                    Sleep(2)
+                                    print("DvW, 启动!")
+                                    print(device.shell(f"am start -n {mainAct}"))
+                                    Sleep(5)
+                                print("检查最多20次")
+                                for i in range(20):
+                                    if not Press(CheckIf(ScreenShotAfterRetry(),'leaveDung')):
+                                        Press([1,1])
+                                        Sleep(1)
+                                    else:
+                                        frozen = False
+                                        break
+                            print("好, 继续")
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'return')):
+                                Press(CheckIf(ScreenShotAfterRetry(),'leaveDung'))
+                                Sleep(2)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'returntotown')):
+                                Sleep(2)
+                            while not CheckIf(ScreenShotAfterRetry(),'Inn'):
+                                Press([1,1])
+                                Sleep(2)
+                            stepNo = 3
+                        case 3:
+                            print("第三步: 前往王城...")
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'intoWorldMap')):
+                                Press([40, 1184])
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'RoyalCityLuknalia')):
+                                device.shell(f"input swipe 450 150 500 150")
+                            stepNo = 4
+                        case 4:
 
-# client = AdbClient(host="127.0.0.1", port=5037)
-# device = client.device("emulator-5554")
-# setting = None
-# ##################################################################
-# def Sleep(t=1):
-#     time.sleep(t)
-# def ScreenShot():
-#     # print('ScreenShot')
-#     screenshot = device.screencap()
+                            print("第四步: 给我!(伸手)")
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'guild')):
+                                Sleep(1)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/illgonow')):
+                                Press([1,1])
+                                Sleep(1)
+                            Sleep(15)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/olddist')):
+                                Press([1,1])
+                                Sleep(2)
+                            Sleep(4)
+                            Press([1,1])
+                            Press([1,1])
+                            Sleep(8)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/royalcapital')):
+                                Press([1,1])
+                                Sleep(2)
+                            while not CheckIf(ScreenShotAfterRetry(),'intoWorldMap'):
+                                Press([1,1])
+                                Sleep(2)
+                            while not (CheckIf(ScreenShotAfterRetry(),'fastforward')):
+                                Press([450,1111])
+                            while not CheckIf(scn:=ScreenShotAfterRetry(),'intoWorldMap'):
+                                Press(CheckIf(scn,'7000G/why'))
+                                Press([1,1])
+                                Sleep(2)
+                            while not (CheckIf(ScreenShotAfterRetry(),'fastforward')):
+                                Press([200,1180])
+                            while not CheckIf(scn:=ScreenShotAfterRetry(),'intoWorldMap'):
+                                Press(CheckIf(scn,'7000G/why'))
+                                Press([1,1])
+                                Sleep(2)
+                            while not (CheckIf(ScreenShotAfterRetry(),'fastforward')):
+                                Press([680,1200])
+                            while not Press(CheckIf(scn:=ScreenShotAfterRetry(),'7000G/leavethechild')):
+                                Press(CheckIf(scn,'7000G/why'))
+                                Press([1,1])
+                                Sleep(1)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/icantagreewithU')):
+                                Press([1,1])
+                                Sleep(1)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/olddist')):
+                                Press([1,1])
+                                Sleep(1)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/illgo')):
+                                Press([1,1])
+                                Sleep(1)
+                            while not Press(CheckIf(ScreenShotAfterRetry(),'7000G/noeasytask')):
+                                Press([1,1])
+                                Sleep(1)
+                            while not CheckIf(ScreenShotAfterRetry(),'ruins'):
+                                Press([1,1])
+                                Sleep(1)
+                            costtime = time.time()-starttime
+                            print(f"花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
+                            if not setting._FORCESTOPING.is_set():
+                                stepNo = 1
+                            else:
+                                break
+        setting._FINISHINGCALLBACK()
+        return
+                        
+                        
+    return StreetFarm, QuestFarm
 
-#     screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
-#     image = cv2.imdecode(screenshot_np, cv2.IMREAD_COLOR)
-
-#     #cv2.imwrite('screen.png', image)
-
-#     return image
-# def CheckIf(pathOfScreen, pathOfTarget):
-#     print('检查',pathOfTarget)
-#     pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
-#     template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
-#     screenshot = pathOfScreen
-#     result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
-
-#     threshold = 0.8
-#     _, max_val, _, max_loc = cv2.minMaxLoc(result)
-#     pos = None
-#     print(max_val)
-#     if max_val >= threshold:
-#         cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-#         # cv2.imwrite("Matched Result.png", screenshot)
-
-#         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
-#     return pos
-# def CheckIf_MultiRect(pathOfScreen, pathOfTarget):
-#     print('检查', pathOfTarget)
-#     pathOfTarget = resource_path(fr'resources/images/{pathOfTarget}.png')
-#     template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
-#     screenshot = pathOfScreen
-#     result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
-
-#     threshold = 0.8
-#     ys, xs = np.where(result >= threshold)
-#     h, w = template.shape[:2]
-#     rectangles = list([])
-
-#     for (x, y) in zip(xs, ys):
-#         rectangles.append([x, y, w, h])
-#         rectangles.append([x, y, w, h]) # 复制两次, 这样groupRectangles可以保留那些单独的矩形.
-#     rectangles, _ = cv2.groupRectangles(rectangles, groupThreshold=1, eps=0.5)
-#     pos_list = []
-#     for rect in rectangles:
-#         x, y, rw, rh = rect
-#         center_x = x + rw // 2
-#         center_y = y + rh // 2
-#         pos_list.append([center_x, center_y])
-#         # cv2.rectangle(screenshot, (x, y), (x + w, y + h), (0, 255, 0), 2)
-#     # cv2.imwrite("Matched_Result.png", screenshot)
-#     return pos_list
-# def Press(pos):
-#     if pos!=None:
-#         print(f'按了{pos[0]} {pos[1]}')
-#         device.shell(f"input tap {pos[0]} {pos[1]}")
-#         return True
-#     return False
-# def PressReturn():
-#     device.shell('input keyevent KEYCODE_BACK')
-
-# Press([1,230])
 
 
 # Press(CheckIf(ScreenShot(),'ruins'))
