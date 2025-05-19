@@ -12,7 +12,8 @@ import time
 CONFIG_FILE = 'config.json'
 
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)-测试版", "卢比肯的洞窟 Le Bicken Cave", "7000G"]
+DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)","火洞(强化石15-19)", "卢比肯的洞窟 Le Bicken Cave", "7000G", #"鸟洞 fordraig"
+                   ]
 
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
@@ -38,7 +39,7 @@ class ConfigPanelApp:
         self.root = root
         self.root.geometry('450x460')
         self.root.resizable(False, False)
-        self.root.title("WvD 巫术daphne自动刷怪 v0.35 @德德Dellyla(B站)")
+        self.root.title("WvD 巫术daphne自动刷怪 v0.4 @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -530,9 +531,14 @@ class ConfigPanelApp:
             case "贸易水路-一号街 1stDist":
                 setting._FARMTARGET = 'Dist'
                 StreetFarm(setting)
-            case "土洞(强化石5-9)-测试版":
+            case "土洞(强化石5-9)":
                 setting._FARMTARGET = 'DOE'
                 setting._DUNGTARGET = 'DOEtarget'
+                setting._DUNGWAITTIMEOUT = 0
+                StreetFarm(setting)
+            case "火洞(强化石15-19)":
+                setting._FARMTARGET = 'DOF'
+                setting._DUNGTARGET = 'DOFtarget'
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "卢比肯的洞窟 Le Bicken Cave":
@@ -541,6 +547,13 @@ class ConfigPanelApp:
             case "7000G":
                 setting._FARMTARGET = '7000G'
                 QuestFarm(setting)
+            case "鸟洞 fordraig":
+                setting._FARMTARGET = 'fordraig'
+                QuestFarm(setting)
+            case _:
+                print(f"无效的任务名:{self.farm_target_var.get()}")
+                self.finishingcallback()
+                
 
         
         # self.continue_btn.grid()
