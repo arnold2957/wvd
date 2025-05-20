@@ -45,6 +45,7 @@ class FarmSetting:
     _RESTINTERVEL = 0
     _SKIPRECOVER = False
     _ADBDEVICE = None
+    _LOGGER = None
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -64,12 +65,13 @@ def resource_path(relative_path):
 def Factory():
     toaster = ToastNotifier()
     device = None
+    logger = None
     setting = None
     ##################################################################
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
-        # print('ScreenShot')
+        logger.debug('ScreenShot')
         screenshot = device.screencap()
 
         screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
@@ -79,7 +81,7 @@ def Factory():
 
         return image
     def _CheckIfLoadImage(shortPathOfTarget):
-        print('检查',shortPathOfTarget)
+        logger.debug(f"检查{shortPathOfTarget}")
         pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
         try:
             # 尝试读取图片
@@ -89,7 +91,7 @@ def Factory():
                 raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {pathOfTarget}(注意: 路径中不能包含中文.)")
         except Exception as e:
             setting._FORCESTOPING.set()
-            print(f"加载图片失败: {str(e)}")
+            logger.info(f"加载图片失败: {str(e)}")
             return None
         return template
     def CheckIf(pathOfScreen, shortPathOfTarget, outputMatchResult = False):
@@ -102,14 +104,13 @@ def Factory():
         threshold = 0.80
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
         pos = None
+        logger.debug(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
         if max_val >= threshold:
             pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
-
             if max_val<=0.9:
-                print(f"警告: {shortPathOfTarget}的匹配程度超过了80%但不足90%, 当前为{max_val*100:.2f}%")
+                logger.debug(f"警告: {shortPathOfTarget}的匹配程度超过了80%但不足90%")
         
         if outputMatchResult:
-            print(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
             cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
             cv2.imwrite("Matched Result.png", screenshot)
         return pos
@@ -143,11 +144,13 @@ def Factory():
 
         threshold = 0.80
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        logger.debug(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
         if max_val >= threshold:
-            # cropped = img[y:y+height, x:x+width]
-            cropped = screenshot[max_loc[1]:max_loc[1]+template.shape[0], max_loc[0]:max_loc[0]+template.shape[1]]
+            if max_val<=0.9:
+                logger.debug(f"警告: {shortPathOfTarget}的匹配程度超过了80%但不足90%")
 
-            SIZE = 15
+            cropped = screenshot[max_loc[1]:max_loc[1]+template.shape[0], max_loc[0]:max_loc[0]+template.shape[1]]
+            SIZE = 15 # size of cursor 光标就是这么大
             left = (template.shape[1] - SIZE) // 2
             right =  left+ SIZE
             top = (template.shape[0] - SIZE) // 2
@@ -157,14 +160,14 @@ def Factory():
             gray1 = cv2.cvtColor(midimg_scn, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(miding_ptn, cv2.COLOR_BGR2GRAY)
             mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-            print(f"移动时冻结检查:{mean_diff:.2f}")
+            logger.debug(f"中心匹配检查:{mean_diff:.2f}")
 
             if mean_diff<0.1:
                 return True
         return False
     def Press(pos):
         if pos!=None:
-            # print(f'按了{pos[0]} {pos[1]}')
+            logger.debug(f'按了{pos[0]} {pos[1]}')
             device.shell(f"input tap {pos[0]} {pos[1]}")
             return True
         return False
@@ -178,24 +181,24 @@ def Factory():
                 return None
             scn = ScreenShot()
             pos = CheckIf(scn,targetPattern)
-            if not pos:
+            if pos:
+                return pos # findit 
+            else: # otherwise
                 if Press(CheckIf(scn,'retry')):
                     Sleep(1)
                     continue
-                if pressPos:
+                if pressPos: # press
                     if isinstance(pressPos, str):
                         Press(CheckIf(scn, pressPos))
                     elif isinstance(pressPos, (list, tuple)) and len(pressPos) == 2:
                         Press(pressPos)
                     else:
-                        print("错误: 非法的目标.")
+                        logger.debug("错误: 非法的目标.")
                         setting._FORCESTOPING.set()
                         return None
-                Sleep(waitTime)
-            else:
-                return pos
+                Sleep(waitTime) # and wait
         
-        print("25次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
+        logger.info("25次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
         restartGame()
         return FindItOtherwisePressAndWait(targetPattern, pressPos,waitTime) #???能这么些吗?
     ##################################################################  
@@ -206,8 +209,8 @@ def Factory():
         mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
         device.shell(f"am force-stop {package_name}")
         Sleep(2)
-        print("巫术, 启动!")
-        print(device.shell(f"am start -n {mainAct}"))
+        logger.info("巫术, 启动!")
+        logger.debug(device.shell(f"am start -n {mainAct}"))
         Sleep(5)
     ##################################################################
     def getCursorCoordinates(input, template_path, threshold=0.8):
@@ -261,7 +264,7 @@ def Factory():
         if startIndex is not None:
             rect_range.append([startIndex,i-1])
 
-        print(rect_range)
+        logger.debug(rect_range)
 
         widest = 0
         widest_rect = []
@@ -295,13 +298,13 @@ def Factory():
             bounds=(0, np.inf)  # 确保周期为正
         )
         estimated_p = p_opt[0]
-        print(f"周期 p = {estimated_p:.4f}")
+        logger.debug(f"周期 p = {estimated_p:.4f}")
         estimated_c = p_opt[1]
-        print(f"初始偏移 c = {estimated_c:.4f}")
+        logger.debug(f"初始偏移 c = {estimated_c:.4f}")
 
         return p_opt[0], p_opt[1]
     def ChestOpen():
-        print("开始智能开箱(?)...")
+        logger.info("开始智能开箱(?)...")
         ts = []
         xs = []
         t0 = float(device.shell("date +%s.%N").strip())
@@ -314,7 +317,7 @@ def Factory():
                 if x != None:
                     ts.append(t-t0)
                     xs.append(x/900)
-                    print(t-t0,x)
+                    logger.debug(f"t={t-t0}, x={x}")
                 else:
                     # cv2.imwrite("Matched Result.png",s)
                     None
@@ -322,15 +325,15 @@ def Factory():
                     break
             p, c = calculSpd(ts,xs)
             spd = 2/p*900
-            print('速度 spd =',2/p*900)
+            logger.debug(f"s = {2/p*900}")
 
             t = float(device.shell("date +%s.%N").strip())
             s = ScreenShot()
             x = getCursorCoordinates(s,'cursor')
             target = findWidestRectMid(s)
-            print('理论点',triangularWave(t-t0,p,c)*900)
-            print('起始点', x)
-            print('目标点 ',target)
+            logger.debug(f"理论点: {triangularWave(t-t0,p,c)*900}")
+            logger.debug(f"起始点: {x}")
+            logger.debug(f"目标点: {target}")
 
             if x!=None:
                 waittime = 0
@@ -338,11 +341,11 @@ def Factory():
                 if t_mod<p/2:
                     # 正向移动, 向右
                     waittime = ((900-x)+(900-target))/spd
-                    print("先向右再向左")
+                    logger.debug("先向右再向左")
                 else:
                     waittime = (x+target)/spd
-                    print("先向左再向右")
-                print("预计等待", waittime)
+                    logger.debug("先向左再向右")
+                logger.debug(f"预计等待 {waittime}")
                 Sleep(waittime-0.270)
                 device.shell(f"input tap 430 1000")
                 Sleep(3)
@@ -366,14 +369,14 @@ def Factory():
         counter = 0
         while 1:
             screen = ScreenShot()
-            print(f'状态机检查中...(第{counter+1}次)')
+            logger.info(f'状态机检查中...(第{counter+1}次)')
 
             if setting._FORCESTOPING.is_set():
                 return State.Quit, DungeonState.Quit, screen
 
             if Press(CheckIf(screen,'retry')):
-                    print("网络不太给力啊.")
-                    # print("ka le.")
+                    logger.info("网络不太给力啊.")
+                    # logger.info("ka le.")
                     Sleep(2)
 
             identifyConfig = [
@@ -412,50 +415,50 @@ def Factory():
                 return State.Inn, None, screen
 
             if counter>5:
-                print("看起来遇到了一些不太寻常的情况...")
+                logger.info("看起来遇到了一些不太寻常的情况...")
                 if (CheckIf(screen,'RiseAgain')):
-                    print("这就把你拉起来.")
-                    # print("REZ.")
+                    logger.info("这就把你拉起来.")
+                    # logger.info("REZ.")
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
                 if Press(CheckIf(screen,'ambush')):
-                    print("伏击起手!")
-                    # print("Ambush! Always starts with Ambush.")
+                    logger.info("伏击起手!")
+                    # logger.info("Ambush! Always starts with Ambush.")
                     Sleep(2)
                 if Press(CheckIf(screen,'blessing')):
-                    print("我要选安戈拉的祝福!...好吧随便选一个吧.")
-                    # print("Blessing of... of course Angora! Fine, anything.")
+                    logger.info("我要选安戈拉的祝福!...好吧随便选一个吧.")
+                    # logger.info("Blessing of... of course Angora! Fine, anything.")
                     Sleep(2)
                 if Press(CheckIf(screen,'DontBuyIt')):
-                    print("等我买? 你白等了, 我不买.")
-                    # print("wait for paurch? Wait for someone else.")
+                    logger.info("等我买? 你白等了, 我不买.")
+                    # logger.info("wait for paurch? Wait for someone else.")
                     Sleep(2)
                 if Press(CheckIf(screen,'adventurersbones')):
-                    print("是骨头!")
-                    # print("")
+                    logger.info("是骨头!")
+                    # logger.info("")
                     Sleep(2)
                 if Press(CheckIf(screen,'buyNothing')):
-                    print("有骨头的话我会买的. 但是现在我没有骨头的识别图片啊.")
-                    # print("No Bones No Buy.")
+                    logger.info("有骨头的话我会买的. 但是现在我没有骨头的识别图片啊.")
+                    # logger.info("No Bones No Buy.")
                     Sleep(2)
                 if Press(CheckIf(screen,'Nope')):
-                    print("但是, 我拒绝.")
-                    # print("And what, must we give in return?")
+                    logger.info("但是, 我拒绝.")
+                    # logger.info("And what, must we give in return?")
                     Sleep(2)
                 if Press(CheckIf(screen,'dontGiveAntitoxin')):
-                    print("但是, 我拒绝.")
-                    # print("")
+                    logger.info("但是, 我拒绝.")
+                    # logger.info("")
                     Sleep(2)
                 if (CheckIf(screen,'multipeopledead')):
-                    print("死了好几个, 惨哦")
-                    # print("Corpses strew the screen")
+                    logger.info("死了好几个, 惨哦")
+                    # logger.info("Corpses strew the screen")
                     Press(CheckIf(screen,'skull'))
                     Sleep(2)
                 PressReturn()
                 PressReturn()
             if counter>= 20:
-                print("看起来遇到了一些非同寻常的情况...重启游戏吧")
+                logger.info("看起来遇到了一些非同寻常的情况...重启游戏吧")
                 restartGame()
                 counter = 0
 
@@ -477,32 +480,39 @@ def Factory():
                 grayLast = cv2.cvtColor(queue[i-1], cv2.COLOR_BGR2GRAY)
                 mean_diff = cv2.absdiff(grayThis, grayLast).mean()/255
                 totalDiff+=mean_diff
-            print(f"卡死检测耗时: {time.time()-t:.5f}秒")
-            print(f"卡死检测: 本次结果为{totalDiff:.5f}")
+            logger.debug(f"卡死检测耗时: {time.time()-t:.5f}秒")
+            logger.debug(f"卡死检测结果: {totalDiff:.5f}")
             if totalDiff<=0.08:
                 return queue, True
         return queue, False
     def StateInn():
         Press(FindItOtherwisePressAndWait('Inn',[1,1],1))
-        Press(FindItOtherwisePressAndWait('Stay',None,2))
-        Press(FindItOtherwisePressAndWait('Economy',None,2))
-        Press(FindItOtherwisePressAndWait('OK',None,2))
+        Press(FindItOtherwisePressAndWait('Stay',[1,1],2))
+        Press(FindItOtherwisePressAndWait('Economy',[1,1],2))
+        Press(FindItOtherwisePressAndWait('OK',[1,1],2))
         FindItOtherwisePressAndWait('Stay',[299,1464],2)
         PressReturn()
     def StateEoT():
         match setting._FARMTARGET:
             case "shiphold":
                 Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
-                Press(FindItOtherwisePressAndWait('shiphold',None,1))
+                Press(FindItOtherwisePressAndWait('shiphold',[1,1],1))
             case "lounge":
                 Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
-                Press(FindItOtherwisePressAndWait('lounge',None,1))
+                Press(FindItOtherwisePressAndWait('lounge',[1,1],1))
             case "LBC":
                 Press(FindItOtherwisePressAndWait('intoWorldMap','closePartyInfo',1))
                 
                 while not Press(CheckIf(ScreenShot(),'LBC')):
                     device.shell(f"input swipe 100 100 700 1500")
                     Sleep(1)
+            case "fordraig-B3F":
+                Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
+
+                while not Press(CheckIf(ScreenShot(),'labyrinthOfFordraig')):
+                    device.shell(f"input swipe 450 150 500 150")
+                
+                Press(FindItOtherwisePressAndWait('fordraig/B3F','labyrinthOfFordraig',1))
             case "Dist":
                 Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
 
@@ -511,10 +521,13 @@ def Factory():
                     Sleep(1)
             case "DOE":
                 Press(FindItOtherwisePressAndWait('DOE','EdgeOfTown',1))
-                Press(FindItOtherwisePressAndWait('DOEB1F',None,1))
+                Press(FindItOtherwisePressAndWait('DOEB1F',[1,1],1))
+            case "DOL":
+                Press(FindItOtherwisePressAndWait('DOL','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('DOLB1F',[1,1],1))
             case "DOF":
                 Press(FindItOtherwisePressAndWait('DOF','EdgeOfTown',1))
-                Press(FindItOtherwisePressAndWait('DOFB1F',None,1))
+                Press(FindItOtherwisePressAndWait('DOFB1F',[1,1],1))
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
@@ -531,7 +544,7 @@ def Factory():
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
                 if Press(CheckIf(screen, 'spellskill/'+skillspell)):
-                    print('使用了技能', skillspell)
+                    logger.info(f"使用了技能 {skillspell}")
                     Sleep(1)
                     Press([150,750])
                     Press([300,750])
@@ -571,7 +584,7 @@ def Factory():
                 points = CheckIf_MultiRect(ScreenShot(),target)
                 if len(points)>1:
                     targetPos = sorted(points, key=lambda p: p[1], reverse=False)[0]
-                    print(f'找到了 {target}! {targetPos}')
+                    logger.info(f'找到了 {target}! {targetPos}')
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
                     Press([1,230])
@@ -581,7 +594,7 @@ def Factory():
                     return targetPos
             else:
                 if targetPos:=CheckIf(map,target):
-                    print(f'找到了 {target}! {targetPos}')
+                    logger.info(f'找到了 {target}! {targetPos}')
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
                     Press([1,230])
@@ -591,21 +604,26 @@ def Factory():
     def StateMoving_CheckFrozen(): # return current DungeonState
         lastscreen = None
         dungState = None
-        print("进入移动状态. 将不断进行自检.")
+        logger.info("面具男, 移动.")
         while 1:
             Sleep(3)
             _, dungState,screen = IdentifyState()
+            if dungState == DungeonState.Map:
+                logger.info(f"疑似移动失败.")
+                FindItOtherwisePressAndWait("dungFlag",[280,1433],1)
+                dungState = dungState.Dungeon
+                break
             if dungState != DungeonState.Dungeon:
-                print(f"退出移动状态. 当前状态: {dungState}.")
+                logger.info(f"退出移动状态. 当前状态: {dungState}.")
                 break
             if lastscreen is not None:
                 gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
                 gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
                 mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                # print(mean_diff)
+                logger.debug(f"移动冻结检查:{mean_diff:.2f}")
                 if mean_diff < 0.02:
                     dungState = None
-                    print("退出移动状态. 疑似游戏卡死.")
+                    logger.info("退出移动状态. 疑似游戏卡死.")
                     break
             lastscreen = screen
         return dungState
@@ -622,40 +640,41 @@ def Factory():
                 Press([280,1433]) # automove
                 return StateMoving_CheckFrozen(),targetComplete
             else:
-                print("没有找到目标, 地下城完成, 准备离开.")
+                logger.info("没有找到目标, 地下城完成, 准备离开.")
                 targetComplete = True
         else:
             if (pos:=StateMap_FindSwipeClick(target)):
                 if (CheckIf_FocusCursor(ScreenShot(),target)): #注意 这里通过二次确认 我们可以看到目标地点 而且是未选中的状态
-                    print("经过对比中心区域, 确认没有抵达.")
+                    logger.info("经过对比中心区域, 确认没有抵达.")
                     Press(pos)
                     Press([280,1433]) # automove
                     return StateMoving_CheckFrozen(),targetComplete
                 else:
-                    print("经过对比中心区域, 判断为抵达目标地点.")
-                    print('开始等待...等待...')
+                    logger.info("经过对比中心区域, 判断为抵达目标地点.")
+                    logger.info('开始等待...等待...')
                     PressReturn()
                     PressReturn()
                     while 1:
                         if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
-                            print("等得够久了.")
+                            logger.info("等得够久了.")
                             targetComplete = True
                             Sleep(1)
                             Press([777,150])
                             return None,  targetComplete
-                        print(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
+                        logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
                         if CheckIf(ScreenShot(),'flee'):
                             return DungeonState.Combat,targetComplete
             else:
-                print("错误: 地图中未找到目标地点.")
+                logger.info("错误: 地图中未找到目标地点.")
                 return DungeonState.Map,  targetComplete
         return DungeonState.Map,  targetComplete
     def StateQuit():
-        print("地下城已经完成, 返回中...")
+        logger.info("地下城已经完成, 返回中...")
         # if not alreadyPressReturnTarget:
         targetSpecialQuit = [
             "DOE",
             "DOF",
+            "DOL",
             "LBC",
             ]
         targetQuit = None
@@ -706,40 +725,50 @@ def Factory():
                 return None
             ## todo: 换个简易版本的identify
             tryOpenCounter += 1
-            print(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
+            logger.info(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
 
     def StreetFarm(set):
         nonlocal setting
         nonlocal device
+        nonlocal logger
         setting = set
         device = setting._ADBDEVICE
+        logger = setting._LOGGER
         screenFrozen = []
         
         state = None
         while 1:
-            print("======================")
+            logger.info("======================")
             Sleep(1)
             if setting._FORCESTOPING.is_set():
-                print("即将中断脚本...")
+                logger.info("即将中断脚本...")
                 break
-            print('当前状态: ', state)
+            logger.info(f"当前状态: {state}")
             match state:
                 case None:
                     state,_,_ = IdentifyState()
-                    print('下一状态: ', state)
+                    logger.info(f"下一状态: {state}")
                     if state ==State.Quit:
-                        print("即将中断脚本...")
+                        logger.info("即将中断脚本...")
                         break
                 case State.NearTown:
                     if setting._LAPTIME!= 0:
-                        print(f"第{setting._DUNGCOUNTER}次地下城完成. 用时:",time.time()-setting._LAPTIME)
+                        logger.info(f"第{setting._DUNGCOUNTER}次地下城完成. 用时:{time.time()-setting._LAPTIME}")
                     setting._LAPTIME = time.time()
                     setting._DUNGCOUNTER+=1
                     if (setting._DUNGCOUNTER-1) % (setting._RESTINTERVEL+1) == 0:
                         PressReturn()
                         state = State.Inn
                     else:
-                        print("还有许多地下城要刷. 现在还不能休息哦.")
+                        logger.info("还有许多地下城要刷. 现在还不能休息...稍微休息一下好了.")
+                        Press([1,1])
+                        FindItOtherwisePressAndWait('gradeup',[450,1300],2)
+                        Press(FindItOtherwisePressAndWait('recover',[833,750],1))
+                        PressReturn()
+                        Sleep(0.5)
+                        PressReturn()
+                        PressReturn()
+                        #Press([600,1200])
                         state = State.EoT
                 case State.Inn:
                     StateInn()
@@ -753,11 +782,11 @@ def Factory():
                     targetComplete = False
                     waitTimer = time.time()
                     while inDung:
-                        print("----------------------")
+                        logger.info("----------------------")
                         if setting._FORCESTOPING.is_set():
-                            print("即将中断脚本...")
+                            logger.info("即将中断脚本...")
                             dungState = DungeonState.Quit
-                        print("当前状态(地下城): ", dungState)
+                        logger.info(f"当前状态(地下城): {dungState}")
 
                         match dungState:
                             case None:
@@ -776,7 +805,7 @@ def Factory():
                                     Press([450,1300])
                                     Sleep(1)
                                     if CheckIf(ScreenShot(), 'trait'):
-                                        print("治疗队伍.")
+                                        logger.info("治疗队伍.")
                                         Press([833,843])
                                         Sleep(1)
                                         if CheckIf(ScreenShot(),'recover'):
@@ -785,6 +814,7 @@ def Factory():
                                             Sleep(0.5)
                                             PressReturn()
                                         PressReturn()
+                                Sleep(1)
                                 Press([777,150])
                                 Sleep(1)
                                 dungState = DungeonState.Map
@@ -803,8 +833,10 @@ def Factory():
     def QuestFarm(set):
         nonlocal setting
         nonlocal device
+        nonlocal logger
         setting = set
         device = setting._ADBDEVICE
+        logger = setting._LOGGER
         match setting._FARMTARGET:
             case '7000G':                    
                 stepNo = 1 #IdentifyStep(stepNo)
@@ -813,7 +845,7 @@ def Factory():
                     starttime = time.time()
                     match stepNo:
                         case 1:
-                            print("第一步: 开始诅咒之旅...")
+                            logger.info("第一步: 开始诅咒之旅...")
                             Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
                             Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
 
@@ -828,37 +860,37 @@ def Factory():
                                 Press(CheckIf(ScreenShot(),'FortressArrival'))
                             stepNo = 2
                         case 2:
-                            print("第二步: 从要塞返回主城...")
+                            logger.info("第二步: 从要塞返回主城...")
                             leapSuccess = False
                             Sleep(10)
                             while 1:
                                 Sleep(15)
                                 for i in range(50):
                                     if (CheckIf(ScreenShot(),'leaveDung')):
-                                        print("跳跃成功!")
+                                        logger.info("跳跃成功!")
                                         leapSuccess = True
                                         break
                                     else:
                                         Press([1,1])
                                 if not leapSuccess:
                                     restartGame()
-                                    print("跳跃失败, 重启游戏")
+                                    logger.info("跳跃失败, 重启游戏")
                                 else:
                                     break
                             Press(FindItOtherwisePressAndWait('return','leaveDung',2))
-                            Press(FindItOtherwisePressAndWait('returntotown',None,2))
+                            Press(FindItOtherwisePressAndWait('returntotown',[1,1],2))
                             FindItOtherwisePressAndWait('Inn',[1,1],2)
                             stepNo = 3
                         case 3:
-                            print("第三步: 前往王城...")
+                            logger.info("第三步: 前往王城...")
                             Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
 
                             while not Press(CheckIf(ScreenShot(),'RoyalCityLuknalia')):
                                 device.shell(f"input swipe 450 150 500 150")
                             stepNo = 4
                         case 4:
-                            print("第四步: 给我!(伸手)")
-                            Press(FindItOtherwisePressAndWait('guild',None,1))
+                            logger.info("第四步: 给我!(伸手)")
+                            Press(FindItOtherwisePressAndWait('guild',[1,1],1))
                             Press(FindItOtherwisePressAndWait('7000G/illgonow',[1,1],1))
                             Sleep(15)
                             Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],2))
@@ -889,7 +921,7 @@ def Factory():
                             Press(FindItOtherwisePressAndWait('7000G/noeasytask',[1,1],1))
                             FindItOtherwisePressAndWait('ruins',[1,1],1)
                             costtime = time.time()-starttime
-                            print(f"第{setting._DUNGCOUNTER}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
+                            logger.info(f"第{setting._DUNGCOUNTER}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
                             if not setting._FORCESTOPING.is_set():
                                 stepNo = 1
                             else:
@@ -898,18 +930,18 @@ def Factory():
                 stepNo = 3
                 while 1:
                     setting._DUNGCOUNTER += 1
-                    print(setting._DUNGCOUNTER)
+                    logger.info(setting._DUNGCOUNTER)
                     starttime = time.time()
                     match stepNo:
                         case 1:
-                            print('第一步: 诅咒之旅...')
+                            logger.info('第一步: 诅咒之旅...')
                             Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
                             Press(FindItOtherwisePressAndWait('Fordraig/Leap','specialRequest',1))
                             Press(FindItOtherwisePressAndWait('OK','leap',1))
                             Sleep(15)
                             stepNo = 2
                         case 2:
-                            print('第二步: 领取任务.')
+                            logger.info('第二步: 领取任务.')
                             FindItOtherwisePressAndWait('Inn',[1,1],1)
                             StateInn()
                             Press(FindItOtherwisePressAndWait('guildRequest','guild',1))
@@ -927,7 +959,7 @@ def Factory():
                             PressReturn()
                             stepNo = 3
                         case 3:
-                            print('第三步: 进入地下城.')
+                            logger.info('第三步: 进入地下城.')
                             Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
 
                             while not Press(CheckIf(ScreenShot(),'labyrinthOfFordraig')):

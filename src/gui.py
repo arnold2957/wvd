@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
 import os
 import sys
+import logging
 from script import *
 from threading import Thread,Event
 import subprocess
@@ -10,9 +11,22 @@ import socket
 import time
 
 CONFIG_FILE = 'config.json'
+LOG_FILE_NAME = "log.txt"
+if os.path.exists(LOG_FILE_NAME):
+    os.remove(LOG_FILE_NAME)
+with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
+    pass
 
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["贸易水路-一号街 1stDist", "贸易水路-船一 shiphold", "贸易水路-船二 lounge","土洞(强化石5-9)","火洞(强化石15-19)", "卢比肯的洞窟 Le Bicken Cave", "7000G", #"鸟洞 fordraig"
+DUNGEON_TARGETS = ["贸易水路-一号街 1stDist",
+                   "贸易水路-船一 shiphold",
+                   "贸易水路-船二 lounge",
+                   "鸟洞3层 fordraig B3F",
+                   "卢比肯的洞窟 Le Bicken Cave",
+                   "7000G","土洞(强化石5-9)",
+                   "火洞(强化石15-19)", 
+                   "光洞"
+                   #"鸟洞 fordraig"
                    ]
 
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
@@ -20,26 +34,46 @@ FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
 ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 PHYSICAL_SKILLS = ["PS","HA","SB"]
 
-ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS)) 
+ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS))
 
-class RedirectConsole:
-    def __init__(self, widget):
-        self.widget = widget
+############################################
+logger = logging.getLogger('WvDLogger')
+logger.setLevel(logging.DEBUG)
+# 文件句柄
+file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
+# tk组件句柄
+scrolled_text_formatter = logging.Formatter(
+    '%(message)s'
+)
+class ScrolledTextHandler(logging.Handler):
+    def __init__(self, text_widget):
+        super().__init__()
+        self.text_widget = text_widget
+        self.text_widget.config(state=tk.DISABLED)
 
-    def write(self, message):
-        self.widget.config(state=tk.NORMAL)
-        self.widget.insert(tk.END, message)
-        self.widget.config(state=tk.DISABLED)
-        self.widget.see(tk.END)
-
-    def flush(self):
-        pass
+    def emit(self, record):
+        msg = self.format(record)
+        try:
+            self.text_widget.config(state=tk.NORMAL)
+            self.text_widget.insert(tk.END, msg + '\n')
+            self.text_widget.see(tk.END)
+            self.text_widget.config(state=tk.DISABLED)
+        except Exception:
+            self.handleError(record)
+############################################
 class ConfigPanelApp:
     def __init__(self, root):
         self.root = root
         self.root.geometry('450x470')
-        self.root.resizable(False, False)
-        self.root.title("WvD 巫术daphne自动刷怪 v0.4.2 @德德Dellyla(B站)")
+        # self.root.resizable(False, False)
+        self.root.title("WvD 巫术daphne自动刷怪 v0.4.5 @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -76,7 +110,7 @@ class ConfigPanelApp:
         self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
         self.update_current_skills_display() # 初始化时更新技能显示
 
-        print("**********************\n" \
+        logger.info("**********************\n" \
         "使用前请确保以下模拟器设置:\n" \
         "1 模拟器已经允许adb调试. 位于\"设置\"-\"高级\"-\"adb调试\"的设置已经打开.\n" \
         "2 模拟器分辨率为 1600x900, 240 dpi.\n" \
@@ -136,14 +170,17 @@ class ConfigPanelApp:
         try:
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=4)
-            print("配置已保存。")
+            logger.info("配置已保存。")
         except Exception as e:
             messagebox.showerror("错误", f"保存配置时发生错误: {e}")
 
     def create_widgets(self):
-        logger = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
-        logger.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-        sys.stdout = RedirectConsole(logger)
+        self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
+        self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
+        self.scrolled_text_handler.setLevel(logging.INFO)
+        self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
+        logger.addHandler(self.scrolled_text_handler)
 
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -369,22 +406,22 @@ class ConfigPanelApp:
             # "启用所有技能" 按钮：如果当前所有技能都已启用，再次点击则清空所有技能。否则，启用所有技能。
             if skills_to_process_set.issubset(current_skill_set) and len(skills_to_process_set) == len(current_skill_set) and len(current_skill_set) > 0 : # 确保不是空集对空集
                 self._spell_skill_config_internal = []
-                print("已取消所有技能。")
+                logger.info("已取消所有技能。")
             else:
                 self._spell_skill_config_internal = list(skills_to_process_set)
-                print(f"已启用所有技能: {self._spell_skill_config_internal}")
+                logger.info(f"已启用所有技能: {self._spell_skill_config_internal}")
         else:
             # 其他技能按钮：如果该类别的所有技能都已启用，则移除这些技能。否则，添加这些技能。
             is_fully_active = skills_to_process_set.issubset(current_skill_set)
 
             if is_fully_active:
                 self._spell_skill_config_internal = [s for s in self._spell_skill_config_internal if s not in skills_to_process_set]
-                print(f"已禁用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+                logger.info(f"已禁用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
             else:
                 for skill in skills_to_process:
                     if skill not in self._spell_skill_config_internal:
                         self._spell_skill_config_internal.append(skill)
-                print(f"已启用/添加 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+                logger.info(f"已启用/添加 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
 
         # 保证唯一性，但保留顺序（如果重要的话，使用 dict.fromkeys）
         self._spell_skill_config_internal = list(dict.fromkeys(self._spell_skill_config_internal))
@@ -465,11 +502,11 @@ class ConfigPanelApp:
             self.thread.start()
         else: # self.thread is NOT None
             if self.thread.is_alive():
-                print("等待当前步骤执行完毕, 执行完毕后将中断脚本. 这可能需要一些时间...")
+                logger.info("等待当前步骤执行完毕, 执行完毕后将中断脚本. 这可能需要一些时间...")
                 self.stop_event.set()
 
     def finishingcallback(self):
-        print("已中断.")
+        logger.info("已中断.")
         self.start_stop_btn.config(text="脚本, 启动!")
         self.set_controls_state(tk.NORMAL)
         self.continue_btn.grid_remove()
@@ -487,13 +524,13 @@ class ConfigPanelApp:
                 result = sock.connect_ex(("127.0.0.1", 5037))
                 return result == 0  # 返回0表示连接成功
             except Exception as e:
-                print(f"连接检测异常: {str(e)}")
+                logger.info(f"连接检测异常: {str(e)}")
                 return False
             finally:
                 sock.close()
         try:
             if not check_adb_connection():
-                print("开始启动ADB服务, 路径:",self.adb_path_var.get())
+                logger.info(f"开始启动ADB服务, 路径:{self.adb_path_var.get()}")
                 # 启动adb服务（非阻塞模式）
                 subprocess.Popen(
                     [self.adb_path_var.get(), "start-server"],
@@ -501,21 +538,21 @@ class ConfigPanelApp:
                     stderr=subprocess.DEVNULL,
                     shell=True
                 )
-                print("ADB 服务启动中...")
+                logger.info("ADB 服务启动中...")
                 
                 # 循环检测连接（最多重试5次）
                 for _ in range(5):
                     if check_adb_connection():
-                        print("ADB 连接成功")
+                        logger.info("ADB 连接成功")
                         return True
                     time.sleep(1)  # 每次检测间隔1秒
                 
-                print("ADB 连接超时")
+                logger.info("ADB 连接超时")
                 return False
             else:
                 return True
         except Exception as e:
-            print(f"启动ADB失败: {str(e)}")
+            logger.info(f"启动ADB失败: {str(e)}")
             return False
 
     def dungeonLoop(self):
@@ -530,12 +567,12 @@ class ConfigPanelApp:
         client.remote_connect("127.0.0.1", int(self.adb_port_var.get()))
         devices = client.devices()
         if (not devices) or not (devices[0]):
-            print("创建adb链接失败.")
+            logger.info("创建adb链接失败.")
             self.finishingcallback()
             return
         device = devices[0]
 
-        print("目标地下城:",self.farm_target_var.get())
+        logger.info(f"目标地下城:{self.farm_target_var.get()}")
         setting = FarmSetting()
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
         setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
@@ -546,6 +583,7 @@ class ConfigPanelApp:
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._ADBDEVICE = device
+        setting._LOGGER = logger
         StreetFarm,QuestFarm = Factory()
         match self.farm_target_var.get():
             case "贸易水路-船一 shiphold":
@@ -562,6 +600,11 @@ class ConfigPanelApp:
                 setting._DUNGTARGET = 'DOEtarget'
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
+            case "光洞":
+                setting._FARMTARGET = 'DOL'
+                setting._DUNGTARGET = 'DOLtarget'
+                setting._DUNGWAITTIMEOUT = 0
+                StreetFarm(setting)
             case "火洞(强化石15-19)":
                 setting._FARMTARGET = 'DOF'
                 setting._DUNGTARGET = 'DOFtarget'
@@ -573,11 +616,14 @@ class ConfigPanelApp:
             case "7000G":
                 setting._FARMTARGET = '7000G'
                 QuestFarm(setting)
-            case "鸟洞 fordraig":
+            case "角鹫之剑":
                 setting._FARMTARGET = 'fordraig'
                 QuestFarm(setting)
+            case "鸟洞3层 fordraig B3F":
+                setting._FARMTARGET = 'fordraig-B3F'
+                StreetFarm(setting)
             case _:
-                print(f"无效的任务名:{self.farm_target_var.get()}")
+                logger.info(f"无效的任务名:{self.farm_target_var.get()}")
                 self.finishingcallback()
                 
 
