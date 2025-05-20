@@ -37,9 +37,9 @@ class RedirectConsole:
 class ConfigPanelApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry('450x460')
+        self.root.geometry('450x470')
         self.root.resizable(False, False)
-        self.root.title("WvD 巫术daphne自动刷怪 v0.4 @德德Dellyla(B站)")
+        self.root.title("WvD 巫术daphne自动刷怪 v0.4.2 @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -65,6 +65,7 @@ class ConfigPanelApp:
         self.system_auto_combat_var = tk.BooleanVar(value=self.config.get("SYSTEM_AUTO_COMBAT_ENABLED", False))
         self.rest_intervel_var = tk.StringVar(value=self.config.get("_RESTINTERVEL", 0))
         self.adb_path_var = tk.StringVar(value=self.config.get("ADB_PATH", ""))
+        self.adb_port_var = tk.StringVar(value=self.config.get("ADB_PORT", 5555))
 
         self._spell_skill_config_internal = list(self.config.get("_SPELLSKILLCONFIG", []))
 
@@ -119,6 +120,7 @@ class ConfigPanelApp:
 
     def save_config(self):
         self.config["ADB_PATH"] = self.adb_path_var.get()
+        self.config["ADB_PORT"] = self.adb_port_var.get()
         self.config["_FARMTARGET"] = self.farm_target_var.get()
         self.config["_RANDOMLYOPENCHEST"] = self.randomly_open_chest_var.get()
         self.config["_RANDOMLYPERSONOPENCHEST"] = self.randomly_people_open_chest_var.get()
@@ -139,14 +141,14 @@ class ConfigPanelApp:
             messagebox.showerror("错误", f"保存配置时发生错误: {e}")
 
     def create_widgets(self):
-        logger = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white')
-        logger.place(x=250, y=10, width=200, height=430)
+        logger = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
+        logger.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         sys.stdout = RedirectConsole(logger)
 
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        # 第0行 设定adb路径
+        # 第0行 设定adb
         frame_row0 = ttk.Frame(main_frame)
         frame_row0.grid(row=0, column=0, sticky="ew", pady=5)  # 首行框架
         self.adb_status_label = ttk.Label(frame_row0)
@@ -173,12 +175,28 @@ class ConfigPanelApp:
         # 初始化标签状态
         def update_adb_status(*args):
             if self.adb_path_var.get():
-                self.adb_status_label.config(text="已设定ADB路径", foreground="green")
+                self.adb_status_label.config(text="已设定ADB", foreground="green")
             else:
-                self.adb_status_label.config(text="未设定ADB路径", foreground="red")
+                self.adb_status_label.config(text="未设定ADB", foreground="red")
         
         self.adb_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
+
+        ttk.Label(frame_row0, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        vcmd = root.register(lambda x: ((x=="")or(x.isdigit())))
+        self.adb_port_entry = ttk.Entry(frame_row0,
+                                        textvariable=self.adb_port_var,
+                                        validate="key",
+                                        validatecommand=(vcmd, '%P'),
+                                        width=5)
+        self.adb_port_entry.grid(row=0, column=3)
+        self.button_save_adb_port = ttk.Button(
+            frame_row0,
+            text="保存",
+            command = self.save_config,
+            width=5
+            )
+        self.button_save_adb_port.grid(row=0, column=4)
 
         # 第1行 分割线.
         ttk.Separator(main_frame, orient='horizontal').grid(row=1, column=0, columnspan=3, sticky='ew', pady=10)
@@ -224,7 +242,6 @@ class ConfigPanelApp:
         frame_row5 = ttk.Frame(main_frame)
         frame_row5.grid(row=5, column=0, sticky="ew", pady=5)
         ttk.Label(frame_row5, text="旅店休息间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        vcmd = root.register(lambda x: ((x=="")or(x.isdigit())))
         self.rest_intervel_entry = ttk.Entry(frame_row5,
                                              textvariable=self.rest_intervel_var,
                                              validate="key",
@@ -303,7 +320,7 @@ class ConfigPanelApp:
         # 第11行 技能选择结果展示
         self.current_skills_label_var = tk.StringVar()
         current_skills_display = ttk.Label(main_frame, textvariable=self.current_skills_label_var, wraplength=230)
-        current_skills_display.grid(row=11, column=0, columnspan=2, sticky=tk.W+tk.E, pady=5)
+        # current_skills_display.grid(row=11, column=0, columnspan=2, sticky=tk.W+tk.E, pady=5)
 
     def update_current_skills_display(self):
         if self.system_auto_combat_var.get():
@@ -414,6 +431,8 @@ class ConfigPanelApp:
             self.skip_recover_check.configure(state="disabled")
             self.rest_intervel_entry.configure(state="disabled")
             self.button_save_rest_intervel.configure(state="disabled")
+            self.adb_port_entry.configure(state='disabled')
+            self.button_save_adb_port.configure(state='disabled')
         else:
             self.adb_path_change_button.configure(state="normal")
             self.farm_target_combo.configure(state="readonly") 
@@ -423,6 +442,8 @@ class ConfigPanelApp:
             self.skip_recover_check.configure(state="normal")
             self.rest_intervel_entry.configure(state="normal")
             self.button_save_rest_intervel.configure(state="normal")
+            self.adb_port_entry.configure(state='normal')
+            self.button_save_adb_port.configure(state='normal')
         """设置所有控件的状态"""
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -492,13 +513,7 @@ class ConfigPanelApp:
                 print("ADB 连接超时")
                 return False
             else:
-                client = AdbClient(host="127.0.0.1", port=5037)
-                device = client.device("emulator-5554")
-                if device!=None:
-                    return True
-                else:
-                    print("创建adb链接失败.")
-                    return False
+                return True
         except Exception as e:
             print(f"启动ADB失败: {str(e)}")
             return False
@@ -510,6 +525,16 @@ class ConfigPanelApp:
                 self.finishingcallback()
                 return
 
+        
+        client = AdbClient(host="127.0.0.1", port=5037)
+        client.remote_connect("127.0.0.1", int(self.adb_port_var.get()))
+        devices = client.devices()
+        if (not devices) or not (devices[0]):
+            print("创建adb链接失败.")
+            self.finishingcallback()
+            return
+        device = devices[0]
+
         print("目标地下城:",self.farm_target_var.get())
         setting = FarmSetting()
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
@@ -520,6 +545,7 @@ class ConfigPanelApp:
         setting._SPELLSKILLCONFIG = [s for s in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
+        setting._ADBDEVICE = device
         StreetFarm,QuestFarm = Factory()
         match self.farm_target_var.get():
             case "贸易水路-船一 shiphold":

@@ -44,6 +44,7 @@ class FarmSetting:
     _COMBATSPD = False
     _RESTINTERVEL = 0
     _SKIPRECOVER = False
+    _ADBDEVICE = None
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -62,8 +63,7 @@ def resource_path(relative_path):
 
 def Factory():
     toaster = ToastNotifier()
-    client = AdbClient(host="127.0.0.1", port=5037)
-    device = client.device("emulator-5554")
+    device = None
     setting = None
     ##################################################################
     def Sleep(t=1):
@@ -157,7 +157,7 @@ def Factory():
             gray1 = cv2.cvtColor(midimg_scn, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(miding_ptn, cv2.COLOR_BGR2GRAY)
             mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-            print(mean_diff)
+            print(f"移动时冻结检查:{mean_diff:.2f}")
 
             if mean_diff<0.1:
                 return True
@@ -195,16 +195,18 @@ def Factory():
             else:
                 return pos
         
-        print("25次截图依旧没有找到目标, 疑似卡死. 中断游戏.")
+        print("25次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
         restartGame()
         return FindItOtherwisePressAndWait(targetPattern, pressPos,waitTime) #???能这么些吗?
     ##################################################################  
     def restartGame():
+        nonlocal setting
+        setting._COMBATSPD = False
         package_name = "jp.co.drecom.wizardry.daphne"
         mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
         device.shell(f"am force-stop {package_name}")
         Sleep(2)
-        print("DvW, 启动!")
+        print("巫术, 启动!")
         print(device.shell(f"am start -n {mainAct}"))
         Sleep(5)
     ##################################################################
@@ -463,6 +465,23 @@ def Factory():
             Sleep(1)
             counter += 1
         return None, None, screen
+    def StateNone_CheckFrozen(queue, scn):
+        if len(queue) > 5:
+            queue = []
+        queue.append(scn)
+        totalDiff = 0
+        t = time.time()
+        if len(queue)==5:
+            for i in range(1,5):
+                grayThis = cv2.cvtColor(queue[i], cv2.COLOR_BGR2GRAY)
+                grayLast = cv2.cvtColor(queue[i-1], cv2.COLOR_BGR2GRAY)
+                mean_diff = cv2.absdiff(grayThis, grayLast).mean()/255
+                totalDiff+=mean_diff
+            print(f"卡死检测耗时: {time.time()-t:.5f}秒")
+            print(f"卡死检测: 本次结果为{totalDiff:.5f}")
+            if totalDiff<=0.08:
+                return queue, True
+        return queue, False
     def StateInn():
         Press(FindItOtherwisePressAndWait('Inn',[1,1],1))
         Press(FindItOtherwisePressAndWait('Stay',None,2))
@@ -514,13 +533,13 @@ def Factory():
                 if Press(CheckIf(screen, 'spellskill/'+skillspell)):
                     print('使用了技能', skillspell)
                     Sleep(1)
-                    Press(CheckIf(ScreenShot(),'OK'))
                     Press([150,750])
                     Press([300,750])
                     Press([450,750])
                     Press([550,750])
                     Press([650,750])
                     Press([750,750])
+                    Press(CheckIf(ScreenShot(),'OK'))
                     Sleep(3)
                     castSpellSkill = True
                     break
@@ -631,7 +650,6 @@ def Factory():
                 print("错误: 地图中未找到目标地点.")
                 return DungeonState.Map,  targetComplete
         return DungeonState.Map,  targetComplete
-
     def StateQuit():
         print("地下城已经完成, 返回中...")
         # if not alreadyPressReturnTarget:
@@ -652,8 +670,7 @@ def Factory():
                 return StateMoving_CheckFrozen()
         return StateMoving_CheckFrozen()
     def StateChest():
-        while Press(CheckIf(ScreenShot(),'chestFlag')):
-            Sleep(1) # 感觉对的但是好像那里不对 先这样吧
+        FindItOtherwisePressAndWait('whowillopenit', 'chestFlag',1)
         tryOpenCounter = 0
         MAXtryOpen = 5
         while 1:
@@ -670,7 +687,7 @@ def Factory():
                 if setting._RANDOMLYOPENCHEST:
                     while 1:
                         screen = ScreenShot()
-                        if Press(CheckIf(screen,'Retry')):
+                        if Press(CheckIf(screen,'retry')):
                             Sleep(1)
                             screen = ScreenShot()
                         if CheckIf(screen, 'chestOpening'):
@@ -693,7 +710,11 @@ def Factory():
 
     def StreetFarm(set):
         nonlocal setting
+        nonlocal device
         setting = set
+        device = setting._ADBDEVICE
+        screenFrozen = []
+        
         state = None
         while 1:
             print("======================")
@@ -740,6 +761,9 @@ def Factory():
 
                         match dungState:
                             case None:
+                                screenFrozen, result = StateNone_CheckFrozen(screenFrozen,ScreenShot())
+                                if result:
+                                    restartGame()
                                 s, dungState,_ = IdentifyState()
                                 if (s == State.Inn)or(s == DungeonState.Quit):
                                     inDung = False
@@ -778,7 +802,9 @@ def Factory():
         setting._FINISHINGCALLBACK()
     def QuestFarm(set):
         nonlocal setting
+        nonlocal device
         setting = set
+        device = setting._ADBDEVICE
         match setting._FARMTARGET:
             case '7000G':                    
                 stepNo = 1 #IdentifyStep(stepNo)
@@ -803,13 +829,22 @@ def Factory():
                             stepNo = 2
                         case 2:
                             print("第二步: 从要塞返回主城...")
-                            print("25秒时间应该足够了...")
-                            Sleep(25)
-                            print("有没有卡死?")
-                            if not CheckIf(ScreenShot(),'leaveDung'):
-                                restartGame()
-                            Press(FindItOtherwisePressAndWait('leaveDung',[1,1],1))
-                            print("好, 继续")
+                            leapSuccess = False
+                            Sleep(10)
+                            while 1:
+                                Sleep(15)
+                                for i in range(50):
+                                    if (CheckIf(ScreenShot(),'leaveDung')):
+                                        print("跳跃成功!")
+                                        leapSuccess = True
+                                        break
+                                    else:
+                                        Press([1,1])
+                                if not leapSuccess:
+                                    restartGame()
+                                    print("跳跃失败, 重启游戏")
+                                else:
+                                    break
                             Press(FindItOtherwisePressAndWait('return','leaveDung',2))
                             Press(FindItOtherwisePressAndWait('returntotown',None,2))
                             FindItOtherwisePressAndWait('Inn',[1,1],2)
