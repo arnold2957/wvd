@@ -201,7 +201,17 @@ def Factory():
         logger.info("25次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
         restartGame()
         return FindItOtherwisePressAndWait(targetPattern, pressPos,waitTime) #???能这么些吗?
-    ##################################################################  
+    ##################################################################
+    class RestartException(Exception):
+        pass
+    def restartThisWhenRetartGame(func):
+        def wrapper(*args, **kwargs):
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except RestartException:
+                    continue
+        return wrapper
     def restartGame():
         nonlocal setting
         setting._COMBATSPD = False
@@ -212,6 +222,7 @@ def Factory():
         logger.info("巫术, 启动!")
         logger.debug(device.shell(f"am start -n {mainAct}"))
         Sleep(5)
+        raise RestartException()
     ##################################################################
     def getCursorCoordinates(input, template_path, threshold=0.8):
         """在本地图片中查找模板位置"""
@@ -351,7 +362,7 @@ def Factory():
                 Sleep(3)
             if not CheckIf(ScreenShot(), 'chestOpening'):
                 break
-
+    ##################################################################
     class State(Enum):
         Dungeon = 'dungeon'
         Inn = 'inn'
@@ -364,7 +375,7 @@ def Factory():
         Chest = 'chest'
         Combat = 'combat'
         Quit = 'quit'
-
+    ##################################################################
     def IdentifyState():
         counter = 0
         while 1:
@@ -485,6 +496,7 @@ def Factory():
             if totalDiff<=0.08:
                 return queue, True
         return queue, False
+    @restartThisWhenRetartGame
     def StateInn():
         Press(FindItOtherwisePressAndWait('Inn',[1,1],1))
         Press(FindItOtherwisePressAndWait('Stay',[1,1],2))
@@ -492,6 +504,7 @@ def Factory():
         Press(FindItOtherwisePressAndWait('OK',[1,1],2))
         FindItOtherwisePressAndWait('Stay',[299,1464],2)
         PressReturn()
+    @restartThisWhenRetartGame
     def StateEoT():
         match setting._FARMTARGET:
             case "shiphold":
@@ -627,7 +640,7 @@ def Factory():
                     break
             lastscreen = screen
         return dungState
-    def StateSearch(targetComplete,waitTimer):
+    def StateSearch(targetComplete,waitTimer, targetList = None):
         normalPlace = ['harken','chest','leaveDung']
         target = setting._DUNGTARGET
         # 地图已经打开.
@@ -845,19 +858,22 @@ def Factory():
                     starttime = time.time()
                     match stepNo:
                         case 1:
-                            logger.info("第一步: 开始诅咒之旅...")
-                            Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
-                            Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
+                            @restartThisWhenRetartGame
+                            def step_1():
+                                logger.info("第一步: 开始诅咒之旅...")
+                                Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
+                                Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
 
-                            if not Press(CheckIf(ScreenShot(),'FortressArrival')):
-                                device.shell(f"input swipe 450 1200 450 200")
-                                while not Press(CheckIf(ScreenShot(),'FortressArrival')):
-                                    device.shell(f"input swipe 50 1200 50 1300")
-                            
-                            while pos:= CheckIf(ScreenShot(), 'leap'):
-                                Press(pos)
-                                Sleep(2)
-                                Press(CheckIf(ScreenShot(),'FortressArrival'))
+                                if not Press(CheckIf(ScreenShot(),'FortressArrival')):
+                                    device.shell(f"input swipe 450 1200 450 200")
+                                    while not Press(CheckIf(ScreenShot(),'FortressArrival')):
+                                        device.shell(f"input swipe 50 1200 50 1300")
+                                
+                                while pos:= CheckIf(ScreenShot(), 'leap'):
+                                    Press(pos)
+                                    Sleep(2)
+                                    Press(CheckIf(ScreenShot(),'FortressArrival'))
+                            step_1()
                             stepNo = 2
                         case 2:
                             logger.info("第二步: 从要塞返回主城...")
@@ -934,11 +950,14 @@ def Factory():
                     starttime = time.time()
                     match stepNo:
                         case 1:
-                            logger.info('第一步: 诅咒之旅...')
-                            Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
-                            Press(FindItOtherwisePressAndWait('Fordraig/Leap','specialRequest',1))
-                            Press(FindItOtherwisePressAndWait('OK','leap',1))
-                            Sleep(15)
+                            @restartThisWhenRetartGame
+                            def step_1():
+                                logger.info('第一步: 诅咒之旅...')
+                                Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
+                                Press(FindItOtherwisePressAndWait('Fordraig/Leap','specialRequest',1))
+                                Press(FindItOtherwisePressAndWait('OK','leap',1))
+                                Sleep(15)
+                            step_1()
                             stepNo = 2
                         case 2:
                             logger.info('第二步: 领取任务.')
