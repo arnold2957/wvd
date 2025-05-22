@@ -12,6 +12,7 @@ import time
 
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
+VERSION = 'v0.4.6.4'
 if os.path.exists(LOG_FILE_NAME):
     os.remove(LOG_FILE_NAME)
 with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
@@ -73,7 +74,7 @@ class ConfigPanelApp:
         self.root = root
         self.root.geometry('450x470')
         # self.root.resizable(False, False)
-        self.root.title("WvD 巫术daphne自动刷怪 v0.4.5 @德德Dellyla(B站)")
+        self.root.title(f"WvD 巫术daphne自动刷怪 v{VERSION} @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -95,7 +96,7 @@ class ConfigPanelApp:
         self.farm_target_var = tk.StringVar(value=self.config.get("_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""))
         self.randomly_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYOPENCHEST", False))
         self.randomly_people_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYPERSONOPENCHEST", False))
-        self.skip_recover_var = tk.BooleanVar(value=self.config.get("_SKIPRECOVER", False))
+        self.skip_recover_var = tk.BooleanVar(value=self.config.get("_SKIPCOMBATRECOVER", False))
         self.system_auto_combat_var = tk.BooleanVar(value=self.config.get("SYSTEM_AUTO_COMBAT_ENABLED", False))
         self.rest_intervel_var = tk.StringVar(value=self.config.get("_RESTINTERVEL", 0))
         self.adb_path_var = tk.StringVar(value=self.config.get("ADB_PATH", ""))
@@ -111,6 +112,7 @@ class ConfigPanelApp:
         self.update_current_skills_display() # 初始化时更新技能显示
 
         logger.info("**********************\n" \
+                    f"当前版本: {VERSION}\n"\
         "使用前请确保以下模拟器设置:\n" \
         "1 模拟器已经允许adb调试. 位于\"设置\"-\"高级\"-\"adb调试\"的设置已经打开.\n" \
         "2 模拟器分辨率为 1600x900, 240 dpi.\n" \
@@ -121,6 +123,8 @@ class ConfigPanelApp:
         "旅店休息间隔是间隔多少次地下城休息. 0代表一直休息, 1代表间隔一次休息, 以此类推.\n" \
         "**********************\n"\
         "现在可用的体术(\"技能\")包括 精密攻击PS, 眩晕突袭SB, 以及 强袭HA.\n" \
+        "**********************\n"\
+        "每次进入地下城必定会恢复. 开宝箱后必定会恢复. 界面按钮控制战斗后是否恢复.\n"\
         "**********************\n")
         
 
@@ -160,7 +164,7 @@ class ConfigPanelApp:
         self.config["_RANDOMLYPERSONOPENCHEST"] = self.randomly_people_open_chest_var.get()
         self.config["SYSTEM_AUTO_COMBAT_ENABLED"] = self.system_auto_combat_var.get()
         self.config["_RESTINTERVEL"] = self.rest_intervel_var.get()
-        self.config["_SKIPRECOVER"] = self.skip_recover_var.get()
+        self.config["_SKIPCOMBATRECOVER"] = self.skip_recover_var.get()
 
         if self.system_auto_combat_var.get():
             self.config["_SPELLSKILLCONFIG"] = []
@@ -178,7 +182,7 @@ class ConfigPanelApp:
         self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
-        self.scrolled_text_handler.setLevel(logging.INFO)
+        self.scrolled_text_handler.setLevel(logging.DEBUG)
         self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
         logger.addHandler(self.scrolled_text_handler)
 
@@ -251,7 +255,7 @@ class ConfigPanelApp:
         frame_row3.grid(row=3, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
             frame_row3,
-            text="开箱时随机乱按",
+            text="智能开箱(测试版)",
             variable=self.randomly_open_chest_var,
             command=self.save_config
         )
@@ -269,7 +273,7 @@ class ConfigPanelApp:
         # 第4行 跳过恢复
         self.skip_recover_check = ttk.Checkbutton(
             main_frame,
-            text="不进行战后和开箱子后恢复",
+            text="不进行战后恢复",
             variable=self.skip_recover_var,
             command=self.save_config
         )
@@ -588,30 +592,37 @@ class ConfigPanelApp:
         match self.farm_target_var.get():
             case "贸易水路-船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
+                setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
             case "贸易水路-船二 lounge":
-                setting._FARMTARGET = 'lounge'
+                setting._FARMTARGET = 'shiphold'
+                setting._TARGETLIST = ['shiphold_upstair','chest','lounge_downstair','harken']
+                setting._TARGETSEARCHDIR = [[[1,1,1,1]],[[100,100,700,1500]],[[100,100,700,1500]],None]
+                setting._TARGETROI = [[0,0,900,800],[0,0,900,800],[0,0,900,800],None]
+                
                 StreetFarm(setting)
             case "贸易水路-一号街 1stDist":
                 setting._FARMTARGET = 'Dist'
+                setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
             case "土洞(强化石5-9)":
                 setting._FARMTARGET = 'DOE'
-                setting._DUNGTARGET = 'DOEtarget'
+                setting._TARGETLIST = ['DOEtarget','DOE_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "光洞":
                 setting._FARMTARGET = 'DOL'
-                setting._DUNGTARGET = 'DOLtarget'
+                setting._TARGETLIST = ['DOLtarget','DOL_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "火洞(强化石15-19)":
                 setting._FARMTARGET = 'DOF'
-                setting._DUNGTARGET = 'DOFtarget'
+                setting._TARGETLIST = ['DOFtarget','DOF_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "卢比肯的洞窟 Le Bicken Cave":
                 setting._FARMTARGET = 'LBC'
+                setting._TARGETLIST = ['chest','LBC_quit']
                 StreetFarm(setting)
             case "7000G":
                 setting._FARMTARGET = '7000G'
@@ -621,6 +632,7 @@ class ConfigPanelApp:
                 QuestFarm(setting)
             case "鸟洞3层 fordraig B3F":
                 setting._FARMTARGET = 'fordraig-B3F'
+                setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
             case _:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")
