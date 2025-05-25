@@ -2,38 +2,44 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
 import os
-import sys
 import logging
 from script import *
 from threading import Thread,Event
 import subprocess
 import socket
 import time
+import shutil
 
+VERSION = '0.4.6.5'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
-VERSION = 'v0.4.6.4'
 if os.path.exists(LOG_FILE_NAME):
     os.remove(LOG_FILE_NAME)
 with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
     pass
+RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
+if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
+    shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
+os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["贸易水路-一号街 1stDist",
-                   "贸易水路-船一 shiphold",
-                   "贸易水路-船二 lounge",
-                   "鸟洞3层 fordraig B3F",
-                   "卢比肯的洞窟 Le Bicken Cave",
-                   "7000G","土洞(强化石5-9)",
-                   "火洞(强化石15-19)", 
-                   "光洞"
-                   #"鸟洞 fordraig"
+DUNGEON_TARGETS = ["[刷图]水路一号街",
+                   "[刷图]水路船一 shiphold",
+                   "[刷图]水路船二 lounge",
+                   "[刷图]鸟洞三层 fordraig B3F",
+                   "[刷图]卢比肯的洞窟",
+                   "[刷图]土洞(5-9)",
+                   "[刷图]火洞(10-14)", 
+                   "[刷图]光洞(15-19)",
+                   "[任务]7000G",
+                   #"[任务]角鹫之剑 fordraig",
+                   "[任务]击退敌势力",
                    ]
 
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
 ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-PHYSICAL_SKILLS = ["PS","HA","SB"]
+PHYSICAL_SKILLS = ["FPS","tzalik","PS","HA","SB",]
 
 ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS))
 
@@ -122,12 +128,13 @@ class ConfigPanelApp:
         "**********************\n"\
         "旅店休息间隔是间隔多少次地下城休息. 0代表一直休息, 1代表间隔一次休息, 以此类推.\n" \
         "**********************\n"\
-        "现在可用的体术(\"技能\")包括 精密攻击PS, 眩晕突袭SB, 以及 强袭HA.\n" \
+        "现在可用的强力单体技能包括 精密攻击, 眩晕突袭, 浑身一击 扎兹里克 以及 强袭.\n" \
         "**********************\n"\
         "每次进入地下城必定会恢复. 开宝箱后必定会恢复. 界面按钮控制战斗后是否恢复.\n"\
+        "**********************\n"\
+        "击退敌势力流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!\n"\
         "**********************\n")
         
-
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
             try:
@@ -182,7 +189,7 @@ class ConfigPanelApp:
         self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
-        self.scrolled_text_handler.setLevel(logging.DEBUG)
+        self.scrolled_text_handler.setLevel(logging.INFO)
         self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
         logger.addHandler(self.scrolled_text_handler)
 
@@ -354,7 +361,7 @@ class ConfigPanelApp:
         self.btn_enable_esoteric_aoe.grid(row=1, column=1, padx=2, pady=2)
         self.skill_buttons_map.append({"button": self.btn_enable_esoteric_aoe, "skills": ESOTERIC_AOE_SKILLS, "name": "esoteric_aoe"})
 
-        self.btn_enable_physical = ttk.Button(self.skills_button_frame, text="启用体术", command=lambda: self.update_spell_config(PHYSICAL_SKILLS, "physical_skills"))
+        self.btn_enable_physical = ttk.Button(self.skills_button_frame, text="启用强力单体", command=lambda: self.update_spell_config(PHYSICAL_SKILLS, "physical_skills"))
         self.btn_enable_physical.grid(row=2, column=0, padx=2, pady=2)
         self.skill_buttons_map.append({"button": self.btn_enable_physical, "skills": PHYSICAL_SKILLS, "name": "physical_skills"})
 
@@ -566,7 +573,6 @@ class ConfigPanelApp:
                 self.finishingcallback()
                 return
 
-        
         client = AdbClient(host="127.0.0.1", port=5037)
         client.remote_connect("127.0.0.1", int(self.adb_port_var.get()))
         devices = client.devices()
@@ -581,59 +587,63 @@ class ConfigPanelApp:
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
         setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
         setting._RANDOMLYPERSONOPENCHEST = self.randomly_people_open_chest_var.get()
-        setting._SKIPRECOVER = self.skip_recover_var.get()
+        setting._SKIPCOMBATRECOVER = self.skip_recover_var.get()
         setting._FORCESTOPING = self.stop_event
-        setting._SPELLSKILLCONFIG = [s for s in setting._SPELLSKILLCONFIG if s in list(set(self._spell_skill_config_internal))]
+        setting._SPELLSKILLCONFIG = [s for s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._ADBDEVICE = device
         setting._LOGGER = logger
         StreetFarm,QuestFarm = Factory()
         match self.farm_target_var.get():
-            case "贸易水路-船一 shiphold":
+            case "[刷图]水路船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
                 setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
-            case "贸易水路-船二 lounge":
+            case "[刷图]水路船二 lounge":
                 setting._FARMTARGET = 'shiphold'
                 setting._TARGETLIST = ['shiphold_upstair','chest','lounge_downstair','harken']
                 setting._TARGETSEARCHDIR = [[[1,1,1,1]],[[100,100,700,1500]],[[100,100,700,1500]],None]
                 setting._TARGETROI = [[0,0,900,800],[0,0,900,800],[0,0,900,800],None]
-                
                 StreetFarm(setting)
-            case "贸易水路-一号街 1stDist":
+            case "[刷图]水路一号街":
                 setting._FARMTARGET = 'Dist'
                 setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
-            case "土洞(强化石5-9)":
+            case "[刷图]土洞(5-9)":
                 setting._FARMTARGET = 'DOE'
                 setting._TARGETLIST = ['DOEtarget','DOE_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
-            case "光洞":
+            case "[刷图]光洞(15-19)":
                 setting._FARMTARGET = 'DOL'
                 setting._TARGETLIST = ['DOLtarget','DOL_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
-            case "火洞(强化石15-19)":
+            case "[刷图]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
-                setting._TARGETLIST = ['DOFtarget','DOF_quit']
+                setting._TARGETLIST = ['DOFtarget','DOFtarget2','DOF_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
-            case "卢比肯的洞窟 Le Bicken Cave":
+            case "[刷图]卢比肯的洞窟":
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETLIST = ['chest','LBC_quit']
+                setting._TARGETLIST = ['LBC_quit']
                 StreetFarm(setting)
-            case "7000G":
+            case "[任务]7000G":
                 setting._FARMTARGET = '7000G'
                 QuestFarm(setting)
-            case "角鹫之剑":
-                setting._FARMTARGET = 'fordraig'
-                QuestFarm(setting)
-            case "鸟洞3层 fordraig B3F":
+            case "[刷图]鸟洞三层 fordraig B3F":
                 setting._FARMTARGET = 'fordraig-B3F'
                 setting._TARGETLIST = ['chest','harken']
+                setting._TARGETSEARCHDIR = [None,[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100],]]
                 StreetFarm(setting)
+            case "[任务]角鹫之剑 fordraig":
+                setting._FARMTARGET = 'fordraig'
+                QuestFarm(setting)
+            case "[任务]击退敌势力":
+                setting._FARMTARGET = 'repelEnemyForces'
+                QuestFarm(setting)
             case _:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")
                 self.finishingcallback()

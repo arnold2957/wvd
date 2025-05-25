@@ -6,7 +6,7 @@ from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from enum import Enum
-import random
+from datetime import datetime
 import sys
 import os
 
@@ -16,26 +16,7 @@ class FarmSetting:
     _LAPTIME = 0
     _DUNGCOUNTER = 0
     _CHESTCOUNTER = 0
-    _SPELLSKILLCONFIG = [
-        'LAERLIK',
-        'LAMIGAL',
-        'LAZELOS',
-        "LAFOROS",
-        "LACONES",
-        'SAoLABADIOS',
-        'SAoLAERLIK',
-        'SAoLAFOROS',
-        'maerlik',
-        'macones',
-        'maferu',
-        'mahalito',
-        'mazelos',
-        'mamigal',
-        "maforos",
-        'PS',
-        'HA',
-        'SB',
-        ]
+    _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
     _FORCESTOPING = None
@@ -83,7 +64,7 @@ def Factory():
 
         return image
     def _CheckIfLoadImage(shortPathOfTarget):
-        logger.debug(f"检查{shortPathOfTarget}")
+        logger.debug(f"加载{shortPathOfTarget}")
         pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
         try:
             # 尝试读取图片
@@ -199,50 +180,77 @@ def Factory():
             if setting._FORCESTOPING.is_set():
                 return None
             scn = ScreenShot()
-            pos = CheckIf(scn,targetPattern)
-            if pos:
-                return pos # findit 
-            else: # otherwise
-                if Press(CheckIf(scn,'retry')):
-                    Sleep(1)
-                    continue
-                def pressTarget(target):
-                    if target.lower() == 'return':
-                        PressReturn()
-                    elif target.startswith("input swipe"):
-                        device.shell(target)
+            if isinstance(targetPattern, (list, tuple)):
+                for pattern in targetPattern:
+                    p = CheckIf(scn,pattern)
+                    if p:
+                        return p
+            else:
+                pos = CheckIf(scn,targetPattern)
+                if pos:
+                    return pos # findit 
+            # otherwise
+            if Press(CheckIf(scn,'retry')):
+                logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+                Sleep(1)
+                continue
+            def pressTarget(target):
+                if target.lower() == 'return':
+                    PressReturn()
+                elif target.startswith("input swipe"):
+                    device.shell(target)
+                else:
+                    Press(CheckIf(scn, target))
+            if pressPos: # press
+                if isinstance(pressPos, (list, tuple)):
+                    if (len(pressPos) == 2) and all(isinstance(x, (int, float)) for x in pressPos):
+                        Press(pressPos)
                     else:
-                        Press(CheckIf(scn, target))
-                if pressPos: # press
-                    if isinstance(pressPos, (list, tuple)):
-                        if (len(pressPos) == 2) and all(isinstance(x, (int, float)) for x in pressPos):
-                            Press(pressPos)
-                        else:
-                            for p in pressPos:
-                                if isinstance(p, str):
-                                    pressTarget(p)
-                                elif isinstance(p, (list, tuple)) and len(p) == 2:
-                                    Press(p)
-                                else:
-                                    logger.debug(f"错误: 非法的目标{p}.")
-                                    setting._FORCESTOPING.set()
-                                    return None
+                        for p in pressPos:
+                            if isinstance(p, str):
+                                pressTarget(p)
+                            elif isinstance(p, (list, tuple)) and len(p) == 2:
+                                Press(p)
+                            else:
+                                logger.debug(f"错误: 非法的目标{p}.")
+                                setting._FORCESTOPING.set()
+                                return None
+                else:
+                    if isinstance(pressPos, str):
+                        pressTarget(pressPos)
                     else:
-                        if isinstance(pressPos, str):
-                            pressTarget(pressPos)
-                        else:
-                            logger.debug("错误: 非法的目标.")
-                            setting._FORCESTOPING.set()
-                            return None
-                Sleep(waitTime) # and wait
+                        logger.debug("错误: 非法的目标.")
+                        setting._FORCESTOPING.set()
+                        return None
+            Sleep(waitTime) # and wait
         
         logger.info("25次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
         restartGame()
-        return FindItOtherwisePressAndWait(targetPattern, pressPos,waitTime) #???能这么些吗?
-    ##################################################################  
+        return None # FindItOtherwisePressAndWait(targetPattern, pressPos,waitTime) #???能这么些吗?
+    ##################################################################
+    class RestartSignal(Exception):
+        pass
+    def RestartableSequenceExecution(*operations):
+        while True:
+            try:
+                for op in operations:
+                    op()
+                return
+            except RestartSignal:
+                logger.info("任务进度重置中...")
+                continue
+
     def restartGame():
         nonlocal setting
         setting._COMBATSPD = False
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
+        file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
+        
+        # 保存为PNG格式
+        cv2.imwrite(file_path, ScreenShot())
+        print(f"Screenshot saved: {file_path}")
+
         package_name = "jp.co.drecom.wizardry.daphne"
         mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
         device.shell(f"am force-stop {package_name}")
@@ -250,6 +258,7 @@ def Factory():
         logger.info("巫术, 启动!")
         logger.debug(device.shell(f"am start -n {mainAct}"))
         Sleep(5)
+        raise RestartSignal()
     ##################################################################
     def getCursorCoordinates(input, template_path, threshold=0.8):
         """在本地图片中查找模板位置"""
@@ -389,7 +398,7 @@ def Factory():
                 Sleep(3)
             if not CheckIf(ScreenShot(), 'chestOpening'):
                 break
-
+    ##################################################################
     class State(Enum):
         Dungeon = 'dungeon'
         Inn = 'inn'
@@ -413,7 +422,7 @@ def Factory():
                 return State.Quit, DungeonState.Quit, screen
 
             if Press(CheckIf(screen,'retry')):
-                    logger.info("网络不太给力啊.")
+                    logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                     # logger.info("ka le.")
                     Sleep(2)
 
@@ -437,17 +446,11 @@ def Factory():
                 Sleep(2)
                 return IdentifyState()
 
-            if CheckIf(screen,"returntoTown"):
+            if CheckIf(screen,"returntoTown") or CheckIf(screen,"openworldmap"):
                 return State.NearTown,DungeonState.Quit, screen
-            if Press(CheckIf(screen,"openworldmap")):
-                PressReturn()
-                Sleep(2)
-                return IdentifyState()
             
-            if Press(CheckIf(screen,"RoyalCityLuknalia")):
-                Sleep(2)
-                return IdentifyState()
-            
+            if CheckIf(screen,"RoyalCityLuknalia"):
+                return State.NearTown,DungeonState.Quit, screen
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
@@ -499,8 +502,13 @@ def Factory():
                     Sleep(2)
                 PressReturn()
                 PressReturn()
-            if counter>= 20:
-                logger.info("看起来遇到了一些非同寻常的情况...重启游戏吧")
+            if counter>15:
+                black = _CheckIfLoadImage("blackScreen")
+                mean_diff = cv2.absdiff(black, screen).mean()/255
+                if mean_diff<0.02:
+                    logger.info(f"警告: 游戏画面长时间处于黑屏中, 即将重启({25-counter})")
+            if counter>= 25:
+                logger.info("看起来遇到了一些非同寻常的情况...重启游戏.")
                 restartGame()
                 counter = 0
 
@@ -544,12 +552,18 @@ def Factory():
                 Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
                 Press(FindItOtherwisePressAndWait('lounge',[1,1],1))
             case "LBC":
-                Press(FindItOtherwisePressAndWait('intoWorldMap','closePartyInfo',1))
-                Press(FindItOtherwisePressAndWait('LBC','input swipe 100 100 700 1500',1))
+                if Press(CheckIf(ScreenShot(),'LBC')):
+                    pass
+                else:
+                    Press(FindItOtherwisePressAndWait('intoWorldMap','closePartyInfo',1))
+                    Press(FindItOtherwisePressAndWait('LBC','input swipe 100 100 700 1500',1))
             case "fordraig-B3F":
-                Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
-                Press(FindItOtherwisePressAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
-                Press(FindItOtherwisePressAndWait('fordraig/B3F','labyrinthOfFordraig',1))
+                if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
+                    pass
+                else:
+                    Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
+                    Press(FindItOtherwisePressAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
+                    Press(FindItOtherwisePressAndWait('fordraig/B3F','labyrinthOfFordraig',1))
             case "Dist":
                 Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
                 Press(FindItOtherwisePressAndWait('Dist', 'input swipe 650 250 650 900',1))
@@ -597,7 +611,7 @@ def Factory():
     def StateMap_FindSwipeClick(target,searchDir = None, roi = None):
         if searchDir == None:
             searchDir = [None,
-                        [100,100,700,1500],
+                        [100,100,700,1200],
                         [400,1200,400,100],
                         [700,800,100,800],
                         [400,100,400,1200],
@@ -645,7 +659,7 @@ def Factory():
             _, dungState,screen = IdentifyState()
             if dungState == DungeonState.Map:
                 logger.info(f"开始移动失败. 不要停下来啊面具男!")
-                FindItOtherwisePressAndWait("dungFlag",[280,1433],1)
+                FindItOtherwisePressAndWait("dungFlag",([280,1433],[1,1]),1)
                 dungState = dungState.Dungeon
                 break
             if dungState != DungeonState.Dungeon:
@@ -731,6 +745,7 @@ def Factory():
                     while 1:
                         screen = ScreenShot()
                         if Press(CheckIf(screen,'retry')):
+                            logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                             Sleep(1)
                             screen = ScreenShot()
                         if CheckIf(screen, 'chestOpening'):
@@ -745,24 +760,22 @@ def Factory():
                 return DungeonState.Dungeon
             if CheckIf(ScreenShot(),'flee'):
                 return DungeonState.Combat
-            if CheckIf(ScreenShot(),'retry'):
-                return None
+            if Press(CheckIf(ScreenShot(),'retry')):
+                logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+                continue
             ## todo: 换个简易版本的identify
             tryOpenCounter += 1
             logger.info(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
-    def dungeonBase(set:FarmSetting):
-        nonlocal setting
-        nonlocal device
-        nonlocal logger
-        setting = set
-        device = setting._ADBDEVICE
-        logger = setting._LOGGER
+    def StateDungeon(specialTargetList = None):
         screenFrozen = []
         dungState = None
         waitTimer = time.time()
-        targetList = setting._TARGETLIST.copy() # copy()很重要 不然就是引用传进去了
+        if specialTargetList == None:
+            targetList = setting._TARGETLIST.copy() # copy()很重要 不然就是引用传进去了
+        else:
+            targetList = specialTargetList
         recoverFirst = False
-        recoverAfterChest = True                    
+        recoverAfterChest = True
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
@@ -782,7 +795,7 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1]) # interrupt auto moving
-                    if (not recoverFirst) or (not recoverAfterChest) or setting._SKIPCOMBATRECOVER:
+                    if (not recoverFirst) or (not recoverAfterChest) or not setting._SKIPCOMBATRECOVER:
                         Press([1,1])
                         Press([450,1300])
                         Sleep(1)
@@ -809,6 +822,9 @@ def Factory():
                     dungState = DungeonState.Map
                 case DungeonState.Map:
                     dungState, targetList = StateSearch(targetList,waitTimer, setting._TARGETSEARCHDIR, setting._TARGETROI)
+                    if (targetList==None) or (targetList == []):
+                        logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
+                        break
                 case DungeonState.Chest:
                     recoverAfterChest = False
                     dungState = StateChest()
@@ -825,9 +841,8 @@ def Factory():
         logger = setting._LOGGER
         if setting._TARGETSEARCHDIR and setting._TARGETROI:
             if len(setting._TARGETLIST)!=len(setting._TARGETSEARCHDIR) or len(setting._TARGETLIST)!= len(setting._TARGETROI):
-                logger.info("警告: 目标搜素数据长度不匹配")
+                logger.info("警告: 数据的长度不一致")
                 return 
-        
         state = None
         while 1:
             logger.info("======================")
@@ -849,20 +864,30 @@ def Factory():
                     setting._LAPTIME = time.time()
                     setting._DUNGCOUNTER+=1
 
-                    if (setting._DUNGCOUNTER-1) % (setting._RESTINTERVEL+1) == 0:
-                        PressReturn()
+                    if (setting._DUNGCOUNTER) % (setting._RESTINTERVEL+1) == 0:
+                        logger.info("休息时间到!")
+                        if not CheckIf(ScreenShot(),"RoyalCityLuknalia"):
+                            PressReturn()
+                        Sleep(1)
+                        FindItOtherwisePressAndWait("Inn",["RoyalCityLuknalia",[1,1]],1)
                         state = State.Inn
                     else:
                         logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                         state = State.EoT
                 case State.Inn:
-                    StateInn()
+                    RestartableSequenceExecution(
+                        lambda:StateInn()
+                        )
                     state = State.EoT
                 case State.EoT:
-                    StateEoT()
+                    RestartableSequenceExecution(
+                        lambda:StateEoT()
+                        )
                     state = State.Dungeon
                 case State.Dungeon:
-                    dungeonBase(setting)
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon()
+                        )
                     state = None
         setting._FINISHINGCALLBACK()
     def QuestFarm(set:FarmSetting):
@@ -880,70 +905,87 @@ def Factory():
                     match stepNo:
                         case 1:
                             setting._DUNGCOUNTER += 1
-                            logger.info("第一步: 开始诅咒之旅...")
-                            Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
-                            Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
+                            def stepMain():
+                                logger.info("第一步: 开始诅咒之旅...")
+                                Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
+                                Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
 
-                            if not Press(CheckIf(ScreenShot(),'FortressArrival')):
-                                device.shell(f"input swipe 450 1200 450 200")
-                                Press(FindItOtherwisePressAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
-                            
-                            while pos:= CheckIf(ScreenShot(), 'leap'):
-                                Press(pos)
-                                Sleep(2)
-                                Press(CheckIf(ScreenShot(),'FortressArrival'))
+                                if not Press(CheckIf(ScreenShot(),'FortressArrival')):
+                                    device.shell(f"input swipe 450 1200 450 200")
+                                    Press(FindItOtherwisePressAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
+                                
+                                while pos:= CheckIf(ScreenShot(), 'leap'):
+                                    Press(pos)
+                                    Sleep(2)
+                                    Press(CheckIf(ScreenShot(),'FortressArrival'))
+                            RestartableSequenceExecution(
+                                lambda: stepMain()
+                                )
                             stepNo = 2
                         case 2:
-                            logger.info("第二步: 从要塞返回主城...")
-                            leapSuccess = False
                             Sleep(10)
-                            while 1:
-                                Sleep(15)
-                                for i in range(50):
-                                    if (CheckIf(ScreenShot(),'leaveDung')):
-                                        logger.info("跳跃成功!")
-                                        leapSuccess = True
-                                        break
-                                    else:
-                                        Press([1,1])
-                                if not leapSuccess:
-                                    restartGame()
-                                    logger.info("跳跃失败, 重启游戏")
-                                else:
-                                    break
-                            Press(FindItOtherwisePressAndWait('return','leaveDung',2))
-                            Press(FindItOtherwisePressAndWait('returntotown',[1,1],2))
-                            FindItOtherwisePressAndWait('Inn',[1,1],2)
+                            logger.info("第二步: 从要塞返回王城...")                                
+                            RestartableSequenceExecution(
+                                lambda: Press(FindItOtherwisePressAndWait('return',['leaveDung',[1,1]],2))
+                                )
+                            RestartableSequenceExecution(
+                                lambda: FindItOtherwisePressAndWait('Inn',['returntotown',[1,1]],2)
+                                )
                             stepNo = 3
                         case 3:
                             logger.info("第三步: 前往王城...")
-                            Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
-                            Press(FindItOtherwisePressAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
-                            FindItOtherwisePressAndWait('guild','RoyalCityLuknalia',1)
+                            def stepMain():
+                                Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
+                                Press(FindItOtherwisePressAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
+                                FindItOtherwisePressAndWait('guild',['RoyalCityLuknalia',[1,1]],1)
+                            RestartableSequenceExecution(
+                                lambda: stepMain()
+                                )
                             stepNo = 4
                         case 4:
                             logger.info("第四步: 给我!(伸手)")
                             Press(FindItOtherwisePressAndWait('guild',[1,1],1))
                             Press(FindItOtherwisePressAndWait('7000G/illgonow',[1,1],1))
                             Sleep(15)
-                            Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],2))
-                            Sleep(4)
-                            Press([1,1])
-                            Press([1,1])
-                            Sleep(8)
-                            Press(FindItOtherwisePressAndWait('7000G/royalcapital',[1,1],2))
-                            FindItOtherwisePressAndWait('intoWorldMap',[1,1],2)
-                            FindItOtherwisePressAndWait('fastforward',[450,1111],0)
-                            FindItOtherwisePressAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                            FindItOtherwisePressAndWait('fastforward',[200,1180],0)
-                            FindItOtherwisePressAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                            FindItOtherwisePressAndWait('fastforward',[680,1200],0)
-                            FindItOtherwisePressAndWait('7000G/leavethechild',['7000G/why',[1,1]],2)
-                            Press(FindItOtherwisePressAndWait('7000G/icantagreewithU',[1,1],1))
-                            Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],1))
-                            Press(FindItOtherwisePressAndWait('7000G/illgo',[1,1],1))
-                            Press(FindItOtherwisePressAndWait('7000G/noeasytask',[1,1],1))
-                            FindItOtherwisePressAndWait('ruins',[1,1],1)
+                            royalcap = False
+                            firstPeople = False
+                            secondPeople = False
+                            thirdPeople = False
+                            def stepMain():
+                                nonlocal royalcap
+                                nonlocal firstPeople
+                                nonlocal secondPeople
+                                nonlocal thirdPeople
+                                if not royalcap or not firstPeople or not secondPeople or not thirdPeople:
+                                    Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],2))
+                                    if not royalcap:
+                                        Sleep(4)
+                                        Press([1,1])
+                                        Press([1,1])
+                                        Sleep(8)
+                                        Press(FindItOtherwisePressAndWait('7000G/royalcapital',[1,1],2))
+                                        FindItOtherwisePressAndWait('intoWorldMap',[1,1],2)
+                                        royalcap = True
+                                    if not firstPeople:
+                                        FindItOtherwisePressAndWait('fastforward',[450,1111],0)
+                                        FindItOtherwisePressAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                        firstPeople = True
+                                    if not secondPeople:
+                                        FindItOtherwisePressAndWait('fastforward',[200,1180],0)
+                                        FindItOtherwisePressAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                        secondPeople = True
+                                    if not thirdPeople:
+                                        FindItOtherwisePressAndWait('fastforward',[680,1200],0)
+                                        Press(FindItOtherwisePressAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
+                                        Press(FindItOtherwisePressAndWait('7000G/icantagreewithU',[1,1],1))
+                                        thirdPeople = True
+                                Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],1))
+                                Press(FindItOtherwisePressAndWait('7000G/illgo',[1,1],1))
+                                Press(FindItOtherwisePressAndWait('7000G/noeasytask',[1,1],1))
+                                FindItOtherwisePressAndWait('ruins',[1,1],1)
+                            RestartableSequenceExecution(
+                                lambda: stepMain()
+                                )
                             costtime = time.time()-starttime
                             logger.info(f"第{setting._DUNGCOUNTER}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
                             if not setting._FORCESTOPING.is_set():
@@ -951,7 +993,7 @@ def Factory():
                             else:
                                 break
             case 'fordraig':
-                stepNo = 3
+                stepNo = 4
                 while 1:
                     setting._DUNGCOUNTER += 1
                     logger.info(setting._DUNGCOUNTER)
@@ -989,78 +1031,69 @@ def Factory():
                             Press(FindItOtherwisePressAndWait('fordraig/Entrance','labyrinthOfFordraig',1))
                             stepNo = 4
                         case 4:
-                            targetList = ['fordraig/firstTrap',None]
+                            # logger.info('第四步: 陷阱.')
+                            # StateDungeon(['fordraig/firstTrap',None])
+                            # FindItOtherwisePressAndWait("dungFlag","return",1)
+                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1))
+                            # logger.info('已完成第一个陷阱.')
+                            # FindItOtherwisePressAndWait("fordraig/B2Fentrance",[50,950],1)
+                            # StateDungeon(['fordraig/SecondTrap',None]) #这个有几率中断啊
+                            # FindItOtherwisePressAndWait("dungFlag","return",1)
+                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1))
+                            # logger.info('已完成第二个陷阱.')
+                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1)
+                            # FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1)
+                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1)
+                            StateDungeon(['fordraig/B2F_quit','fordraig/thirdMach',None])
+                            FindItOtherwisePressAndWait("dungFlag","return",1)
+                            FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1)
+                            logger.info('已完成第三个机关.')
+                            FindItOtherwisePressAndWait("fordraig/B4F","input swipe 400 1200 400 200",1)
+                            StateDungeon(['fordraig/SecondBoss','B4Fquit',None])
+                            Press(FindItOtherwisePressAndWait("return",["leaveDung",[455,1200]],1))
+                            Press(FindItOtherwisePressAndWait("RoyalCityLuknalia","return",1))
+                            FindItOtherwisePressAndWait("Inn",[1,1],1)
+                            stepNo = 1
                             break
-                            
+            case 'repelEnemyForces':
+                if setting._RESTINTERVEL == 0:
+                    logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1.")
+                    setting._RESTINTERVEL = 1
+                logger.info("注意, 该流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!")
+                counter = 0
+                while 1:
+                    t = time.time()
+
+                    StateInn()
+                    Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
+                    FindItOtherwisePressAndWait('7thDist',[1,1],1)
+                    FindItOtherwisePressAndWait('dungFlag',['7thDist',[1,1]],1)
+                    StateDungeon(['repelEnemyForcesMid','repelEnemyForces',None])
+                    logger.info('已抵达目标地点, 开始战斗.')
+                    FindItOtherwisePressAndWait('dungFlag',['return',[1,1]],1)
+                    for i in range(setting._RESTINTERVEL):
+                        logger.info(f"第{i+1}轮开始.")
+                        secondcombat = False
+                        while 1:
+                            FindItOtherwisePressAndWait(['flee','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
+                            if CheckIf(scn:=ScreenShot(),'flee'):
+                                StateCombat()
+                            elif pos:=CheckIf(scn,'icanstillgo'):
+                                if secondcombat:
+                                    logger.info(f"第2场战斗结束.")
+                                    Press(CheckIf(scn,'letswithdraw'))
+                                    break
+                                logger.info(f"第1场战斗结束.")
+                                secondcombat = True
+                                Press(pos)
+                        logger.info(f"第{i+1}轮结束.")
+                    Press(FindItOtherwisePressAndWait('return',[[1,1],'leaveDung'],3))
+                    FindItOtherwisePressAndWait('Inn',['return',[1,1]],1)
+                    counter+=1
+                    logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
 
         setting._FINISHINGCALLBACK()
         return
                         
                         
     return StreetFarm, QuestFarm
-
-
-
-# Press(CheckIf(ScreenShot(),'ruins'))
-# Press(CheckIf(ScreenShot(),'cursedWheel'))
-# Press(CheckIf(ScreenShot(),'specialRequest'))
-# Press(CheckIf(ScreenShot(),'FordraigLeap'))
-# Press(CheckIf(ScreenShot(),'leap'))
-# Press(CheckIf(ScreenShot(),'OK'))
-# Sleep(15)
-# KeepPress([1,1]) until Inn
-# StateInn()
-# Press(CheckIf(ScreenShot(),'guild'))
-# Press(CheckIf(ScreenShot(),'guildRequest'))
-# Press(CheckIf(ScreenShot(),'guildFeatured'))
-# pos=CheckIf(ScreenShot(),'fordraigRequestAccept')
-# Press([pos[0]+350,pos[1]+180])
-# KeepPress([1,1]) until guildRequest
-# PressReturn()
-# Press(CheckIf(ScreenShot(),'closePartyInfo'))
-# Press(CheckIf(ScreenShot(),'intoWorldMap'))
-# Press(CheckIf(ScreenShot(),'labyrinthOfFordraig'))
-# Press(CheckIf(ScreenShot(),'fordraigEntrance'))
-# pos = CheckIf(ScreenShot(),'fordraigFirstTrap')
-# Press([pos[0], pos[1]+90])
-# device.shell(f"input swipe 100 250 800 250")
-# Sleep(1)
-# Press([450,900])
-# Press(CheckIf(ScreenShot(),'fordraigTryPushingIt'))
-# Sleep(2)
-# downstair
-# Press(CheckIf(ScreenShot(),'fordraigAskDagger'))
-# Sleep(2)
-# Press(CheckIf(ScreenShot(),'fordraigSecondTrap'))
-# device.shell(f"input swipe 100 250 800 250")
-# Sleep(1)
-# Press([450,900])
-# Press(CheckIf(ScreenShot(),'fordraigTryPushingIt'))
-# device.shell(f"input swipe 30 1234 800 250")
-# Sleep(2)
-# Press([30,1234])
-# Press(CheckIf(ScreenShot(),'downstair2'))
-# Press(CheckIf(ScreenShot(),'fordraigFirstBoss'))
-# input()
-# Press(CheckIf(ScreenShot(),'harken'))
-# Press(CheckIf(ScreenShot(),'fordraigReachHarken'))
-# Press([450,1100])
-# Press([450,1200]) # 找一个固定位置? 这是return
-# if CheckIf('fordraigEntrance') then Return
-# Press(CheckIf(ScreenShot(),'RoyalCityLuknalia'))
-# StateInn()
-# Press(CheckIf(ScreenShot(),'closePartyInfo'))
-# Press(CheckIf(ScreenShot(),'intoWorldMap'))
-# Press(CheckIf(ScreenShot(),'labyrinthOfFordraig')) # 这3步相同
-# Press(CheckIf(ScreenShot(),'fordraigB3F'))
-# device.shell(f"input swipe 30 1234 800 250")
-# Sleep(2) # 这2步相同
-# Press([100,1000])
-# Press(CheckIf(ScreenShot(),'fordraigInsertTheDagger'))
-# Press(Resume)
-# Press(CheckIf(ScreenShot(),'fordraigSecondBoss'))
-# 'chest'
-#  keep 'quit' until return
-# if CheckIf('fordraigEntrance') then Return
-# Press(CheckIf(ScreenShot(),'RoyalCityLuknalia'))
-# 不交任务了直接结束吧
