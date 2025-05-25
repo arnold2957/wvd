@@ -10,7 +10,7 @@ import socket
 import time
 import shutil
 
-VERSION = '0.4.6.5'
+VERSION = '0.4.6.6'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -32,7 +32,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]火洞(10-14)", 
                    "[刷图]光洞(15-19)",
                    "[任务]7000G",
-                   #"[任务]角鹫之剑 fordraig",
+                   # "[任务]角鹫之剑 fordraig",
                    "[任务]击退敌势力",
                    ]
 
@@ -628,7 +628,6 @@ class ConfigPanelApp:
             case "[刷图]卢比肯的洞窟":
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETLIST = ['chest','LBC_quit']
-                setting._TARGETLIST = ['LBC_quit']
                 StreetFarm(setting)
             case "[任务]7000G":
                 setting._FARMTARGET = '7000G'

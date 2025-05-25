@@ -403,7 +403,6 @@ def Factory():
         Dungeon = 'dungeon'
         Inn = 'inn'
         EoT = 'edge of Town'
-        NearTown = 'nearTown'
         Quit = 'quit'
     class DungeonState(Enum):
         Dungeon = 'dungeon'
@@ -446,11 +445,15 @@ def Factory():
                 Sleep(2)
                 return IdentifyState()
 
-            if CheckIf(screen,"returntoTown") or CheckIf(screen,"openworldmap"):
-                return State.NearTown,DungeonState.Quit, screen
+            if CheckIf(screen,"returntoTown"):
+                FindItOtherwisePressAndWait('Inn',['return',[1,1]],1)
+                return State.Inn,DungeonState.Quit, screen
             
-            if CheckIf(screen,"RoyalCityLuknalia"):
-                return State.NearTown,DungeonState.Quit, screen
+            if Press(CheckIf(screen,"openworldmap")):
+                return IdentifyState()
+            
+            if Press(CheckIf(screen,"RoyalCityLuknalia")):
+                return State.Inn,DungeonState.Quit, screen
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
@@ -546,16 +549,16 @@ def Factory():
     def StateEoT():
         match setting._FARMTARGET:
             case "shiphold":
-                Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('shiphold',[1,1],1))
             case "lounge":
-                Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('lounge',[1,1],1))
             case "LBC":
                 if Press(CheckIf(ScreenShot(),'LBC')):
                     pass
                 else:
-                    Press(FindItOtherwisePressAndWait('intoWorldMap','closePartyInfo',1))
+                    Press(FindItOtherwisePressAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
                     Press(FindItOtherwisePressAndWait('LBC','input swipe 100 100 700 1500',1))
             case "fordraig-B3F":
                 if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
@@ -563,18 +566,18 @@ def Factory():
                 else:
                     Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
                     Press(FindItOtherwisePressAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
-                    Press(FindItOtherwisePressAndWait('fordraig/B3F','labyrinthOfFordraig',1))
+                    Press(FindItOtherwisePressAndWait('fordraig/B3F',['labyrinthOfFordraig',[1,1]],1))
             case "Dist":
-                Press(FindItOtherwisePressAndWait('TradeWaterway','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('Dist', 'input swipe 650 250 650 900',1))
             case "DOE":
-                Press(FindItOtherwisePressAndWait('DOE','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('DOE',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('DOEB1F',[1,1],1))
             case "DOL":
-                Press(FindItOtherwisePressAndWait('DOL','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('DOL',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('DOLB1F',[1,1],1))
             case "DOF":
-                Press(FindItOtherwisePressAndWait('DOF','EdgeOfTown',1))
+                Press(FindItOtherwisePressAndWait('DOF',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('DOFB1F',[1,1],1))
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
@@ -644,6 +647,7 @@ def Factory():
                 if targetPos:=CheckIf(map,target,roi):
                     logger.info(f'找到了 {target}! {targetPos}')
                     if not roi:
+                        logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
                         device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
                     Press([1,230])
@@ -725,7 +729,7 @@ def Factory():
                             return DungeonState.Combat,targetList                
         return DungeonState.Map,  targetList
     def StateChest():
-        FindItOtherwisePressAndWait('whowillopenit', 'chestFlag',1)
+        FindItOtherwisePressAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
         MAXtryOpen = 5
         while 1:
@@ -766,7 +770,7 @@ def Factory():
             ## todo: 换个简易版本的identify
             tryOpenCounter += 1
             logger.info(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
-    def StateDungeon(specialTargetList = None):
+    def StateDungeon(specialTargetList = None, specialDialogueOption = None):
         screenFrozen = []
         dungState = None
         waitTimer = time.time()
@@ -788,6 +792,11 @@ def Factory():
                     screenFrozen, result = StateNone_CheckFrozen(screenFrozen,ScreenShot())
                     if result:
                         restartGame()
+                    if specialDialogueOption:
+                        scn = ScreenShot()
+                        for sdo in specialDialogueOption:
+                            if Press(CheckIf(scn,sdo)):
+                                break
                     s, dungState,_ = IdentifyState()
                     if (s == State.Inn)or(s == DungeonState.Quit):
                         break
@@ -858,26 +867,19 @@ def Factory():
                     if state ==State.Quit:
                         logger.info("即将中断脚本...")
                         break
-                case State.NearTown:
+                case State.Inn:
                     if setting._LAPTIME!= 0:
                         logger.info(f"第{setting._DUNGCOUNTER}次地下城完成. 用时:{time.time()-setting._LAPTIME}")
                     setting._LAPTIME = time.time()
                     setting._DUNGCOUNTER+=1
 
-                    if (setting._DUNGCOUNTER) % (setting._RESTINTERVEL+1) == 0:
+                    if (setting._DUNGCOUNTER-1) % (setting._RESTINTERVEL+1) == 0:
                         logger.info("休息时间到!")
-                        if not CheckIf(ScreenShot(),"RoyalCityLuknalia"):
-                            PressReturn()
-                        Sleep(1)
-                        FindItOtherwisePressAndWait("Inn",["RoyalCityLuknalia",[1,1]],1)
-                        state = State.Inn
-                    else:
-                        logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
-                        state = State.EoT
-                case State.Inn:
-                    RestartableSequenceExecution(
+                        RestartableSequenceExecution(
                         lambda:StateInn()
                         )
+                    else:
+                        logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     state = State.EoT
                 case State.EoT:
                     RestartableSequenceExecution(
@@ -907,8 +909,8 @@ def Factory():
                             setting._DUNGCOUNTER += 1
                             def stepMain():
                                 logger.info("第一步: 开始诅咒之旅...")
-                                Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
-                                Press(FindItOtherwisePressAndWait('impregnableFortress','cursedWheelTapRight',1))
+                                Press(FindItOtherwisePressAndWait('cursedWheel',['ruins',[1,1]],1))
+                                Press(FindItOtherwisePressAndWait('impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
                                 if not Press(CheckIf(ScreenShot(),'FortressArrival')):
                                     device.shell(f"input swipe 450 1200 450 200")
@@ -993,7 +995,7 @@ def Factory():
                             else:
                                 break
             case 'fordraig':
-                stepNo = 4
+                stepNo = 1
                 while 1:
                     setting._DUNGCOUNTER += 1
                     logger.info(setting._DUNGCOUNTER)
@@ -1001,8 +1003,8 @@ def Factory():
                     match stepNo:
                         case 1:
                             logger.info('第一步: 诅咒之旅...')
-                            Press(FindItOtherwisePressAndWait('cursedWheel','ruins',1))
-                            Press(FindItOtherwisePressAndWait('Fordraig/Leap','specialRequest',1))
+                            Press(FindItOtherwisePressAndWait('cursedWheel',['ruins',[1,1]],1))
+                            Press(FindItOtherwisePressAndWait('Fordraig/Leap',['specialRequest',[1,1]],1))
                             Press(FindItOtherwisePressAndWait('OK','leap',1))
                             Sleep(15)
                             stepNo = 2
@@ -1010,8 +1012,8 @@ def Factory():
                             logger.info('第二步: 领取任务.')
                             FindItOtherwisePressAndWait('Inn',[1,1],1)
                             StateInn()
-                            Press(FindItOtherwisePressAndWait('guildRequest','guild',1))
-                            Press(FindItOtherwisePressAndWait('guildFeatured','guildRequest',1))
+                            Press(FindItOtherwisePressAndWait('guildRequest',['guild',[1,1]],1))
+                            Press(FindItOtherwisePressAndWait('guildFeatured',['guildRequest',[1,1]],1))
                             Sleep(1)
                             device.shell(f"input swipe 450 1000 450 200")
                             while 1:
@@ -1028,30 +1030,30 @@ def Factory():
                             logger.info('第三步: 进入地下城.')
                             Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
                             Press(FindItOtherwisePressAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))                            
-                            Press(FindItOtherwisePressAndWait('fordraig/Entrance','labyrinthOfFordraig',1))
+                            Press(FindItOtherwisePressAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
                             stepNo = 4
                         case 4:
-                            # logger.info('第四步: 陷阱.')
-                            # StateDungeon(['fordraig/firstTrap',None])
-                            # FindItOtherwisePressAndWait("dungFlag","return",1)
-                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1))
-                            # logger.info('已完成第一个陷阱.')
-                            # FindItOtherwisePressAndWait("fordraig/B2Fentrance",[50,950],1)
-                            # StateDungeon(['fordraig/SecondTrap',None]) #这个有几率中断啊
-                            # FindItOtherwisePressAndWait("dungFlag","return",1)
-                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1))
-                            # logger.info('已完成第二个陷阱.')
-                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1)
-                            # FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1)
-                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1)
-                            StateDungeon(['fordraig/B2F_quit','fordraig/thirdMach',None])
-                            FindItOtherwisePressAndWait("dungFlag","return",1)
-                            FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1)
+                            logger.info('第四步: 陷阱.')
+                            StateDungeon(['fordraig/firstTrap',None]) # 前往第一个陷阱
+                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            logger.info('已完成第一个陷阱.')
+                            FindItOtherwisePressAndWait("fordraig/B2Fentrance",[50,950],1) # 移动到下一层
+                            StateDungeon(['fordraig/SecondTrap',None],['thedagger']) #前往第二个陷阱, 这个有几率中断啊
+                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            logger.info('已完成第二个陷阱.')
+                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
+                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            StateDungeon(['fordraig/B2F_quit','fordraig/thirdMach',None],['thedagger']) #前往boss战
+                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1) # 第三个机关
                             logger.info('已完成第三个机关.')
-                            FindItOtherwisePressAndWait("fordraig/B4F","input swipe 400 1200 400 200",1)
-                            StateDungeon(['fordraig/SecondBoss','B4Fquit',None])
-                            Press(FindItOtherwisePressAndWait("return",["leaveDung",[455,1200]],1))
-                            Press(FindItOtherwisePressAndWait("RoyalCityLuknalia","return",1))
+                            FindItOtherwisePressAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
+                            StateDungeon(['fordraig/SecondBoss','B4Fquit',None]) # 前往boss战斗
+                            Press(FindItOtherwisePressAndWait("return",["leaveDung",[455,1200]],1)) # 回城
+                            Press(FindItOtherwisePressAndWait("RoyalCityLuknalia","return",1)) # 回城
                             FindItOtherwisePressAndWait("Inn",[1,1],1)
                             stepNo = 1
                             break
