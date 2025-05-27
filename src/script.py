@@ -14,8 +14,10 @@ class FarmSetting:
     _FARMTARGET = "shiphold"
     _DUNGWAITTIMEOUT = 0
     _LAPTIME = 0
-    _DUNGCOUNTER = 0
-    _CHESTCOUNTER = 0
+    _COUNTERDUNG = 0
+    _COUNTERCOMBAT = 0
+    _COUNTERCHEST = 0
+    _COUNTEROPENCHEST = 0
     _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
@@ -452,7 +454,8 @@ def Factory():
             if Press(CheckIf(screen,"openworldmap")):
                 return IdentifyState()
             
-            if Press(CheckIf(screen,"RoyalCityLuknalia")):
+            if CheckIf(screen,"RoyalCityLuknalia"):
+                FindItOtherwisePressAndWait('Inn',['RoyalCityLuknalia',[1,1]],1)
                 return State.Inn,DungeonState.Quit, screen
 
             if (CheckIf(screen,'Inn')):
@@ -695,11 +698,10 @@ def Factory():
         if not CheckIf(map,'mapFlag'):
                 return None,targetList # 发生了错误
         if not (pos:=StateMap_FindSwipeClick(target,searchDir,roi)):
-            if len(targetList)!=1:
-                logger.info(f"没有找到{target}, 该目标完成.")
+            logger.info(f"没有找到{target}.")
+            if target == 'chest' or target.endswith('_once'):
                 targetList.pop(0)
-            else:
-                logger.info(f"警告: 无法搜索到最后一个目标点. 删除目标点可能会导致游戏卡死, 因此不删除该目标点.")
+                logger.info(f"不再搜索{target}") 
             return DungeonState.Map,  targetList
         else:
             if target in normalPlace or target.endswith("_quit"):
@@ -737,10 +739,10 @@ def Factory():
             Press(CheckIf(scn,'chestFlag'))
             if CheckIf(scn,'whowillopenit'):
                 if setting._RANDOMLYPERSONOPENCHEST or tryOpenCounter>=MAXtryOpen:
-                    Press([200+(setting._CHESTCOUNTER%3)*200, 1200+((setting._CHESTCOUNTER)//3)%2*150])
+                    Press([200+(setting._COUNTEROPENCHEST%3)*200, 1200+((setting._COUNTEROPENCHEST)//3)%2*150])
                 else:
                     Press([200,1200])
-                setting._CHESTCOUNTER += 1
+                setting._COUNTEROPENCHEST += 1
                 Sleep(1)
             Press([1,1])
             if CheckIf(ScreenShot(),'chestOpening'):
@@ -773,13 +775,14 @@ def Factory():
     def StateDungeon(specialTargetList = None, specialDialogueOption = None):
         screenFrozen = []
         dungState = None
+        shouldRecover = False
         waitTimer = time.time()
         if specialTargetList == None:
             targetList = setting._TARGETLIST.copy() # copy()很重要 不然就是引用传进去了
         else:
             targetList = specialTargetList
-        recoverFirst = False
-        recoverAfterChest = True
+        needRecoverBecauseCombat = False
+        needRecoverBecauseChest = False
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
@@ -804,27 +807,33 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1]) # interrupt auto moving
-                    if (not recoverFirst) or (not recoverAfterChest) or not setting._SKIPCOMBATRECOVER:
+                    if needRecoverBecauseChest:
+                        logger.info("进行开启宝箱后的恢复.")
+                        setting._COUNTERCHEST+=1
+                        needRecoverBecauseChest = False
+                        shouldRecover = True
+                    if needRecoverBecauseCombat:
+                        setting._COUNTERCOMBAT+=1
+                        needRecoverBecauseCombat = False
+                        if (not setting._SKIPCOMBATRECOVER):
+                            logger.info("由于面板配置, 进行战后恢复.")
+                            shouldRecover = True
+                    if shouldRecover:
                         Press([1,1])
                         Press([450,1300])
                         Sleep(1)
-                        if CheckIf(ScreenShot(), 'trait'):
-                            if not recoverFirst:
-                                logger.info("进行进图的首次恢复.")
-                                recoverFirst = True
-                            if not recoverAfterChest:
-                                logger.info("进行开启宝箱后的恢复.")
-                                recoverAfterChest = True
-                            if setting._SKIPCOMBATRECOVER:
-                                logger.info("由于面板配置, 进行战后恢复.")
-                            Press([833,843])
-                            Sleep(1)
-                            if CheckIf(ScreenShot(),'recover'):
-                                Press([600,1200])
-                                PressReturn()
-                                Sleep(0.5)
-                                PressReturn()
-                            PressReturn()
+                        if CheckIf(ScreenShot(),'trait'):
+                            for _ in range(3):
+                                Press([833,843])
+                                if CheckIf(ScreenShot(),'recover'):
+                                    Sleep(1)
+                                    Press([600,1200])
+                                    PressReturn()
+                                    Sleep(0.5)
+                                    PressReturn()
+                                    PressReturn()
+                                    shouldRecover = False
+                                    break
                     Sleep(1)
                     Press([777,150])
                     Sleep(1)
@@ -835,9 +844,10 @@ def Factory():
                         logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
                         break
                 case DungeonState.Chest:
-                    recoverAfterChest = False
+                    needRecoverBecauseChest = True
                     dungState = StateChest()
                 case DungeonState.Combat:
+                    needRecoverBecauseCombat =True
                     StateCombat()
                     dungState = None
 
@@ -869,11 +879,11 @@ def Factory():
                         break
                 case State.Inn:
                     if setting._LAPTIME!= 0:
-                        logger.info(f"第{setting._DUNGCOUNTER}次地下城完成. 用时:{time.time()-setting._LAPTIME}")
+                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成. 用时:{time.time()-setting._LAPTIME}. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}")
                     setting._LAPTIME = time.time()
-                    setting._DUNGCOUNTER+=1
+                    setting._COUNTERDUNG+=1
 
-                    if (setting._DUNGCOUNTER-1) % (setting._RESTINTERVEL+1) == 0:
+                    if (setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0:
                         logger.info("休息时间到!")
                         RestartableSequenceExecution(
                         lambda:StateInn()
@@ -906,7 +916,7 @@ def Factory():
                     starttime = time.time()
                     match stepNo:
                         case 1:
-                            setting._DUNGCOUNTER += 1
+                            setting._COUNTERDUNG += 1
                             def stepMain():
                                 logger.info("第一步: 开始诅咒之旅...")
                                 Press(FindItOtherwisePressAndWait('cursedWheel',['ruins',[1,1]],1))
@@ -989,16 +999,17 @@ def Factory():
                                 lambda: stepMain()
                                 )
                             costtime = time.time()-starttime
-                            logger.info(f"第{setting._DUNGCOUNTER}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
+                            logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
                             if not setting._FORCESTOPING.is_set():
                                 stepNo = 1
                             else:
                                 break
             case 'fordraig':
-                stepNo = 1
+                stepNo = 4
+                setting._SYSTEMAUTOCOMBAT = True
                 while 1:
-                    setting._DUNGCOUNTER += 1
-                    logger.info(setting._DUNGCOUNTER)
+                    setting._COUNTERDUNG += 1
+                    logger.info(setting._COUNTERDUNG)
                     starttime = time.time()
                     match stepNo:
                         case 1:
@@ -1033,27 +1044,37 @@ def Factory():
                             Press(FindItOtherwisePressAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
                             stepNo = 4
                         case 4:
-                            logger.info('第四步: 陷阱.')
-                            StateDungeon(['fordraig/firstTrap',None]) # 前往第一个陷阱
+                            # logger.info('第四步: 陷阱.')
+                            # StateDungeon(['fordraig/firstTrap',None]) # 前往第一个陷阱
+                            # FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            # logger.info('已完成第一个陷阱.')
+                            # FindItOtherwisePressAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
+                            # StateDungeon(['fordraig/SecondTrap',None],['fordraig/thedagger']) #前往第二个陷阱, 这个有几率中断啊
+                            # FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            # logger.info('已完成第二个陷阱.')
+                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            # FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
+                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            StateDungeon(['fordraig/B2Fquit',None])
+                            FindItOtherwisePressAndWait("dungFlag","return",1)
+                            FindItOtherwisePressAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
+                            StateDungeon(['fordraig/thirdMach',None],['fordraig/thedagger']) #前往boss战
+                            # 上面那个不起作用
                             FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
-                            logger.info('已完成第一个陷阱.')
-                            FindItOtherwisePressAndWait("fordraig/B2Fentrance",[50,950],1) # 移动到下一层
-                            StateDungeon(['fordraig/SecondTrap',None],['thedagger']) #前往第二个陷阱, 这个有几率中断啊
-                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
-                            logger.info('已完成第二个陷阱.')
-                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
-                            FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
-                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
-                            StateDungeon(['fordraig/B2F_quit','fordraig/thirdMach',None],['thedagger']) #前往boss战
-                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1) # 第三个机关
+                            Press(FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
                             logger.info('已完成第三个机关.')
                             FindItOtherwisePressAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
-                            StateDungeon(['fordraig/SecondBoss','B4Fquit',None]) # 前往boss战斗
-                            Press(FindItOtherwisePressAndWait("return",["leaveDung",[455,1200]],1)) # 回城
-                            Press(FindItOtherwisePressAndWait("RoyalCityLuknalia","return",1)) # 回城
+                            StateDungeon(['fordraig/readytoBoss',None])
+                            setting._SYSTEMAUTOCOMBAT = False
+                            StateDungeon(['fordraig/SecondBoss',None]) # 前往boss战斗
+                            setting._SYSTEMAUTOCOMBAT = True
+                            StateDungeon(['fordraig/B4Fquit',None]) # 第四层出口
+                            FindItOtherwisePressAndWait("dungFlag","return",1) 
+                            Press(FindItOtherwisePressAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
+                            # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
+                            Press(FindItOtherwisePressAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
                             FindItOtherwisePressAndWait("Inn",[1,1],1)
                             stepNo = 1
                             break

@@ -10,7 +10,7 @@ import socket
 import time
 import shutil
 
-VERSION = '0.4.6.6'
+VERSION = '0.5.1'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -36,12 +36,13 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]击退敌势力",
                    ]
 
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
 ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 PHYSICAL_SKILLS = ["FPS","tzalik","PS","HA","SB",]
 
-ALL_SKILLS = list(set(ROW_AOE_SKILLS + FULL_AOE_SKILLS + ESOTERIC_AOE_SKILLS + PHYSICAL_SKILLS))
+ALL_SKILLS = ESOTERIC_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
+ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
 ############################################
 logger = logging.getLogger('WvDLogger')
@@ -589,7 +590,7 @@ class ConfigPanelApp:
         setting._RANDOMLYPERSONOPENCHEST = self.randomly_people_open_chest_var.get()
         setting._SKIPCOMBATRECOVER = self.skip_recover_var.get()
         setting._FORCESTOPING = self.stop_event
-        setting._SPELLSKILLCONFIG = [s for s in list(set(self._spell_skill_config_internal))]
+        setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._ADBDEVICE = device
@@ -602,7 +603,7 @@ class ConfigPanelApp:
                 StreetFarm(setting)
             case "[刷图]水路船二 lounge":
                 setting._FARMTARGET = 'shiphold'
-                setting._TARGETLIST = ['shiphold_upstair','chest','lounge_downstair','harken']
+                setting._TARGETLIST = ['shiphold_upstair_once','chest','lounge_downstair_once','harken']
                 setting._TARGETSEARCHDIR = [[[1,1,1,1]],[[100,100,700,1500]],[[100,100,700,1500]],None]
                 setting._TARGETROI = [[0,0,900,800],[0,0,900,800],[0,0,900,800],None]
                 StreetFarm(setting)
