@@ -31,6 +31,7 @@ class FarmSetting:
     _TARGETLIST = None
     _TARGETSEARCHDIR = None
     _TARGETROI = None
+    _SPECIALDIALOGOPTION = None
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -163,7 +164,7 @@ def Factory():
             mean_diff = cv2.absdiff(gray1, gray2).mean()/255
             logger.debug(f"中心匹配检查:{mean_diff:.2f}")
 
-            if mean_diff<0.1:
+            if mean_diff<0.2:
                 return True
         return False
     def Press(pos):
@@ -461,8 +462,12 @@ def Factory():
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
 
-            if counter>5:
+            if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
+                if setting._SPECIALDIALOGOPTION != None:
+                    for option in setting._SPECIALDIALOGOPTION:
+                        if Press(CheckIf(ScreenShot(),option)):
+                            return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     logger.info("这就把你拉起来.")
                     # logger.info("REZ.")
@@ -539,7 +544,7 @@ def Factory():
                 totalDiff+=mean_diff
             logger.debug(f"卡死检测耗时: {time.time()-t:.5f}秒")
             logger.debug(f"卡死检测结果: {totalDiff:.5f}")
-            if totalDiff<=0.08:
+            if totalDiff<=0.05:
                 return queue, True
         return queue, False
     def StateInn():
@@ -772,7 +777,7 @@ def Factory():
             ## todo: 换个简易版本的identify
             tryOpenCounter += 1
             logger.info(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
-    def StateDungeon(specialTargetList = None, specialDialogueOption = None):
+    def StateDungeon(specialTargetList = None):
         screenFrozen = []
         dungState = None
         shouldRecover = False
@@ -795,11 +800,6 @@ def Factory():
                     screenFrozen, result = StateNone_CheckFrozen(screenFrozen,ScreenShot())
                     if result:
                         restartGame()
-                    if specialDialogueOption:
-                        scn = ScreenShot()
-                        for sdo in specialDialogueOption:
-                            if Press(CheckIf(scn,sdo)):
-                                break
                     s, dungState,_ = IdentifyState()
                     if (s == State.Inn)or(s == DungeonState.Quit):
                         break
@@ -969,7 +969,12 @@ def Factory():
                                 nonlocal secondPeople
                                 nonlocal thirdPeople
                                 if not royalcap or not firstPeople or not secondPeople or not thirdPeople:
-                                    Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],2))
+                                    FindItOtherwisePressAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
+                                    if pos:=CheckIf(scn:=ScreenShot,'7000G/olddist'):
+                                        Press(pos)
+                                    else:
+                                        Press(CheckIf(scn,'7000G/iminhungry'))
+                                        Press(FindItOtherwisePressAndWait('7000G/olddist',[1,1],2))
                                     if not royalcap:
                                         Sleep(4)
                                         Press([1,1])
@@ -1007,6 +1012,7 @@ def Factory():
             case 'fordraig':
                 stepNo = 4
                 setting._SYSTEMAUTOCOMBAT = True
+                setting._SPECIALDIALOGOPTION = ['fordraig/thedagger']
                 while 1:
                     setting._COUNTERDUNG += 1
                     logger.info(setting._COUNTERDUNG)
@@ -1044,23 +1050,24 @@ def Factory():
                             Press(FindItOtherwisePressAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
                             stepNo = 4
                         case 4:
-                            # logger.info('第四步: 陷阱.')
-                            # StateDungeon(['fordraig/firstTrap',None]) # 前往第一个陷阱
-                            # FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
-                            # logger.info('已完成第一个陷阱.')
-                            # FindItOtherwisePressAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
-                            # StateDungeon(['fordraig/SecondTrap',None],['fordraig/thedagger']) #前往第二个陷阱, 这个有几率中断啊
-                            # FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            # Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
-                            # logger.info('已完成第二个陷阱.')
-                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
-                            # FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
-                            # FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            logger.info('第四步: 陷阱.')
+                            # StateDungeon(['fordraig/b1fquit','fordraig/firstTrap',None]) # 前往第一个陷阱
+                            StateDungeon(['fordraig/firstTrap',None])
+                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            logger.info('已完成第一个陷阱.')
+                            FindItOtherwisePressAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
+                            StateDungeon(['fordraig/SecondTrap',None]) #前往第二个陷阱, 这个有几率中断啊
+                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
+                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            logger.info('已完成第二个陷阱.')
+                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
+                            FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
+                            FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
                             StateDungeon(['fordraig/B2Fquit',None])
                             FindItOtherwisePressAndWait("dungFlag","return",1)
                             FindItOtherwisePressAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
-                            StateDungeon(['fordraig/thirdMach',None],['fordraig/thedagger']) #前往boss战
+                            StateDungeon(['fordraig/thirdMach',None]) #前往boss战
                             # 上面那个不起作用
                             FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
                             Press(FindItOtherwisePressAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
@@ -1077,7 +1084,6 @@ def Factory():
                             Press(FindItOtherwisePressAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
                             FindItOtherwisePressAndWait("Inn",[1,1],1)
                             stepNo = 1
-                            break
             case 'repelEnemyForces':
                 if setting._RESTINTERVEL == 0:
                     logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1.")
