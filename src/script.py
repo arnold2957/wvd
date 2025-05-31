@@ -456,8 +456,11 @@ def Factory():
                 return IdentifyState()
             
             if CheckIf(screen,"RoyalCityLuknalia"):
-                FindItOtherwisePressAndWait('Inn',['RoyalCityLuknalia',[1,1]],1)
-                return State.Inn,DungeonState.Quit, screen
+                FindItOtherwisePressAndWait(['Inn','dungFlag'],['RoyalCityLuknalia',[1,1]],1)
+                if CheckIf(scn:=ScreenShot(),'Inn'):
+                    return State.Inn,DungeonState.Quit, screen
+                elif CheckIf(scn,'dungFlag'):
+                    return State.Dungeon,None, screen
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
@@ -682,7 +685,7 @@ def Factory():
                 gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
                 mean_diff = cv2.absdiff(gray1, gray2).mean()/255
                 logger.debug(f"移动停止检查:{mean_diff:.2f}")
-                if mean_diff < 0.02:
+                if mean_diff < 0.1:
                     dungState = None
                     logger.info("已退出移动状态.进行状态检查...")
                     break
@@ -970,7 +973,7 @@ def Factory():
                                 nonlocal thirdPeople
                                 if not royalcap or not firstPeople or not secondPeople or not thirdPeople:
                                     FindItOtherwisePressAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
-                                    if pos:=CheckIf(scn:=ScreenShot,'7000G/olddist'):
+                                    if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
                                         Press(pos)
                                     else:
                                         Press(CheckIf(scn,'7000G/iminhungry'))
@@ -1010,7 +1013,7 @@ def Factory():
                             else:
                                 break
             case 'fordraig':
-                stepNo = 4
+                stepNo = 1
                 setting._SYSTEMAUTOCOMBAT = True
                 setting._SPECIALDIALOGOPTION = ['fordraig/thedagger']
                 while 1:
@@ -1051,10 +1054,12 @@ def Factory():
                             stepNo = 4
                         case 4:
                             logger.info('第四步: 陷阱.')
-                            # StateDungeon(['fordraig/b1fquit','fordraig/firstTrap',None]) # 前往第一个陷阱
-                            StateDungeon(['fordraig/firstTrap',None])
-                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            RestartableSequenceExecution(
+                                lambda:StateDungeon(['fordraig/b1fquit','fordraig/firstTrap',None]), # 前往第一个陷阱
+                                lambda:FindItOtherwisePressAndWait("dungFlag","return",1), # 关闭地图
+                                lambda:Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                                
+                                )
                             logger.info('已完成第一个陷阱.')
                             FindItOtherwisePressAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
                             StateDungeon(['fordraig/SecondTrap',None]) #前往第二个陷阱, 这个有几率中断啊

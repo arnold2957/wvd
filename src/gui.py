@@ -10,7 +10,7 @@ import socket
 import time
 import shutil
 
-VERSION = '0.5.2'
+VERSION = '0.5.2.2'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -39,7 +39,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
 ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
-PHYSICAL_SKILLS = ["FPS","tzalik","PS","HA","SB",]
+PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
 
 ALL_SKILLS = ESOTERIC_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -618,12 +618,12 @@ class ConfigPanelApp:
                 StreetFarm(setting)
             case "[刷图]光洞(15-19)":
                 setting._FARMTARGET = 'DOL'
-                setting._TARGETLIST = ['DOLtarget','DOL_quit']
+                setting._TARGETLIST = ['DOLtarget1','DOLtarget2','DOL_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "[刷图]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
-                setting._TARGETLIST = ['DOFtarget','DOFtarget2','DOF_quit']
+                setting._TARGETLIST = ['DOFtarget1','DOFtarget2','DOF_quit']
                 setting._DUNGWAITTIMEOUT = 0
                 StreetFarm(setting)
             case "[刷图]卢比肯的洞窟":
