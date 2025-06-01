@@ -32,6 +32,7 @@ class FarmSetting:
     _TARGETSEARCHDIR = None
     _TARGETROI = None
     _SPECIALDIALOGOPTION = None
+    _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -111,6 +112,8 @@ def Factory():
             logger.debug(f"警告: {shortPathOfTarget}的匹配程度超过了{threshold*100:.0f}%但不足90%")
         
         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
+        if roi is not None:
+            pos = [pos[0]+roi[0],pos[1]+roi[1]]
         
         if outputMatchResult:
             cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
@@ -472,7 +475,8 @@ def Factory():
                         if Press(CheckIf(ScreenShot(),option)):
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
-                    logger.info("这就把你拉起来.")
+                    setting._SUICIDE = False # 死了 自杀成功 设置为false
+                    logger.info("快快请起.")
                     # logger.info("REZ.")
                     Press([450,750])
                     Sleep(10)
@@ -506,6 +510,7 @@ def Factory():
                     # logger.info("")
                     Sleep(2)
                 if (CheckIf(screen,'multipeopledead')):
+                    setting._SUICIDE = True # 准备尝试自杀
                     logger.info("死了好几个, 惨哦")
                     # logger.info("Corpses strew the screen")
                     Press(CheckIf(screen,'skull'))
@@ -578,6 +583,9 @@ def Factory():
                     Press(FindItOtherwisePressAndWait('intoWorldMap',[40, 1184],2))
                     Press(FindItOtherwisePressAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
                     Press(FindItOtherwisePressAndWait('fordraig/B3F',['labyrinthOfFordraig',[1,1]],1))
+            case 'fortress-B3F':
+                Press(FindItOtherwisePressAndWait('impregnableFortress',['EdgeOfTown',[1,1]],1))
+                Press(FindItOtherwisePressAndWait('fortressb3f', 'input swipe 650 250 650 900',1))
             case "Dist":
                 Press(FindItOtherwisePressAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
                 Press(FindItOtherwisePressAndWait('Dist', 'input swipe 650 250 650 900',1))
@@ -599,7 +607,9 @@ def Factory():
             if Press(CheckIf(screen,'combatSpd')):
                 setting._COMBATSPD = True
 
-        if setting._SYSTEMAUTOCOMBAT:
+        if setting._SUICIDE:
+            Press(CheckIf(screen,'defend'))
+        elif setting._SYSTEMAUTOCOMBAT:
             Press(CheckIf(screen,'combatAuto'))
             Sleep(5)
         else:

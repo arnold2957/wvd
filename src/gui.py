@@ -27,6 +27,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]水路船一 shiphold",
                    "[刷图]水路船二 lounge",
                    "[刷图]鸟洞三层 fordraig B3F",
+                   "[刷图]要塞三层",
                    "[刷图]卢比肯的洞窟",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
@@ -662,6 +663,12 @@ class ConfigPanelApp:
                 setting._FARMTARGET = 'fordraig-B3F'
                 setting._TARGETLIST = ['chest','harken']
                 setting._TARGETSEARCHDIR = [None,[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100],]]
+                StreetFarm(setting)
+            case "[刷图]要塞三层":
+                setting._FARMTARGET = 'fortress-B3F'
+                setting._TARGETLIST = ['chest','harken2']
+                setting._TARGETSEARCHDIR = [[[100,1200,700,100]],[[100,1200,700,100]]]
+                setting._TARGETROI = [[0,355,480,700],None]
                 StreetFarm(setting)
             case "[任务]角鹫之剑 fordraig":
                 setting._FARMTARGET = 'fordraig'
