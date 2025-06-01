@@ -10,7 +10,7 @@ import socket
 import time
 import shutil
 
-VERSION = '0.5.2.2'
+VERSION = '1.0.1'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -45,8 +45,33 @@ ALL_SKILLS = ESOTERIC_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
 ############################################
+# 重定向logger流
+class LoggerStream:
+    """自定义流，将输出重定向到logger"""
+    def __init__(self, logger, log_level):
+        self.logger = logger
+        self.log_level = log_level
+        self.buffer = ''  # 用于累积不完整的行
+    
+    def write(self, message):
+        # 累积消息直到遇到换行符
+        self.buffer += message
+        while '\n' in self.buffer:
+            line, self.buffer = self.buffer.split('\n', 1)
+            if line:  # 跳过空行
+                self.logger.log(self.log_level, line)
+    
+    def flush(self):
+        # 处理缓冲区中剩余的内容
+        if self.buffer:
+            self.logger.log(self.log_level, self.buffer)
+            self.buffer = ''
+# 创建logger
 logger = logging.getLogger('WvDLogger')
 logger.setLevel(logging.DEBUG)
+# cmd文件句柄
+sys.stdout = LoggerStream(logger, logging.DEBUG)
+sys.stderr = LoggerStream(logger, logging.ERROR)
 # 文件句柄
 file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)

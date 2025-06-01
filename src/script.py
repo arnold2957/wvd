@@ -1023,9 +1023,11 @@ def Factory():
                     match stepNo:
                         case 1:
                             logger.info('第一步: 诅咒之旅...')
-                            Press(FindItOtherwisePressAndWait('cursedWheel',['ruins',[1,1]],1))
-                            Press(FindItOtherwisePressAndWait('Fordraig/Leap',['specialRequest',[1,1]],1))
-                            Press(FindItOtherwisePressAndWait('OK','leap',1))
+                            RestartableSequenceExecution(
+                                lambda:Press(FindItOtherwisePressAndWait('cursedWheel',['ruins',[1,1]],1)),
+                                lambda:Press(FindItOtherwisePressAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
+                                lambda:Press(FindItOtherwisePressAndWait('OK','leap',1)),
+                                )
                             Sleep(15)
                             stepNo = 2
                         case 2:
@@ -1062,9 +1064,11 @@ def Factory():
                                 )
                             logger.info('已完成第一个陷阱.')
                             FindItOtherwisePressAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
-                            StateDungeon(['fordraig/SecondTrap',None]) #前往第二个陷阱, 这个有几率中断啊
-                            FindItOtherwisePressAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)) # 转向来开启机关
+                            RestartableSequenceExecution(
+                                lambda:StateDungeon(['fordraig/SecondTrap',None]), #前往第二个陷阱, 这个有几率中断啊
+                                lambda:FindItOtherwisePressAndWait("dungFlag","return",1), # 关闭地图
+                                lambda:Press(FindItOtherwisePressAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                                )
                             logger.info('已完成第二个陷阱.')
                             FindItOtherwisePressAndWait("mapFlag",[777,150],1) # 开启地图
                             FindItOtherwisePressAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
