@@ -5,12 +5,9 @@ import os
 import logging
 from script import *
 from threading import Thread,Event
-import subprocess
-import socket
-import time
 import shutil
 
-VERSION = '1.0.1'
+VERSION = '1.1.4'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -31,18 +28,20 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]卢比肯的洞窟",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
+                   "[刷图]风洞(15-19)",
                    "[刷图]光洞(15-19)",
                    "[任务]7000G",
                    "[任务]角鹫之剑 fordraig",
                    "[任务]击退敌势力",
                    ]
 
-ESOTERIC_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS"]
+SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
+CC_SKILLS = []
 
-ALL_SKILLS = ESOTERIC_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
+ALL_SKILLS = SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS + CC_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
 ############################################
@@ -68,7 +67,7 @@ class LoggerStream:
             self.logger.log(self.log_level, self.buffer)
             self.buffer = ''
 # 创建logger
-logger = logging.getLogger('WvDLogger')
+logger = logging.getLogger('WvDASLogger')
 logger.setLevel(logging.DEBUG)
 # cmd文件句柄
 sys.stdout = LoggerStream(logger, logging.DEBUG)
@@ -107,7 +106,7 @@ class ConfigPanelApp:
         self.root = root
         self.root.geometry('450x470')
         # self.root.resizable(False, False)
-        self.root.title(f"WvD 巫术daphne自动刷怪 v{VERSION} @德德Dellyla(B站)")
+        self.root.title(f"WvDAS 巫术daphne自动刷怪 v{VERSION} @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -145,22 +144,8 @@ class ConfigPanelApp:
         self.update_current_skills_display() # 初始化时更新技能显示
 
         logger.info("**********************\n" \
-                    f"当前版本: {VERSION}\n"\
-        "使用前请确保以下模拟器设置:\n" \
-        "1 模拟器已经允许adb调试. 位于\"设置\"-\"高级\"-\"adb调试\"的设置已经打开.\n" \
-        "2 模拟器分辨率为 1600x900, 240 dpi.\n" \
-        "3 多开模拟器时, 请确保运行巫术的模拟器为第一个启动的模拟器.\n" \
-        "**********************\n" \
-        "如果没有勾选\"开箱子时随机人选\", 那么固定使用左上角的人开箱. 多次选人失败后会临时变为随机人选开箱.\n" \
-        "**********************\n"\
-        "旅店休息间隔是间隔多少次地下城休息. 0代表一直休息, 1代表间隔一次休息, 以此类推.\n" \
-        "**********************\n"\
-        "现在可用的强力单体技能包括 精密攻击, 眩晕突袭, 浑身一击 扎兹里克 以及 强袭.\n" \
-        "**********************\n"\
-        "每次进入地下城必定会恢复. 开宝箱后必定会恢复. 界面按钮控制战斗后是否恢复.\n"\
-        "**********************\n"\
-        "击退敌势力流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!\n"\
-        "**********************\n")
+                    f"当前版本: {VERSION}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd\n"\
+                    "**********************\n" )
         
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
@@ -384,9 +369,9 @@ class ConfigPanelApp:
         self.btn_enable_full_aoe.grid(row=1, column=0, padx=2, pady=2)
         self.skill_buttons_map.append({"button": self.btn_enable_full_aoe, "skills": FULL_AOE_SKILLS, "name": "full_aoe"})
 
-        self.btn_enable_esoteric_aoe = ttk.Button(self.skills_button_frame, text="启用秘术AOE", command=lambda: self.update_spell_config(ESOTERIC_AOE_SKILLS, "esoteric_aoe"))
-        self.btn_enable_esoteric_aoe.grid(row=1, column=1, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_esoteric_aoe, "skills": ESOTERIC_AOE_SKILLS, "name": "esoteric_aoe"})
+        self.btn_enable_secret_aoe = ttk.Button(self.skills_button_frame, text="启用秘术AOE", command=lambda: self.update_spell_config(SECRET_AOE_SKILLS, "secret_aoe"))
+        self.btn_enable_secret_aoe.grid(row=1, column=1, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_secret_aoe, "skills": SECRET_AOE_SKILLS, "name": "secret_aoe"})
 
         self.btn_enable_physical = ttk.Button(self.skills_button_frame, text="启用强力单体", command=lambda: self.update_spell_config(PHYSICAL_SKILLS, "physical_skills"))
         self.btn_enable_physical.grid(row=2, column=0, padx=2, pady=2)
@@ -553,62 +538,7 @@ class ConfigPanelApp:
         self.continue_btn.grid_remove()
         self.continue_trigger.set()
 
-    def start_adb_server(self):
-        def check_adb_connection():
-            try:
-                # 创建socket检测端口连接
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(2)  # 设置超时时间
-                result = sock.connect_ex(("127.0.0.1", 5037))
-                return result == 0  # 返回0表示连接成功
-            except Exception as e:
-                logger.info(f"连接检测异常: {str(e)}")
-                return False
-            finally:
-                sock.close()
-        try:
-            if not check_adb_connection():
-                logger.info(f"开始启动ADB服务, 路径:{self.adb_path_var.get()}")
-                # 启动adb服务（非阻塞模式）
-                subprocess.Popen(
-                    [self.adb_path_var.get(), "start-server"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    shell=True
-                )
-                logger.info("ADB 服务启动中...")
-                
-                # 循环检测连接（最多重试5次）
-                for _ in range(5):
-                    if check_adb_connection():
-                        logger.info("ADB 连接成功")
-                        return True
-                    time.sleep(1)  # 每次检测间隔1秒
-                
-                logger.info("ADB 连接超时")
-                return False
-            else:
-                return True
-        except Exception as e:
-            logger.info(f"启动ADB失败: {str(e)}")
-            return False
-
     def dungeonLoop(self):
-        if not self.adb_active:
-            self.adb_active = self.start_adb_server()
-            if not self.adb_active:
-                self.finishingcallback()
-                return
-
-        client = AdbClient(host="127.0.0.1", port=5037)
-        client.remote_connect("127.0.0.1", int(self.adb_port_var.get()))
-        devices = client.devices()
-        if (not devices) or not (devices[0]):
-            logger.info("创建adb链接失败.")
-            self.finishingcallback()
-            return
-        device = devices[0]
-
         logger.info(f"目标地下城:{self.farm_target_var.get()}")
         setting = FarmSetting()
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
@@ -619,9 +549,19 @@ class ConfigPanelApp:
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
-        setting._ADBDEVICE = device
         setting._LOGGER = logger
+        setting._ADBPATH = self.adb_path_var.get()
+        setting._ADBPORT = self.adb_port_var.get()
         StreetFarm,QuestFarm = Factory()
+
+        if not self.adb_active:
+            self.adb_active = StartAdbServer(setting)
+            if not self.adb_active:
+                self.finishingcallback()
+                return
+
+        setting._ADBDEVICE = CreateAdbDevice(setting)
+
         match self.farm_target_var.get():
             case "[刷图]水路船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
@@ -630,8 +570,16 @@ class ConfigPanelApp:
             case "[刷图]水路船二 lounge":
                 setting._FARMTARGET = 'shiphold'
                 setting._TARGETLIST = ['shiphold_upstair_once','chest','lounge_downstair_once','harken']
-                setting._TARGETSEARCHDIR = [[[1,1,1,1]],[[100,100,700,1500]],[[100,100,700,1500]],None]
-                setting._TARGETROI = [[0,0,900,800],[0,0,900,800],[0,0,900,800],None]
+                setting._TARGETSEARCHDIR = [
+                    [[1,1,1,1]],
+                    [[100,100,700,1500]],
+                    [[100,100,700,1500]],
+                    None]
+                setting._TARGETROI = [
+                    [[0,0,900,739]],
+                    [[0,0,900,739],[0,529,212,106]],
+                    [[0,0,900,739]],
+                    None]
                 StreetFarm(setting)
             case "[刷图]水路一号街":
                 setting._FARMTARGET = 'Dist'
@@ -641,16 +589,34 @@ class ConfigPanelApp:
                 setting._FARMTARGET = 'DOE'
                 setting._TARGETLIST = ['DOEtarget','DOE_quit']
                 setting._DUNGWAITTIMEOUT = 0
+                setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[刷图]光洞(15-19)":
-                setting._FARMTARGET = 'DOL'
-                setting._TARGETLIST = ['DOLtarget1','DOLtarget2','DOL_quit']
-                setting._DUNGWAITTIMEOUT = 0
+            case "[刷图]风洞(15-19)":
+                setting._FARMTARGET = 'DOW'
+                setting._TARGETLIST = ['chest','DOW_quit']
+                setting._TARGETSEARCHDIR = [
+                    [[700,1200,100,100]],
+                    [[700,1200,100,100]]]
+                setting._TARGETROI = [
+                    [[0,780,900,500],[0,780,150,120]],
+                    None]
+                setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
             case "[刷图]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
                 setting._TARGETLIST = ['DOFtarget1','DOFtarget2','DOF_quit']
                 setting._DUNGWAITTIMEOUT = 0
+                setting._SYSTEMAUTOCOMBAT = True
+                StreetFarm(setting)
+            case "[刷图]光洞(15-19)":
+                setting._FARMTARGET = 'DOL'
+                setting._TARGETLIST = ['chest','DOL_quit']
+                setting._TARGETSEARCHDIR = [
+                    [[700,100,100,1200]],
+                    [[700,100,100,1200]]]
+                setting._TARGETROI = [
+                    [[420,686,478,481]],
+                    None]
                 StreetFarm(setting)
             case "[刷图]卢比肯的洞窟":
                 setting._FARMTARGET = 'LBC'
@@ -667,8 +633,12 @@ class ConfigPanelApp:
             case "[刷图]要塞三层":
                 setting._FARMTARGET = 'fortress-B3F'
                 setting._TARGETLIST = ['chest','harken2']
-                setting._TARGETSEARCHDIR = [[[100,1200,700,100]],[[100,1200,700,100]]]
-                setting._TARGETROI = [[0,355,480,700],None]
+                setting._TARGETSEARCHDIR = [
+                    [[100,1200,700,100]],
+                    [[100,1200,700,100]]]
+                setting._TARGETROI = [
+                    [[0,355,480,805],[320,1053,300,200]],
+                    None]
                 StreetFarm(setting)
             case "[任务]角鹫之剑 fordraig":
                 setting._FARMTARGET = 'fordraig'
@@ -680,13 +650,6 @@ class ConfigPanelApp:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")
                 self.finishingcallback()
                 
-
-        
-        # self.continue_btn.grid()
-        # self.continue_trigger.clear()
-        # print('wait!')
-        # self.continue_trigger.wait()
-        # print("got!")
 
 if __name__ == '__main__':
     root = tk.Tk()
