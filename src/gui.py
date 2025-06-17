@@ -7,7 +7,7 @@ from script import *
 from threading import Thread,Event
 import shutil
 
-VERSION = '1.1.4'
+VERSION = '1.1.5'
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -35,13 +35,13 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]击退敌势力",
                    ]
 
+CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
-CC_SKILLS = []
 
-ALL_SKILLS = SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS + CC_SKILLS
+ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
 ############################################
@@ -377,6 +377,10 @@ class ConfigPanelApp:
         self.btn_enable_physical.grid(row=2, column=0, padx=2, pady=2)
         self.skill_buttons_map.append({"button": self.btn_enable_physical, "skills": PHYSICAL_SKILLS, "name": "physical_skills"})
 
+        self.btn_enable_cc = ttk.Button(self.skills_button_frame, text="启用群体控制", command=lambda: self.update_spell_config(CC_SKILLS, "cc_skills"))
+        self.btn_enable_cc.grid(row=2, column=1, padx=2, pady=2)
+        self.skill_buttons_map.append({"button": self.btn_enable_cc, "skills": CC_SKILLS, "name": "cc_skills"})
+
         # 第11行 技能选择结果展示
         self.current_skills_label_var = tk.StringVar()
         current_skills_display = ttk.Label(main_frame, textvariable=self.current_skills_label_var, wraplength=230)
@@ -444,7 +448,7 @@ class ConfigPanelApp:
                 for skill in skills_to_process:
                     if skill not in self._spell_skill_config_internal:
                         self._spell_skill_config_internal.append(skill)
-                logger.info(f"已启用/添加 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+                logger.info(f"已启用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
 
         # 保证唯一性，但保留顺序（如果重要的话，使用 dict.fromkeys）
         self._spell_skill_config_internal = list(dict.fromkeys(self._spell_skill_config_internal))

@@ -38,6 +38,7 @@ class FarmSetting:
     _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
     _ADBPATH = None
     _ADBPORT = None
+    _MAXRETRYLIMIT = 20
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -275,11 +276,11 @@ def Factory():
     def PressReturn():
         logger.debug("按了返回.")
         device.shell('input keyevent KEYCODE_BACK')
+    ##################################################################
     def FindCoordsOrElseExecuteAndWait(targetPattern, pressPos,waitTime):
         # PressPos可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
-        MAXTRY = 20
         while True:
-            for _ in range(MAXTRY):
+            for _ in range(setting._MAXRETRYLIMIT):
                 if setting._FORCESTOPING.is_set():
                     return None
                 scn = ScreenShot()
@@ -327,12 +328,28 @@ def Factory():
                             return None
                 Sleep(waitTime) # and wait
             
-            logger.info(f"{MAXTRY}次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
-            MAXTRY += 5
+            logger.info(f"{setting._MAXRETRYLIMIT}次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
             Sleep()
             restartGame()
-            return None # FindCoordsOrElseExecuteAndWait(targetPattern, pressPos,waitTime) #???能这么写吗?
-    ##################################################################
+            return None # restartGame会抛出异常 所以直接返回none就行了
+    def restartGame():
+        nonlocal setting
+        setting._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
+        setting._MAXRETRYLIMIT = min(50, setting._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
+        file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
+        cv2.imwrite(file_path, ScreenShot())
+        logger.info(f"重启前截图已保存在{file_path}中.")
+
+        package_name = "jp.co.drecom.wizardry.daphne"
+        mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
+        device.shell(f"am force-stop {package_name}")
+        Sleep(2)
+        logger.info("巫术, 启动!")
+        logger.debug(device.shell(f"am start -n {mainAct}"))
+        Sleep(10)
+        raise RestartSignal()
     class RestartSignal(Exception):
         pass
     def RestartableSequenceExecution(*operations):
@@ -344,25 +361,6 @@ def Factory():
             except RestartSignal:
                 logger.info("任务进度重置中...")
                 continue
-    def restartGame():
-        nonlocal setting
-        setting._COMBATSPD = False
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-        file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
-        
-        # 保存为PNG格式
-        cv2.imwrite(file_path, ScreenShot())
-        print(f"Screenshot saved: {file_path}")
-
-        package_name = "jp.co.drecom.wizardry.daphne"
-        mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
-        device.shell(f"am force-stop {package_name}")
-        Sleep(2)
-        logger.info("巫术, 启动!")
-        logger.debug(device.shell(f"am start -n {mainAct}"))
-        Sleep(10)
-        raise RestartSignal()
     ##################################################################
     def getCursorCoordinates(input, template_path, threshold=0.8):
         """在本地图片中查找模板位置"""
@@ -591,6 +589,10 @@ def Factory():
                     logger.info("等我买? 你白等了, 我不买.")
                     # logger.info("wait for paurch? Wait for someone else.")
                     Sleep(2)
+                if Press(CheckIf(screen,'donthelp')):
+                    logger.info("不帮你了.")
+                    # logger.info("")
+                    Sleep(2)
                 if Press(CheckIf(screen,'adventurersbones')):
                     logger.info("是骨头!")
                     # logger.info("")
@@ -757,7 +759,7 @@ def Factory():
             
             targetPos = None
             if (target == 'chest') and roi==None:
-                roi = [[0,0,900,1600],[0,636,137,222],[763,636,137,222]]
+                roi = [[0,208,900,1057],[0,636,137,222],[763,636,137,222], [336,208,228,77],[336,1168,228,97]]
             if targetPos:=CheckIf(map,target,roi):
                 logger.info(f'找到了 {target}! {targetPos}')
                 if not roi:
@@ -1019,9 +1021,9 @@ def Factory():
             case '7000G':                    
                 stepNo = 1
                 while 1:
-                    starttime = time.time()
                     match stepNo:
                         case 1:
+                            starttime = time.time()
                             setting._COUNTERDUNG += 1
                             def stepMain():
                                 logger.info("第一步: 开始诅咒之旅...")
@@ -1118,11 +1120,11 @@ def Factory():
                 setting._SYSTEMAUTOCOMBAT = True
                 setting._SPECIALDIALOGOPTION = ['fordraig/thedagger']
                 while 1:
-                    setting._COUNTERDUNG += 1
-                    logger.info(setting._COUNTERDUNG)
-                    starttime = time.time()
                     match stepNo:
                         case 1:
+                            setting._COUNTERDUNG += 1
+                            logger.info(setting._COUNTERDUNG)
+                            starttime = time.time()
                             logger.info('第一步: 诅咒之旅...')
                             RestartableSequenceExecution(
                                 lambda:Press(FindCoordsOrElseExecuteAndWait('cursedWheel',['ruins',[1,1]],1)),
@@ -1192,7 +1194,13 @@ def Factory():
                             # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
                             Press(FindCoordsOrElseExecuteAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
                             FindCoordsOrElseExecuteAndWait("Inn",[1,1],1)
-                            stepNo = 1
+
+                            costtime = time.time()-starttime
+                            logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.")
+                            if not setting._FORCESTOPING.is_set():
+                                stepNo = 1
+                            else:
+                                break
             case 'repelEnemyForces':
                 if setting._RESTINTERVEL == 0:
                     logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1.")
