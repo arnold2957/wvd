@@ -7,7 +7,7 @@ from script import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.1.6'
+__version__ = '1.1.6.1'
 
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
