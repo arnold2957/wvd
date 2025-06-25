@@ -1,0 +1,144 @@
+name: Build Executable
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 第一步：从源代码提取版本号
+    - name: Extract version from gui.py
+      id: extract-version
+      shell: pwsh
+      run: |
+        $version = (Select-String -Path .\gui.py -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+)[''"]').Matches.Groups[1].Value
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Extracted version: $version"
+
+    # 第二步：获取GitHub上最新发布的版本
+    - name: Get latest release version
+      id: get-latest-release
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $apiUrl = "https://api.github.com/repos/arnold2957/wvd/releases/latest"
+        $headers = @{
+            Authorization = "token $env:GITHUB_TOKEN"
+        }
+
+        try {
+            $response = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get -ErrorAction Stop
+            $latestVersion = $response.tag_name
+            echo "latest_version=$latestVersion" >> $env:GITHUB_OUTPUT
+            echo "Latest release version: $latestVersion"
+        }
+        catch {
+            $statusCode = $_.Exception.Response.StatusCode.value__
+            if ($statusCode -eq 404) {
+                echo "latest_version=0.0.0" >> $env:GITHUB_OUTPUT
+                echo "Error 404: Repository or release not found. Using default 0.0.0"
+            }
+            else {
+                echo "Error ${statusCode}: Failed to check release. Using default 0.0.0"
+                echo "latest_version=0.0.0" >> $env:GITHUB_OUTPUT
+            }
+        }
+
+    # 第三步：比较本地版本和发布版本
+    - name: Compare versions
+      id: compare-versions
+      shell: pwsh
+      run: |
+        if ("${{ steps.extract-version.outputs.version }}" -ne "${{ steps.get-latest-release.outputs.latest_version }}") {
+            echo "build_required=true" >> $env:GITHUB_OUTPUT
+            echo "Version mismatch, build required"
+        }
+        else {
+            echo "build_required=false" >> $env:GITHUB_OUTPUT
+            echo "Version match, skip build"
+        }
+
+    # 以下步骤仅在需要构建时执行
+    - name: Set up Python
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller requests
+
+    - name: Build with PyInstaller
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      run: |
+        pyinstaller --onedir --add-data "resources/images;resources/images/" src/gui.py -n wvd
+        echo "Build completed"
+    
+    - name: Compress to ZIP
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      shell: pwsh
+      run: |
+        # 使用系统自带的Compress-Archive创建ZIP
+        Compress-Archive -Path ./dist/wvd/* -DestinationPath ./dist/wvd.zip -Force
+        Get-ChildItem dist/wvd.zip
+    
+    - name: Calculate MD5 and prepare release
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      id: calculate-md5
+      shell: pwsh
+      run: |
+        $md5 = (Get-FileHash -Path dist/wvd.zip -Algorithm MD5).Hash.ToLower()
+        echo "md5=$md5" >> $env:GITHUB_OUTPUT
+        echo "MD5: $md5"
+        
+        $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss" -AsUTC
+        $version = "${{ steps.extract-version.outputs.version }}"
+
+        # 生成 release_notes.md (用于 GitHub Release)
+        @"
+        **Version**: $version
+        **MD5**: ``$md5``
+        **Build Date**: $date
+        "@ | Out-File -FilePath dist/release_notes.md -Encoding utf8
+
+        # 生成 release.json (用于 GitHub Pages)
+        $releaseData = @{
+          version = $version
+          md5 = $md5
+          release_date = $date
+          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
+          release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
+        } | ConvertTo-Json
+
+        # 创建 gh-pages 目录并保存文件
+        New-Item -ItemType Directory -Path gh-pages -Force
+        $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
+    
+    - name: Create Release
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.extract-version.outputs.version }}
+        name: Release ${{ steps.extract-version.outputs.version }}
+        body_path: dist/release_notes.md
+        files: dist/wvd.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Deploy to GitHub Pages
+      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./gh-pages
+        keep_files: false
