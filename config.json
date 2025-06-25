@@ -1,22 +1,12 @@
 {
     "ADB_PATH": "C:/Program Files/BlueStacks_nxt/HD-Adb.exe",
-    "_FARMTARGET": "贸易水路-船一 shiphold",
-    "_RANDOMLYOPENCHEST": true,
-    "_SPELLSKILLCONFIG": [
-        "maerlik",
-        "LAERLIK",
-        "SB",
-        "PS",
-        "mamigal",
-        "LAMIGAL",
-        "mazelos",
-        "mahalito",
-        "HA",
-        "maferu",
-        "LAZELOS"
-    ],
-    "SYSTEM_AUTO_COMBAT_ENABLED": false,
+    "_FARMTARGET": "[刷图]鸟洞三层 fordraig B3F",
+    "_RANDOMLYOPENCHEST": false,
+    "_SPELLSKILLCONFIG": [],
+    "SYSTEM_AUTO_COMBAT_ENABLED": true,
     "_RESTINTERVEL": "0",
-    "_SKIPRECOVER": false,
-    "_RANDOMLYPERSONOPENCHEST": true
+    "_SKIPRECOVER": true,
+    "_RANDOMLYPERSONOPENCHEST": false,
+    "ADB_PORT": "5555",
+    "_SKIPCOMBATRECOVER": false
 }
