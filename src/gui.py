@@ -7,7 +7,8 @@ from script import *
 from threading import Thread,Event
 import shutil
 
-VERSION = '1.1.5'
+__version__ = '1.1.6'
+
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -106,7 +107,7 @@ class ConfigPanelApp:
         self.root = root
         self.root.geometry('450x470')
         # self.root.resizable(False, False)
-        self.root.title(f"WvDAS 巫术daphne自动刷怪 v{VERSION} @德德Dellyla(B站)")
+        self.root.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -144,7 +145,7 @@ class ConfigPanelApp:
         self.update_current_skills_display() # 初始化时更新技能显示
 
         logger.info("**********************\n" \
-                    f"当前版本: {VERSION}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd\n"\
+                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd\n"\
                     "**********************\n" )
         
     def load_config(self):

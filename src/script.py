@@ -126,13 +126,30 @@ def Factory():
                 logger.debug('ScreenShot')
                 screenshot = device.screencap()
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
+
+                if screenshot_np.size == 0:
+                    logger.error("截图数据为空！")
+                    raise RuntimeError("截图数据为空")
+
                 image = cv2.imdecode(screenshot_np, cv2.IMREAD_COLOR)
+
+                if image is None:
+                    logger.error("OpenCV解码失败：图像数据损坏")
+                    raise RuntimeError("图像解码失败")
+
+                if image.shape != (1600, 900, 3):  # OpenCV格式为(高, 宽, 通道)
+                    if image.shape == (900, 1600, 3):
+                        logger.error(f"截图尺寸错误: 当前{image.shape}, 为横屏.")
+                        image = cv2.transpose(image)
+                    else:
+                        logger.error(f"截图尺寸错误: 期望(1600,900,3), 实际{image.shape}.")
+                        raise RuntimeError("截图尺寸异常")
                 
                 #cv2.imwrite('screen.png', image)
                 return image
-            except (RuntimeError, ConnectionResetError) as e:
+            except (RuntimeError, ConnectionResetError, cv2.error) as e:
                 logger.debug(f"{e}")
-                logger.info("adb连接异常.")
+                logger.info("adb重启中...")
                 while 1:
                     if StartAdbServer(setting):
                         setting._ADBDEVICE = CreateAdbDevice(setting)
@@ -277,8 +294,8 @@ def Factory():
         logger.debug("按了返回.")
         device.shell('input keyevent KEYCODE_BACK')
     ##################################################################
-    def FindCoordsOrElseExecuteAndWait(targetPattern, pressPos,waitTime):
-        # PressPos可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
+    def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
+        # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
         while True:
             for _ in range(setting._MAXRETRYLIMIT):
                 if setting._FORCESTOPING.is_set():
@@ -292,8 +309,8 @@ def Factory():
                 else:
                     pos = CheckIf(scn,targetPattern)
                     if pos:
-                        return pos # findit 
-                # otherwise
+                        return pos # FindCoords 
+                # OrElse
                 if Press(CheckIf(scn,'retry')):
                     logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                     Sleep(1)
@@ -305,12 +322,12 @@ def Factory():
                         device.shell(target)
                     else:
                         Press(CheckIf(scn, target))
-                if pressPos: # press
-                    if isinstance(pressPos, (list, tuple)):
-                        if (len(pressPos) == 2) and all(isinstance(x, (int, float)) for x in pressPos):
-                            Press(pressPos)
+                if fallback: # Execute
+                    if isinstance(fallback, (list, tuple)):
+                        if (len(fallback) == 2) and all(isinstance(x, (int, float)) for x in fallback):
+                            Press(fallback)
                         else:
-                            for p in pressPos:
+                            for p in fallback:
                                 if isinstance(p, str):
                                     pressTarget(p)
                                 elif isinstance(p, (list, tuple)) and len(p) == 2:
@@ -320,8 +337,8 @@ def Factory():
                                     setting._FORCESTOPING.set()
                                     return None
                     else:
-                        if isinstance(pressPos, str):
-                            pressTarget(pressPos)
+                        if isinstance(fallback, str):
+                            pressTarget(fallback)
                         else:
                             logger.debug("错误: 非法的目标.")
                             setting._FORCESTOPING.set()
@@ -494,10 +511,15 @@ def Factory():
                 else:
                     waittime = (x+target)/spd
                     logger.debug("先向左再向右")
-                logger.debug(f"预计等待 {waittime}")
-                Sleep(waittime-0.270)
-                device.shell(f"input tap 450 900") # 这里和retry重合 可以按.
-                Sleep(3)
+                
+                if waittime > 0.270 :
+                    logger.debug(f"预计等待 {waittime}")
+                    Sleep(waittime-0.270)
+                    device.shell(f"input tap 450 900") # 这里和retry重合 可以按.
+                    Sleep(3)
+                else:
+                    logger.debug(f"等待时间过短: {waittime}")
+                    
             if not CheckIf(ScreenShot(), 'chestOpening'):
                 break
     ##################################################################
@@ -548,14 +570,14 @@ def Factory():
                 return IdentifyState()
 
             if CheckIf(screen,"returntoTown"):
-                FindCoordsOrElseExecuteAndWait('Inn',['return',[1,1]],1)
+                FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                 return State.Inn,DungeonState.Quit, screen
             
             if Press(CheckIf(screen,"openworldmap")):
                 return IdentifyState()
             
             if CheckIf(screen,"RoyalCityLuknalia"):
-                FindCoordsOrElseExecuteAndWait(['Inn','dungFlag'],['RoyalCityLuknalia',[1,1]],1)
+                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['RoyalCityLuknalia',[1,1]],1)
                 if CheckIf(scn:=ScreenShot(),'Inn'):
                     return State.Inn,DungeonState.Quit, screen
                 elif CheckIf(scn,'dungFlag'):
@@ -652,58 +674,58 @@ def Factory():
                 grayThis = cv2.cvtColor(queue[i], cv2.COLOR_BGR2GRAY)
                 grayLast = cv2.cvtColor(queue[i-1], cv2.COLOR_BGR2GRAY)
                 mean_diff = cv2.absdiff(grayThis, grayLast).mean()/255
-                totalDiff+=mean_diff
-            logger.debug(f"卡死检测耗时: {time.time()-t:.5f}秒")
-            logger.debug(f"卡死检测结果: {totalDiff:.5f}")
-            if totalDiff<=0.05:
+                totalDiff += mean_diff
+            logger.info(f"卡死检测耗时: {time.time()-t:.5f}秒")
+            logger.info(f"卡死检测结果: {totalDiff:.5f}")
+            if totalDiff<=0.1:
                 return queue, True
         return queue, False
     def StateInn():
-        Press(FindCoordsOrElseExecuteAndWait('Inn',[1,1],1))
-        Press(FindCoordsOrElseExecuteAndWait('Stay',['Inn',[1,1]],2))
-        Press(FindCoordsOrElseExecuteAndWait('Economy',['Stay',[1,1]],2))
-        Press(FindCoordsOrElseExecuteAndWait('OK',['Economy',[1,1]],2))
-        FindCoordsOrElseExecuteAndWait('Stay',['OK',[299,1464]],2)
+        Press(FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('Stay',['Inn',[1,1]],2))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('Economy',['Stay',[1,1]],2))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('OK',['Economy',[1,1]],2))
+        FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
     def StateEoT():
         match setting._FARMTARGET:
             case "shiphold":
-                Press(FindCoordsOrElseExecuteAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('shiphold',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('shiphold',[1,1],1))
             case "lounge":
-                Press(FindCoordsOrElseExecuteAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('lounge',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('lounge',[1,1],1))
             case "LBC":
                 if Press(CheckIf(ScreenShot(),'LBC')):
                     pass
                 else:
-                    Press(FindCoordsOrElseExecuteAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteAndWait('LBC','input swipe 100 100 700 1500',1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('LBC','input swipe 100 100 700 1500',1))
             case "fordraig-B3F":
                 if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
                     pass
                 else:
-                    Press(FindCoordsOrElseExecuteAndWait('intoWorldMap',[40, 1184],2))
-                    Press(FindCoordsOrElseExecuteAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
-                    Press(FindCoordsOrElseExecuteAndWait('fordraig/B3F',['labyrinthOfFordraig',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))               
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/B3F',['labyrinthOfFordraig',[1,1]],1))
             case 'fortress-B3F':
-                Press(FindCoordsOrElseExecuteAndWait('impregnableFortress',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('fortressb3f', 'input swipe 650 250 650 900',1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('impregnableFortress',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('fortressb3f', 'input swipe 650 250 650 900',1))
             case "Dist":
-                Press(FindCoordsOrElseExecuteAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('Dist', 'input swipe 650 250 650 900',1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('Dist', 'input swipe 650 250 650 900',1))
             case "DOE":
-                Press(FindCoordsOrElseExecuteAndWait('DOE',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('DOEB1F',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOE',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOEB1F',[1,1],1))
             case "DOL":
-                Press(FindCoordsOrElseExecuteAndWait('DOL',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('DOLB1F',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOL',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOLB1F',[1,1],1))
             case "DOF":
-                Press(FindCoordsOrElseExecuteAndWait('DOF',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('DOFB1F',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOF',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOFB1F',[1,1],1))
             case "DOW":
-                Press(FindCoordsOrElseExecuteAndWait('DOW',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteAndWait('DOWB1F',[1,1],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOW',['EdgeOfTown',[1,1]],1))
+                Press(FindCoordsOrElseExecuteFallbackAndWait('DOWB1F',[1,1],1))
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
@@ -779,7 +801,7 @@ def Factory():
             _, dungState,screen = IdentifyState()
             if dungState == DungeonState.Map:
                 logger.info(f"开始移动失败. 不要停下来啊面具男!")
-                FindCoordsOrElseExecuteAndWait("dungFlag",([280,1433],[1,1]),1)
+                FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([280,1433],[1,1]),1)
                 dungState = dungState.Dungeon
                 break
             if dungState != DungeonState.Dungeon:
@@ -844,7 +866,7 @@ def Factory():
                             return DungeonState.Combat,targetList                
         return DungeonState.Map,  targetList
     def StateChest():
-        FindCoordsOrElseExecuteAndWait('whowillopenit', ['chestFlag',[1,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
         MAXtryOpen = 5
         while 1:
@@ -980,7 +1002,12 @@ def Factory():
             logger.info(f"当前状态: {state}")
             match state:
                 case None:
-                    state,_,_ = IdentifyState()
+                    def _identifyState():
+                        nonlocal state
+                        state=IdentifyState()[0]
+                    RestartableSequenceExecution(
+                        lambda: _identifyState()
+                        )
                     logger.info(f"下一状态: {state}")
                     if state ==State.Quit:
                         logger.info("即将中断脚本...")
@@ -1027,12 +1054,12 @@ def Factory():
                             setting._COUNTERDUNG += 1
                             def stepMain():
                                 logger.info("第一步: 开始诅咒之旅...")
-                                Press(FindCoordsOrElseExecuteAndWait('cursedWheel',['ruins',[1,1]],1))
-                                Press(FindCoordsOrElseExecuteAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
                                 if not Press(CheckIf(ScreenShot(),'FortressArrival')):
                                     device.shell(f"input swipe 450 1200 450 200")
-                                    Press(FindCoordsOrElseExecuteAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
                                 
                                 while pos:= CheckIf(ScreenShot(), 'leap'):
                                     Press(pos)
@@ -1046,24 +1073,24 @@ def Factory():
                             Sleep(10)
                             logger.info("第二步: 从要塞返回王城...")                                
                             RestartableSequenceExecution(
-                                lambda: Press(FindCoordsOrElseExecuteAndWait('return',['leaveDung',[1,1]],2))
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('return',['leaveDung','blessing',[1,1]],2))
                                 )
                             RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteAndWait('Inn',['returntotown',[1,1]],2)
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown',[1,1]],2)
                                 )
                             stepNo = 3
                         case 3:
                             logger.info("第三步: 前往王城...")
                             RestartableSequenceExecution(
-                                lambda:Press(FindCoordsOrElseExecuteAndWait('intoWorldMap',[40, 1184],2)),
-                                lambda:Press(FindCoordsOrElseExecuteAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
-                                lambda:FindCoordsOrElseExecuteAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                                lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                                 )
                             stepNo = 4
                         case 4:
                             logger.info("第四步: 给我!(伸手)")
-                            Press(FindCoordsOrElseExecuteAndWait('guild',[1,1],1))
-                            Press(FindCoordsOrElseExecuteAndWait('7000G/illgonow',[1,1],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
                             Sleep(15)
                             royalcap = False
                             firstPeople = False
@@ -1075,37 +1102,37 @@ def Factory():
                                 nonlocal secondPeople
                                 nonlocal thirdPeople
                                 if not royalcap or not firstPeople or not secondPeople or not thirdPeople:
-                                    FindCoordsOrElseExecuteAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
+                                    FindCoordsOrElseExecuteFallbackAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
                                     if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
                                         Press(pos)
                                     else:
                                         Press(CheckIf(scn,'7000G/iminhungry'))
-                                        Press(FindCoordsOrElseExecuteAndWait('7000G/olddist',[1,1],2))
+                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],2))
                                     if not royalcap:
                                         Sleep(4)
                                         Press([1,1])
                                         Press([1,1])
                                         Sleep(8)
-                                        Press(FindCoordsOrElseExecuteAndWait('7000G/royalcapital',[1,1],2))
-                                        FindCoordsOrElseExecuteAndWait('intoWorldMap',[1,1],2)
+                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/royalcapital',[1,1],2))
+                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[1,1],2)
                                         royalcap = True
                                     if not firstPeople:
-                                        FindCoordsOrElseExecuteAndWait('fastforward',[450,1111],0)
-                                        FindCoordsOrElseExecuteAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[450,1111],0)
+                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
                                         firstPeople = True
                                     if not secondPeople:
-                                        FindCoordsOrElseExecuteAndWait('fastforward',[200,1180],0)
-                                        FindCoordsOrElseExecuteAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[200,1180],0)
+                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
                                         secondPeople = True
                                     if not thirdPeople:
-                                        FindCoordsOrElseExecuteAndWait('fastforward',[680,1200],0)
-                                        Press(FindCoordsOrElseExecuteAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
-                                        Press(FindCoordsOrElseExecuteAndWait('7000G/icantagreewithU',[1,1],1))
+                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[680,1200],0)
+                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
+                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/icantagreewithU',[1,1],1))
                                         thirdPeople = True
-                                Press(FindCoordsOrElseExecuteAndWait('7000G/olddist',[1,1],1))
-                                Press(FindCoordsOrElseExecuteAndWait('7000G/illgo',[1,1],1))
-                                Press(FindCoordsOrElseExecuteAndWait('7000G/noeasytask',[1,1],1))
-                                FindCoordsOrElseExecuteAndWait('ruins',[1,1],1)
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],1))
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[1,1],1))
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
+                                FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
                             RestartableSequenceExecution(
                                 lambda: stepMain()
                                 )
@@ -1127,18 +1154,18 @@ def Factory():
                             starttime = time.time()
                             logger.info('第一步: 诅咒之旅...')
                             RestartableSequenceExecution(
-                                lambda:Press(FindCoordsOrElseExecuteAndWait('cursedWheel',['ruins',[1,1]],1)),
-                                lambda:Press(FindCoordsOrElseExecuteAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
-                                lambda:Press(FindCoordsOrElseExecuteAndWait('OK','leap',1)),
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
                                 )
                             Sleep(15)
                             stepNo = 2
                         case 2:
                             logger.info('第二步: 领取任务.')
-                            FindCoordsOrElseExecuteAndWait('Inn',[1,1],1)
+                            FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
                             StateInn()
-                            Press(FindCoordsOrElseExecuteAndWait('guildRequest',['guild',[1,1]],1))
-                            Press(FindCoordsOrElseExecuteAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                             Sleep(1)
                             device.shell(f"input swipe 450 1000 450 200")
                             while 1:
@@ -1148,52 +1175,52 @@ def Factory():
                                 else:
                                     Press([pos[0]+350,pos[1]+180])
                                     break
-                            FindCoordsOrElseExecuteAndWait('guildRequest',[1,1],1)
+                            FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
                             PressReturn()
                             stepNo = 3
                         case 3:
                             logger.info('第三步: 进入地下城.')
-                            Press(FindCoordsOrElseExecuteAndWait('intoWorldMap',[40, 1184],2))
-                            Press(FindCoordsOrElseExecuteAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))                            
-                            Press(FindCoordsOrElseExecuteAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))                            
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
                             stepNo = 4
                         case 4:
                             logger.info('第四步: 陷阱.')
                             RestartableSequenceExecution(
                                 lambda:StateDungeon(['fordraig/b1fquit','fordraig/firstTrap',None]), # 前往第一个陷阱
-                                lambda:FindCoordsOrElseExecuteAndWait("dungFlag","return",1), # 关闭地图
-                                lambda:Press(FindCoordsOrElseExecuteAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                                lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
                                 
                                 )
                             logger.info('已完成第一个陷阱.')
-                            FindCoordsOrElseExecuteAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
+                            FindCoordsOrElseExecuteFallbackAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
                             RestartableSequenceExecution(
                                 lambda:StateDungeon(['fordraig/SecondTrap',None]), #前往第二个陷阱, 这个有几率中断啊
-                                lambda:FindCoordsOrElseExecuteAndWait("dungFlag","return",1), # 关闭地图
-                                lambda:Press(FindCoordsOrElseExecuteAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                                lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
+                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
                                 )
                             logger.info('已完成第二个陷阱.')
-                            FindCoordsOrElseExecuteAndWait("mapFlag",[777,150],1) # 开启地图
-                            FindCoordsOrElseExecuteAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
-                            FindCoordsOrElseExecuteAndWait("mapFlag",[777,150],1) # 开启地图
+                            FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
+                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
+                            FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
                             StateDungeon(['fordraig/B2Fquit',None])
-                            FindCoordsOrElseExecuteAndWait("dungFlag","return",1)
-                            FindCoordsOrElseExecuteAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
+                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
+                            FindCoordsOrElseExecuteFallbackAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
                             StateDungeon(['fordraig/thirdMach',None]) #前往boss战
-                            FindCoordsOrElseExecuteAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindCoordsOrElseExecuteAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
+                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1) # 关闭地图
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
                             logger.info('已完成第三个机关.')
-                            FindCoordsOrElseExecuteAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
+                            FindCoordsOrElseExecuteFallbackAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
                             StateDungeon(['fordraig/readytoBoss',None])
                             setting._SYSTEMAUTOCOMBAT = False
                             StateDungeon(['fordraig/SecondBoss',None]) # 前往boss战斗
                             setting._SYSTEMAUTOCOMBAT = True
                             StateDungeon(['fordraig/B4Fquit',None]) # 第四层出口
-                            FindCoordsOrElseExecuteAndWait("dungFlag","return",1) 
-                            Press(FindCoordsOrElseExecuteAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
+                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1) 
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
                             # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
-                            Press(FindCoordsOrElseExecuteAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
-                            FindCoordsOrElseExecuteAndWait("Inn",[1,1],1)
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
+                            FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
 
                             costtime = time.time()-starttime
                             logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.")
@@ -1211,17 +1238,17 @@ def Factory():
                     t = time.time()
 
                     StateInn()
-                    Press(FindCoordsOrElseExecuteAndWait('TradeWaterway','EdgeOfTown',1))
-                    FindCoordsOrElseExecuteAndWait('7thDist',[1,1],1)
-                    FindCoordsOrElseExecuteAndWait('dungFlag',['7thDist',[1,1]],1)
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway','EdgeOfTown',1))
+                    FindCoordsOrElseExecuteFallbackAndWait('7thDist',[1,1],1)
+                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['7thDist','GotoDung',[1,1]],1)
                     StateDungeon(['repelEnemyForcesMid','repelEnemyForces',None])
                     logger.info('已抵达目标地点, 开始战斗.')
-                    FindCoordsOrElseExecuteAndWait('dungFlag',['return',[1,1]],1)
+                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1)
                     for i in range(setting._RESTINTERVEL):
                         logger.info(f"第{i+1}轮开始.")
                         secondcombat = False
                         while 1:
-                            FindCoordsOrElseExecuteAndWait(['flee','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
+                            FindCoordsOrElseExecuteFallbackAndWait(['flee','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
                             if CheckIf(scn:=ScreenShot(),'flee'):
                                 StateCombat()
                             elif pos:=CheckIf(scn,'icanstillgo'):
@@ -1233,8 +1260,8 @@ def Factory():
                                 secondcombat = True
                                 Press(pos)
                         logger.info(f"第{i+1}轮结束.")
-                    Press(FindCoordsOrElseExecuteAndWait('return',[[1,1],'leaveDung'],3))
-                    FindCoordsOrElseExecuteAndWait('Inn',['return',[1,1]],1)
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('return',[[1,1],'leaveDung'],3))
+                    FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
 
