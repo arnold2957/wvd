@@ -56,13 +56,48 @@ jobs:
       id: compare-versions
       shell: pwsh
       run: |
-        if ("${{ steps.extract-version.outputs.version }}" -ne "${{ steps.get-latest-release.outputs.latest_version }}") {
+        # 获取版本号
+        $localVer = "${{ steps.extract-version.outputs.version }}"
+        $releaseVer = "${{ steps.get-latest-release.outputs.latest_version }}"
+
+        # 分割版本号
+        $localParts = $localVer.Split('.', [StringSplitOptions]::RemoveEmptyEntries)
+        $releaseParts = $releaseVer.Split('.', [StringSplitOptions]::RemoveEmptyEntries)
+
+        # 补齐数组长度
+        $maxLength = [Math]::Max($localParts.Length, $releaseParts.Length)
+        $localParts = $localParts + (,0 * ($maxLength - $localParts.Length))
+        $releaseParts = $releaseParts + (,0 * ($maxLength - $releaseParts.Length))
+
+        # 比较每个部分
+        $buildRequired = $false
+        for ($i = 0; $i -lt $maxLength; $i++) {
+            $localNum = [int]::Parse($localParts[$i])
+            $releaseNum = [int]::Parse($releaseParts[$i])
+            
+            if ($localNum -gt $releaseNum) {
+                $buildRequired = $true
+                break
+            }
+            elseif ($localNum -lt $releaseNum) {
+                $buildRequired = $false
+                break
+            }
+        }
+
+        # 输出结果
+        if ($buildRequired) {
             echo "build_required=true" >> $env:GITHUB_OUTPUT
-            echo "Version mismatch, build required"
+            echo "New version detected ($localVer > $releaseVer), build required"
         }
         else {
             echo "build_required=false" >> $env:GITHUB_OUTPUT
-            echo "Version match, skip build"
+            if ($localVer -eq $releaseVer) {
+                echo "Version identical ($localVer == $releaseVer), skip build"
+            }
+            else {
+                echo "Local version older ($localVer < $releaseVer), skip build"
+            }
         }
 
     # 以下步骤仅在需要构建时执行
