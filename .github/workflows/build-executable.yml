@@ -17,9 +17,23 @@ jobs:
       id: extract-version
       shell: pwsh
       run: |
-        $version = (Select-String -Path .\src\gui.py -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+)[''"]').Matches.Groups[1].Value
-        echo "version=$version" >> $env:GITHUB_OUTPUT
-        echo "Extracted version: $version"
+        # 检查文件是否存在
+        if (-not (Test-Path -Path ".\src\gui.py")) {
+            Write-Error "File .\src\gui.py not found!"
+            exit 1
+        }
+
+        # 安全提取版本号（带错误处理）
+        $match = Select-String -Path ".\src\gui.py" -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+)[''"]'
+        if ($match -and $match.Matches.Groups.Count -gt 1) {
+            $version = $match.Matches.Groups[1].Value
+            Write-Output "Extracted version: $version"
+            "version=$version" >> $env:GITHUB_OUTPUT
+        } else {
+            Write-Error "Version pattern not found in .\src\gui.py"
+            Get-Content -Path ".\src\gui.py" | Select-String '__version__'  # 调试输出
+            exit 1
+        }
 
     # 第二步：获取GitHub上最新发布的版本
     - name: Get latest release version
