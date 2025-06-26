@@ -208,7 +208,7 @@ def Factory():
                         # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
                         screenshot[pixels_in_roi2_mask_for_current_op] = 0
             
-            cv2.imwrite('cutRoI.png', screenshot)
+            # cv2.imwrite('cutRoI.png', screenshot)
             return screenshot
         
         nonlocal setting
