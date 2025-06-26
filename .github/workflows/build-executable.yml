@@ -24,7 +24,7 @@ jobs:
         }
 
         # 安全提取版本号（带错误处理）
-        $match = Select-String -Path ".\src\gui.py" -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+)[''"]'
+        $match = Select-String -Path ".\src\gui.py" -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+.\d+)[''"]'
         if ($match -and $match.Matches.Groups.Count -gt 1) {
             $version = $match.Matches.Groups[1].Value
             Write-Output "Extracted version: $version"
