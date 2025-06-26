@@ -1,14 +1,18 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
 import json
 import os
 import logging
 from script import *
+from auto_updater import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.1.7'
+__version__ = '1.1.6'
 
+OWNER = "arnold2957"
+REPO = "wvd"
+############################################
 CONFIG_FILE = 'config.json'
 LOG_FILE_NAME = "log.txt"
 if os.path.exists(LOG_FILE_NAME):
@@ -19,7 +23,7 @@ RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
 if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
     shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
-
+############################################
 # --- 预定义的技能和目标 ---
 DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]水路船一 shiphold",
@@ -44,7 +48,6 @@ PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
-
 ############################################
 # 重定向logger流
 class LoggerStream:
@@ -145,8 +148,11 @@ class ConfigPanelApp:
         self.update_current_skills_display() # 初始化时更新技能显示
 
         logger.info("**********************\n" \
-                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd\n"\
+                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356"\
                     "**********************\n" )
+        
+        # 初始化自动更新
+        AutoUpdater(self.root, OWNER, REPO, __version__)
         
     def load_config(self):
         if os.path.exists(CONFIG_FILE):

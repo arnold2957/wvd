@@ -3,6 +3,11 @@ setlocal
 
 set "ANACONDA_PATH=C:\P\Anaconda"
 
+:: 清理旧文件
+echo [INFO] 正在清理旧构建文件...
+rd /s /q "dist" 2>nul
+rd /s /q "build" 2>nul
+
 :: 激活Anaconda基础环境
 echo Activating Anaconda base environment...
 call "%ANACONDA_PATH%\Scripts\activate.bat" base
