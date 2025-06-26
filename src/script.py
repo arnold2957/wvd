@@ -208,7 +208,7 @@ def Factory():
                         # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
                         screenshot[pixels_in_roi2_mask_for_current_op] = 0
             
-            # cv2.imwrite('cutRoI.png', screenshot)
+            cv2.imwrite('cutRoI.png', screenshot)
             return screenshot
         
         nonlocal setting
@@ -582,6 +582,13 @@ def Factory():
                     return State.Inn,DungeonState.Quit, screen
                 elif CheckIf(scn,'dungFlag'):
                     return State.Dungeon,None, screen
+                
+            if CheckIf(screen,"fortressworldmap"):
+                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['fortressworldmap',[1,1]],1)
+                if CheckIf(scn:=ScreenShot(),'Inn'):
+                    return State.Inn,DungeonState.Quit, screen
+                elif CheckIf(scn,'dungFlag'):
+                    return State.Dungeon,None, screen
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
@@ -701,6 +708,12 @@ def Factory():
                 else:
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
                     Press(FindCoordsOrElseExecuteFallbackAndWait('LBC','input swipe 100 100 700 1500',1))
+            case "SSC":
+                if Press(CheckIf(ScreenShot(),'SSC')):
+                    pass
+                else:
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('SSC','input swipe 700 100 100 100',1))
             case "fordraig-B3F":
                 if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
                     pass
@@ -780,8 +793,10 @@ def Factory():
                 return None # 发生了错误
             
             targetPos = None
-            if (target == 'chest') and roi==None:
-                roi = [[0,208,900,1057],[0,636,137,222],[763,636,137,222], [336,208,228,77],[336,1168,228,97]]
+            if (target == 'chest'):
+                if roi==None:
+                    roi = [[0,0,900,1600]]
+                roi += [[0,0,900,208],[0,1265,900,335],[0,636,137,222],[763,636,137,222], [336,208,228,77],[336,1168,228,97]]
             if targetPos:=CheckIf(map,target,roi):
                 logger.info(f'找到了 {target}! {targetPos}')
                 if not roi:

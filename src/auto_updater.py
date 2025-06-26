@@ -37,7 +37,7 @@ class AutoUpdater:
                 print(f"更新检查出错: {e}")
             finally:
                 # 每10分钟检查一次（可根据需要调整）
-                time.sleep(1)
+                time.sleep(3600)
 
     def _check_update(self):
         """执行更新检查逻辑"""
