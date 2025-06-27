@@ -8,7 +8,7 @@ from auto_updater import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.1.8.1'
+__version__ = '1.1.9.0'
 
 OWNER = "arnold2957"
 REPO = "wvd"
