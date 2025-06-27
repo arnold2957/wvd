@@ -141,6 +141,7 @@ def Factory():
                     if image.shape == (900, 1600, 3):
                         logger.error(f"截图尺寸错误: 当前{image.shape}, 为横屏.")
                         image = cv2.transpose(image)
+                        restartGame(skipScreenShot = True) # 这里直接重启, 会被外部接收到重启的exception
                     else:
                         logger.error(f"截图尺寸错误: 期望(1600,900,3), 实际{image.shape}.")
                         raise RuntimeError("截图尺寸异常")
@@ -349,15 +350,18 @@ def Factory():
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
-    def restartGame():
+    def restartGame(skipScreenShot = False):
         nonlocal setting
         setting._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         setting._MAXRETRYLIMIT = min(50, setting._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-        file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
-        cv2.imwrite(file_path, ScreenShot())
-        logger.info(f"重启前截图已保存在{file_path}中.")
+        if not skipScreenShot:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
+            file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
+            cv2.imwrite(file_path, ScreenShot())
+            logger.info(f"重启前截图已保存在{file_path}中.")
+        else:
+            logger.info(f"因为外部设置, 跳过了重启前截图.")
 
         package_name = "jp.co.drecom.wizardry.daphne"
         mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
