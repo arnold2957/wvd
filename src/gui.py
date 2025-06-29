@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.1.9.2'
+__version__ = '1.2.0.0'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -116,7 +116,8 @@ class ConfigPanelApp:
 
     def updata_config(self):
         config = LoadConfigFromFile()
-        self.karma_adjust_var.set(config['_KARMAADJUST'])
+        if '_KARMAADJUST' in config:
+            self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
         self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
