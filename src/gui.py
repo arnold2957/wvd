@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog
-import json
 import os
 import logging
 from script import *
@@ -9,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.1.9.0'
+__version__ = '1.1.9.1'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -41,7 +40,7 @@ CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
-PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
+PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","FS","SB",]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -50,7 +49,7 @@ ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 class ConfigPanelApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry('450x470')
+        self.root.geometry('450x510')
         # self.root.resizable(False, False)
         self.root.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
@@ -75,6 +74,7 @@ class ConfigPanelApp:
             ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", 0],
             ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
             ["adb_port_var", tk.StringVar, "ADB_PORT", 5555],
+            ["last_version",tk.StringVar,"LAST_VERSION",""]
             ]
         
         self.config = LoadConfigFromFile()
@@ -93,6 +93,11 @@ class ConfigPanelApp:
         logger.info("**********************\n" \
                     f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
                     "**********************\n" )
+        
+        if self.last_version.get() != __version__:
+            ShowChangesLogWindow()
+            self.last_version.set(__version__)
+            #SetOneVarInConfig("LAST_VERSION",self.last_version.get())
         
         # 初始化自动更新
         AutoUpdater(self.root, OWNER, REPO, __version__)

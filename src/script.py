@@ -613,40 +613,38 @@ def Factory():
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
-                if (pos:=CheckIf(screen,'ambush')):
+                if (pos:=CheckIf(screen,'ambush') and setting._KARMAADJUST.startswith('-')):
                     new_str = None
-                    if setting._KARMAADJUST.startswith('-'):
-                        num_str = setting._KARMAADJUST[1:]
-                        if num_str.isdigit():
-                            num = int(num_str)
-                            if num != 0:
-                                new_str = f"-{num - 1}"
-                            else:
-                                new_str = f"+0"
-
+                    num_str = setting._KARMAADJUST[1:]
+                    if num_str.isdigit():
+                        num = int(num_str)
+                        if num != 0:
+                            new_str = f"-{num - 1}"
+                        else:
+                            new_str = f"+0"
                     if new_str is not None:
+                        logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
                         setting._KARMAADJUST = new_str
-                        Press(pos)
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                        Press(pos)
                         logger.info("伏击起手!")
                         # logger.info("Ambush! Always starts with Ambush.")
                         Sleep(2)
-                if (pos:=CheckIf(screen,'ignore')):
+                if (pos:=CheckIf(screen,'ignore') and setting._KARMAADJUST.startswith('+')):
                     new_str = None
-                    if setting._KARMAADJUST.startswith('+'):
-                        num_str = setting._KARMAADJUST[1:]
-                        if num_str.isdigit():
-                            num = int(num_str)
-                            if num != 0:
-                                new_str = f"+{num - 1}"
-                            else:
-                                new_str = f"-0"
-
+                    num_str = setting._KARMAADJUST[1:]
+                    if num_str.isdigit():
+                        num = int(num_str)
+                        if num != 0:
+                            new_str = f"+{num - 1}"
+                        else:
+                            new_str = f"-0"
                     if new_str is not None:
+                        logger.info(f"已经进行善恶值调整. 剩余次数:{new_str}")
                         setting._KARMAADJUST = new_str
                         Press(pos)
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
-                        logger.info("行善积德!")
+                        logger.info("积善行德!")
                         # logger.info("")
                         Sleep(2)
                 if Press(CheckIf(screen,'blessing')):
@@ -839,11 +837,12 @@ def Factory():
             if targetPos:=CheckIf(map,target,roi):
                 logger.info(f'找到了 {target}! {targetPos}')
                 if not roi:
+                    # 非固定视角的情况下, 跳过二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
-                Sleep(2)
-                Press([1,230])
-                targetPos = CheckIf(ScreenShot(),target,roi)
+                    Sleep(2)
+                    Press([1,230])
+                    targetPos = CheckIf(ScreenShot(),target,roi)
                 break # return targetPos
         return targetPos
     def StateMoving_CheckFrozen(): # return current DungeonState

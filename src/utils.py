@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, scrolledtext
 import json
 import os
 import logging
@@ -8,6 +8,7 @@ import sys
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
 # CONFIG. 保存和写入设置.
+# CHANGES LOG. 弹窗展示更新文档.
 # TOOLTIP. 鼠标悬停时的提示.
 
 ############################################
@@ -92,21 +93,64 @@ def LoadConfigFromFile():
                 loaded_config = json.load(f)
                 return loaded_config
         except json.JSONDecodeError:
-            logger.error("错误", f"无法解析 {CONFIG_FILE}。将使用默认配置。")
+            logger.error(f"错误: 无法解析 {CONFIG_FILE}。将使用默认配置。")
             return {}
         except Exception as e:
-            logger.error("错误", f"加载配置时发生错误: {e}。将使用默认配置。")
+            logger.error(f"错误: 加载配置时发生错误: {e}。将使用默认配置。")
             return {}
     else:
         return {}
     
 def SetOneVarInConfig(var, value):
-    data = SaveConfigToFile()
-    if var in data:
-        data[var] = value
-    else:
-        logger.error("错误", f"不存在变量{var}, 无法修改.")
+    data = LoadConfigFromFile()
+    data[var] = value
     SaveConfigToFile(data)
+
+###########################################
+CHANGES_LOG = "CHANGES_LOG.md"
+def ShowChangesLogWindow():
+    log_window = tk.Toplevel()
+    log_window.title("更新日志")
+    log_window.geometry("700x500")
+
+    log_window.lift()  # 提升到最上层
+    log_window.attributes('-topmost', True)  # 强制置顶
+    log_window.after(100, lambda: log_window.attributes('-topmost', False))
+    
+    # 创建滚动文本框
+    text_area = scrolledtext.ScrolledText(
+        log_window, 
+        wrap=tk.WORD,
+        font=("Segoe UI", 10),
+        padx=10,
+        pady=10
+    )
+    text_area.pack(fill=tk.BOTH, expand=True)
+    
+    # 禁用文本编辑功能
+    text_area.configure(state='disabled')
+    
+    # 尝试读取并显示Markdown文件
+    try:
+        # 替换为你的Markdown文件路径
+        with open(CHANGES_LOG, "r", encoding="utf-8") as file:
+            markdown_content = file.read()
+        
+        # 临时启用文本框以插入内容
+        text_area.configure(state='normal')
+        text_area.delete(1.0, tk.END)
+        text_area.insert(tk.INSERT, markdown_content)
+        text_area.configure(state='disabled')
+    
+    except FileNotFoundError:
+        text_area.configure(state='normal')
+        text_area.insert(tk.INSERT, f"错误：未找到{CHANGES_LOG}文件")
+        text_area.configure(state='disabled')
+    
+    except Exception as e:
+        text_area.configure(state='normal')
+        text_area.insert(tk.INSERT, f"读取文件时出错: {str(e)}")
+        text_area.configure(state='disabled')
     
 ###########################################
 class Tooltip:
