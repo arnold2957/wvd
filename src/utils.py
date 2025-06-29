@@ -1,0 +1,159 @@
+import tkinter as tk
+from tkinter import ttk
+import json
+import os
+import logging
+import sys
+
+# 基础模块包括:
+# LOGGER. 将输入写入到logger.txt文件中.
+# CONFIG. 保存和写入设置.
+# TOOLTIP. 鼠标悬停时的提示.
+
+############################################
+LOG_FILE_NAME = "log.txt"
+if os.path.exists(LOG_FILE_NAME):
+    os.remove(LOG_FILE_NAME)
+with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
+    pass
+
+class LoggerStream:
+    """自定义流，将输出重定向到logger"""
+    def __init__(self, logger, log_level):
+        self.logger = logger
+        self.log_level = log_level
+        self.buffer = ''  # 用于累积不完整的行
+    
+    def write(self, message):
+        # 累积消息直到遇到换行符
+        self.buffer += message
+        while '\n' in self.buffer:
+            line, self.buffer = self.buffer.split('\n', 1)
+            if line:  # 跳过空行
+                self.logger.log(self.log_level, line)
+    
+    def flush(self):
+        # 处理缓冲区中剩余的内容
+        if self.buffer:
+            self.logger.log(self.log_level, self.buffer)
+            self.buffer = ''
+# 创建logger
+logger = logging.getLogger('WvDASLogger')
+logger.setLevel(logging.DEBUG)
+# cmd文件句柄
+sys.stdout = LoggerStream(logger, logging.DEBUG)
+sys.stderr = LoggerStream(logger, logging.ERROR)
+# 文件句柄
+file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
+# tk组件句柄
+scrolled_text_formatter = logging.Formatter(
+    '%(message)s'
+)
+class ScrolledTextHandler(logging.Handler):
+    def __init__(self, text_widget):
+        super().__init__()
+        self.text_widget = text_widget
+        self.text_widget.config(state=tk.DISABLED)
+
+    def emit(self, record):
+        msg = self.format(record)
+        try:
+            self.text_widget.config(state=tk.NORMAL)
+            self.text_widget.insert(tk.END, msg + '\n')
+            self.text_widget.see(tk.END)
+            self.text_widget.config(state=tk.DISABLED)
+        except Exception:
+            self.handleError(record)
+############################################
+CONFIG_FILE = 'config.json'
+
+def SaveConfigToFile(config_data):
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=4)
+        logger.info("配置已保存。")
+        return True
+    except Exception as e:
+        logger.error(f"保存配置时发生错误: {e}")
+        return False
+
+
+def LoadConfigFromFile():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                loaded_config = json.load(f)
+                return loaded_config
+        except json.JSONDecodeError:
+            logger.error("错误", f"无法解析 {CONFIG_FILE}。将使用默认配置。")
+            return {}
+        except Exception as e:
+            logger.error("错误", f"加载配置时发生错误: {e}。将使用默认配置。")
+            return {}
+    else:
+        return {}
+    
+def SetOneVarInConfig(var, value):
+    data = SaveConfigToFile()
+    if var in data:
+        data[var] = value
+    else:
+        logger.error("错误", f"不存在变量{var}, 无法修改.")
+    SaveConfigToFile(data)
+    
+###########################################
+class Tooltip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event=None):
+        if self.tooltip_window:
+            return
+            
+        # 获取widget的位置和尺寸
+        widget_x = self.widget.winfo_rootx()
+        widget_y = self.widget.winfo_rooty()
+        widget_width = self.widget.winfo_width()
+        widget_height = self.widget.winfo_height()
+        
+        self.tooltip_window = tk.Toplevel(self.widget)
+        self.tooltip_window.wm_overrideredirect(True)  # 移除窗口装饰
+        self.tooltip_window.attributes("-alpha", 0.95)  # 设置透明度
+        
+        # 创建标签显示文本
+        label = ttk.Label(
+            self.tooltip_window, 
+            text=self.text, 
+            background="#ffffe0", 
+            relief="solid", 
+            borderwidth=1,
+            padding=(8, 4),
+            font=("Arial", 10),
+            justify="left",
+            wraplength=300  # 自动换行宽度
+        )
+        label.pack()
+        
+        # 计算最佳显示位置（默认在widget下方）
+        x = widget_x + widget_width + 2
+        y = widget_y + widget_height//2
+        
+        # 设置最终位置并显示
+        self.tooltip_window.wm_geometry(f"+{int(x)}+{int(y)}")
+        self.tooltip_window.deiconify()
+
+    def hide_tooltip(self, event=None):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None

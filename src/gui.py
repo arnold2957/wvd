@@ -5,6 +5,7 @@ import os
 import logging
 from script import *
 from auto_updater import *
+from utils import *
 from threading import Thread,Event
 import shutil
 
@@ -13,16 +14,11 @@ __version__ = '1.1.9.0'
 OWNER = "arnold2957"
 REPO = "wvd"
 ############################################
-CONFIG_FILE = 'config.json'
-LOG_FILE_NAME = "log.txt"
-if os.path.exists(LOG_FILE_NAME):
-    os.remove(LOG_FILE_NAME)
-with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
-    pass
 RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
 if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
     shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
+
 ############################################
 # --- 预定义的技能和目标 ---
 DUNGEON_TARGETS = ["[刷图]水路一号街",
@@ -49,62 +45,7 @@ PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","SB",]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
-############################################
-# 重定向logger流
-class LoggerStream:
-    """自定义流，将输出重定向到logger"""
-    def __init__(self, logger, log_level):
-        self.logger = logger
-        self.log_level = log_level
-        self.buffer = ''  # 用于累积不完整的行
-    
-    def write(self, message):
-        # 累积消息直到遇到换行符
-        self.buffer += message
-        while '\n' in self.buffer:
-            line, self.buffer = self.buffer.split('\n', 1)
-            if line:  # 跳过空行
-                self.logger.log(self.log_level, line)
-    
-    def flush(self):
-        # 处理缓冲区中剩余的内容
-        if self.buffer:
-            self.logger.log(self.log_level, self.buffer)
-            self.buffer = ''
-# 创建logger
-logger = logging.getLogger('WvDASLogger')
-logger.setLevel(logging.DEBUG)
-# cmd文件句柄
-sys.stdout = LoggerStream(logger, logging.DEBUG)
-sys.stderr = LoggerStream(logger, logging.ERROR)
-# 文件句柄
-file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
-file_handler.setLevel(logging.DEBUG)
-file_formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-# tk组件句柄
-scrolled_text_formatter = logging.Formatter(
-    '%(message)s'
-)
-class ScrolledTextHandler(logging.Handler):
-    def __init__(self, text_widget):
-        super().__init__()
-        self.text_widget = text_widget
-        self.text_widget.config(state=tk.DISABLED)
 
-    def emit(self, record):
-        msg = self.format(record)
-        try:
-            self.text_widget.config(state=tk.NORMAL)
-            self.text_widget.insert(tk.END, msg + '\n')
-            self.text_widget.see(tk.END)
-            self.text_widget.config(state=tk.DISABLED)
-        except Exception:
-            self.handleError(record)
 ############################################
 class ConfigPanelApp:
     def __init__(self, root):
@@ -116,28 +57,29 @@ class ConfigPanelApp:
         self.adb_active = False
 
         self.thread = None
-        self.continue_trigger = Event()
         self.stop_event = Event()
 
         # --- ttk Style ---
         self.style = ttk.Style()
-        # 你可以尝试不同的主题, 如 'clam', 'alt', 'default', 'classic'
-        # self.style.theme_use('clam')
         self.style.configure("Active.TButton", foreground="green")
-        # "Inactive.TButton" 可以不特别定义，恢复到默认的 "TButton" 即可
-        # 或者显式定义: self.style.configure("Inactive.TButton", foreground="black") # 或其他默认颜色
-
-        self.config = self.load_config()
 
         # --- UI 变量 ---
-        self.farm_target_var = tk.StringVar(value=self.config.get("_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""))
-        self.randomly_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYOPENCHEST", False))
-        self.randomly_people_open_chest_var = tk.BooleanVar(value=self.config.get("_RANDOMLYPERSONOPENCHEST", False))
-        self.skip_recover_var = tk.BooleanVar(value=self.config.get("_SKIPCOMBATRECOVER", False))
-        self.system_auto_combat_var = tk.BooleanVar(value=self.config.get("SYSTEM_AUTO_COMBAT_ENABLED", False))
-        self.rest_intervel_var = tk.StringVar(value=self.config.get("_RESTINTERVEL", 0))
-        self.adb_path_var = tk.StringVar(value=self.config.get("ADB_PATH", ""))
-        self.adb_port_var = tk.StringVar(value=self.config.get("ADB_PORT", 5555))
+        self.var_list = [
+            # var_name, type, config_name, default_value
+            ["farm_target_var", tk.StringVar, "_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""],
+            ["randomly_open_chest_var", tk.BooleanVar, "_RANDOMLYOPENCHEST", False],
+            ["randomly_people_open_chest_var", tk.BooleanVar, "_RANDOMLYPERSONOPENCHEST", False],
+            ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
+            ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
+            ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
+            ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", 0],
+            ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
+            ["adb_port_var", tk.StringVar, "ADB_PORT", 5555],
+            ]
+        
+        self.config = LoadConfigFromFile()
+        for attr_name, var_type, var_config_name, var_default_value in self.var_list:
+            setattr(self, attr_name, var_type(value = self.config.get(var_config_name,var_default_value)))
 
         self._spell_skill_config_internal = list(self.config.get("_SPELLSKILLCONFIG", []))
 
@@ -149,61 +91,27 @@ class ConfigPanelApp:
         self.update_current_skills_display() # 初始化时更新技能显示
 
         logger.info("**********************\n" \
-                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356"\
+                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
                     "**********************\n" )
         
         # 初始化自动更新
         AutoUpdater(self.root, OWNER, REPO, __version__)
-        
-    def load_config(self):
-        if os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                    loaded_config = json.load(f)
-                    # 确保关键字段存在
-                    defaults = self.get_default_config()
-                    for key, value in defaults.items():
-                        loaded_config.setdefault(key, value)
-                    return loaded_config
-            except json.JSONDecodeError:
-                messagebox.showerror("错误", f"无法解析 {CONFIG_FILE}。将使用默认配置。")
-                return self.get_default_config()
-            except Exception as e:
-                messagebox.showerror("错误", f"加载配置时发生错误: {e}。将使用默认配置。")
-                return self.get_default_config()
-        else:
-            return self.get_default_config()
-
-    def get_default_config(self):
-        return {
-            "ADB_PATH": "",
-            "_FARMTARGET": DUNGEON_TARGETS[0] if DUNGEON_TARGETS else "默认地牢",
-            "_RANDOMLYOPENCHEST": False,
-            "_SPELLSKILLCONFIG": [],
-            "SYSTEM_AUTO_COMBAT_ENABLED": False
-        }
 
     def save_config(self):
-        self.config["ADB_PATH"] = self.adb_path_var.get()
-        self.config["ADB_PORT"] = self.adb_port_var.get()
-        self.config["_FARMTARGET"] = self.farm_target_var.get()
-        self.config["_RANDOMLYOPENCHEST"] = self.randomly_open_chest_var.get()
-        self.config["_RANDOMLYPERSONOPENCHEST"] = self.randomly_people_open_chest_var.get()
-        self.config["SYSTEM_AUTO_COMBAT_ENABLED"] = self.system_auto_combat_var.get()
-        self.config["_RESTINTERVEL"] = self.rest_intervel_var.get()
-        self.config["_SKIPCOMBATRECOVER"] = self.skip_recover_var.get()
+        for attr_name, _, var_config_name, _ in self.var_list:
+            self.config[var_config_name] = getattr(self, attr_name).get()
 
+        # 统计启用技能
         if self.system_auto_combat_var.get():
             self.config["_SPELLSKILLCONFIG"] = []
         else:
             self.config["_SPELLSKILLCONFIG"] = list(set(self._spell_skill_config_internal))
+        
+        SaveConfigToFile(self.config)
 
-        try:
-            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-                json.dump(self.config, f, ensure_ascii=False, indent=4)
-            logger.info("配置已保存。")
-        except Exception as e:
-            messagebox.showerror("错误", f"保存配置时发生错误: {e}")
+    def updata_config(self):
+        config = LoadConfigFromFile()
+        self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
         self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
@@ -216,9 +124,10 @@ class ConfigPanelApp:
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        # 第0行 设定adb
+        #设定adb
+        row_counter = 0
         frame_row0 = ttk.Frame(main_frame)
-        frame_row0.grid(row=0, column=0, sticky="ew", pady=5)  # 首行框架
+        frame_row0.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 首行框架
         self.adb_status_label = ttk.Label(frame_row0)
         self.adb_status_label.grid(row=0, column=0,)
         # 隐藏的Entry用于存储变量
@@ -249,13 +158,12 @@ class ConfigPanelApp:
         
         self.adb_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
-
         ttk.Label(frame_row0, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
-        vcmd = root.register(lambda x: ((x=="")or(x.isdigit())))
+        vcmd_non_neg = root.register(lambda x: ((x=="")or(x.isdigit())))
         self.adb_port_entry = ttk.Entry(frame_row0,
                                         textvariable=self.adb_port_var,
                                         validate="key",
-                                        validatecommand=(vcmd, '%P'),
+                                        validatecommand=(vcmd_non_neg, '%P'),
                                         width=5)
         self.adb_port_entry.grid(row=0, column=3)
         self.button_save_adb_port = ttk.Button(
@@ -266,20 +174,23 @@ class ConfigPanelApp:
             )
         self.button_save_adb_port.grid(row=0, column=4)
 
-        # 第1行 分割线.
-        ttk.Separator(main_frame, orient='horizontal').grid(row=1, column=0, columnspan=3, sticky='ew', pady=10)
+        # 分割线.
+        row_counter += 1
+        ttk.Separator(main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
-        # 第2行 地下城目标
+        # 地下城目标
+        row_counter += 1
         frame_row2 = ttk.Frame(main_frame)
-        frame_row2.grid(row=2, column=0, sticky="ew", pady=5)  # 第二行框架
+        frame_row2.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         ttk.Label(frame_row2, text="地下城目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.farm_target_combo = ttk.Combobox(frame_row2, textvariable=self.farm_target_var, values=DUNGEON_TARGETS, state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
 
-        # 第3行 开箱子设置
+        # 开箱子设置
+        row_counter += 1
         frame_row3 = ttk.Frame(main_frame)
-        frame_row3.grid(row=3, column=0, sticky="ew", pady=5)  # 第二行框架
+        frame_row3.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
             frame_row3,
             text="智能开箱(测试版)",
@@ -295,25 +206,25 @@ class ConfigPanelApp:
         )
         self.random_people_open_check.grid(row=0, column=1,  sticky=tk.W, pady=5)
 
-
-
-        # 第4行 跳过恢复
+        # 跳过恢复
+        row_counter += 1
         self.skip_recover_check = ttk.Checkbutton(
             main_frame,
             text="不进行战后恢复",
             variable=self.skip_recover_var,
             command=self.save_config
         )
-        self.skip_recover_check.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.skip_recover_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
-        # 第5行 休息设置
+        # 休息设置
+        row_counter += 1
         frame_row5 = ttk.Frame(main_frame)
-        frame_row5.grid(row=5, column=0, sticky="ew", pady=5)
+        frame_row5.grid(row=row_counter, column=0, sticky="ew", pady=5)
         ttk.Label(frame_row5, text="旅店休息间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.rest_intervel_entry = ttk.Entry(frame_row5,
                                              textvariable=self.rest_intervel_var,
                                              validate="key",
-                                             validatecommand=(vcmd, '%P'),
+                                             validatecommand=(vcmd_non_neg, '%P'),
                                              width=8)
         self.rest_intervel_entry.grid(row=0, column=1)
         self.button_save_rest_intervel = ttk.Button(
@@ -324,10 +235,34 @@ class ConfigPanelApp:
             )
         self.button_save_rest_intervel.grid(row=0, column=2)
 
-        # 第6行 启动! 以及继续
+        # 善恶设置
+        row_counter += 1
+        frame_row6 = ttk.Frame(main_frame)
+        frame_row6.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        ttk.Label(frame_row6, text="待调整的善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        vcmd_digit_with_symbol = root.register(lambda x: x == "" or x == '-' or x == '+' or (x.isdigit() and len(x)<=2) or (x[0] in ['+', '-'] and x[1:].isdigit() and len(x) > 1 and len(x)<=3))
+        self.karma_adjust_entry = ttk.Entry(frame_row6,
+                                             textvariable=self.karma_adjust_var,
+                                             validate="key",
+                                             validatecommand=(vcmd_digit_with_symbol, '%P'),
+                                             width=8)
+        self.karma_adjust_entry.grid(row=0, column=1)
+        def standardize_karma_input():
+          if self.karma_adjust_var.get().isdigit():
+              valuestr = self.karma_adjust_var.get()
+              self.karma_adjust_var.set('+' + valuestr)
+        self.button_save_karma_adjust = ttk.Button(
+            frame_row6,
+            text="保存",
+            command = lambda: (standardize_karma_input(),self.save_config()),
+            width=5
+            )
+        self.button_save_karma_adjust.grid(row=0, column=2)
+
+        # 启动!
+        row_counter += 1
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=6, column=0, columnspan=2, pady=5, sticky=tk.W)
-        
+        button_frame.grid(row=row_counter, column=0, columnspan=2, pady=5, sticky=tk.W)
         s = ttk.Style()
         s.configure('start.TButton', font=('微软雅黑', 15))
         self.start_stop_btn = ttk.Button(
@@ -338,32 +273,28 @@ class ConfigPanelApp:
         )
         self.start_stop_btn.grid(row=0, column=0, padx=2)
 
-        self.continue_btn = ttk.Button(
-            button_frame,
-            text="继续",
-            command=self.continue_execution,
-        )
-        self.continue_btn.grid(row=0, column=1, padx=2)
-        self.continue_btn.grid_remove()
+        # 分割线
+        row_counter += 1
+        ttk.Separator(main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
-        # 第7行 分割线
-        ttk.Separator(main_frame, orient='horizontal').grid(row=7, column=0, columnspan=3, sticky='ew', pady=10)
+        # 技能配置 文本
+        row_counter += 1
+        ttk.Label(main_frame, text="技能配置:", font=('Arial', 10, 'bold')).grid(row=row_counter, column=0, sticky=tk.W, pady=5)
 
-        # 第8行 技能配置 文本
-        ttk.Label(main_frame, text="技能配置:", font=('Arial', 10, 'bold')).grid(row=8, column=0, sticky=tk.W, pady=5)
-
-        # 第9行 系统自动战斗
+        # 系统自动战斗
+        row_counter += 1
         self.system_auto_check = ttk.Checkbutton(
             main_frame,
             text="启用系统自动战斗",
             variable=self.system_auto_combat_var,
             command=self.toggle_system_auto_combat
         )
-        self.system_auto_check.grid(row=9, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
-        # 第10行 技能按钮框架
+        # 技能按钮框架
+        row_counter += 1
         self.skills_button_frame = ttk.Frame(main_frame)
-        self.skills_button_frame.grid(row=10, column=0, columnspan=2, sticky=tk.W)
+        self.skills_button_frame.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W)
 
         self.btn_enable_all = ttk.Button(self.skills_button_frame, text="启用所有技能", command=lambda: self.update_spell_config(ALL_SKILLS, "all"))
         self.btn_enable_all.grid(row=0, column=0, padx=2, pady=2)
@@ -389,10 +320,8 @@ class ConfigPanelApp:
         self.btn_enable_cc.grid(row=2, column=1, padx=2, pady=2)
         self.skill_buttons_map.append({"button": self.btn_enable_cc, "skills": CC_SKILLS, "name": "cc_skills"})
 
-        # 第11行 技能选择结果展示
+        # (不使用)技能选择结果展示
         self.current_skills_label_var = tk.StringVar()
-        current_skills_display = ttk.Label(main_frame, textvariable=self.current_skills_label_var, wraplength=230)
-        # current_skills_display.grid(row=11, column=0, columnspan=2, sticky=tk.W+tk.E, pady=5)
 
     def update_current_skills_display(self):
         if self.system_auto_combat_var.get():
@@ -494,29 +423,29 @@ class ConfigPanelApp:
                 else:
                     button.configure(style="TButton") # 恢复默认样式
     def set_controls_state(self, state):
+        self.button_and_entry = [
+            self.adb_path_change_button,
+            self.random_chest_check,
+            self.random_people_open_check,
+            self.system_auto_check,
+            self.skip_recover_check,
+            self.rest_intervel_entry,
+            self.button_save_rest_intervel,
+            self.karma_adjust_entry,
+            self.button_save_karma_adjust,
+            self.adb_port_entry,
+            self.button_save_adb_port,
+            ]
+
         if state == tk.DISABLED:
-            self.adb_path_change_button.configure(state="disabled")
             self.farm_target_combo.configure(state="disabled")
-            self.random_chest_check.configure(state="disabled")
-            self.random_people_open_check.configure(state="disabled")
-            self.system_auto_check.configure(state="disabled")
-            self.skip_recover_check.configure(state="disabled")
-            self.rest_intervel_entry.configure(state="disabled")
-            self.button_save_rest_intervel.configure(state="disabled")
-            self.adb_port_entry.configure(state='disabled')
-            self.button_save_adb_port.configure(state='disabled')
+            for widget in self.button_and_entry:
+                widget.configure(state="disabled")
         else:
-            self.adb_path_change_button.configure(state="normal")
-            self.farm_target_combo.configure(state="readonly") 
-            self.random_chest_check.configure(state="normal")
-            self.random_people_open_check.configure(state="normal")
-            self.system_auto_check.configure(state="normal")
-            self.skip_recover_check.configure(state="normal")
-            self.rest_intervel_entry.configure(state="normal")
-            self.button_save_rest_intervel.configure(state="normal")
-            self.adb_port_entry.configure(state='normal')
-            self.button_save_adb_port.configure(state='normal')
-        """设置所有控件的状态"""
+            self.farm_target_combo.configure(state="readonly")
+            for widget in self.button_and_entry:
+                widget.configure(state="normal")
+
         if not self.system_auto_combat_var.get():
             widgets = [
                 *[item["button"] for item in self.skill_buttons_map]
@@ -544,11 +473,7 @@ class ConfigPanelApp:
         logger.info("已中断.")
         self.start_stop_btn.config(text="脚本, 启动!")
         self.set_controls_state(tk.NORMAL)
-        self.continue_btn.grid_remove()
-
-    def continue_execution(self):
-        self.continue_btn.grid_remove()
-        self.continue_trigger.set()
+        self.updata_config()
 
     def dungeonLoop(self):
         logger.info(f"目标地下城:{self.farm_target_var.get()}")
@@ -561,6 +486,7 @@ class ConfigPanelApp:
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
+        setting._KARMAADJUST = str(self.karma_adjust_var.get())
         setting._LOGGER = logger
         setting._ADBPATH = self.adb_path_var.get()
         setting._ADBPORT = self.adb_port_var.get()

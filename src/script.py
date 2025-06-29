@@ -12,6 +12,7 @@ import os
 import subprocess
 import socket
 import time
+from utils import *
 
 class FarmSetting:
     _FARMTARGET = "shiphold"
@@ -24,6 +25,7 @@ class FarmSetting:
     _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
+    _RANDOMLYPERSONOPENCHEST = False
     _FORCESTOPING = None
     _FINISHINGCALLBACK = None
     _COMBATSPD = False
@@ -39,6 +41,7 @@ class FarmSetting:
     _ADBPATH = None
     _ADBPORT = None
     _MAXRETRYLIMIT = 20
+    _KARMAADJUST = "+0"
 
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
@@ -610,10 +613,42 @@ def Factory():
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
-                if Press(CheckIf(screen,'ambush')):
-                    logger.info("伏击起手!")
-                    # logger.info("Ambush! Always starts with Ambush.")
-                    Sleep(2)
+                if (pos:=CheckIf(screen,'ambush')):
+                    new_str = None
+                    if setting._KARMAADJUST.startswith('-'):
+                        num_str = setting._KARMAADJUST[1:]
+                        if num_str.isdigit():
+                            num = int(num_str)
+                            if num != 0:
+                                new_str = f"-{num - 1}"
+                            else:
+                                new_str = f"+0"
+
+                    if new_str is not None:
+                        setting._KARMAADJUST = new_str
+                        Press(pos)
+                        SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                        logger.info("伏击起手!")
+                        # logger.info("Ambush! Always starts with Ambush.")
+                        Sleep(2)
+                if (pos:=CheckIf(screen,'ignore')):
+                    new_str = None
+                    if setting._KARMAADJUST.startswith('+'):
+                        num_str = setting._KARMAADJUST[1:]
+                        if num_str.isdigit():
+                            num = int(num_str)
+                            if num != 0:
+                                new_str = f"+{num - 1}"
+                            else:
+                                new_str = f"-0"
+
+                    if new_str is not None:
+                        setting._KARMAADJUST = new_str
+                        Press(pos)
+                        SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                        logger.info("行善积德!")
+                        # logger.info("")
+                        Sleep(2)
                 if Press(CheckIf(screen,'blessing')):
                     logger.info("我要选安戈拉的祝福!...好吧随便选一个吧.")
                     # logger.info("Blessing of... of course Angora! Fine, anything.")
