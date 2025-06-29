@@ -138,7 +138,9 @@ jobs:
       shell: pwsh
       run: |
         # 使用系统自带的Compress-Archive创建ZIP
+        Copy-Item -Path './CHANGES_LOG.md' -Destination './dist/wvd/' -Force
         Compress-Archive -Path ./dist/wvd/* -DestinationPath ./dist/wvd.zip -Force
+        Remove-Item -Path './dist/wvd/CHANGES_LOG.md'  # 清理临时文件
         Get-ChildItem dist/wvd.zip
     
     - name: Calculate MD5 and prepare release

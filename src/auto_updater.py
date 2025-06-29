@@ -57,8 +57,27 @@ class AutoUpdater:
             print(f"更新检查异常: {e}")
 
     def _is_newer_version(self, new_version):
-        print(new_version,self.current_version)
-        return new_version > self.current_version
+        # 分割版本号
+        new_parts = new_version.split('.')[:3]  # 只取前三个部分
+        current_parts = self.current_version.split('.')[:3]  # 只取前三个部分
+        
+        # 确保两个列表都有3个元素（不足的补0）
+        while len(new_parts) < 3:
+            new_parts.append('0')
+        while len(current_parts) < 3:
+            current_parts.append('0')
+        
+        # 逐段比较版本号
+        for i in range(3):
+            new_num = int(new_parts[i])
+            current_num = int(current_parts[i])
+            
+            if new_num > current_num:
+                return True
+            elif new_num < current_num:
+                return False
+        
+        return False  # 所有部分都相等
 
     def _show_update_prompt(self, update_data):
         """显示更新提示对话框"""
