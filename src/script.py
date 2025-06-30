@@ -21,11 +21,10 @@ class FarmSetting:
     _COUNTERDUNG = 0
     _COUNTERCOMBAT = 0
     _COUNTERCHEST = 0
-    _COUNTEROPENCHEST = 0
     _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
     _RANDOMLYOPENCHEST = True
-    _RANDOMLYPERSONOPENCHEST = False
+    _WHOWILLOPENIT = 0
     _FORCESTOPING = None
     _FINISHINGCALLBACK = None
     _COMBATSPD = False
@@ -927,11 +926,11 @@ def Factory():
             scn = ScreenShot()
             Press(CheckIf(scn,'chestFlag'))
             if CheckIf(scn,'whowillopenit'):
-                if setting._RANDOMLYPERSONOPENCHEST or tryOpenCounter>MSXTRYOPEN:
-                    Press([200+(setting._COUNTEROPENCHEST%3)*200, 1200+((setting._COUNTEROPENCHEST)//3)%2*150])
+                if tryOpenCounter>MSXTRYOPEN or setting._WHOWILLOPENIT == 0:
+                    whowillopenit = tryOpenCounter # 如果超过尝试次数或者根本就是设置了随机开箱, 那么用尝试次数作为序号
                 else:
-                    Press([200,1200])
-                setting._COUNTEROPENCHEST += 1
+                    whowillopenit = setting._WHOWILLOPENIT - 1 # 否则, 使用指定的序号
+                Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
                 Sleep(1)
             Press([1,1])
             if CheckIf(ScreenShot(),'chestOpening'):

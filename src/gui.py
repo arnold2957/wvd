@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.0.2'
+__version__ = '1.2.0.3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -67,7 +67,7 @@ class ConfigPanelApp:
             # var_name, type, config_name, default_value
             ["farm_target_var", tk.StringVar, "_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""],
             ["randomly_open_chest_var", tk.BooleanVar, "_RANDOMLYOPENCHEST", False],
-            ["randomly_people_open_chest_var", tk.BooleanVar, "_RANDOMLYPERSONOPENCHEST", False],
+            ["who_will_open_it_var", tk.IntVar,"_WHOWILLOPENIT",0],
             ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
@@ -210,13 +210,30 @@ class ConfigPanelApp:
             command=self.save_config
         )
         self.random_chest_check.grid(row=0, column=0,  sticky=tk.W, pady=5)
-        self.random_people_open_check = ttk.Checkbutton(
+        ttk.Label(frame_row3, text="| 开箱人选:").grid(row=0, column=1, sticky=tk.W, pady=5)
+        self.open_chest_mapping = {
+            0:"随机",
+            1:"左上",
+            2:"中上",
+            3:"右上",
+            4:"左下",
+            5:"中下",
+            6:"右下",
+        }
+        self.who_will_open_text_var = tk.StringVar(value=self.open_chest_mapping[self.who_will_open_it_var.get()])
+        self.who_will_open_combobox = ttk.Combobox(
             frame_row3,
-            text="开箱时随机人选",
-            variable=self.randomly_people_open_chest_var,
-            command=self.save_config
+            textvariable=self.who_will_open_text_var,  # 绑定变量
+            values=list(self.open_chest_mapping.values()),  # 使用中文选项
+            state="readonly",  # 设置为只读（只能选择）
+            width=4
         )
-        self.random_people_open_check.grid(row=0, column=1,  sticky=tk.W, pady=5)
+        self.who_will_open_combobox.grid(row=0, column=2, sticky=tk.W, pady=5)
+        def handle_open_chest_selection(event = None):
+            open_chest_reverse_mapping = {v: k for k, v in self.open_chest_mapping.items()}
+            self.who_will_open_it_var.set(open_chest_reverse_mapping[self.who_will_open_text_var.get()])
+            self.save_config()
+        self.who_will_open_combobox.bind("<<ComboboxSelected>>", handle_open_chest_selection)
 
         # 跳过恢复
         row_counter += 1
@@ -251,22 +268,37 @@ class ConfigPanelApp:
         row_counter += 1
         frame_row6 = ttk.Frame(main_frame)
         frame_row6.grid(row=row_counter, column=0, sticky="ew", pady=5)
-        ttk.Label(frame_row6, text="待调整的善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        vcmd_digit_with_symbol = root.register(lambda x: x == "" or x == '-' or x == '+' or (x.isdigit() and len(x)<=2) or (x[0] in ['+', '-'] and x[1:].isdigit() and len(x) > 1 and len(x)<=3))
-        self.karma_adjust_entry = ttk.Entry(frame_row6,
-                                             textvariable=self.karma_adjust_var,
-                                             validate="key",
-                                             validatecommand=(vcmd_digit_with_symbol, '%P'),
-                                             width=8)
-        self.karma_adjust_entry.grid(row=0, column=1)
-
-        self.button_save_karma_adjust = ttk.Button(
+        ttk.Label(frame_row6, text=f"善恶倾向:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.karma_adjust_mapping = {
+            "维持现状": "+0",
+            "变得善良": "+17",
+            "变得邪恶": "-17",
+            }
+        times = int(self.karma_adjust_var.get())
+        if times == 0:
+            self.karma_adjust_text_var = tk.StringVar(value = "维持现状")
+        elif times > 0:
+            self.karma_adjust_text_var = tk.StringVar(value = "变得善良")
+        elif times < 0:
+            self.karma_adjust_text_var = tk.StringVar(value = "变得邪恶")
+        self.karma_adjust_combobox = ttk.Combobox(
             frame_row6,
-            text="保存",
-            command = self.save_config(),
-            width=5
-            )
-        self.button_save_karma_adjust.grid(row=0, column=2)
+            textvariable=self.karma_adjust_text_var,  # 绑定变量
+            values=list(self.karma_adjust_mapping.keys()),  # 使用中文选项
+            state="readonly",  # 设置为只读（只能选择）
+            width=8
+        )
+        self.karma_adjust_combobox.grid(row=0, column=1, sticky=tk.W, pady=5)
+        def handle_karma_adjust_selection(event = None):
+            karma_adjust_left = int(self.karma_adjust_var.get())
+            karma_adjust_want = int(self.karma_adjust_mapping[self.karma_adjust_text_var.get()])
+            if (karma_adjust_left == 0 and karma_adjust_want == 0) or (karma_adjust_left*karma_adjust_want > 0):
+                return
+            self.karma_adjust_var.set(self.karma_adjust_mapping[self.karma_adjust_text_var.get()])
+            self.save_config()
+        self.karma_adjust_combobox.bind("<<ComboboxSelected>>", handle_karma_adjust_selection)
+        ttk.Label(frame_row6, text="剩余次数:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row6, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
 
         # 启动!
         row_counter += 1
@@ -435,13 +467,12 @@ class ConfigPanelApp:
         self.button_and_entry = [
             self.adb_path_change_button,
             self.random_chest_check,
-            self.random_people_open_check,
+            self.who_will_open_combobox,
             self.system_auto_check,
             self.skip_recover_check,
             self.rest_intervel_entry,
             self.button_save_rest_intervel,
-            self.karma_adjust_entry,
-            self.button_save_karma_adjust,
+            self.karma_adjust_combobox,
             self.adb_port_entry,
             self.button_save_adb_port,
             ]
@@ -489,7 +520,7 @@ class ConfigPanelApp:
         setting = FarmSetting()
         setting._SYSTEMAUTOCOMBAT = self.system_auto_combat_var.get()
         setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
-        setting._RANDOMLYPERSONOPENCHEST = self.randomly_people_open_chest_var.get()
+        setting._WHOWILLOPENIT = self.who_will_open_it_var.get()
         setting._SKIPCOMBATRECOVER = self.skip_recover_var.get()
         setting._FORCESTOPING = self.stop_event
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
