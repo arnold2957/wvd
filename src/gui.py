@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.0.1'
+__version__ = '1.2.0.2'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -71,7 +71,7 @@ class ConfigPanelApp:
             ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
-            ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", 0],
+            ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
             ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
             ["adb_port_var", tk.StringVar, "ADB_PORT", 5555],
             ["last_version",tk.StringVar,"LAST_VERSION",""]
@@ -103,6 +103,12 @@ class ConfigPanelApp:
         AutoUpdater(self.root, OWNER, REPO, __version__)
 
     def save_config(self):
+        def standardize_karma_input():
+          if self.karma_adjust_var.get().isdigit():
+              valuestr = self.karma_adjust_var.get()
+              self.karma_adjust_var.set('+' + valuestr)
+        standardize_karma_input()
+
         for attr_name, _, var_config_name, _ in self.var_list:
             self.config[var_config_name] = getattr(self, attr_name).get()
 
@@ -253,14 +259,11 @@ class ConfigPanelApp:
                                              validatecommand=(vcmd_digit_with_symbol, '%P'),
                                              width=8)
         self.karma_adjust_entry.grid(row=0, column=1)
-        def standardize_karma_input():
-          if self.karma_adjust_var.get().isdigit():
-              valuestr = self.karma_adjust_var.get()
-              self.karma_adjust_var.set('+' + valuestr)
+
         self.button_save_karma_adjust = ttk.Button(
             frame_row6,
             text="保存",
-            command = lambda: (standardize_karma_input(),self.save_config()),
+            command = self.save_config(),
             width=5
             )
         self.button_save_karma_adjust.grid(row=0, column=2)

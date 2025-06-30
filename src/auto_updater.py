@@ -8,6 +8,62 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError
 import subprocess
 import time
+from tkinter import ttk
+import tkinter as tk
+
+
+class CancelException(Exception):
+    """自定义取消异常"""
+    pass
+
+class Progressbar:
+    def __init__(self,parent, title="进度", width=300):
+        self.canceled = False
+        self.window = tk.Toplevel(parent)
+        self.window.title(title)
+        self.window.geometry(f"{width}x100")
+        self.window.protocol("WM_DELETE_WINDOW", self._on_cancel)
+        
+        # 创建进度条
+        self.bar = ttk.Progressbar(self.window, length=width-20, mode="determinate")
+        self.bar.pack(pady=20)
+        
+        # 创建取消按钮
+        self.btn_cancel = tk.Button(self.window, text="取消", command=self._on_cancel)
+        self.btn_cancel.pack(pady=5)
+        
+        # 启动独立线程运行GUI
+        self.thread = threading.Thread(target=self.window.mainloop, daemon=True)
+        self.thread.start()
+
+    def _on_cancel(self):
+        """取消按钮回调函数"""
+        self.canceled = True
+        self.window.quit()
+        self.window.destroy()
+
+    @property
+    def percent(self):
+        """获取当前进度值"""
+        return self.bar["value"] / 100
+
+    @percent.setter
+    def percent(self, value):
+        """设置进度值并检查取消状态"""
+        if self.canceled:
+            raise CancelException("用户取消操作")
+        
+        self.bar["value"] = value * 100
+        self.window.update()
+        
+        if self.canceled:
+            raise CancelException("用户取消操作")
+
+    def destroy(self):
+        """销毁窗口"""
+        if not self.canceled:
+            self.window.quit()
+            self.window.destroy()
 
 class AutoUpdater:
     def __init__(self, tk, github_user, github_repo, current_version):
@@ -88,6 +144,61 @@ class AutoUpdater:
         else:
             self.is_updating = False
 
+    def _download_bar_and_retry(self, download_url,archive_path):
+        max_retries = 3
+        retry_count = 0
+        success = False
+
+        while retry_count <= max_retries and not success:
+            try:
+                # 打开网络连接
+                with urlopen(download_url) as response:
+                    # 获取文件总大小（字节）
+                    total_size = int(response.headers.get('Content-Length', 0))
+                    
+                    # 创建进度条（标题+总大小）
+                    pb = Progressbar(self.tk,"文件下载", 400)
+                    
+                    # 打开本地文件
+                    with open(archive_path, 'wb') as out_file:
+                        downloaded = 0
+                        # 分块读取数据（每次8KB）
+                        while True:
+                            chunk = response.read(8192)  # 8KB缓冲区
+                            if not chunk:
+                                break  # 数据读取完成
+                            
+                            # 写入本地文件
+                            out_file.write(chunk)
+                            downloaded += len(chunk)
+                            
+                            # 更新进度条（避免除零错误）
+                            if total_size > 0:
+                                pb.percent = downloaded / total_size
+                        
+                        # 下载完成标记
+                        success = True
+                        
+                # 销毁进度条（仅在成功时）
+                pb.destroy()
+                
+            except (URLError, IOError, ConnectionResetError) as e:
+                # 网络或IO异常处理
+                retry_count += 1
+                
+                if retry_count > max_retries:
+                    # 重试次数耗尽，抛出原始异常
+                    raise e
+                else:
+                    # 显示重试信息
+                    print(f"下载中断，正在重试 ({retry_count}/{max_retries})...")
+                    time.sleep(2)  # 重试前等待2秒
+                    
+            finally:
+                # 确保每次异常后销毁进度条
+                if 'pb' in locals() and not success:
+                    pb.destroy()
+
     def _download_and_apply_update(self, update_data):
         try:
             # 创建临时目录
@@ -99,8 +210,7 @@ class AutoUpdater:
             archive_name = os.path.basename(download_url)
             archive_path = os.path.join(temp_dir, archive_name)
             
-            with urlopen(download_url) as response, open(archive_path, 'wb') as out_file:
-                out_file.write(response.read())
+            self._download_bar_and_retry(download_url,archive_path)
             
             # 验证MD5
             if not self._verify_md5(archive_path, update_data['md5']):

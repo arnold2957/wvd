@@ -921,12 +921,13 @@ def Factory():
     def StateChest():
         FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
-        MAXtryOpen = 5
+        MSXTRYOPEN = 5
+        MAXERROROPEN = 50
         while 1:
             scn = ScreenShot()
             Press(CheckIf(scn,'chestFlag'))
             if CheckIf(scn,'whowillopenit'):
-                if setting._RANDOMLYPERSONOPENCHEST or tryOpenCounter>=MAXtryOpen:
+                if setting._RANDOMLYPERSONOPENCHEST or tryOpenCounter>MSXTRYOPEN:
                     Press([200+(setting._COUNTEROPENCHEST%3)*200, 1200+((setting._COUNTEROPENCHEST)//3)%2*150])
                 else:
                     Press([200,1200])
@@ -957,9 +958,16 @@ def Factory():
             if Press(CheckIf(ScreenShot(),'retry')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                 continue
-            ## todo: 换个简易版本的identify
             tryOpenCounter += 1
-            logger.info(f"似乎选择人物失败了,当前尝试次数:{tryOpenCounter}. 尝试{MAXtryOpen}次后若失败则会变为随机开箱.")
+            logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
+            if tryOpenCounter <=MSXTRYOPEN:
+                logger.info(f"尝试{MSXTRYOPEN}次后若失败则会变为随机开箱.")
+            else:
+                logger.info(f"随机开箱已经启用.")
+            if tryOpenCounter > MAXERROROPEN:
+                logger.info(f"错误: 尝试次数过多. 疑似卡死.")
+                return None
+            
     def StateDungeon(specialTargetList = None):
         screenFrozen = []
         dungState = None
