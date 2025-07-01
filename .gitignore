@@ -4,3 +4,8 @@
 # 忽略 build 和 dist 文件夹
 build/
 dist/
+src/__pycache__/
+log.txt
+config.json
+run.bat
+run.vbs

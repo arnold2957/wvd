@@ -157,7 +157,7 @@ class AutoUpdater:
                     total_size = int(response.headers.get('Content-Length', 0))
                     
                     # 创建进度条（标题+总大小）
-                    pb = Progressbar(self.tk,"文件下载", 400)
+                    # pb = Progressbar(self.tk,"文件下载", 400)
                     
                     # 打开本地文件
                     with open(archive_path, 'wb') as out_file:
@@ -173,14 +173,14 @@ class AutoUpdater:
                             downloaded += len(chunk)
                             
                             # 更新进度条（避免除零错误）
-                            if total_size > 0:
-                                pb.percent = downloaded / total_size
+                            # if total_size > 0:
+                            #     pb.percent = downloaded / total_size
                         
                         # 下载完成标记
                         success = True
                         
                 # 销毁进度条（仅在成功时）
-                pb.destroy()
+                # pb.destroy()
                 
             except (URLError, IOError, ConnectionResetError) as e:
                 # 网络或IO异常处理
