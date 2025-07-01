@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.0.3'
+__version__ = '1.2.0.4'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -268,25 +268,25 @@ class ConfigPanelApp:
         row_counter += 1
         frame_row6 = ttk.Frame(main_frame)
         frame_row6.grid(row=row_counter, column=0, sticky="ew", pady=5)
-        ttk.Label(frame_row6, text=f"善恶倾向:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame_row6, text=f"善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.karma_adjust_mapping = {
             "维持现状": "+0",
-            "变得善良": "+17",
-            "变得邪恶": "-17",
+            "恶→中立,中立→善": "+17",
+            "善→中立,中立→恶": "-17",
             }
         times = int(self.karma_adjust_var.get())
         if times == 0:
             self.karma_adjust_text_var = tk.StringVar(value = "维持现状")
         elif times > 0:
-            self.karma_adjust_text_var = tk.StringVar(value = "变得善良")
+            self.karma_adjust_text_var = tk.StringVar(value = "恶→中立,中立→善")
         elif times < 0:
-            self.karma_adjust_text_var = tk.StringVar(value = "变得邪恶")
+            self.karma_adjust_text_var = tk.StringVar(value = "善→中立,中立→恶")
         self.karma_adjust_combobox = ttk.Combobox(
             frame_row6,
             textvariable=self.karma_adjust_text_var,  # 绑定变量
             values=list(self.karma_adjust_mapping.keys()),  # 使用中文选项
             state="readonly",  # 设置为只读（只能选择）
-            width=8
+            width=14
         )
         self.karma_adjust_combobox.grid(row=0, column=1, sticky=tk.W, pady=5)
         def handle_karma_adjust_selection(event = None):
@@ -297,8 +297,9 @@ class ConfigPanelApp:
             self.karma_adjust_var.set(self.karma_adjust_mapping[self.karma_adjust_text_var.get()])
             self.save_config()
         self.karma_adjust_combobox.bind("<<ComboboxSelected>>", handle_karma_adjust_selection)
-        ttk.Label(frame_row6, text="剩余次数:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row6, text="还需").grid(row=0, column=2, sticky=tk.W, pady=5)
         ttk.Label(frame_row6, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
+        ttk.Label(frame_row6, text="点").grid(row=0, column=4, sticky=tk.W, pady=5)
 
         # 启动!
         row_counter += 1

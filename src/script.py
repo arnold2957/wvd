@@ -612,7 +612,7 @@ def Factory():
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
-                if (pos:=CheckIf(screen,'ambush') and setting._KARMAADJUST.startswith('-')):
+                if (pos:=CheckIf(screen,'ambush')) and setting._KARMAADJUST.startswith('-'):
                     new_str = None
                     num_str = setting._KARMAADJUST[1:]
                     if num_str.isdigit():
@@ -629,7 +629,7 @@ def Factory():
                         logger.info("伏击起手!")
                         # logger.info("Ambush! Always starts with Ambush.")
                         Sleep(2)
-                if (pos:=CheckIf(screen,'ignore') and setting._KARMAADJUST.startswith('+')):
+                if (pos:=CheckIf(screen,'ignore')) and setting._KARMAADJUST.startswith('+'):
                     new_str = None
                     num_str = setting._KARMAADJUST[1:]
                     if num_str.isdigit():
@@ -639,10 +639,10 @@ def Factory():
                         else:
                             new_str = f"-0"
                     if new_str is not None:
-                        logger.info(f"已经进行善恶值调整. 剩余次数:{new_str}")
+                        logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
                         setting._KARMAADJUST = new_str
-                        Press(pos)
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                        Press(pos)
                         logger.info("积善行德!")
                         # logger.info("")
                         Sleep(2)
@@ -705,7 +705,8 @@ def Factory():
             Sleep(1)
             counter += 1
         return None, None, screen
-    def StateNone_CheckFrozen(queue, scn):
+    def GameFrozenCheck(queue, scn):
+        logger.info("卡死检测截图")
         LENGTH = 10
         if len(queue) > LENGTH:
             queue = []
@@ -836,7 +837,7 @@ def Factory():
             if targetPos:=CheckIf(map,target,roi):
                 logger.info(f'找到了 {target}! {targetPos}')
                 if not roi:
-                    # 非固定视角的情况下, 跳过二次确认
+                    # 固定视角的情况下, 跳过二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
@@ -968,7 +969,8 @@ def Factory():
                 return None
             
     def StateDungeon(specialTargetList = None):
-        screenFrozen = []
+        gameFrozen_none = []
+        gameFrozen_map = []
         dungState = None
         shouldRecover = False
         waitTimer = time.time()
@@ -987,7 +989,7 @@ def Factory():
 
             match dungState:
                 case None:
-                    screenFrozen, result = StateNone_CheckFrozen(screenFrozen,ScreenShot())
+                    gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,ScreenShot())
                     if result:
                         restartGame()
                     s, dungState,_ = IdentifyState()
@@ -1029,6 +1031,9 @@ def Factory():
                     Sleep(1)
                     dungState = DungeonState.Map
                 case DungeonState.Map:
+                    gameFrozen_map, result = GameFrozenCheck(gameFrozen_map,ScreenShot())
+                    if result:
+                        restartGame()
                     dungState, targetList = StateSearch(targetList,waitTimer, setting._TARGETSEARCHDIR, setting._TARGETROI)
                     if (targetList==None) or (targetList == []):
                         logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
