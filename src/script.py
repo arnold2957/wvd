@@ -279,6 +279,8 @@ def Factory():
             bottom =  top + SIZE
             midimg_scn = cropped[top:bottom, left:right]
             miding_ptn = template[top:bottom, left:right]
+            # cv2.imwrite("miding_scn.png", midimg_scn)
+            # cv2.imwrite("miding_ptn.png", miding_ptn)
             gray1 = cv2.cvtColor(midimg_scn, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(miding_ptn, cv2.COLOR_BGR2GRAY)
             mean_diff = cv2.absdiff(gray1, gray2).mean()/255
@@ -1138,10 +1140,7 @@ def Factory():
                             Sleep(10)
                             logger.info("第二步: 从要塞返回王城...")                                
                             RestartableSequenceExecution(
-                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('return',['leaveDung','blessing',[1,1]],2))
-                                )
-                            RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown',[1,1]],2)
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                                 )
                             stepNo = 3
                         case 3:
@@ -1157,46 +1156,45 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
                             Sleep(15)
-                            royalcap = False
-                            firstPeople = False
-                            secondPeople = False
-                            thirdPeople = False
+                            stepMark = 0
                             def stepMain():
-                                nonlocal royalcap
-                                nonlocal firstPeople
-                                nonlocal secondPeople
-                                nonlocal thirdPeople
-                                if not royalcap or not firstPeople or not secondPeople or not thirdPeople:
+                                nonlocal stepMark
+                                if stepMark <= 3:
                                     FindCoordsOrElseExecuteFallbackAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
                                     if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
                                         Press(pos)
                                     else:
                                         Press(CheckIf(scn,'7000G/iminhungry'))
                                         Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],2))
-                                    if not royalcap:
-                                        Sleep(4)
-                                        Press([1,1])
-                                        Press([1,1])
-                                        Sleep(8)
-                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/royalcapital',[1,1],2))
-                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[1,1],2)
-                                        royalcap = True
-                                    if not firstPeople:
-                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[450,1111],0)
-                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                                        firstPeople = True
-                                    if not secondPeople:
-                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[200,1180],0)
-                                        FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                                        secondPeople = True
-                                    if not thirdPeople:
-                                        FindCoordsOrElseExecuteFallbackAndWait('fastforward',[680,1200],0)
-                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
-                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/icantagreewithU',[1,1],1))
-                                        thirdPeople = True
-                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],1))
-                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[1,1],1))
-                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
+                                if stepMark == 0:
+                                    Sleep(4)
+                                    Press([1,1])
+                                    Press([1,1])
+                                    Sleep(8)
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/royalcapital',[1,1],2))
+                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[1,1],2)
+                                    stepMark = 1
+                                if stepMark == 1:
+                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[450,1111],0)
+                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                    stepMark = 2
+                                if stepMark == 2:
+                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[200,1180],0)
+                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                                    stepMark = 3
+                                if stepMark == 3:
+                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[680,1200],0)
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
+                                    stepMark = 4
+                                if stepMark == 4:
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/icantagreewithU',[1,1],1))
+                                    stepMark = 5
+                                if stepMark == 5:
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[[1,1],'7000G/olddist'],1))
+                                    stepMark = 6
+                                if stepMark == 6:
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
+                                    stepMark = 7
                                 FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
                             RestartableSequenceExecution(
                                 lambda: stepMain()
@@ -1325,7 +1323,7 @@ def Factory():
                                 secondcombat = True
                                 Press(pos)
                         logger.info(f"第{i+1}轮结束.")
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('return',[[1,1],'leaveDung'],3))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung'],3))
                     FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
