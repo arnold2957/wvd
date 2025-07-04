@@ -31,6 +31,7 @@ class FarmSetting:
     _COMBATSPD = False
     _RESTINTERVEL = 0
     _SKIPCOMBATRECOVER = False
+    _SKIPCHESTRECOVER = False
     _ADBDEVICE = None
     _LOGGER = None
     _TARGETLIST = None
@@ -1009,13 +1010,19 @@ def Factory():
                         logger.info("进行开启宝箱后的恢复.")
                         setting._COUNTERCHEST+=1
                         needRecoverBecauseChest = False
-                        shouldRecover = True
+                        if not setting._SKIPCHESTRECOVER:
+                            logger.info("由于面板配置, 进行开启宝箱后恢复.")
+                            shouldRecover = True
+                        else:
+                            logger.info("由于面板配置, 跳过了开启宝箱后恢复.")
                     if needRecoverBecauseCombat:
                         setting._COUNTERCOMBAT+=1
                         needRecoverBecauseCombat = False
                         if (not setting._SKIPCOMBATRECOVER):
                             logger.info("由于面板配置, 进行战后恢复.")
                             shouldRecover = True
+                        else:
+                            logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
                         Press([450,1300])
@@ -1328,7 +1335,8 @@ def Factory():
                                 secondcombat = True
                                 Press(pos)
                         logger.info(f"第{i+1}轮结束.")
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung'],3))
+                    StateDungeon(['repelEnemyForcesHarken_once',None])
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung','return'],3))
                     FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")

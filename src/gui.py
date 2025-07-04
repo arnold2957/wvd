@@ -69,6 +69,7 @@ class ConfigPanelApp:
             ["randomly_open_chest_var", tk.BooleanVar, "_RANDOMLYOPENCHEST", False],
             ["who_will_open_it_var", tk.IntVar,"_WHOWILLOPENIT",0],
             ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
+            ["skip_chest_recover_var",tk.BooleanVar,"_SKIPCHESTRECOVER",False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
             ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
@@ -237,13 +238,22 @@ class ConfigPanelApp:
 
         # 跳过恢复
         row_counter += 1
+        row_recover = tk.Frame(main_frame)
+        row_recover.grid(row = row_counter,column=0, columnspan=2, sticky=tk.W, pady=5)
         self.skip_recover_check = ttk.Checkbutton(
-            main_frame,
-            text="不进行战后恢复",
+            row_recover,
+            text="跳过战后恢复",
             variable=self.skip_recover_var,
             command=self.save_config
         )
-        self.skip_recover_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.skip_recover_check.grid(row=0, column=0)
+        self.skip_chest_recover_check = ttk.Checkbutton(
+            row_recover,
+            text="跳过开箱后恢复",
+            variable=self.skip_chest_recover_var,
+            command=self.save_config
+        )
+        self.skip_chest_recover_check.grid(row=0, column=1)
 
         # 休息设置
         row_counter += 1
@@ -471,6 +481,7 @@ class ConfigPanelApp:
             self.who_will_open_combobox,
             self.system_auto_check,
             self.skip_recover_check,
+            self.skip_chest_recover_check,
             self.rest_intervel_entry,
             self.button_save_rest_intervel,
             self.karma_adjust_combobox,
@@ -523,6 +534,7 @@ class ConfigPanelApp:
         setting._RANDOMLYOPENCHEST = self.randomly_open_chest_var.get()
         setting._WHOWILLOPENIT = self.who_will_open_it_var.get()
         setting._SKIPCOMBATRECOVER = self.skip_recover_var.get()
+        setting._SKIPCHESTRECOVER = self.skip_chest_recover_var.get()
         setting._FORCESTOPING = self.stop_event
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
