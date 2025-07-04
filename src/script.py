@@ -13,6 +13,7 @@ import subprocess
 import socket
 import time
 from utils import *
+import random
 
 class FarmSetting:
     _FARMTARGET = "shiphold"
@@ -573,7 +574,7 @@ def Factory():
                 Sleep(1)
                 screen = ScreenShot()
 
-            if Press(CheckIf(screen, "Return")):
+            if Press(CheckIf(screen, "returnText")):
                 Sleep(2)
                 return IdentifyState()
 
@@ -730,6 +731,7 @@ def Factory():
         Press(FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1))
         Press(FindCoordsOrElseExecuteFallbackAndWait('Stay',['Inn',[1,1]],2))
         Press(FindCoordsOrElseExecuteFallbackAndWait('Economy',['Stay',[1,1]],2))
+        Sleep(0.5)
         Press(FindCoordsOrElseExecuteFallbackAndWait('OK',['Economy',[1,1]],2))
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
@@ -923,16 +925,18 @@ def Factory():
     def StateChest():
         FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
-        MSXTRYOPEN = 5
+        MAXTRYOPEN = 5
         MAXERROROPEN = 50
         while 1:
             scn = ScreenShot()
             Press(CheckIf(scn,'chestFlag'))
             if CheckIf(scn,'whowillopenit'):
-                if tryOpenCounter>MSXTRYOPEN or setting._WHOWILLOPENIT == 0:
-                    whowillopenit = tryOpenCounter # 如果超过尝试次数或者根本就是设置了随机开箱, 那么用尝试次数作为序号
+                if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
+                    whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
                 else:
-                    whowillopenit = setting._WHOWILLOPENIT - 1 # 否则, 使用指定的序号
+                    # 其他时候都使用随机
+                    others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
+                    whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
                 Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
                 Sleep(1)
             Press([1,1])
@@ -962,8 +966,8 @@ def Factory():
                 continue
             tryOpenCounter += 1
             logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
-            if tryOpenCounter <=MSXTRYOPEN:
-                logger.info(f"尝试{MSXTRYOPEN}次后若失败则会变为随机开箱.")
+            if tryOpenCounter <=MAXTRYOPEN:
+                logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
             else:
                 logger.info(f"随机开箱已经启用.")
             if tryOpenCounter > MAXERROROPEN:
@@ -1153,19 +1157,20 @@ def Factory():
                             stepNo = 4
                         case 4:
                             logger.info("第四步: 给我!(伸手)")
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
-                            Sleep(15)
-                            stepMark = 0
+                            stepMark = -1
                             def stepMain():
                                 nonlocal stepMark
-                                if stepMark <= 3:
+                                if stepMark == -1:
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
+                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
+                                    Sleep(15)
                                     FindCoordsOrElseExecuteFallbackAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
                                     if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
                                         Press(pos)
                                     else:
                                         Press(CheckIf(scn,'7000G/iminhungry'))
                                         Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],2))
+                                    stepMark = 0
                                 if stepMark == 0:
                                     Sleep(4)
                                     Press([1,1])
