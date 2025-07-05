@@ -19,6 +19,7 @@ class FarmSetting:
     _FARMTARGET = "shiphold"
     _DUNGWAITTIMEOUT = 0
     _LAPTIME = 0
+    _TOTALTIME = 0
     _COUNTERDUNG = 0
     _COUNTERCOMBAT = 0
     _COUNTERCHEST = 0
@@ -1092,7 +1093,8 @@ def Factory():
                         break
                 case State.Inn:
                     if setting._LAPTIME!= 0:
-                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成. 用时:{time.time()-setting._LAPTIME}. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}")
+                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
 
