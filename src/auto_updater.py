@@ -75,7 +75,9 @@ class AutoUpdater():
     def _is_newer_version(self, new_version):
         # 分割版本号
         new_parts = new_version.split('.')[:3]  # 只取前三个部分
-        current_parts = self.current_version.split('.')[:3]  # 只取前三个部分
+
+        withoutbeta = self.current_version.split('-')[:1][0]  # 只取前三个部分
+        current_parts = withoutbeta.split('.')[:3]  # 只取前三个部分
         
         # 确保两个列表都有3个元素（不足的补0）
         while len(new_parts) < 3:
