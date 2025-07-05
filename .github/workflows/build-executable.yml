@@ -79,7 +79,7 @@ jobs:
         # 生成 release_notes.md (用于 GitHub Release)
         '**Version**: {0}' + "`n" + '**MD5**: ``{1}``' + "`n" + '**Build Date**: {2}' -f $version, $md5, $date | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
-        生成 release.json (用于 GitHub Pages)
+        # 生成 release.json (用于 GitHub Pages)
         $releaseData = @{
           version = $version
           md5 = $md5
