@@ -110,8 +110,24 @@ jobs:
         name: Release ${{ steps.extract-version.outputs.version }}
         body_path: dist/release_notes.md
         files: dist/wvd.zip
-        # Mark as a pre-release if the version string contains a hyphen
-        prerelease: ${{ steps.extract-version.outputs.is_prerelease }}
+
+    - name: Force set as prerelease
+      if: ${{ steps.extract-version.outputs.is_prerelease == 'true' }}
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const release = await github.rest.repos.getReleaseByTag({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag: '${{ steps.extract-version.outputs.version }}'
+          });
+          
+          await github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: release.data.id,
+            prerelease: true
+          });
 
     # This step will only run for stable (non-prerelease) versions
     - name: Deploy to GitHub Pages
