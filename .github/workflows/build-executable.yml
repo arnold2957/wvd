@@ -95,10 +95,12 @@ jobs:
             download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
             release_notes_url = "https://github.com/${{ github.repository }}/releases/tag/$version"
           } | ConvertTo-Json
-
+          Write-Host "111"
           # Create gh-pages directory and save the JSON file
           New-Item -ItemType Directory -Path gh-pages -Force
+          Write-Host "222"
           $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
+          Write-Host "333"
         } else {
           Write-Host "This is a pre-release. Skipping GitHub Pages deployment."
         }
