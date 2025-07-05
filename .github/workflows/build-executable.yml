@@ -77,10 +77,10 @@ jobs:
           $version = "${{ steps.extract-version.outputs.version }}"
 
           # 生成 release_notes.md (用于 GitHub Release)
-@"
-**Version**: $version
-**MD5**: ``$md5``
-**Build Date**: $date
+          @"
+          **Version**: $version
+          **MD5**: ``$md5``
+          **Build Date**: $date
 "@ | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
           # 生成 release.json (用于 GitHub Pages)
