@@ -81,24 +81,24 @@ jobs:
             '**Version**: {0}' + "`n" + '**MD5**: ``{1}``' + "`n" + '**Build Date**: {2}' -f $version, $md5, $date | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
             # 生成 release.json (用于 GitHub Pages)
-            $releaseData = @{
-              version = $version
-              md5 = $md5
-              release_date = $date
-              download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
-              release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
-            } | ConvertTo-Json
+            # $releaseData = @{
+            #   version = $version
+            #   md5 = $md5
+            #   release_date = $date
+            #   download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
+            #   release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
+            # } | ConvertTo-Json
 
-            # 创建 gh-pages 目录并保存文件
-            New-Item -ItemType Directory -Path gh-pages -Force
-            $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
+            # # 创建 gh-pages 目录并保存文件
+            # New-Item -ItemType Directory -Path gh-pages -Force
+            # $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
           } else {
             Write-Host "This is a pre-release. Skipping GitHub Pages deployment."
           }
         }
         catch {
           Write-Error "Failed to create release.json: $_"
-          exit 0
+          exit 1
         }
 
     - name: Create GitHub Release
