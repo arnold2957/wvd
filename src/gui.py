@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog, messagebox
 import os
 import logging
 from script import *
@@ -46,12 +46,13 @@ ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS + 
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
 ############################################
-class ConfigPanelApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.geometry('450x510')
+class ConfigPanelApp(tk.Toplevel):
+    def __init__(self, master_controller):
+        super().__init__(master_controller)
+        self.controller = master_controller
+        self.geometry('450x510')
         # self.root.resizable(False, False)
-        self.root.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
+        self.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
         self.adb_active = False
 
@@ -99,9 +100,6 @@ class ConfigPanelApp:
             ShowChangesLogWindow()
             self.last_version.set(__version__)
             #SetOneVarInConfig("LAST_VERSION",self.last_version.get())
-        
-        # 初始化自动更新
-        AutoUpdater(self.root, OWNER, REPO, __version__)
 
     def save_config(self):
         def standardize_karma_input():
@@ -127,14 +125,14 @@ class ConfigPanelApp:
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
-        self.log_display = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
+        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
         self.scrolled_text_handler.setLevel(logging.INFO)
         self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
         logger.addHandler(self.scrolled_text_handler)
 
-        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame = ttk.Frame(self, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         #设定adb
@@ -172,7 +170,7 @@ class ConfigPanelApp:
         self.adb_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
         ttk.Label(frame_row0, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
-        vcmd_non_neg = root.register(lambda x: ((x=="")or(x.isdigit())))
+        vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
         self.adb_port_entry = ttk.Entry(frame_row0,
                                         textvariable=self.adb_port_var,
                                         validate="key",
@@ -657,8 +655,115 @@ class ConfigPanelApp:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")
                 self.finishingcallback()
                 
+class AppController(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        # 关键：立即隐藏根窗口
+        self.withdraw()
+        self.main_window = None
+        if not self.main_window:
+            self.main_window = ConfigPanelApp(self)
 
-if __name__ == '__main__':
-    root = tk.Tk()
-    app = ConfigPanelApp(root)
-    root.mainloop()
+        self.msg_queue = queue.Queue()
+        
+        self.is_checking_for_update = False 
+        self.updater = AutoUpdater(
+            msg_queue=self.msg_queue,
+            github_user=OWNER,
+            github_repo=REPO,
+            current_version="1.0.0"
+        )
+        self.schedule_periodic_update_check()
+        self.check_queue()
+
+    def run_in_thread(self, target_func, *args):
+        thread = threading.Thread(target=target_func, args=args, daemon=True)
+        thread.start()
+    def schedule_periodic_update_check(self):
+        # 如果当前没有在检查或下载，则启动一个新的检查
+        if not self.is_checking_for_update:
+            # print("调度器：正在启动一小时一次的后台更新检查...")
+            self.is_checking_for_update = True  # 设置标志，防止重复
+            self.run_in_thread(self.updater.check_for_updates)
+            self.is_checking_for_update = False
+        else:
+            # print("调度器：上一个检查/下载任务尚未完成，跳过本次检查。")
+            None
+        self.after(3600000, self.schedule_periodic_update_check)
+
+    def check_queue(self):
+        """处理来自AutoUpdater和其他服务的消息"""
+        try:
+            message = self.msg_queue.get_nowait()
+            command, value = message
+            
+            # --- 这是处理更新逻辑的核心部分 ---
+            if command == 'update_available':
+                # 控制器决定弹窗询问用户
+                update_data = value
+                version = update_data['version']
+                # changelog = update_data['changelog']
+                
+                user_wants_update = messagebox.askyesno(
+                    "发现新版本",
+                    f"发现新版本 {version}！\n\n更新日志:\n\n是否立即下载更新？",
+                    parent=self.main_window # 确保弹窗在主窗口之上
+                )
+                
+                if user_wants_update:
+                    # 用户同意，命令Updater开始下载（在后台线程中）
+                    self.run_in_thread(self.updater.download)
+            
+            elif command == 'download_started':
+                # 控制器决定创建并显示进度条窗口
+                if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
+                    self.progress_window = Progressbar(self.main_window,title="下载中...",max_size = value)
+
+            elif command == 'progress':
+                # 控制器更新进度条UI
+                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                    self.progress_window.update_progress(value)
+                    self.update()
+                    None
+
+            elif command == 'download_complete':
+                # 控制器关闭进度条并显示成功信息
+                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                    self.progress_window.destroy()
+
+            elif command == 'error':
+                 # 控制器处理错误显示
+                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                    self.progress_window.destroy()
+                messagebox.showerror("错误", value, parent=self.main_window)
+
+            elif command == 'restart_ready':
+                script_path = value
+                messagebox.showinfo(
+                    "更新完成",
+                    "新版本已准备就绪，应用程序即将重启！",
+                    parent=self.main_window
+                )
+                
+                if sys.platform == "win32":
+                    subprocess.Popen([script_path], shell=True)
+                else:
+                    os.system(script_path)
+                
+                self.destroy()
+                
+            elif command == 'no_update_found':
+                # （可选）可以给个安静的提示，或什么都不做
+                print("UI: 未发现更新。")
+
+        except queue.Empty:
+            pass
+        finally:
+            # 持续监听
+            self.after(100, self.check_queue)
+
+if __name__ == "__main__":
+    # 程序的入口点是创建控制器
+    controller = AppController()
+    # 控制器自己运行事件循环
+    controller.mainloop()
