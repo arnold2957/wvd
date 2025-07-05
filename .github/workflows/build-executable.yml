@@ -1,8 +1,8 @@
-name: Build Executable
+name: Build Executable and Create Release
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
 
 jobs:
   build:
@@ -12,184 +12,113 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 第一步：从源代码提取版本号
-    - name: Extract version from src\gui.py
+    # Step 1: Extract version from source code and check if it's a pre-release.
+    - name: Extract SemVer version from src\gui.py
       id: extract-version
       shell: pwsh
       run: |
-        # 检查文件是否存在
-        if (-not (Test-Path -Path ".\src\gui.py")) {
-            Write-Error "File .\src\gui.py not found!"
-            exit 1
+        $filePath = ".\src\gui.py"
+        if (-not (Test-Path -Path $filePath)) {
+          Write-Error "File $filePath not found!"
+          exit 1
         }
 
-        # 安全提取版本号（带错误处理）
-        $match = Select-String -Path ".\src\gui.py" -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+.\d+)[''"]'
+        # SemVer-compliant regex to find versions like '1.2.3' or '1.2.3-beta.1'
+        $match = Select-String -Path $filePath -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+(-[a-zA-Z0-9.-]*)?)[''"]'
+        
         if ($match -and $match.Matches.Groups.Count -gt 1) {
-            $version = $match.Matches.Groups[1].Value
-            Write-Output "Extracted version: $version"
-            "version=$version" >> $env:GITHUB_OUTPUT
+          $version = $match.Matches.Groups[1].Value
+          $is_prerelease = $version.Contains("-")
+          
+          Write-Output "Extracted version: $version"
+          Write-Output "Is pre-release: $is_prerelease"
+          
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "is_prerelease=$is_prerelease" >> $env:GITHUB_OUTPUT
         } else {
-            Write-Error "Version pattern not found in .\src\gui.py"
-            Get-Content -Path ".\src\gui.py" | Select-String '__version__'  # 调试输出
-            exit 1
+          Write-Error "SemVer version pattern not found in $filePath"
+          exit 1
         }
 
-    # 第二步：获取GitHub上最新发布的版本
-    - name: Get latest release version
-      id: get-latest-release
-      shell: pwsh
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        $apiUrl = "https://api.github.com/repos/arnold2957/wvd/releases/latest"
-        $headers = @{
-            Authorization = "token $env:GITHUB_TOKEN"
-        }
-
-        try {
-            $response = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get -ErrorAction Stop
-            $latestVersion = $response.tag_name
-            echo "latest_version=$latestVersion" >> $env:GITHUB_OUTPUT
-            echo "Latest release version: $latestVersion"
-        }
-        catch {
-            $statusCode = $_.Exception.Response.StatusCode.value__
-            if ($statusCode -eq 404) {
-                echo "latest_version=0.0.0" >> $env:GITHUB_OUTPUT
-                echo "Error 404: Repository or release not found. Using default 0.0.0"
-            }
-            else {
-                echo "Error ${statusCode}: Failed to check release. Using default 0.0.0"
-                echo "latest_version=0.0.0" >> $env:GITHUB_OUTPUT
-            }
-        }
-
-    # 第三步：比较本地版本和发布版本
-    - name: Compare versions
-      id: compare-versions
-      shell: pwsh
-      run: |
-        # 获取版本号
-        $localVer = "${{ steps.extract-version.outputs.version }}"
-        $releaseVer = "${{ steps.get-latest-release.outputs.latest_version }}"
-
-        # 分割版本号
-        $localParts = $localVer.Split('.', [StringSplitOptions]::RemoveEmptyEntries)
-        $releaseParts = $releaseVer.Split('.', [StringSplitOptions]::RemoveEmptyEntries)
-
-        # 补齐数组长度
-        $maxLength = [Math]::Max($localParts.Length, $releaseParts.Length)
-        $localParts = $localParts + (,0 * ($maxLength - $localParts.Length))
-        $releaseParts = $releaseParts + (,0 * ($maxLength - $releaseParts.Length))
-
-        # 比较每个部分
-        $buildRequired = $false
-        for ($i = 0; $i -lt $maxLength; $i++) {
-            $localNum = [int]::Parse($localParts[$i])
-            $releaseNum = [int]::Parse($releaseParts[$i])
-            
-            if ($localNum -gt $releaseNum) {
-                $buildRequired = $true
-                break
-            }
-            elseif ($localNum -lt $releaseNum) {
-                $buildRequired = $false
-                break
-            }
-        }
-
-        # 输出结果
-        if ($buildRequired) {
-            echo "build_required=true" >> $env:GITHUB_OUTPUT
-            echo "New version detected ($localVer > $releaseVer), build required"
-        }
-        else {
-            echo "build_required=false" >> $env:GITHUB_OUTPUT
-            if ($localVer -eq $releaseVer) {
-                echo "Version identical ($localVer == $releaseVer), skip build"
-            }
-            else {
-                echo "Local version older ($localVer < $releaseVer), skip build"
-            }
-        }
-
-    # 以下步骤仅在需要构建时执行
+    # The following steps will now always run for every push to master.
     - name: Set up Python
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
     - name: Install dependencies
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller
 
     - name: Build with PyInstaller
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
       run: |
         pyinstaller --onedir --add-data "resources/images;resources/images/" src/gui.py -n wvd
-        echo "Build completed"
-    
-    - name: Compress to ZIP
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
+        Write-Host "Build completed successfully."
+
+    - name: Compress build artifact to ZIP
       shell: pwsh
       run: |
-        # 使用系统自带的Compress-Archive创建ZIP
+        # Copy changelog into the build directory before zipping
         Copy-Item -Path './CHANGES_LOG.md' -Destination './dist/wvd/' -Force
         Compress-Archive -Path ./dist/wvd/* -DestinationPath ./dist/wvd.zip -Force
-        Remove-Item -Path './dist/wvd/CHANGES_LOG.md'  # 清理临时文件
         Get-ChildItem dist/wvd.zip
-    
-    - name: Calculate MD5 and prepare release
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
-      id: calculate-md5
+
+    - name: Prepare Release Notes and Metadata
+      id: prepare-release-meta
       shell: pwsh
       run: |
-        $md5 = (Get-FileHash -Path dist/wvd.zip -Algorithm MD5).Hash.ToLower()
-        echo "md5=$md5" >> $env:GITHUB_OUTPUT
-        echo "MD5: $md5"
-        
+        $zipPath = "dist/wvd.zip"
+        $md5 = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
         $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss" -AsUTC
         $version = "${{ steps.extract-version.outputs.version }}"
 
-        # 生成 release_notes.md (用于 GitHub Release)
+        "md5=$md5" >> $env:GITHUB_OUTPUT
+        Write-Output "MD5 Checksum: $md5"
+
+        # Generate release_notes.md for the GitHub Release body
         @"
         **Version**: $version
-        **MD5**: ``$md5``
-        **Build Date**: $date
+        **MD5 Checksum**: `$md5`
+        **Build Date (UTC)**: $date
         "@ | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
-        # 生成 release.json (用于 GitHub Pages)
-        $releaseData = @{
-          version = $version
-          md5 = $md5
-          release_date = $date
-          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
-          release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
-        } | ConvertTo-Json
+        # --- GitHub Pages logic: Only run for stable releases ---
+        if (-not(${{ steps.extract-version.outputs.is_prerelease }})) {
+          Write-Host "This is a stable release. Preparing release.json for GitHub Pages."
+          
+          # Generate release.json for GitHub Pages update
+          $releaseData = @{
+            version = $version
+            md5 = $md5
+            release_date = $date
+            download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
+            release_notes_url = "https://github.com/${{ github.repository }}/releases/tag/$version"
+          } | ConvertTo-Json
 
-        # 创建 gh-pages 目录并保存文件
-        New-Item -ItemType Directory -Path gh-pages -Force
-        $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
-    
-    - name: Create Release
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
-      uses: softprops/action-gh-release@v1
+          # Create gh-pages directory and save the JSON file
+          New-Item -ItemType Directory -Path gh-pages -Force
+          $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
+        } else {
+          Write-Host "This is a pre-release. Skipping GitHub Pages deployment."
+        }
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.extract-version.outputs.version }}
         name: Release ${{ steps.extract-version.outputs.version }}
         body_path: dist/release_notes.md
         files: dist/wvd.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Mark as a pre-release if the version string contains a hyphen
+        prerelease: ${{ steps.extract-version.outputs.is_prerelease }}
 
+    # This step will only run for stable (non-prerelease) versions
     - name: Deploy to GitHub Pages
-      if: ${{ steps.compare-versions.outputs.build_required == 'true' }}
-      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ steps.extract-version.outputs.is_prerelease == 'false' }}
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./gh-pages
+        # This will overwrite the existing release.json with the new one
         keep_files: false
