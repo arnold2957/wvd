@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.3'
+__version__ = '1.2.4-beta.1'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -38,7 +38,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
 PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","FS","SB",]
 

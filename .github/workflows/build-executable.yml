@@ -100,7 +100,6 @@ jobs:
         name: Release ${{ steps.extract-version.outputs.version }}
         body_path: dist/release_notes.md
         files: dist/wvd.zip
-        overwrite: true
 
     - name: Force set as prerelease
       if: ${{ steps.extract-version.outputs.is_prerelease == 'true' }}
