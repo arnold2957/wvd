@@ -68,8 +68,8 @@ jobs:
       id: prepare-release-meta
       shell: pwsh
       run: |
-        if (-not(${{ steps.extract-version.outputs.is_prerelease }})) {
-          try {
+        try {
+          if (-not(${{ steps.extract-version.outputs.is_prerelease }})) {
             $md5 = (Get-FileHash -Path dist/wvd.zip -Algorithm MD5).Hash.ToLower()
             echo "md5=$md5" >> $env:GITHUB_OUTPUT
             echo "MD5: $md5"
@@ -92,13 +92,13 @@ jobs:
             # 创建 gh-pages 目录并保存文件
             New-Item -ItemType Directory -Path gh-pages -Force
             $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
+          } else {
+            Write-Host "This is a pre-release. Skipping GitHub Pages deployment."
           }
-          catch {
-            Write-Error "Failed to create release.json: $_"
-            exit 1
-          }
-        } else {
-          Write-Host "This is a pre-release. Skipping GitHub Pages deployment."
+        }
+        catch {
+          Write-Error "Failed to create release.json: $_"
+          exit 0
         }
 
     - name: Create GitHub Release
