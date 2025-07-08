@@ -65,7 +65,6 @@ jobs:
         Get-ChildItem dist/wvd.zip
 
     - name: Prepare Release Notes and Metadata
-      if: ${{ steps.extract-version.outputs.is_prerelease == 'false' }}
       id: prepare-release-meta
       shell: pwsh
       run: |
