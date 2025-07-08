@@ -34,7 +34,6 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]7000G",
                    "[任务]角鹫之剑 fordraig",
                    "[任务]击退敌势力",
-                   "[任务]卢比肯-一牛"
                    ]
 
 CC_SKILLS = ["KANTIOS"]
@@ -610,7 +609,7 @@ class ConfigPanelApp(tk.Toplevel):
                 StreetFarm(setting)
             case "[刷图]卢比肯的洞窟":
                 setting._FARMTARGET = 'LBC'
-                setting._TARGETLIST = ['chest','LBC/LBC_quit']
+                setting._TARGETLIST = ['chest','LBC_quit']
                 StreetFarm(setting)
             case "[刷图]沙影洞窟一层":
                 setting._FARMTARGET = 'SSC'
@@ -651,9 +650,6 @@ class ConfigPanelApp(tk.Toplevel):
                 QuestFarm(setting)
             case "[任务]击退敌势力":
                 setting._FARMTARGET = 'repelEnemyForces'
-                QuestFarm(setting)
-            case "[任务]卢比肯-一牛":
-                setting._FARMTARGET = 'LBC-oneGorgon'
                 QuestFarm(setting)
             case _:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")
