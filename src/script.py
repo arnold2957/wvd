@@ -353,7 +353,7 @@ def Factory():
                             return None
                 Sleep(waitTime) # and wait
             
-            logger.info(f"{setting._MAXRETRYLIMIT}次截图依旧没有找到目标, 疑似卡死. 重启游戏.")
+            logger.info(f"{setting._MAXRETRYLIMIT}次截图依旧没有找到目标{targetPattern}, 疑似卡死. 重启游戏.")
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
@@ -668,7 +668,7 @@ def Factory():
                     # logger.info("")
                     Sleep(2)
                 if Press(CheckIf(screen,'buyNothing')):
-                    logger.info("有骨头的话我会买的. 但是现在我没有骨头的识别图片啊.")
+                    logger.info("有骨头的话我会买的.")
                     # logger.info("No Bones No Buy.")
                     Sleep(2)
                 if Press(CheckIf(screen,'Nope')):
@@ -746,11 +746,11 @@ def Factory():
                 Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
                 Press(FindCoordsOrElseExecuteFallbackAndWait('lounge',[1,1],1))
             case "LBC":
-                if Press(CheckIf(ScreenShot(),'LBC')):
+                if Press(CheckIf(ScreenShot(),'LBC/LBC')):
                     pass
                 else:
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('LBC','input swipe 100 100 700 1500',1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
             case "SSC":
                 if Press(CheckIf(ScreenShot(),'SSC')):
                     pass
@@ -802,13 +802,18 @@ def Factory():
                 if Press(CheckIf(screen, 'spellskill/'+skillspell)):
                     logger.info(f"使用了技能 {skillspell}")
                     Sleep(1)
-                    Press([150,750])
-                    Press([300,750])
-                    Press([450,750])
-                    Press([550,750])
-                    Press([650,750])
-                    Press([750,750])
-                    Press(CheckIf(ScreenShot(),'OK'))
+                    scn = ScreenShot()
+                    if Press(CheckIf(scn,'OK')):
+                        None
+                    elif pos:=(CheckIf(scn,'next')):
+                        Press([pos[0],pos[1]+100])
+                    else:
+                        Press([150,750])
+                        Press([300,750])
+                        Press([450,750])
+                        Press([550,750])
+                        Press([650,750])
+                        Press([750,750])
                     Sleep(3)
                     castSpellSkill = True
                     break
@@ -847,7 +852,7 @@ def Factory():
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
                     Sleep(2)
-                    Press([1,230])
+                    Press([1,1255])
                     targetPos = CheckIf(ScreenShot(),target,roi)
                 break # return targetPos
         return targetPos
@@ -909,20 +914,26 @@ def Factory():
                     Press([280,1433]) # automove
                     return StateMoving_CheckFrozen(),targetList
                 else:
-                    logger.info("经过对比中心区域, 判断为抵达目标地点.")
-                    logger.info('开始等待...等待...')
-                    PressReturn()
-                    PressReturn()
-                    while 1:
-                        if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
-                            logger.info("等得够久了. 目标地点完成.")
-                            targetList.pop(0)
-                            Sleep(1)
-                            Press([777,150])
-                            return None,  targetList
-                        logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
-                        if CheckIf(ScreenShot(),'flee'):
-                            return DungeonState.Combat,targetList                
+                    if setting._DUNGWAITTIMEOUT == 0:
+                        logger.info("经过对比中心区域, 判断为抵达目标地点.")
+                        logger.info("无需等待, 当前目标已完成.")
+                        targetList.pop(0)
+                        return None,  targetList
+                    else:
+                        logger.info("经过对比中心区域, 判断为抵达目标地点.")
+                        logger.info('开始等待...等待...')
+                        PressReturn()
+                        PressReturn()
+                        while 1:
+                            if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
+                                logger.info("等得够久了. 目标地点完成.")
+                                targetList.pop(0)
+                                Sleep(1)
+                                Press([777,150])
+                                return None,  targetList
+                            logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
+                            if CheckIf(ScreenShot(),'flee'):
+                                return DungeonState.Combat,targetList                
         return DungeonState.Map,  targetList
     def StateChest():
         FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
@@ -1151,7 +1162,7 @@ def Factory():
                             stepNo = 2
                         case 2:
                             Sleep(10)
-                            logger.info("第二步: 从要塞返回王城...")                                
+                            logger.info("第二步: 返回要塞...")                                
                             RestartableSequenceExecution(
                                 lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                                 )
@@ -1342,7 +1353,72 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
+            case 'LBC-oneGorgon':
+                checkCSC = False
+                while 1:
+                    if setting._LAPTIME!= 0:
+                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        logger.info(f"第{setting._COUNTERDUNG}次一牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
+                    setting._LAPTIME = time.time()
+                    setting._COUNTERDUNG+=1
+                    logger.info('第一步: 重置因果')
+                    def stepMain():
+                        nonlocal checkCSC
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
+                        if not Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore')):
+                            device.shell(f"input swipe 450 1200 450 200")
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/GhostsOfYore','input swipe 50 1200 50 1300',1))
+                        
+                        while CheckIf(ScreenShot(), 'leap'):
+                            if not checkCSC:
+                                Press(CheckIf(ScreenShot(),'CSC'))
+                                Press(CheckIf(ScreenShot(),'LBC/didnottakethequest'))
+                                PressReturn()
+                                checkCSC = True
+                            Press(CheckIf(ScreenShot(),'leap'))
+                            Sleep(2)
+                            Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore'))
+                    RestartableSequenceExecution(
+                        lambda: stepMain()
+                        )
+                    Sleep(10)
+                    logger.info("第二步: 返回要塞")                                
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+                    logger.info("第三步: 前往王城")    
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        )
+                    logger.info('第四步: 领取任务')
+                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                    StateInn()
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                    Sleep(1)
+                    device.shell(f"input swipe 450 1000 450 200")
+                    while 1:
+                        pos = CheckIf(ScreenShot(),'LBC/Request')
+                        if not pos:
+                            device.shell(f"input swipe 50 1300 50 200")
+                            Sleep(1)
+                        else:
+                            Press([pos[0]+300,pos[1]+200])
+                            break
+                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                    logger.info('第五步: 杀牛')
+                    if Press(CheckIf(ScreenShot(),'LBC/LBC')):
+                        pass
+                    else:
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
+                    setting._TARGETLIST = ['LBC/Gorgon','LBC/LBC_quit']
+                    setting._TARGETSEARCHDIR = [[[450,800,800,1200]],None]
+                    StateDungeon()
         setting._FINISHINGCALLBACK()
         return
                         
