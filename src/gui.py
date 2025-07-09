@@ -363,7 +363,7 @@ class ConfigPanelApp(tk.Toplevel):
         row_counter += 1
         self.aoe_once_check = ttk.Checkbutton(
             main_frame,
-            text="仅释放一次全体AOE",
+            text="一场战斗中仅释放一次全体AOE",
             variable=self.aoe_once_var,
             command= self.save_config
         )
