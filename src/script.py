@@ -15,6 +15,15 @@ import time
 from utils import *
 import random
 
+CC_SKILLS = ["KANTIOS"]
+SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
+PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","FS","SB",]
+
+ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
+ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
+
 class FarmSetting:
     _FARMTARGET = "shiphold"
     _DUNGWAITTIMEOUT = 0
@@ -25,6 +34,8 @@ class FarmSetting:
     _COUNTERCHEST = 0
     _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
+    _AOE_ONCE = False
+    _ENOUGH_AOE = False
     _RANDOMLYOPENCHEST = True
     _WHOWILLOPENIT = 0
     _FORCESTOPING = None
@@ -799,12 +810,16 @@ def Factory():
         else:
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
-                if Press(CheckIf(screen, 'spellskill/'+skillspell)):
-                    logger.info(f"使用了技能 {skillspell}")
+                if setting._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
+                    # logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
+                    continue
+                elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
+                    logger.info(f"使用技能 {skillspell}")
                     Sleep(1)
                     scn = ScreenShot()
                     if Press(CheckIf(scn,'OK')):
-                        None
+                        if setting._AOE_ONCE:
+                            setting._ENOUGH_AOE = True
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0],pos[1]+100])
                     else:
@@ -1018,6 +1033,9 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1]) # interrupt auto moving
+                    if setting._AOE_ONCE:
+                        # 战斗结束了, 我们将_ENOUGH_AOE复位
+                        setting._ENOUGH_AOE = False
                     if needRecoverBecauseChest:
                         logger.info("进行开启宝箱后的恢复.")
                         setting._COUNTERCHEST+=1
@@ -1361,8 +1379,7 @@ def Factory():
                         logger.info(f"第{setting._COUNTERDUNG}次一牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
-                    logger.info('第一步: 重置因果')
-                    def stepMain():
+                    def stepOne():
                         nonlocal checkCSC
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
@@ -1381,44 +1398,58 @@ def Factory():
                             Sleep(2)
                             Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore'))
                     RestartableSequenceExecution(
-                        lambda: stepMain()
+                        lambda: logger.info('第一步: 重置因果'),
+                        lambda: stepOne()
                         )
-                    Sleep(10)
-                    logger.info("第二步: 返回要塞")                                
+                    Sleep(10)     
                     RestartableSequenceExecution(
+                        lambda: logger.info("第二步: 返回要塞"),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
-                        )
-                    logger.info("第三步: 前往王城")    
+                        ) 
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        lambda: logger.info("第三步: 前往王城"),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
-                    logger.info('第四步: 领取任务')
-                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                    StateInn()
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                    Sleep(1)
-                    device.shell(f"input swipe 450 1000 450 200")
-                    while 1:
-                        pos = CheckIf(ScreenShot(),'LBC/Request')
-                        if not pos:
-                            device.shell(f"input swipe 50 1300 50 200")
-                            Sleep(1)
+                    def stepFour():
+                        FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                        StateInn()
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                        Sleep(1)
+                        device.shell(f"input swipe 450 1000 450 200")
+                        while 1:
+                            pos = CheckIf(ScreenShot(),'LBC/Request')
+                            if not pos:
+                                device.shell(f"input swipe 50 1300 50 200")
+                                Sleep(1)
+                            else:
+                                Press([pos[0]+300,pos[1]+200])
+                                break
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第四步: 领取任务'),
+                        lambda: stepFour()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                        )
+                    def stepFive():
+                        if Press(CheckIf(ScreenShot(),'LBC/LBC')):
+                            pass
                         else:
-                            Press([pos[0]+300,pos[1]+200])
-                            break
-                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                    logger.info('第五步: 杀牛')
-                    if Press(CheckIf(ScreenShot(),'LBC/LBC')):
-                        pass
-                    else:
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第五步: 进入牛洞'),
+                        lambda: stepFive()
+                        )
                     setting._TARGETLIST = ['LBC/Gorgon','LBC/LBC_quit']
                     setting._TARGETSEARCHDIR = [[[450,800,800,1200]],None]
-                    StateDungeon()
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第六步: 击杀一牛'),
+                        lambda: StateDungeon()
+                        )
         setting._FINISHINGCALLBACK()
         return
                         

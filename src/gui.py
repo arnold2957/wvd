@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.5-beta1'
+__version__ = '1.2.5-beta2'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -37,32 +37,29 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]卢比肯-一牛"
                    ]
 
-CC_SKILLS = ["KANTIOS"]
-SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
-PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","FS","SB",]
-
-ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
-ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
-
 ############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller):
         super().__init__(master_controller)
         self.controller = master_controller
-        self.geometry('450x510')
+        self.geometry('550x550')
         # self.root.resizable(False, False)
         self.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
         self.adb_active = False
 
+        # 关闭时退出整个程序
+        self.protocol("WM_DELETE_WINDOW", self.controller.destroy)
+
+        # --- 后台线程 ---
         self.thread = None
         self.stop_event = Event()
 
         # --- ttk Style ---
         self.style = ttk.Style()
         self.style.configure("Active.TButton", foreground="green")
+        self.style.configure("Active.TButton", foreground="green")
+        
 
         # --- UI 变量 ---
         self.var_list = [
@@ -73,11 +70,13 @@ class ConfigPanelApp(tk.Toplevel):
             ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
             ["skip_chest_recover_var",tk.BooleanVar,"_SKIPCHESTRECOVER",False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
+            ["aoe_once_var",tk.BooleanVar,"AOE_ONCE",False],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
             ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
             ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
             ["adb_port_var", tk.StringVar, "ADB_PORT", 5555],
-            ["last_version",tk.StringVar,"LAST_VERSION",""]
+            ["last_version",tk.StringVar,"LAST_VERSION",""],
+            ["latest_version",tk.StringVar,"LATEST_VERSION",None]
             ]
         
         self.config = LoadConfigFromFile()
@@ -93,14 +92,14 @@ class ConfigPanelApp(tk.Toplevel):
         self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
         self.update_current_skills_display() # 初始化时更新技能显示
 
-        logger.info("**********************\n" \
+        logger.info("**********************************\n" \
                     f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
-                    "**********************\n" )
+                    "**********************************\n" )
         
         if self.last_version.get() != __version__:
             ShowChangesLogWindow()
             self.last_version.set(__version__)
-            #SetOneVarInConfig("LAST_VERSION",self.last_version.get())
+            self.save_config()
 
     def save_config(self):
         def standardize_karma_input():
@@ -126,7 +125,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
-        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 22, height = 1)
+        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 34, height = 1)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
         self.scrolled_text_handler.setLevel(logging.INFO)
@@ -334,13 +333,26 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 系统自动战斗
         row_counter += 1
+        style = ttk.Style()
+        style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 10,"bold"))  # 修改字体和字号
         self.system_auto_check = ttk.Checkbutton(
             main_frame,
-            text="启用系统自动战斗",
+            text="启用自动战斗",
             variable=self.system_auto_combat_var,
-            command=self.toggle_system_auto_combat
+            command=self.toggle_system_auto_combat,
+            style="LargeFont.TCheckbutton"  # 应用自定义样式
         )
         self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        #仅释放一次aoe
+        row_counter += 1
+        self.aoe_once_check = ttk.Checkbutton(
+            main_frame,
+            text="仅释放一次全体AOE",
+            variable=self.aoe_once_var,
+        )
+        self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+
 
         # 技能按钮框架
         row_counter += 1
@@ -373,6 +385,51 @@ class ConfigPanelApp(tk.Toplevel):
 
         # (不使用)技能选择结果展示
         self.current_skills_label_var = tk.StringVar()
+
+        # 分割线
+        row_counter += 1
+        self.update_sep = ttk.Separator(main_frame, orient='horizontal')
+        self.update_sep.grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
+
+        #更新按钮
+        row_counter += 1
+        frame_row_update = tk.Frame(main_frame)
+        frame_row_update.grid(row=row_counter, column=0, sticky=tk.W)
+
+        self.find_update = ttk.Label(frame_row_update, text="发现新版本:",foreground="red")
+        self.find_update.grid(row=0, column=0, sticky=tk.W)
+
+        self.update_text = ttk.Label(frame_row_update, textvariable=self.latest_version,foreground="red")
+        self.update_text.grid(row=0, column=1, sticky=tk.W)
+
+        self.button_auto_download = ttk.Button(
+            frame_row_update,
+            text="自动下载",
+            width=7
+            )
+        self.button_auto_download.grid(row=0, column=2, sticky=tk.W, padx= 5)
+
+        def open_url():
+            url = f"https://github.com/{OWNER}/{REPO}/releases"
+            if sys.platform == "win32":
+                os.startfile(url)
+            elif sys.platform == "darwin":
+                os.system(f"open {url}")
+            else:
+                os.system(f"xdg-open {url}")
+        self.button_manual_download = ttk.Button(
+            frame_row_update,
+            text="手动下载最新版",
+            command=open_url,
+            width=7
+            )
+        self.button_manual_download.grid(row=0, column=3, sticky=tk.W)
+
+        self.update_sep.grid_remove()
+        self.find_update.grid_remove()
+        self.update_text.grid_remove()
+        self.button_auto_download.grid_remove()
+        self.button_manual_download.grid_remove()
 
     def update_current_skills_display(self):
         if self.system_auto_combat_var.get():
@@ -479,6 +536,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.random_chest_check,
             self.who_will_open_combobox,
             self.system_auto_check,
+            self.aoe_once_check,
             self.skip_recover_check,
             self.skip_chest_recover_check,
             self.rest_intervel_entry,
@@ -537,6 +595,7 @@ class ConfigPanelApp(tk.Toplevel):
         setting._FORCESTOPING = self.stop_event
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
+        setting._AOE_ONCE = self.aoe_once_var.get()
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._KARMAADJUST = str(self.karma_adjust_var.get())
         setting._LOGGER = logger
@@ -703,21 +762,21 @@ class AppController(tk.Tk):
             
             # --- 这是处理更新逻辑的核心部分 ---
             if command == 'update_available':
-                # 控制器决定弹窗询问用户
+                # 在面板上显示提示
                 update_data = value
                 version = update_data['version']
-                # changelog = update_data['changelog']
                 
-                user_wants_update = messagebox.askyesno(
-                    "发现新版本",
-                    f"发现新版本 {version}！\n\n更新日志:\n\n是否立即下载更新？",
-                    parent=self.main_window # 确保弹窗在主窗口之上
-                )
-                
-                if user_wants_update:
-                    # 用户同意，命令Updater开始下载（在后台线程中）
-                    self.run_in_thread(self.updater.download)
-            
+                self.main_window.find_update.grid()
+                self.main_window.update_text.grid()
+                self.main_window.latest_version.set(version)
+                self.main_window.button_auto_download.grid()
+                self.main_window.button_manual_download.grid()
+                self.main_window.update_sep.grid()
+                self.main_window.save_config()
+                width, height = map(int, self.main_window.geometry().split('+')[0].split('x'))
+                self.main_window.geometry(f'{width}x{height+50}')
+
+                self.main_window.button_auto_download.config(command=lambda:self.run_in_thread(self.updater.download))          
             elif command == 'download_started':
                 # 控制器决定创建并显示进度条窗口
                 if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
