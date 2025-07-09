@@ -1052,6 +1052,8 @@ def Factory():
                                     shouldRecover = False
                                     break
                     Sleep(1)
+                    Press(CheckIf(ScreenShot(), 'resume'))
+                    StateMoving_CheckFrozen()
                     Press([777,150])
                     Sleep(1)
                     dungState = DungeonState.Map
