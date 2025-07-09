@@ -41,6 +41,7 @@ class FarmSetting:
     _FORCESTOPING = None
     _FINISHINGCALLBACK = None
     _COMBATSPD = False
+    _ACTIVE_REST = True
     _RESTINTERVEL = 0
     _SKIPCOMBATRECOVER = False
     _SKIPCHESTRECOVER = False
@@ -865,7 +866,7 @@ def Factory():
                 if not roi:
                     # 固定视角的情况下, 跳过二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                    device.shell(f"input swipe {targetPos[0]} {targetPos[1]} 450 800")
+                    device.shell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
                     Sleep(2)
                     Press([1,1255])
                     targetPos = CheckIf(ScreenShot(),target,roi)
@@ -1128,8 +1129,7 @@ def Factory():
                         logger.info(f"第{setting._COUNTERDUNG}次地下城完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
-
-                    if (setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0:
+                    if setting._ACTIVE_REST and ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
                         logger.info("休息时间到!")
                         RestartableSequenceExecution(
                         lambda:StateInn()
@@ -1274,12 +1274,12 @@ def Factory():
                             StateInn()
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                            Sleep(1)
-                            device.shell(f"input swipe 450 1000 450 200")
+                            Sleep(2)
                             while 1:
                                 pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
                                 if not pos:
-                                    device.shell(f"input swipe 50 1200 50 1300")
+                                    device.shell(f"input swipe 50 1300 50 1200")
+                                    Sleep(1)
                                 else:
                                     Press([pos[0]+350,pos[1]+180])
                                     break
@@ -1337,6 +1337,9 @@ def Factory():
                             else:
                                 break
             case 'repelEnemyForces':
+                if not setting._ACTIVE_REST:
+                    logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1.")
+                    setting._RESTINTERVEL = 1
                 if setting._RESTINTERVEL == 0:
                     logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1.")
                     setting._RESTINTERVEL = 1
@@ -1446,26 +1449,35 @@ def Factory():
                         lambda: logger.info('第五步: 进入牛洞'),
                         lambda: stepFive()
                         )
-                    setting._TARGETLIST = ['LBC/Gorgon','LBC/LBC_quit']
-                    setting._TARGETSEARCHDIR = [[[450,800,800,1200]],None]
-                    RestartableSequenceExecution(
-                        lambda: logger.info('第六步: 击杀一牛'),
-                        lambda: StateDungeon()
-                        )
-                    RestartableSequenceExecution(
-                        lambda: logger.info('第七步: 回去睡觉'),
-                        lambda: StateInn()
-                        )
-                    RestartableSequenceExecution(
-                        lambda: logger.info('第八步: 再入牛洞'),
-                        lambda: stepFive()
-                        )
-                    setting._TARGETLIST = ['LBC/Gorgon2','LBC/Gorgon3','LBC/LBC_quit']
-                    setting._TARGETSEARCHDIR = [[[800,1200,450,800]],[[450,800,0,1200]],None]
-                    RestartableSequenceExecution(
-                        lambda: logger.info('第九步: 击杀二牛'),
-                        lambda: StateDungeon()
-                        )
+                    if setting._ACTIVE_REST:
+                        setting._TARGETLIST = ['LBC/Gorgon','LBC/LBC_quit']
+                        setting._TARGETSEARCHDIR = [[[450,800,800,1200]],None]
+                        RestartableSequenceExecution(
+                            lambda: logger.info('第六步: 击杀一牛'),
+                            lambda: StateDungeon()
+                            )
+                        RestartableSequenceExecution(
+                            lambda: logger.info('第七步: 回去睡觉'),
+                            lambda: StateInn()
+                            )
+                        RestartableSequenceExecution(
+                            lambda: logger.info('第八步: 再入牛洞'),
+                            lambda: stepFive()
+                            )
+                        setting._TARGETLIST = ['LBC/Gorgon2','LBC/Gorgon3','LBC/LBC_quit']
+                        setting._TARGETSEARCHDIR = [[[800,1200,450,800]],[[450,800,0,1200]],None]
+                        RestartableSequenceExecution(
+                            lambda: logger.info('第九步: 击杀二牛'),
+                            lambda: StateDungeon()
+                            )
+                    else:
+                        logger.info('跳过回城休息.')
+                        setting._TARGETLIST = ['LBC/Gorgon','LBC/Gorgon2','LBC/Gorgon3','LBC/LBC_quit']
+                        setting._TARGETSEARCHDIR = [[[450,800,800,1200]],[[800,1200,450,800]],[[450,800,0,1200]],None]
+                        RestartableSequenceExecution(
+                            lambda: logger.info('第六步: 连杀三牛'),
+                            lambda: StateDungeon()
+                            )
         setting._FINISHINGCALLBACK()
         return
                         

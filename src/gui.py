@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.5-beta3'
+__version__ = '1.2.5-beta4'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -71,6 +71,7 @@ class ConfigPanelApp(tk.Toplevel):
             ["skip_chest_recover_var",tk.BooleanVar,"_SKIPCHESTRECOVER",False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
             ["aoe_once_var",tk.BooleanVar,"AOE_ONCE",False],
+            ["active_rest_var",tk.BooleanVar,"ACTIVE_REST",True],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
             ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
             ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
@@ -257,20 +258,31 @@ class ConfigPanelApp(tk.Toplevel):
         row_counter += 1
         frame_row5 = ttk.Frame(main_frame)
         frame_row5.grid(row=row_counter, column=0, sticky="ew", pady=5)
-        ttk.Label(frame_row5, text="旅店休息间隔:").grid(row=0, column=0, sticky=tk.W, pady=5)
+
+        def checkcommand():
+            self.active_rest_change()
+            self.save_config()
+        self.active_rest_check = ttk.Checkbutton(
+            frame_row5,
+            variable=self.active_rest_var,
+            text="启用旅店休息",
+            command=checkcommand
+            )
+        self.active_rest_check.grid(row=0, column=0)
+        ttk.Label(frame_row5, text=" | 间隔:").grid(row=0, column=1, sticky=tk.W, pady=5)
         self.rest_intervel_entry = ttk.Entry(frame_row5,
                                              textvariable=self.rest_intervel_var,
                                              validate="key",
                                              validatecommand=(vcmd_non_neg, '%P'),
-                                             width=8)
-        self.rest_intervel_entry.grid(row=0, column=1)
+                                             width=5)
+        self.rest_intervel_entry.grid(row=0, column=2)
         self.button_save_rest_intervel = ttk.Button(
             frame_row5,
             text="保存",
             command = self.save_config,
-            width=5
+            width=4
             )
-        self.button_save_rest_intervel.grid(row=0, column=2)
+        self.button_save_rest_intervel.grid(row=0, column=3)
 
         # 善恶设置
         row_counter += 1
@@ -315,10 +327,13 @@ class ConfigPanelApp(tk.Toplevel):
         button_frame.grid(row=row_counter, column=0, columnspan=2, pady=5, sticky=tk.W)
         s = ttk.Style()
         s.configure('start.TButton', font=('微软雅黑', 15))
+        def btn_command():
+            self.toggle_start_stop()
+            self.save_config()
         self.start_stop_btn = ttk.Button(
             button_frame,
             text="脚本, 启动!",
-            command=self.toggle_start_stop,
+            command=btn_command,
             style='start.TButton'
         )
         self.start_stop_btn.grid(row=0, column=0, padx=2)
@@ -350,6 +365,7 @@ class ConfigPanelApp(tk.Toplevel):
             main_frame,
             text="仅释放一次全体AOE",
             variable=self.aoe_once_var,
+            command= self.save_config
         )
         self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
@@ -430,6 +446,14 @@ class ConfigPanelApp(tk.Toplevel):
         self.update_text.grid_remove()
         self.button_auto_download.grid_remove()
         self.button_manual_download.grid_remove()
+
+    def active_rest_change(self):
+        if self.active_rest_var.get():
+            self.rest_intervel_entry.config(state="normal")
+            self.button_save_rest_intervel.config(state="normal")
+        else:
+            self.rest_intervel_entry.config(state="disable")
+            self.button_save_rest_intervel.config(state="disable")
 
     def update_current_skills_display(self):
         if self.system_auto_combat_var.get():
@@ -539,6 +563,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.aoe_once_check,
             self.skip_recover_check,
             self.skip_chest_recover_check,
+            self.active_rest_check,
             self.rest_intervel_entry,
             self.button_save_rest_intervel,
             self.karma_adjust_combobox,
@@ -554,6 +579,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.farm_target_combo.configure(state="readonly")
             for widget in self.button_and_entry:
                 widget.configure(state="normal")
+            self.active_rest_change()
 
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -596,6 +622,7 @@ class ConfigPanelApp(tk.Toplevel):
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._AOE_ONCE = self.aoe_once_var.get()
+        setting._ACTIVE_REST = self.active_rest_var.get()
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._KARMAADJUST = str(self.karma_adjust_var.get())
         setting._LOGGER = logger
