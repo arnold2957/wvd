@@ -1023,12 +1023,12 @@ def Factory():
 
             match dungState:
                 case None:
-                    gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,ScreenShot())
-                    if result:
-                        restartGame()
-                    s, dungState,_ = IdentifyState()
+                    s, dungState,scn = IdentifyState()
                     if (s == State.Inn)or(s == DungeonState.Quit):
                         break
+                    gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
+                    if result:
+                        restartGame()
                 case DungeonState.Quit:
                     break
                 case DungeonState.Dungeon:
@@ -1376,7 +1376,7 @@ def Factory():
                 while 1:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次一牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
+                        logger.info(f"第{setting._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     def stepOne():
@@ -1448,6 +1448,20 @@ def Factory():
                     setting._TARGETSEARCHDIR = [[[450,800,800,1200]],None]
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 击杀一牛'),
+                        lambda: StateDungeon()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第七步: 回去睡觉'),
+                        lambda: StateInn()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第八步: 再入牛洞'),
+                        lambda: stepFive()
+                        )
+                    setting._TARGETLIST = ['LBC/Gorgon2','LBC/Gorgon3','LBC/LBC_quit']
+                    setting._TARGETSEARCHDIR = [[[800,1200,450,800]],[[450,800,0,1200]],None]
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第九步: 击杀二牛'),
                         lambda: StateDungeon()
                         )
         setting._FINISHINGCALLBACK()

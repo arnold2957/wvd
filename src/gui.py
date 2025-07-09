@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.2.5-beta2'
+__version__ = '1.2.5-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -34,7 +34,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]7000G",
                    "[任务]角鹫之剑 fordraig",
                    "[任务]击退敌势力",
-                   "[任务]卢比肯-一牛"
+                   "[任务]卢比肯-三牛"
                    ]
 
 ############################################
@@ -711,7 +711,7 @@ class ConfigPanelApp(tk.Toplevel):
             case "[任务]击退敌势力":
                 setting._FARMTARGET = 'repelEnemyForces'
                 QuestFarm(setting)
-            case "[任务]卢比肯-一牛":
+            case "[任务]卢比肯-三牛":
                 setting._FARMTARGET = 'LBC-oneGorgon'
                 QuestFarm(setting)
             case _:
