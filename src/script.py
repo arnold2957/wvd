@@ -226,7 +226,7 @@ def Factory():
                         # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
                         screenshot[pixels_in_roi2_mask_for_current_op] = 0
             
-            # cv2.imwrite('cutRoI.png', screenshot)
+            # cv2.imwrite(f'cutRoI_{time.time()}.png', screenshot)
             return screenshot
         
         nonlocal setting
@@ -761,13 +761,13 @@ def Factory():
                 if Press(CheckIf(ScreenShot(),'LBC/LBC')):
                     pass
                 else:
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
                     Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
             case "SSC":
                 if Press(CheckIf(ScreenShot(),'SSC')):
                     pass
                 else:
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
                     Press(FindCoordsOrElseExecuteFallbackAndWait('SSC','input swipe 700 100 100 100',1))
             case "fordraig-B3F":
                 if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
@@ -1291,6 +1291,7 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))                            
                             Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1))
                             stepNo = 4
                         case 4:
                             logger.info('第四步: 陷阱.')
@@ -1443,7 +1444,7 @@ def Factory():
                         if Press(CheckIf(ScreenShot(),'LBC/LBC')):
                             pass
                         else:
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
                     RestartableSequenceExecution(
                         lambda: logger.info('第五步: 进入牛洞'),
