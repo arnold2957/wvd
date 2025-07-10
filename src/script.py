@@ -822,7 +822,7 @@ def Factory():
                         if setting._AOE_ONCE:
                             setting._ENOUGH_AOE = True
                     elif pos:=(CheckIf(scn,'next')):
-                        Press([pos[0],pos[1]+100])
+                        Press([pos[0],pos[1]+130])
                     else:
                         Press([150,750])
                         Press([300,750])
@@ -1056,7 +1056,7 @@ def Factory():
                             logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
-                        Press([450,1300])
+                        Press([150,1300])
                         Sleep(1)
                         if CheckIf(ScreenShot(),'trait'):
                             for _ in range(3):
