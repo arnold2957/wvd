@@ -831,11 +831,11 @@ def Factory():
                             setting._ENOUGH_AOE = True
                         Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
-                        Press([pos[0],pos[1]+130])
+                        Press([pos[0],pos[1]+150])
                         Sleep(1)
                         if Press(CheckIf(ScreenShot(),'spellskill/lv1')):
                             pos=(CheckIf(scn,'next'))
-                            Press([pos[0],pos[1]+130])
+                            Press([pos[0],pos[1]+150])
                             Sleep(1)
                     else:
                         Press([150,750])
@@ -878,6 +878,8 @@ def Factory():
                 roi += [[0,0,900,208],[0,1265,900,335],[0,636,137,222],[763,636,137,222], [336,208,228,77],[336,1168,228,97]]
             if targetPos:=CheckIf(map,target,roi):
                 logger.info(f'找到了 {target}! {targetPos}')
+                if (target == 'chest') and (searchDir[i]!= None):
+                    logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{searchDir[i]} 位置:{targetPos}")
                 if not roi:
                     # 固定视角的情况下, 跳过二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
@@ -1111,9 +1113,9 @@ def Factory():
                                     shouldRecover = False
                                     break
                     ########### TRY RESUME
-                    Sleep(1)
-                    Press(CheckIf(ScreenShot(), 'resume'))
-                    StateMoving_CheckFrozen()
+                    # Sleep(1)
+                    # Press(CheckIf(ScreenShot(), 'resume'))
+                    # StateMoving_CheckFrozen()
                     ########### OPEN MAP
                     Press([777,150])
                     Sleep(1)

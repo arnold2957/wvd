@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.3.2-beta1'
+__version__ = '1.3.2-beta2'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -482,6 +482,7 @@ class ConfigPanelApp(tk.Toplevel):
         for item in self.skill_buttons_map:
             item["button"].config(state=button_state)
 
+        self.aoe_once_check.config(state = button_state)
         # 如果是从 "systemAuto" 切换回来，并且 _spell_skill_config_internal 还是 ['systemAuto']
         # 则清空它，因为此时用户可以手动选择技能了。
         if not is_system_auto and self._spell_skill_config_internal == ["systemAuto"]:
