@@ -57,6 +57,11 @@ class FarmSetting:
     _MAXRETRYLIMIT = 20
     _KARMAADJUST = "+0"
 
+    _TIME_COMBAT= 0
+    _TIME_COMBAT_TOTAL = 0
+    _TIME_CHEST = 0
+    _TIME_CHEST_TOTAL = 0
+
 def resource_path(relative_path):
     """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
     try:
@@ -798,6 +803,9 @@ def Factory():
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
         nonlocal setting
+        if setting._TIME_COMBAT==0:
+            setting._TIME_COMBAT = time.time()
+
         screen = ScreenShot()
         if not setting._COMBATSPD:
             if Press(CheckIf(screen,'combatSpd')):
@@ -821,8 +829,14 @@ def Factory():
                     if Press(CheckIf(scn,'OK')):
                         if setting._AOE_ONCE:
                             setting._ENOUGH_AOE = True
+                        Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0],pos[1]+130])
+                        Sleep(1)
+                        if Press(CheckIf(ScreenShot(),'spellskill/lv1')):
+                            pos=(CheckIf(scn,'next'))
+                            Press([pos[0],pos[1]+130])
+                            Sleep(1)
                     else:
                         Press([150,750])
                         Press([300,750])
@@ -830,7 +844,8 @@ def Factory():
                         Press([550,750])
                         Press([650,750])
                         Press([750,750])
-                    Sleep(3)
+                        Sleep(2)
+                    Sleep(1)
                     castSpellSkill = True
                     break
             if not castSpellSkill:
@@ -952,6 +967,9 @@ def Factory():
                                 return DungeonState.Combat,targetList                
         return DungeonState.Map,  targetList
     def StateChest():
+        nonlocal setting
+        if setting._TIME_CHEST==0:
+            setting._TIME_CHEST = time.time()
         FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
         MAXTRYOPEN = 5
@@ -1033,10 +1051,32 @@ def Factory():
                 case DungeonState.Quit:
                     break
                 case DungeonState.Dungeon:
-                    Press([1,1]) # interrupt auto moving
+                    Press([1,1])
                     if setting._AOE_ONCE:
                         # 战斗结束了, 我们将_ENOUGH_AOE复位
                         setting._ENOUGH_AOE = False
+                    ########### TIMER
+                    if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
+                        spend_on_chest = 0
+                        if setting._TIME_CHEST !=0:
+                            spend_on_chest = time.time()-setting._TIME_CHEST
+                            setting._TIME_CHEST = 0
+                        spend_on_combat = 0
+                        if setting._TIME_COMBAT !=0:
+                            spend_on_combat = time.time()-setting._TIME_COMBAT
+                            setting._TIME_COMBAT = 0
+                        logger.info(f"粗略统计: 宝箱{spend_on_chest:.2f}秒, 战斗{spend_on_combat:.2f}")
+                        if (spend_on_chest!=0) and (spend_on_combat!=0):
+                            if spend_on_combat>spend_on_chest:
+                                setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat-spend_on_chest
+                                setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest
+                            else:
+                                setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest-spend_on_combat
+                                setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat
+                        else:
+                            setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat
+                            setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest
+                    ########### RECOVER
                     if needRecoverBecauseChest:
                         logger.info("进行开启宝箱后的恢复.")
                         setting._COUNTERCHEST+=1
@@ -1070,9 +1110,11 @@ def Factory():
                                     PressReturn()
                                     shouldRecover = False
                                     break
+                    ########### TRY RESUME
                     Sleep(1)
                     Press(CheckIf(ScreenShot(), 'resume'))
                     StateMoving_CheckFrozen()
+                    ########### OPEN MAP
                     Press([777,150])
                     Sleep(1)
                     dungState = DungeonState.Map
@@ -1126,7 +1168,7 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
+                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成.\n本次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.\n累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.\n战斗占比{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,\n宝箱占比{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     if setting._ACTIVE_REST and ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
