@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.3.2-beta3'
+__version__ = '1.3.2-beta4'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -26,8 +26,8 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]鸟洞三层 fordraig B3F",
                    "[刷图]要塞三层",
                    "[刷图]卢比肯的洞窟",
-                   "[刷图]测试-沙影洞窟一层-下半",
-                   "[刷图]测试-沙影洞窟一层-左下右下洞",
+                   "[刷图]忍洞一层 下半",
+                   "[刷图]忍洞一层 三怪",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
                    "[刷图]风洞(15-19)",
@@ -43,7 +43,7 @@ class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller):
         super().__init__(master_controller)
         self.controller = master_controller
-        self.geometry('550x550')
+        self.geometry('550x580')
         # self.root.resizable(False, False)
         self.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
@@ -72,6 +72,7 @@ class ConfigPanelApp(tk.Toplevel):
             ["skip_chest_recover_var",tk.BooleanVar,"_SKIPCHESTRECOVER",False],
             ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
             ["aoe_once_var",tk.BooleanVar,"AOE_ONCE",False],
+            ["auto_after_aoe_var",tk.BooleanVar,"AUTO_AFTER_AOE",False],
             ["active_rest_var",tk.BooleanVar,"ACTIVE_REST",True],
             ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
             ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
@@ -360,6 +361,17 @@ class ConfigPanelApp(tk.Toplevel):
         )
         self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
+        #任何aoe后自动战斗
+        row_counter += 1
+        self.auto_after_aoe_check = ttk.Checkbutton(
+            main_frame,
+            text="全体AOE后开启自动战斗",
+            variable=self.auto_after_aoe_var,
+            command= self.save_config,
+            style="LargeFont.TCheckbutton"
+        )
+        self.auto_after_aoe_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+
         #仅释放一次aoe
         row_counter += 1
         self.aoe_once_check = ttk.Checkbutton(
@@ -369,7 +381,6 @@ class ConfigPanelApp(tk.Toplevel):
             command= self.save_config
         )
         self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
-
 
         # 技能按钮框架
         row_counter += 1
@@ -484,6 +495,7 @@ class ConfigPanelApp(tk.Toplevel):
             item["button"].config(state=button_state)
 
         self.aoe_once_check.config(state = button_state)
+        self.auto_after_aoe_check.config(state = button_state)
         # 如果是从 "systemAuto" 切换回来，并且 _spell_skill_config_internal 还是 ['systemAuto']
         # 则清空它，因为此时用户可以手动选择技能了。
         if not is_system_auto and self._spell_skill_config_internal == ["systemAuto"]:
@@ -563,6 +575,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.who_will_open_combobox,
             self.system_auto_check,
             self.aoe_once_check,
+            self.auto_after_aoe_check,
             self.skip_recover_check,
             self.skip_chest_recover_check,
             self.active_rest_check,
@@ -624,6 +637,7 @@ class ConfigPanelApp(tk.Toplevel):
         setting._SPELLSKILLCONFIG = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._AOE_ONCE = self.aoe_once_var.get()
+        setting._AUTO_AFTER_AOE = self.auto_after_aoe_var.get()
         setting._ACTIVE_REST = self.active_rest_var.get()
         setting._RESTINTERVEL = int(self.rest_intervel_var.get())
         setting._KARMAADJUST = str(self.karma_adjust_var.get())
@@ -700,35 +714,31 @@ class ConfigPanelApp(tk.Toplevel):
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETLIST = ['chest','LBC/LBC_quit']
                 StreetFarm(setting)
-            case "[刷图]测试-沙影洞窟一层-下半":
+            case "[刷图]忍洞一层 下半":
                 setting._FARMTARGET = 'SSC'
                 setting._TARGETLIST = ['chest','chest','SSC_quit']
                 setting._TARGETSEARCHDIR = [
                     [[100,1200,700,100]],
-                    #[[100,100,700,1200]],
-                    #[[700,100,100,1200]],
                     [[700,1200,100,100]],
                     [[700,1200,100,100]]]
                 setting._TARGETROI = [
                     [[0,0,900,1600],[650,0,250,811],[507,166,179,165],],
-                    #[[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
-                    #[[0,0,900,1600],[0,0,407,1600]],
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)
-            case "[刷图]测试-沙影洞窟一层-左下右下洞":
+            case "[刷图]忍洞一层 三怪":
                 setting._FARMTARGET = 'SSC'
-                setting._TARGETLIST = ['chest','chest','SSC_quit']
+                setting._TARGETLIST = ['SSC1F_left_once','chest','SSC1F_right_once','chest','SSC_quit']
                 setting._TARGETSEARCHDIR = [
                     [[100,1200,700,100]],
-                    #[[100,100,700,1200]],
-                    #[[700,100,100,1200]],
+                    [[100,1200,700,100]],
+                    [[700,1200,100,100]],
                     [[700,1200,100,100]],
                     [[700,1200,100,100]]]
                 setting._TARGETROI = [
-                    [[0,0,900,1600],[650,0,250,811],[507,166,179,165],       [0,0,900,811]       ],
-                    #[[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
-                    #[[0,0,900,1600],[0,0,407,1600]],
+                    [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
+                    [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
+                    [[0,0,900,1600],[0,0,900,800]],
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)

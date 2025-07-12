@@ -37,6 +37,7 @@ class FarmSetting:
     _SYSTEMAUTOCOMBAT = False
     _AOE_ONCE = False
     _ENOUGH_AOE = False
+    _AUTO_AFTER_AOE = False
     _RANDOMLYOPENCHEST = True
     _WHOWILLOPENIT = 0
     _FORCESTOPING = None
@@ -817,9 +818,9 @@ def Factory():
         elif setting._SYSTEMAUTOCOMBAT:
             Press(CheckIf(screen,'combatAuto'))
             Sleep(5)
-        # elif setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
-        #     Press(CheckIf(screen,'combatAuto'))
-        #     Sleep(5)
+        elif setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
+            Press(CheckIf(screen,'combatAuto'))
+            Sleep(5)
         else:
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
@@ -955,7 +956,7 @@ def Factory():
                         logger.info("经过对比中心区域, 判断为抵达目标地点.")
                         logger.info("无需等待, 当前目标已完成.")
                         targetList.pop(0)
-                        return None,  targetList
+                        return DungeonState.Map,  targetList
                     else:
                         logger.info("经过对比中心区域, 判断为抵达目标地点.")
                         logger.info('开始等待...等待...')
