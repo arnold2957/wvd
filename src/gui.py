@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.3.2-beta4'
+__version__ = '1.3.2-beta5'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -728,17 +728,13 @@ class ConfigPanelApp(tk.Toplevel):
                 StreetFarm(setting)
             case "[刷图]忍洞一层 三怪":
                 setting._FARMTARGET = 'SSC'
-                setting._TARGETLIST = ['SSC1F_left_once','chest','SSC1F_right_once','chest','SSC_quit']
+                setting._TARGETLIST = ['SSC1F_left_once','SSC1F_right_once','SSC_quit']
                 setting._TARGETSEARCHDIR = [
                     [[100,1200,700,100]],
-                    [[100,1200,700,100]],
-                    [[700,1200,100,100]],
                     [[700,1200,100,100]],
                     [[700,1200,100,100]]]
                 setting._TARGETROI = [
                     [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
-                    [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
-                    [[0,0,900,1600],[0,0,900,800]],
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)
