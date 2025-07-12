@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.3.2-beta2'
+__version__ = '1.3.2-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -26,7 +26,8 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]鸟洞三层 fordraig B3F",
                    "[刷图]要塞三层",
                    "[刷图]卢比肯的洞窟",
-                   "[刷图]沙影洞窟一层",
+                   "[刷图]测试-沙影洞窟一层-下半",
+                   "[刷图]测试-沙影洞窟一层-左下右下洞",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
                    "[刷图]风洞(15-19)",
@@ -699,19 +700,35 @@ class ConfigPanelApp(tk.Toplevel):
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETLIST = ['chest','LBC/LBC_quit']
                 StreetFarm(setting)
-            case "[刷图]沙影洞窟一层":
+            case "[刷图]测试-沙影洞窟一层-下半":
                 setting._FARMTARGET = 'SSC'
-                setting._TARGETLIST = ['chest','chest','chest','chest','SSC_quit']
+                setting._TARGETLIST = ['chest','chest','SSC_quit']
                 setting._TARGETSEARCHDIR = [
                     [[100,1200,700,100]],
-                    [[100,100,700,1200]],
-                    [[700,100,100,1200]],
+                    #[[100,100,700,1200]],
+                    #[[700,100,100,1200]],
                     [[700,1200,100,100]],
                     [[700,1200,100,100]]]
                 setting._TARGETROI = [
-                    [[0,0,900,1600],[650,0,250,811],[507,166,179,165]],
-                    [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
-                    [[0,0,900,1600],[0,0,407,1600]],
+                    [[0,0,900,1600],[650,0,250,811],[507,166,179,165],],
+                    #[[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
+                    #[[0,0,900,1600],[0,0,407,1600]],
+                    [[0,0,900,1600],[0,0,900,800]],
+                    None]
+                StreetFarm(setting)
+            case "[刷图]测试-沙影洞窟一层-左下右下洞":
+                setting._FARMTARGET = 'SSC'
+                setting._TARGETLIST = ['chest','chest','SSC_quit']
+                setting._TARGETSEARCHDIR = [
+                    [[100,1200,700,100]],
+                    #[[100,100,700,1200]],
+                    #[[700,100,100,1200]],
+                    [[700,1200,100,100]],
+                    [[700,1200,100,100]]]
+                setting._TARGETROI = [
+                    [[0,0,900,1600],[650,0,250,811],[507,166,179,165],       [0,0,900,811]       ],
+                    #[[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
+                    #[[0,0,900,1600],[0,0,407,1600]],
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)

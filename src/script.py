@@ -32,6 +32,7 @@ class FarmSetting:
     _COUNTERDUNG = 0
     _COUNTERCOMBAT = 0
     _COUNTERCHEST = 0
+    _MEET_CHEST_OR_COMBAT = False
     _SPELLSKILLCONFIG = None
     _SYSTEMAUTOCOMBAT = False
     _AOE_ONCE = False
@@ -578,7 +579,7 @@ def Factory():
                     Sleep(2)
 
             identifyConfig = [
-                ('flee',          DungeonState.Combat),
+                ('combatActive',          DungeonState.Combat),
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
                 ('whowillopenit', DungeonState.Chest),
@@ -816,6 +817,9 @@ def Factory():
         elif setting._SYSTEMAUTOCOMBAT:
             Press(CheckIf(screen,'combatAuto'))
             Sleep(5)
+        # elif setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
+        #     Press(CheckIf(screen,'combatAuto'))
+        #     Sleep(5)
         else:
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
@@ -965,7 +969,7 @@ def Factory():
                                 Press([777,150])
                                 return None,  targetList
                             logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
-                            if CheckIf(ScreenShot(),'flee'):
+                            if CheckIf(ScreenShot(),'combatActive'):
                                 return DungeonState.Combat,targetList                
         return DungeonState.Map,  targetList
     def StateChest():
@@ -1008,7 +1012,7 @@ def Factory():
                 return None
             if CheckIf(ScreenShot(),'dungFlag'):
                 return DungeonState.Dungeon
-            if CheckIf(ScreenShot(),'flee'):
+            if CheckIf(ScreenShot(),'combatActive'):
                 return DungeonState.Combat
             if Press(CheckIf(ScreenShot(),'retry')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
@@ -1067,7 +1071,7 @@ def Factory():
                         if setting._TIME_COMBAT !=0:
                             spend_on_combat = time.time()-setting._TIME_COMBAT
                             setting._TIME_COMBAT = 0
-                        logger.info(f"粗略统计: 宝箱{spend_on_chest:.2f}秒, 战斗{spend_on_combat:.2f}")
+                        logger.info(f"粗略统计: 宝箱{spend_on_chest:.2f}秒, 战斗{spend_on_combat:.2f}秒.")
                         if (spend_on_chest!=0) and (spend_on_combat!=0):
                             if spend_on_combat>spend_on_chest:
                                 setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat-spend_on_chest
@@ -1083,6 +1087,7 @@ def Factory():
                         logger.info("进行开启宝箱后的恢复.")
                         setting._COUNTERCHEST+=1
                         needRecoverBecauseChest = False
+                        setting._MEET_CHEST_OR_COMBAT = True
                         if not setting._SKIPCHESTRECOVER:
                             logger.info("由于面板配置, 进行开启宝箱后恢复.")
                             shouldRecover = True
@@ -1091,6 +1096,7 @@ def Factory():
                     if needRecoverBecauseCombat:
                         setting._COUNTERCOMBAT+=1
                         needRecoverBecauseCombat = False
+                        setting._MEET_CHEST_OR_COMBAT = True
                         if (not setting._SKIPCOMBATRECOVER):
                             logger.info("由于面板配置, 进行战后恢复.")
                             shouldRecover = True
@@ -1173,13 +1179,18 @@ def Factory():
                         logger.info(f"第{setting._COUNTERDUNG}次地下城完成.\n本次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.\n累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.\n战斗占比{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,\n宝箱占比{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.") 
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
-                    if setting._ACTIVE_REST and ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                    if not setting._MEET_CHEST_OR_COMBAT:
+                        logger.info("因为没有遇到战斗或宝箱, 跳过恢复")
+                    elif not setting._ACTIVE_REST:
+                        logger.info("因为面板设置, 跳过恢复")
+                    elif ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) != 0):
+                        logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
+                    else:
                         logger.info("休息时间到!")
+                        setting._MEET_CHEST_OR_COMBAT = False
                         RestartableSequenceExecution(
                         lambda:StateInn()
                         )
-                    else:
-                        logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     state = State.EoT
                 case State.EoT:
                     RestartableSequenceExecution(
@@ -1203,6 +1214,8 @@ def Factory():
             case '7000G':                    
                 stepNo = 1
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
                     match stepNo:
                         case 1:
                             starttime = time.time()
@@ -1299,6 +1312,8 @@ def Factory():
                 setting._SYSTEMAUTOCOMBAT = True
                 setting._SPECIALDIALOGOPTION = ['fordraig/thedagger']
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
                     match stepNo:
                         case 1:
                             setting._COUNTERDUNG += 1
@@ -1391,8 +1406,9 @@ def Factory():
                 logger.info("注意, 该流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!")
                 counter = 0
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
                     t = time.time()
-
                     StateInn()
                     Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway','EdgeOfTown',1))
                     FindCoordsOrElseExecuteFallbackAndWait('7thDist',[1,1],1)
@@ -1404,8 +1420,8 @@ def Factory():
                         logger.info(f"第{i+1}轮开始.")
                         secondcombat = False
                         while 1:
-                            FindCoordsOrElseExecuteFallbackAndWait(['flee','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
-                            if CheckIf(scn:=ScreenShot(),'flee'):
+                            FindCoordsOrElseExecuteFallbackAndWait(['combatActive','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
+                            if CheckIf(scn:=ScreenShot(),'combatActive'):
                                 StateCombat()
                             elif pos:=CheckIf(scn,'icanstillgo'):
                                 if secondcombat:
@@ -1416,14 +1432,22 @@ def Factory():
                                 secondcombat = True
                                 Press(pos)
                         logger.info(f"第{i+1}轮结束.")
-                    StateDungeon(['repelEnemyForcesHarken_once',None])
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung','return'],3))
-                    FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon(['repelEnemyForcesHarken_once',None])
+                    )
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung','return'],3))
+                    )
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
+                    )
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
             case 'LBC-oneGorgon':
                 checkCSC = False
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
                         logger.info(f"第{setting._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
@@ -1524,7 +1548,5 @@ def Factory():
                             lambda: StateDungeon()
                             )
         setting._FINISHINGCALLBACK()
-        return
-                        
-                        
+        return             
     return StreetFarm, QuestFarm
