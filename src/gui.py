@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -26,8 +26,8 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]鸟洞三层 fordraig B3F",
                    "[刷图]要塞三层",
                    "[刷图]卢比肯的洞窟",
-                   "[刷图]忍洞一层 下半",
-                   "[刷图]忍洞一层 七怪",
+                   "[刷图]忍洞一层 开箱",
+                   "[刷图]忍洞一层 刷怪",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
                    "[刷图]风洞(15-19)",
@@ -35,7 +35,8 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[任务]7000G",
                    "[任务]角鹫之剑 fordraig",
                    "[任务]击退敌势力",
-                   "[任务]卢比肯-三牛"
+                   "[任务]卢比肯-三牛",
+                   "[任务]忍洞-金箱"
                    ]
 
 ############################################
@@ -95,6 +96,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
         self.update_current_skills_display() # 初始化时更新技能显示
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
+        self.update_change_aoe_once_check() #
 
         logger.info("**********************************\n" \
                     f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
@@ -362,26 +364,30 @@ class ConfigPanelApp(tk.Toplevel):
         )
         self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
+        #仅释放一次aoe
+        def aoe_once_command():
+            self.update_change_aoe_once_check()
+            self.save_config()
+        row_counter += 1
+        self.aoe_once_check = ttk.Checkbutton(
+            main_frame,
+            text="一场战斗中仅释放一次全体AOE",
+            variable=self.aoe_once_var,
+            command= aoe_once_command
+        )
+        self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+
         #任何aoe后自动战斗
         row_counter += 1
         self.auto_after_aoe_check = ttk.Checkbutton(
             main_frame,
             text="全体AOE后开启自动战斗",
             variable=self.auto_after_aoe_var,
-            command= self.save_config,
-            style="LargeFont.TCheckbutton"
+            command= self.save_config
         )
         self.auto_after_aoe_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
-        #仅释放一次aoe
-        row_counter += 1
-        self.aoe_once_check = ttk.Checkbutton(
-            main_frame,
-            text="一场战斗中仅释放一次全体AOE",
-            variable=self.aoe_once_var,
-            command= self.save_config
-        )
-        self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+
 
         # 技能按钮框架
         row_counter += 1
@@ -467,6 +473,13 @@ class ConfigPanelApp(tk.Toplevel):
         else:
             self.rest_intervel_entry.config(state="disable")
             self.button_save_rest_intervel.config(state="disable")
+
+    def update_change_aoe_once_check(self):
+        if self.aoe_once_var.get()==False:
+            self.auto_after_aoe_var.set(False)
+            self.auto_after_aoe_check.config(state="disabled")
+        if self.aoe_once_var.get():
+            self.auto_after_aoe_check.config(state="normal")
 
     def update_current_skills_display(self):
         if self.system_auto_combat_var.get():
@@ -596,6 +609,7 @@ class ConfigPanelApp(tk.Toplevel):
             for widget in self.button_and_entry:
                 widget.configure(state="normal")
             self.update_active_rest_state()
+            self.update_change_aoe_once_check()
 
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -715,7 +729,7 @@ class ConfigPanelApp(tk.Toplevel):
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETLIST = ['chest','LBC/LBC_quit']
                 StreetFarm(setting)
-            case "[刷图]忍洞一层 下半":
+            case "[刷图]忍洞一层 开箱":
                 setting._FARMTARGET = 'SSC'
                 setting._TARGETLIST = ['chest','chest','SSC/SSC_quit']
                 setting._TARGETSEARCHDIR = [
@@ -727,7 +741,7 @@ class ConfigPanelApp(tk.Toplevel):
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)
-            case "[刷图]忍洞一层 七怪":
+            case "[刷图]忍洞一层 刷怪":
                 setting._FARMTARGET = 'SSC'
                 setting._TARGETLIST = ['SSC/SSC1F_left_once','SSC/SSC1F_left_1_once','SSC/SSC1F_left_2_once','SSC/SSC1F_left_3_once','SSC/SSC1F_right_once','SSC/SSC_quit']
                 setting._TARGETSEARCHDIR = [
@@ -771,6 +785,9 @@ class ConfigPanelApp(tk.Toplevel):
                 QuestFarm(setting)
             case "[任务]卢比肯-三牛":
                 setting._FARMTARGET = 'LBC-oneGorgon'
+                QuestFarm(setting)
+            case "[任务]忍洞-金箱":
+                setting._FARMTARGET = 'SSC-goldenchest'
                 QuestFarm(setting)
             case _:
                 logger.info(f"无效的任务名:{self.farm_target_var.get()}")

@@ -38,7 +38,6 @@ class FarmSetting:
     _AOE_ONCE = False
     _ENOUGH_AOE = False
     _AUTO_AFTER_AOE = False
-    _WAIT_PRE_COMBAT_ANIME = False
     _RANDOMLYOPENCHEST = True
     _WHOWILLOPENIT = 0
     _FORCESTOPING = None
@@ -813,24 +812,26 @@ def Factory():
         if not setting._COMBATSPD:
             if Press(CheckIf(screen,'combatSpd')):
                 setting._COMBATSPD = True
+        
+        if setting._SYSTEMAUTOCOMBAT:
+            Press(CheckIf(screen,'combatAuto'))
+            Sleep(5)
+            return
+        
+        if setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
+            Press(CheckIf(screen,'combatAuto'))
+            Sleep(5)
+            return
 
-        if (not setting._WAIT_PRE_COMBAT_ANIME) and (not CheckIf(screen,'flee')): # 如果还在等开场动画并且开场动画没结束
-            return # 继续等
-        setting._WAIT_PRE_COMBAT_ANIME = True # 等完了
-
+        if not CheckIf(screen,'flee'):
+            return 
         if setting._SUICIDE:
             Press(CheckIf(screen,'defend'))
-        elif setting._SYSTEMAUTOCOMBAT:
-            Press(CheckIf(screen,'combatAuto'))
-            Sleep(5)
-        elif setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
-            Press(CheckIf(screen,'combatAuto'))
-            Sleep(5)
         else:
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
                 if setting._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                    # logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
+                    logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
                     continue
                 elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
                     logger.info(f"使用技能 {skillspell}")
@@ -839,6 +840,7 @@ def Factory():
                     if Press(CheckIf(scn,'OK')):
                         if setting._AOE_ONCE:
                             setting._ENOUGH_AOE = True
+                            logger.info(f"已经释放了首次全体aoe.")
                         Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0],pos[1]+150])
@@ -1071,8 +1073,6 @@ def Factory():
                     # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
                         setting._ENOUGH_AOE = False
-
-                    setting._WAIT_PRE_COMBAT_ANIME = False
                     ########### TIMER
                     if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -1562,6 +1562,74 @@ def Factory():
                             lambda: logger.info('第六步: 连杀三牛'),
                             lambda: StateDungeon()
                             )
+            case 'SSC-goldenchest':
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if setting._LAPTIME!= 0:
+                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        logger.info(f"第{setting._COUNTERDUNG}次忍洞完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.") 
+                    setting._LAPTIME = time.time()
+                    setting._COUNTERDUNG+=1
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第一步: 重置因果'),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/Leap',['specialRequest',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
+                        )
+                    Sleep(10)     
+                    RestartableSequenceExecution(
+                        lambda: logger.info("第二步: 前往王城"),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        )
+                    def stepThree():
+                        FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                        StateInn()
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                        Sleep(1)
+                        device.shell(f"input swipe 150 1300 150 200")
+                        Sleep(2)
+                        while 1:
+                            pos = CheckIf(ScreenShot(),'SSC/Request')
+                            if not pos:
+                                device.shell(f"input swipe 150 200 150 250")
+                                Sleep(1)
+                            else:
+                                Press([pos[0]+300,pos[1]+150])
+                                break
+                        FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
+                        PressReturn()
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第三步: 领取任务'),
+                        lambda: stepThree()
+                        )
+                    def stepFour():
+                        if Press(CheckIf(ScreenShot(),'SSC/SSC')):
+                            pass
+                        else:
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 700 100 100 100',1))
+                            FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['SSC/SSC',[1,1]],1)
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第四步: 进入忍洞'),
+                        lambda: stepFour()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第五步: 关闭陷阱'),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('SSC/trapdeactived',['input swipe 450 1050 450 850',[445,721]],4),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[1,1],1)
+                    )
+                    setting._TARGETLIST = ['SSC/goldenchest_1','SSC/SSC_quit']
+                    setting._TARGETSEARCHDIR = [[[700,1200,100,100]],[[700,1200,100,100]]]
+                    setting._TARGETROI = ['default','default']
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第六步: 第一个箱子'),
+                        lambda: StateDungeon()
+                        )
+
         setting._FINISHINGCALLBACK()
         return             
     return StreetFarm, QuestFarm
