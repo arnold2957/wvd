@@ -771,11 +771,11 @@ def Factory():
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
                     Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
             case "SSC":
-                if Press(CheckIf(ScreenShot(),'SSC')):
+                if Press(CheckIf(ScreenShot(),'SSC/SSC')):
                     pass
                 else:
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('SSC','input swipe 700 100 100 100',1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 700 100 100 100',1))
             case "fordraig-B3F":
                 if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
                     pass
