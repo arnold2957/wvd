@@ -19,7 +19,7 @@ CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
-PHYSICAL_SKILLS = ["FPS","tzalik","PS","AB","HA","FS","SB",]
+PHYSICAL_SKILLS = ["FPS","tzalik","PS","DTS","AP","AB","HA","FS","SB",]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -838,8 +838,9 @@ def Factory():
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0],pos[1]+150])
                         Sleep(1)
-                        if Press(CheckIf(ScreenShot(),'spellskill/lv1')):
-                            pos=(CheckIf(scn,'next'))
+                        if CheckIf(ScreenShot(),'notenoughsp'):
+                            PressReturn()
+                            Press(CheckIf(ScreenShot(),'spellskill/lv1'))
                             Press([pos[0],pos[1]+150])
                             Sleep(1)
                     else:
@@ -877,6 +878,8 @@ def Factory():
                 return None # 发生了错误
             
             targetPos = None
+            if roi == 'default':
+                roi = [[0,0,900,1600],[0,0,900,208],[0,1265,900,335],[0,636,137,222],[763,636,137,222], [336,208,228,77],[336,1168,228,97]]
             if (target == 'chest'):
                 if roi==None:
                     roi = [[0,0,900,1600]]
@@ -886,15 +889,15 @@ def Factory():
                 if (target == 'chest') and (searchDir[i]!= None):
                     logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{searchDir[i]} 位置:{targetPos}")
                 if not roi:
-                    # 固定视角的情况下, 跳过二次确认
+                    # 如果没有指定roi 我们使用二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
                     device.shell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
                     Sleep(2)
                     Press([1,1255])
                     targetPos = CheckIf(ScreenShot(),target,roi)
-                break # return targetPos
+                break
         return targetPos
-    def StateMoving_CheckFrozen(): # return current DungeonState
+    def StateMoving_CheckFrozen():
         lastscreen = None
         dungState = None
         logger.info("面具男, 移动.")

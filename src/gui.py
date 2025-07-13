@@ -27,7 +27,7 @@ DUNGEON_TARGETS = ["[刷图]水路一号街",
                    "[刷图]要塞三层",
                    "[刷图]卢比肯的洞窟",
                    "[刷图]忍洞一层 下半",
-                   "[刷图]忍洞一层 三怪",
+                   "[刷图]忍洞一层 七怪",
                    "[刷图]土洞(5-9)",
                    "[刷图]火洞(10-14)", 
                    "[刷图]风洞(15-19)",
@@ -94,6 +94,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.update_combat_buttons_state() # 初始化时更新按钮状态 (包括启用/禁用)
         self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
         self.update_current_skills_display() # 初始化时更新技能显示
+        self.update_active_rest_state() # 初始化时更新旅店住宿entry.
 
         logger.info("**********************************\n" \
                     f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
@@ -262,7 +263,7 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row5.grid(row=row_counter, column=0, sticky="ew", pady=5)
 
         def checkcommand():
-            self.active_rest_change()
+            self.update_active_rest_state()
             self.save_config()
         self.active_rest_check = ttk.Checkbutton(
             frame_row5,
@@ -459,7 +460,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.button_auto_download.grid_remove()
         self.button_manual_download.grid_remove()
 
-    def active_rest_change(self):
+    def update_active_rest_state(self):
         if self.active_rest_var.get():
             self.rest_intervel_entry.config(state="normal")
             self.button_save_rest_intervel.config(state="normal")
@@ -594,7 +595,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.farm_target_combo.configure(state="readonly")
             for widget in self.button_and_entry:
                 widget.configure(state="normal")
-            self.active_rest_change()
+            self.update_active_rest_state()
 
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -726,7 +727,7 @@ class ConfigPanelApp(tk.Toplevel):
                     [[0,0,900,1600],[0,0,900,800]],
                     None]
                 StreetFarm(setting)
-            case "[刷图]忍洞一层 三怪":
+            case "[刷图]忍洞一层 七怪":
                 setting._FARMTARGET = 'SSC'
                 setting._TARGETLIST = ['SSC/SSC1F_left_once','SSC/SSC1F_left_1_once','SSC/SSC1F_left_2_once','SSC/SSC1F_left_3_once','SSC/SSC1F_right_once','SSC/SSC_quit']
                 setting._TARGETSEARCHDIR = [
@@ -738,11 +739,11 @@ class ConfigPanelApp(tk.Toplevel):
                     [[700,1200,100,100]]]
                 setting._TARGETROI = [
                     [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
-                    None,
-                    None,
-                    None,
+                    'default',
+                    'default',
+                    'default',
                     [[0,0,900,1600],[0,0,900,800]],
-                    None]
+                    'default']
                 StreetFarm(setting)
             case "[任务]7000G":
                 setting._FARMTARGET = '7000G'
