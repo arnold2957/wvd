@@ -38,6 +38,7 @@ class FarmSetting:
     _AOE_ONCE = False
     _ENOUGH_AOE = False
     _AUTO_AFTER_AOE = False
+    _WAIT_PRE_COMBAT_ANIME = False
     _RANDOMLYOPENCHEST = True
     _WHOWILLOPENIT = 0
     _FORCESTOPING = None
@@ -813,6 +814,10 @@ def Factory():
             if Press(CheckIf(screen,'combatSpd')):
                 setting._COMBATSPD = True
 
+        if (not setting._WAIT_PRE_COMBAT_ANIME) and (not CheckIf(screen,'flee')): # 如果还在等开场动画并且开场动画没结束
+            return # 继续等
+        setting._WAIT_PRE_COMBAT_ANIME = True # 等完了
+
         if setting._SUICIDE:
             Press(CheckIf(screen,'defend'))
         elif setting._SYSTEMAUTOCOMBAT:
@@ -1062,9 +1067,12 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
+                    ########### COMBAT RESET
+                    # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
-                        # 战斗结束了, 我们将_ENOUGH_AOE复位
                         setting._ENOUGH_AOE = False
+
+                    setting._WAIT_PRE_COMBAT_ANIME = False
                     ########### TIMER
                     if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -1338,10 +1346,12 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                             Sleep(2)
+                            device.shell(f"input swipe 150 1000 150 200")
+                            Sleep(2)
                             while 1:
                                 pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
                                 if not pos:
-                                    device.shell(f"input swipe 50 1300 50 1200")
+                                    device.shell(f"input swipe 150 200 150 250")
                                     Sleep(1)
                                 else:
                                     Press([pos[0]+350,pos[1]+180])
@@ -1354,7 +1364,7 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))                            
                             Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1))
+                            FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
                             stepNo = 4
                         case 4:
                             logger.info('第四步: 陷阱.')
@@ -1496,11 +1506,12 @@ def Factory():
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                         Sleep(1)
-                        device.shell(f"input swipe 450 1000 450 200")
+                        device.shell(f"input swipe 150 1300 150 200")
+                        Sleep(2)
                         while 1:
                             pos = CheckIf(ScreenShot(),'LBC/Request')
                             if not pos:
-                                device.shell(f"input swipe 50 1300 50 200")
+                                device.shell(f"input swipe 150 200 150 250")
                                 Sleep(1)
                             else:
                                 Press([pos[0]+300,pos[1]+200])
