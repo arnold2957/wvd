@@ -142,6 +142,21 @@ def Factory():
     logger = None
     setting =  None
     ##################################################################
+    def DeviceShell(cmdStr):
+        while True:
+            try:
+                device.shell(cmdStr)
+            except (RuntimeError, ConnectionResetError, cv2.error) as e:
+                logger.debug(f"ADB操作失败: {e}")
+                logger.info("ADB连接异常，尝试重启服务...")
+                
+                while True:
+                    if StartAdbServer(setting):
+                        setting._ADBDEVICE = CreateAdbDevice(setting)
+                        logger.info("ADB服务重启成功，设备重新连接")
+                        break
+                    logger.warning("ADB重启失败，5秒后重试...")
+                    time.sleep(5)
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
@@ -314,12 +329,12 @@ def Factory():
     def Press(pos):
         if pos!=None:
             logger.debug(f'按了{pos[0]} {pos[1]}')
-            device.shell(f"input tap {pos[0]} {pos[1]}")
+            DeviceShell(f"input tap {pos[0]} {pos[1]}")
             return True
         return False
     def PressReturn():
         logger.debug("按了返回.")
-        device.shell('input keyevent KEYCODE_BACK')
+        DeviceShell('input keyevent KEYCODE_BACK')
     ##################################################################
     def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
         # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
@@ -346,7 +361,7 @@ def Factory():
                     if target.lower() == 'return':
                         PressReturn()
                     elif target.startswith("input swipe"):
-                        device.shell(target)
+                        DeviceShell(target)
                     else:
                         Press(CheckIf(scn, target))
                 if fallback: # Execute
@@ -390,11 +405,11 @@ def Factory():
             logger.info(f"因为外部设置, 跳过了重启前截图.")
 
         package_name = "jp.co.drecom.wizardry.daphne"
-        mainAct = device.shell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
-        device.shell(f"am force-stop {package_name}")
+        mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
+        DeviceShell(f"am force-stop {package_name}")
         Sleep(2)
         logger.info("巫术, 启动!")
-        logger.debug(device.shell(f"am start -n {mainAct}"))
+        logger.debug(DeviceShell(f"am start -n {mainAct}"))
         Sleep(10)
         raise RestartSignal()
     class RestartSignal(Exception):
@@ -503,11 +518,11 @@ def Factory():
         logger.info("开始智能开箱(?)...")
         ts = []
         xs = []
-        t0 = float(device.shell("date +%s.%N").strip())
+        t0 = float(DeviceShell("date +%s.%N").strip())
         while 1:
             while 1:
                 Sleep(0.2)
-                t = float(device.shell("date +%s.%N").strip())
+                t = float(DeviceShell("date +%s.%N").strip())
                 s = ScreenShot()
                 x = getCursorCoordinates(s,'cursor')
                 if x != None:
@@ -523,7 +538,7 @@ def Factory():
             spd = 2/p*900
             logger.debug(f"s = {2/p*900}")
 
-            t = float(device.shell("date +%s.%N").strip())
+            t = float(DeviceShell("date +%s.%N").strip())
             s = ScreenShot()
             x = getCursorCoordinates(s,'cursor')
             target = findWidestRectMid(s)
@@ -545,7 +560,7 @@ def Factory():
                 if waittime > 0.270 :
                     logger.debug(f"预计等待 {waittime}")
                     Sleep(waittime-0.270)
-                    device.shell(f"input tap 450 900") # 这里和retry重合 可以按.
+                    DeviceShell(f"input tap 450 900") # 这里和retry重合 可以按.
                     Sleep(3)
                 else:
                     logger.debug(f"等待时间过短: {waittime}")
@@ -877,7 +892,7 @@ def Factory():
         targetPos = None
         for i in range(len(searchDir)):
             if searchDir[i]!=None:
-                device.shell(f"input swipe {searchDir[i][0]} {searchDir[i][1]} {searchDir[i][2]} {searchDir[i][3]}")
+                DeviceShell(f"input swipe {searchDir[i][0]} {searchDir[i][1]} {searchDir[i][2]} {searchDir[i][3]}")
                 Sleep(2)
 
             map = ScreenShot()
@@ -898,7 +913,7 @@ def Factory():
                 if not roi:
                     # 如果没有指定roi 我们使用二次确认
                     logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                    device.shell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
+                    DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
                     Sleep(2)
                     Press([1,1255])
                     targetPos = CheckIf(ScreenShot(),target,roi)
@@ -1135,8 +1150,8 @@ def Factory():
                     # Press(CheckIf(ScreenShot(), 'resume'))
                     # StateMoving_CheckFrozen()
                     ########### OPEN MAP
-                    Press([777,150])
                     Sleep(1)
+                    Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
                     gameFrozen_map, result = GameFrozenCheck(gameFrozen_map,ScreenShot())
@@ -1238,7 +1253,7 @@ def Factory():
                                 Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
                                 if not Press(CheckIf(ScreenShot(),'FortressArrival')):
-                                    device.shell(f"input swipe 450 1200 450 200")
+                                    DeviceShell(f"input swipe 450 1200 450 200")
                                     Press(FindCoordsOrElseExecuteFallbackAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
                                 
                                 while pos:= CheckIf(ScreenShot(), 'leap'):
@@ -1346,12 +1361,12 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                             Sleep(2)
-                            device.shell(f"input swipe 150 1000 150 200")
+                            DeviceShell(f"input swipe 150 1000 150 200")
                             Sleep(2)
                             while 1:
                                 pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
                                 if not pos:
-                                    device.shell(f"input swipe 150 200 150 250")
+                                    DeviceShell(f"input swipe 150 200 150 250")
                                     Sleep(1)
                                 else:
                                     Press([pos[0]+350,pos[1]+180])
@@ -1473,7 +1488,7 @@ def Factory():
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
                         if not Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore')):
-                            device.shell(f"input swipe 450 1200 450 200")
+                            DeviceShell(f"input swipe 450 1200 450 200")
                             Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/GhostsOfYore','input swipe 50 1200 50 1300',1))
                         
                         while CheckIf(ScreenShot(), 'leap'):
@@ -1506,12 +1521,12 @@ def Factory():
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                         Sleep(1)
-                        device.shell(f"input swipe 150 1300 150 200")
+                        DeviceShell(f"input swipe 150 1300 150 200")
                         Sleep(2)
                         while 1:
                             pos = CheckIf(ScreenShot(),'LBC/Request')
                             if not pos:
-                                device.shell(f"input swipe 150 200 150 250")
+                                DeviceShell(f"input swipe 150 200 150 250")
                                 Sleep(1)
                             else:
                                 Press([pos[0]+300,pos[1]+200])
@@ -1564,6 +1579,7 @@ def Factory():
                             )
             case 'SSC-goldenchest':
                 while 1:
+                    setting._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
                     if setting._FORCESTOPING.is_set():
                         break
                     if setting._LAPTIME!= 0:
@@ -1590,12 +1606,12 @@ def Factory():
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
                         Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
                         Sleep(1)
-                        device.shell(f"input swipe 150 1300 150 200")
+                        DeviceShell(f"input swipe 150 1300 150 200")
                         Sleep(2)
                         while 1:
                             pos = CheckIf(ScreenShot(),'SSC/Request')
                             if not pos:
-                                device.shell(f"input swipe 150 200 150 250")
+                                DeviceShell(f"input swipe 150 200 150 250")
                                 Sleep(1)
                             else:
                                 Press([pos[0]+300,pos[1]+150])
@@ -1622,9 +1638,30 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('SSC/trapdeactived',['input swipe 450 1050 450 850',[445,721]],4),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[1,1],1)
                     )
-                    setting._TARGETLIST = ['SSC/goldenchest_1','SSC/SSC_quit']
-                    setting._TARGETSEARCHDIR = [[[700,1200,100,100]],[[700,1200,100,100]]]
-                    setting._TARGETROI = ['default','default']
+                    setting._TARGETLIST = [
+                        'SSC/goldenchest_ninja_2',
+                        'SSC/goldenchest_ninja_1',
+                        'chest',
+                        'chest',
+                        'chest',
+                        'chest',
+                        'SSC/SSC_quit']
+                    setting._TARGETSEARCHDIR = [
+                        [[100,100,700,1200]], # 左上
+                        [[100,100,700,1200]], # 左上
+                        [[100,100,700,1200]],
+                        [[700,100,100,1200]],
+                        [[700,1200,100,100]],
+                        [[100,1200,700,100]],
+                        [[700,1200,100,100]]]
+                    setting._TARGETROI = [
+                        'default',
+                        'default',
+                        [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]],
+                        [[0,0,900,1600],[0,0,407,1600]],
+                        [[0,0,900,1600],[0,0,900,800]],
+                        [[0,0,900,1600],[650,0,250,811],[507,166,179,165],],
+                        None]
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 第一个箱子'),
                         lambda: StateDungeon()
