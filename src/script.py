@@ -145,7 +145,7 @@ def Factory():
     def DeviceShell(cmdStr):
         while True:
             try:
-                device.shell(cmdStr)
+                return device.shell(cmdStr)
             except (RuntimeError, ConnectionResetError, cv2.error) as e:
                 logger.debug(f"ADB操作失败: {e}")
                 logger.info("ADB连接异常，尝试重启服务...")
@@ -846,7 +846,7 @@ def Factory():
             castSpellSkill = False
             for skillspell in setting._SPELLSKILLCONFIG:
                 if setting._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                    logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
+                    #logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
                     continue
                 elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
                     logger.info(f"使用技能 {skillspell}")
@@ -897,7 +897,7 @@ def Factory():
 
             map = ScreenShot()
             if not CheckIf(map,'mapFlag'):
-                return None # 发生了错误
+                raise KeyError("地图不可用.")
             
             targetPos = None
             if roi == 'default':
@@ -959,7 +959,13 @@ def Factory():
         map = ScreenShot()
         if not CheckIf(map,'mapFlag'):
                 return None,targetList # 发生了错误
-        if not (pos:=StateMap_FindSwipeClick(target,searchDir,roi)):
+        try:
+            searchResult = StateMap_FindSwipeClick(target,searchDir,roi)
+        except KeyError as e:
+            logger.info(f"错误: {e}") # 一般来说这里只会返回"地图不可用"
+            return None,  targetList
+        
+        if searchResult == None:
             logger.info(f"没有找到{target}.")
             if target == 'chest' or target.endswith('_once'):
                 targetList.pop(0)
@@ -967,13 +973,13 @@ def Factory():
             return DungeonState.Map,  targetList
         else:
             if target in normalPlace or target.endswith("_quit"):
-                Press(pos)
+                Press(searchResult)
                 Press([280,1433]) # automove
                 return StateMoving_CheckFrozen(),targetList
             else:
                 if (CheckIf_FocusCursor(ScreenShot(),target)): #注意 这里通过二次确认 我们可以看到目标地点 而且是未选中的状态
                     logger.info("经过对比中心区域, 确认没有抵达.")
-                    Press(pos)
+                    Press(searchResult)
                     Press([280,1433]) # automove
                     return StateMoving_CheckFrozen(),targetList
                 else:

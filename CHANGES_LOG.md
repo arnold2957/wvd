@@ -1,11 +1,12 @@
 **新版本!**
 ==v1.4.3-beta1==
-忍洞现已加入重置1F刷取3个金箱.
-现在对底层的adb device shell加了额外的adb错误检测, 以避免adb异常导致的中断.
-todo: 水路1 
-todo: 全体aoe卡住 三牛因为怪物丢失一牛 打完三牛无法回程
-todo: 卡战斗ok
+新增了忍洞"重置1F刷取3个金箱"的任务.
+新增了对底层的adb device shell加了额外的adb错误检测, 以避免adb异常导致的中断.
+修复了船2等地图有时会不找宝箱直接退出的问题.
+todo: 卡战斗ok 全体aoe卡住
 todo: 刷内裤
+todo: 把界面的按钮改成checkbox
+todo: 把dungeonState的参数转为字典
 
 
 **历史更新**
