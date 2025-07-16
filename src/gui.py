@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.3-beta3'
+__version__ = '1.4.3-beta4'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -20,20 +20,20 @@ os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 
 ############################################
 # --- 预定义的技能和目标 ---
-DUNGEON_TARGETS = ["[刷图]水路一号街",
-                   "[刷图]水路船一 shiphold",
-                   "[刷图]水路船二 lounge",
-                   "[刷图]鸟洞三层 fordraig B3F",
-                   "[刷图]要塞三层",
-                   "[刷图]卢比肯的洞窟",
-                   "[刷图]忍洞一层 刷怪",
-                   "[刷图]土洞(5-9)",
-                   "[刷图]火洞(10-14)", 
-                   "[刷图]风洞(15-19)",
-                   "[刷图]光洞(15-19)",
-                   "[任务]7000G",
+DUNGEON_TARGETS = ["[宝箱]水路一号街",
+                   "[宝箱]水路船一 shiphold",
+                   "[宝箱]水路船二 lounge",
+                   "[宝箱]鸟洞三层 fordraig B3F",
+                   "[宝箱]要塞三层",
+                   "[宝箱]卢比肯的洞窟",
+                   "[宝箱]忍洞一层 刷怪",
+                   "[宝箱]土洞(5-9)",
+                   "[宝箱]火洞(10-14)", 
+                   "[宝箱]风洞(15-19)",
+                   "[宝箱]光洞(15-19)",
+                   "[金币]7000G",
+                   "[经验]击退敌势力",
                    "[任务]角鹫之剑 fordraig",
-                   "[任务]击退敌势力",
                    "[任务]卢比肯-三牛",
                    "[任务]忍洞-金箱"
                    ]
@@ -59,27 +59,26 @@ class ConfigPanelApp(tk.Toplevel):
         # --- ttk Style ---
         self.style = ttk.Style()
         self.style.configure("Active.TButton", foreground="green")
-        self.style.configure("Active.TButton", foreground="green")
         
 
         # --- UI 变量 ---
         self.var_list = [
-            # var_name, type, config_name, default_value
-            ["farm_target_var", tk.StringVar, "_FARMTARGET", DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""],
-            ["randomly_open_chest_var", tk.BooleanVar, "_RANDOMLYOPENCHEST", False],
-            ["who_will_open_it_var", tk.IntVar,"_WHOWILLOPENIT",0],
-            ["skip_recover_var", tk.BooleanVar, "_SKIPCOMBATRECOVER", False],
-            ["skip_chest_recover_var",tk.BooleanVar,"_SKIPCHESTRECOVER",False],
-            ["system_auto_combat_var", tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
-            ["aoe_once_var",tk.BooleanVar,"AOE_ONCE",False],
-            ["auto_after_aoe_var",tk.BooleanVar,"AUTO_AFTER_AOE",False],
-            ["active_rest_var",tk.BooleanVar,"ACTIVE_REST",True],
-            ["rest_intervel_var", tk.StringVar, "_RESTINTERVEL", 0],
-            ["karma_adjust_var", tk.StringVar, "_KARMAADJUST", "+0"],
-            ["adb_path_var", tk.StringVar, "ADB_PATH", ""],
-            ["adb_port_var", tk.StringVar, "ADB_PORT", 5555],
-            ["last_version",tk.StringVar,"LAST_VERSION",""],
-            ["latest_version",tk.StringVar,"LATEST_VERSION",None]
+            #var_name,                  type,          config_name,                  default_value
+            ["farm_target_var",         tk.StringVar,  "_FARMTARGET",                DUNGEON_TARGETS[0] if DUNGEON_TARGETS else ""],
+            ["randomly_open_chest_var", tk.BooleanVar, "_RANDOMLYOPENCHEST",         False],
+            ["who_will_open_it_var",    tk.IntVar,     "_WHOWILLOPENIT",             0],
+            ["skip_recover_var",        tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
+            ["skip_chest_recover_var",  tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
+            ["system_auto_combat_var",  tk.BooleanVar, "SYSTEM_AUTO_COMBAT_ENABLED", False],
+            ["aoe_once_var",            tk.BooleanVar, "AOE_ONCE",                   False],
+            ["auto_after_aoe_var",      tk.BooleanVar, "AUTO_AFTER_AOE",             False],
+            ["active_rest_var",         tk.BooleanVar, "ACTIVE_REST",                True],
+            ["rest_intervel_var",       tk.StringVar,  "_RESTINTERVEL",              0],
+            ["karma_adjust_var",        tk.StringVar,  "_KARMAADJUST",               "+0"],
+            ["adb_path_var",            tk.StringVar,  "ADB_PATH",                   ""],
+            ["adb_port_var",            tk.StringVar,  "ADB_PORT",                   5555],
+            ["last_version",            tk.StringVar,  "LAST_VERSION",               ""],
+            ["latest_version",          tk.StringVar,  "LATEST_VERSION",             None]
             ]
         
         self.config = LoadConfigFromFile()
@@ -88,12 +87,9 @@ class ConfigPanelApp(tk.Toplevel):
 
         self._spell_skill_config_internal = list(self.config.get("_SPELLSKILLCONFIG", []))
 
-        self.skill_buttons_map = [] # 用于存储按钮和它们关联的技能列表
-
         self.create_widgets()
-        self.update_combat_buttons_state() # 初始化时更新按钮状态 (包括启用/禁用)
+        self.update_system_auto_combat() # 初始化时更新按钮状态 (包括启用/禁用)
         self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
-        self.update_current_skills_display() # 初始化时更新技能显示
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
         self.update_change_aoe_once_check() #
 
@@ -358,13 +354,15 @@ class ConfigPanelApp(tk.Toplevel):
             main_frame,
             text="启用自动战斗",
             variable=self.system_auto_combat_var,
-            command=self.toggle_system_auto_combat,
+            command=self.update_system_auto_combat,
             style="LargeFont.TCheckbutton"  # 应用自定义样式
         )
         self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         #仅释放一次aoe
         def aoe_once_command():
+            # self.update_spell_config(FULL_AOE_SKILLS,"全体AOE")
+            # self.update_spell_config(SECRET_AOE_SKILLS,"秘术AOE")
             self.update_change_aoe_once_check()
             self.save_config()
         row_counter += 1
@@ -393,32 +391,20 @@ class ConfigPanelApp(tk.Toplevel):
         self.skills_button_frame = ttk.Frame(main_frame)
         self.skills_button_frame.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W)
 
-        self.btn_enable_all = ttk.Button(self.skills_button_frame, text="启用所有技能", command=lambda: self.update_spell_config(ALL_SKILLS, "all"))
-        self.btn_enable_all.grid(row=0, column=0, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_all, "skills": ALL_SKILLS, "name": "all"})
-
-        self.btn_enable_horizontal_aoe = ttk.Button(self.skills_button_frame, text="启用所有横排AOE", command=lambda: self.update_spell_config(ROW_AOE_SKILLS, "horizontal_aoe"))
-        self.btn_enable_horizontal_aoe.grid(row=0, column=1, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_horizontal_aoe, "skills": ROW_AOE_SKILLS, "name": "horizontal_aoe"})
-
-        self.btn_enable_full_aoe = ttk.Button(self.skills_button_frame, text="启用所有全体AOE", command=lambda: self.update_spell_config(FULL_AOE_SKILLS, "full_aoe"))
-        self.btn_enable_full_aoe.grid(row=1, column=0, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_full_aoe, "skills": FULL_AOE_SKILLS, "name": "full_aoe"})
-
-        self.btn_enable_secret_aoe = ttk.Button(self.skills_button_frame, text="启用秘术AOE", command=lambda: self.update_spell_config(SECRET_AOE_SKILLS, "secret_aoe"))
-        self.btn_enable_secret_aoe.grid(row=1, column=1, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_secret_aoe, "skills": SECRET_AOE_SKILLS, "name": "secret_aoe"})
-
-        self.btn_enable_physical = ttk.Button(self.skills_button_frame, text="启用强力单体", command=lambda: self.update_spell_config(PHYSICAL_SKILLS, "physical_skills"))
-        self.btn_enable_physical.grid(row=2, column=0, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_physical, "skills": PHYSICAL_SKILLS, "name": "physical_skills"})
-
-        self.btn_enable_cc = ttk.Button(self.skills_button_frame, text="启用群体控制", command=lambda: self.update_spell_config(CC_SKILLS, "cc_skills"))
-        self.btn_enable_cc.grid(row=2, column=1, padx=2, pady=2)
-        self.skill_buttons_map.append({"button": self.btn_enable_cc, "skills": CC_SKILLS, "name": "cc_skills"})
-
-        # (不使用)技能选择结果展示
-        self.current_skills_label_var = tk.StringVar()
+        self.spellButton = [
+            ["btn_enable_all","所有技能",ALL_SKILLS,0,0],
+            ["btn_enable_horizontal_aoe","横排AOE",ROW_AOE_SKILLS,0,1],
+            ["btn_enable_full_aoe","全体AOE",FULL_AOE_SKILLS,1,0],
+            ["btn_enable_secret_aoe","秘术AOE",SECRET_AOE_SKILLS,1,1],
+            ["btn_enable_physical","强力单体",PHYSICAL_SKILLS,2,0],
+            ["btn_enable_cc","群体控制",CC_SKILLS,2,1]
+            ]
+        for buttonName,buttonText,buttonSpell, row, col in self.spellButton:
+            setattr(self,buttonName,ttk.Button(
+                self.skills_button_frame,
+                text=f"启用{buttonText}",
+                command=lambda spell=buttonSpell, text=buttonText :self.update_spell_config(spell,text)))
+            getattr(self, buttonName).grid(row=row,column=col,padx=2, pady=2)
 
         # 分割线
         row_counter += 1
@@ -480,43 +466,29 @@ class ConfigPanelApp(tk.Toplevel):
         if self.aoe_once_var.get():
             self.auto_after_aoe_check.config(state="normal")
 
-    def update_current_skills_display(self):
-        if self.system_auto_combat_var.get():
-            self.current_skills_label_var.set(f"启用系统自动战斗")
-        else:
-            # 显示去重后的技能列表
-            unique_skills = list(dict.fromkeys(self._spell_skill_config_internal))
-            self.current_skills_label_var.set(f"当前技能: {unique_skills}")
-
-    def toggle_system_auto_combat(self):
+    def update_system_auto_combat(self):
         is_system_auto = self.system_auto_combat_var.get()
+
+        # 更新技能列表
         if is_system_auto:
             self._spell_skill_config_internal = ["systemAuto"]
         else:
             # 确保不是 ['systemAuto']，如果是，则清空
             if self._spell_skill_config_internal == ["systemAuto"]:
                  self._spell_skill_config_internal = []
-        self.update_combat_buttons_state() # 会调用 update_skill_button_visuals 和 update_current_skills_display
-        self.save_config()
-
-
-    def update_combat_buttons_state(self):
-        is_system_auto = self.system_auto_combat_var.get()
+        
+        # 更新其他按钮信息
         button_state = tk.DISABLED if is_system_auto else tk.NORMAL
-
-        for item in self.skill_buttons_map:
-            item["button"].config(state=button_state)
-
+        for buttonName,_,_, _, _ in self.spellButton:
+            getattr(self,buttonName).config(state=button_state)
         self.aoe_once_check.config(state = button_state)
         self.auto_after_aoe_check.config(state = button_state)
-        # 如果是从 "systemAuto" 切换回来，并且 _spell_skill_config_internal 还是 ['systemAuto']
-        # 则清空它，因为此时用户可以手动选择技能了。
         if not is_system_auto and self._spell_skill_config_internal == ["systemAuto"]:
             self._spell_skill_config_internal = []
-
-        self.update_skill_button_visuals() # 更新按钮颜色
-        self.update_current_skills_display() # 更新技能显示
-
+        
+        # 更新按钮颜色并保存
+        self.update_skill_button_visuals()
+        self.save_config()
 
     def update_spell_config(self, skills_to_process, category_name):
         if self.system_auto_combat_var.get():
@@ -525,7 +497,7 @@ class ConfigPanelApp(tk.Toplevel):
         current_skill_set = set(self._spell_skill_config_internal)
         skills_to_process_set = set(skills_to_process)
 
-        if category_name == "all":
+        if category_name == "所有技能":
             # "启用所有技能" 按钮：如果当前所有技能都已启用，再次点击则清空所有技能。否则，启用所有技能。
             if skills_to_process_set.issubset(current_skill_set) and len(skills_to_process_set) == len(current_skill_set) and len(current_skill_set) > 0 : # 确保不是空集对空集
                 self._spell_skill_config_internal = []
@@ -544,12 +516,12 @@ class ConfigPanelApp(tk.Toplevel):
                 for skill in skills_to_process:
                     if skill not in self._spell_skill_config_internal:
                         self._spell_skill_config_internal.append(skill)
-                logger.info(f"已启用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+                logger.info(f"已启用{category_name}技能. 当前技能: {self._spell_skill_config_internal}")
 
-        # 保证唯一性，但保留顺序（如果重要的话，使用 dict.fromkeys）
+        # 保证唯一性，但保留顺序
         self._spell_skill_config_internal = list(dict.fromkeys(self._spell_skill_config_internal))
 
-        self.update_current_skills_display()
+        # 更新按钮颜色并保存
         self.update_skill_button_visuals()
         self.save_config()
 
@@ -557,16 +529,16 @@ class ConfigPanelApp(tk.Toplevel):
         """根据当前 _spell_skill_config_internal 更新技能按钮的样式"""
         if self.system_auto_combat_var.get():
             # 如果是系统自动战斗，所有按钮都应该是默认样式（因为它们被禁用了）
-            for item in self.skill_buttons_map:
-                item["button"].configure(style="TButton") # 恢复默认样式
+            for buttonName,_,_, _, _ in self.spellButton:
+                getattr(self,buttonName).configure(style="TButton")
             return
 
         current_skill_set = set(self._spell_skill_config_internal)
 
-        for item in self.skill_buttons_map:
-            button = item["button"]
-            skills_for_button = set(item["skills"])
-            category_name = item["name"]
+        for buttonName,buttonText,buttonSpell, row, col in self.spellButton:
+            button = getattr(self,buttonName)
+            skills_for_button = set(buttonSpell)
+            category_name = buttonText
 
             # 特殊处理 "all" 按钮
             if category_name == "all":
@@ -581,6 +553,7 @@ class ConfigPanelApp(tk.Toplevel):
                     button.configure(style="Active.TButton")
                 else:
                     button.configure(style="TButton") # 恢复默认样式
+
     def set_controls_state(self, state):
         self.button_and_entry = [
             self.adb_path_change_button,
@@ -612,7 +585,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         if not self.system_auto_combat_var.get():
             widgets = [
-                *[item["button"] for item in self.skill_buttons_map]
+                *[getattr(self,buttonName) for buttonName,_,_,_,_ in self.spellButton]
             ]
             for widget in widgets:
                 if isinstance(widget, ttk.Widget):
@@ -669,105 +642,97 @@ class ConfigPanelApp(tk.Toplevel):
         setting._ADBDEVICE = CreateAdbDevice(setting)
 
         match self.farm_target_var.get():
-            case "[刷图]水路船一 shiphold":
+            case "[宝箱]水路船一 shiphold":
                 setting._FARMTARGET = 'shiphold'
                 setting._TARGETLIST = ['chest','harken']
                 StreetFarm(setting)
-            case "[刷图]水路船二 lounge":
+            case "[宝箱]水路船二 lounge":
                 setting._FARMTARGET = 'shiphold'
-                setting._TARGETLIST = ['shiphold_upstair_once','chest','lounge_downstair_once','harken']
-                setting._TARGETSEARCHDIR = [
-                    [[1,1,1,1]],
-                    [[100,100,700,1500]],
-                    [[100,100,700,1500]],
-                    None]
-                setting._TARGETROI = [
-                    [[0,0,900,739]],
-                    [[0,0,900,739],[0,529,212,106]],
-                    [[0,0,900,739]],
-                    None]
+                setting._TARGETINFOLIST = [
+                    TargetInfo('shiphold_upstair_once', [[1,1,1,1]],          [[0,0,900,739]],),
+                    TargetInfo('chest',                 [[100,100,700,1500]], [[0,0,900,739],[0,529,212,106]],),
+                    TargetInfo('lounge_downstair_once', [[100,100,700,1500]], [[0,0,900,739]],),
+                    TargetInfo('harken',                None,                 None),
+                    ]
                 StreetFarm(setting)
-            case "[刷图]水路一号街":
+            case "[宝箱]水路一号街":
                 setting._FARMTARGET = 'Dist'
-                setting._TARGETLIST = ['chest','harken']
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest'),
+                    TargetInfo('harken'),
+                    ]
                 StreetFarm(setting)
-            case "[刷图]土洞(5-9)":
+            case "[宝箱]土洞(5-9)":
                 setting._FARMTARGET = 'DOE'
-                setting._TARGETLIST = ['DOEtarget','DOE_quit']
-                setting._DUNGWAITTIMEOUT = 0
+                setting._TARGETINFOLIST = [
+                    TargetInfo(),
+                    TargetInfo(),
+                    ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[刷图]风洞(15-19)":
+            case "[宝箱]风洞(15-19)":
                 setting._FARMTARGET = 'DOW'
-                setting._TARGETLIST = ['chest','DOW_quit']
-                setting._TARGETSEARCHDIR = [
-                    [[700,1200,100,100]],
-                    [[700,1200,100,100]]]
-                setting._TARGETROI = [
-                    [[0,780,900,500],[0,780,150,120]],
-                    None]
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest',    [[700,1200,100,100]], [[0,780,900,500],[0,780,150,120]],),
+                    TargetInfo('DOW_quit', [[700,1200,100,100]], None),
+                    ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[刷图]火洞(10-14)":
+            case "[宝箱]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
-                setting._TARGETLIST = ['DOFtarget1','DOFtarget2','DOF_quit']
-                setting._DUNGWAITTIMEOUT = 0
+                setting._TARGETINFOLIST = [
+                    TargetInfo('DOFtarget1'),
+                    TargetInfo('DOFtarget2'),
+                    TargetInfo('DOF_quit'),
+                    ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[刷图]光洞(15-19)":
+            case "[宝箱]光洞(15-19)":
                 setting._FARMTARGET = 'DOL'
-                setting._TARGETLIST = ['chest','DOL_quit']
-                setting._TARGETSEARCHDIR = [
-                    [[700,100,100,1200]],
-                    [[700,100,100,1200]]]
-                setting._TARGETROI = [
-                    [[420,686,478,481]],
-                    None]
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest',    [[700,100,100,1200]], [[420,686,478,481]]),
+                    TargetInfo('DOL_quit', [[700,100,100,1200]], None),
+                    ]
                 StreetFarm(setting)
-            case "[刷图]卢比肯的洞窟":
+            case "[宝箱]卢比肯的洞窟":
                 setting._FARMTARGET = 'LBC'
-                setting._TARGETLIST = ['chest','LBC/LBC_quit']
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest'),
+                    TargetInfo('LBC/LBC_quit'),
+                    ]
                 StreetFarm(setting)
-            case "[任务]7000G":
+            case "[金币]7000G":
                 setting._FARMTARGET = '7000G'
                 QuestFarm(setting)
-            case "[刷图]鸟洞三层 fordraig B3F":
+            case "[宝箱]鸟洞三层 fordraig B3F":
                 setting._FARMTARGET = 'fordraig-B3F'
-                setting._TARGETLIST = ['chest','harken']
-                setting._TARGETSEARCHDIR = [None,[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100],]]
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest',  None),
+                    TargetInfo('harken', [[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100],]),
+                    ]
                 StreetFarm(setting)
-            case "[刷图]要塞三层":
+            case "[宝箱]要塞三层":
                 setting._FARMTARGET = 'fortress-B3F'
-                setting._TARGETLIST = ['chest','harken2']
-                setting._TARGETSEARCHDIR = [
-                    [[100,1200,700,100]],
-                    [[100,1200,700,100]]]
-                setting._TARGETROI = [
-                    [[0,355,480,805],[320,1053,300,200]],
-                    None]
+                setting._TARGETINFOLIST = [
+                    TargetInfo('chest',  [[100,1200,700,100]], [[0,355,480,805],[320,1053,300,200]]),
+                    TargetInfo('harken2', [[100,1200,700,100]], None),
+                    ]
                 StreetFarm(setting)
-            case "[刷图]忍洞一层 刷怪":
+            case "[宝箱]忍洞一层 刷怪":
                 setting._FARMTARGET = 'SSC'
-                setting._TARGETLIST = ['SSC/SSC1F_left_once','SSC/SSC1F_left_1_once','SSC/SSC1F_left_2_once','SSC/SSC1F_left_3_once','SSC/SSC1F_right_once','SSC/SSC_quit']
-                setting._TARGETSEARCHDIR = [
-                    [[100,1200,700,100]],
-                    [[100,1200,700,100]],
-                    [[100,1200,700,100]],
-                    [[100,1200,700,100]],
-                    [[700,1200,100,100]],
-                    [[700,1200,100,100]]]
-                setting._TARGETROI = [
-                    [[0,0,900,1600],[0,0,900,800],[500,0,400,1600],],
-                    'default',
-                    'default',
-                    'default',
-                    [[0,0,900,1600],[0,0,900,800]],
-                    'default']
+                setting._TARGETINFOLIST = [
+                    TargetInfo('SSC/SSC1F_left_once',   '左下', [[0,0,900,1600],[0,0,900,800],[500,0,400,1600]]),
+                    TargetInfo('SSC/SSC1F_left_1_once', '左下', 'default'),
+                    TargetInfo('SSC/SSC1F_left_2_once', '左下', 'default'),
+                    TargetInfo('SSC/SSC1F_left_3_once', '左下', 'default'),
+                    TargetInfo('SSC/SSC1F_right_once',  '右下', [[0,0,900,1600],[0,0,900,800]]),
+                    TargetInfo('SSC/SSC_quit',          '右下', 'default'),
+                    ]
                 StreetFarm(setting)
             case "[任务]角鹫之剑 fordraig":
                 setting._FARMTARGET = 'fordraig'
                 QuestFarm(setting)
-            case "[任务]击退敌势力":
+            case "[经验]击退敌势力":
                 setting._FARMTARGET = 'repelEnemyForces'
                 QuestFarm(setting)
             case "[任务]卢比肯-三牛":
