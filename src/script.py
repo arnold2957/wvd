@@ -1268,8 +1268,9 @@ def Factory():
                         )
                     state = State.Dungeon
                 case State.Dungeon:
+                    targetInfoList = setting._TARGETINFOLIST.copy()
                     RestartableSequenceExecution(
-                        lambda: StateDungeon(setting._TARGETINFOLIST)
+                        lambda: StateDungeon(targetInfoList)
                         )
                     state = None
         setting._FINISHINGCALLBACK()
