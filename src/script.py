@@ -387,6 +387,24 @@ def Factory():
             if mean_diff<0.2:
                 return True
         return False
+    def CheckIf_ReachPosition(pathOfScreen,targetInfo : TargetInfo):
+        screenshot = pathOfScreen
+        position = targetInfo.roi
+        cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
+
+        for i in range(4):
+            template = _CheckIfLoadImage(f"cursor_{i}")
+        
+            result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
+            threshold = 0.80
+            _, max_val, _, _ = cv2.minMaxLoc(result)
+
+            logger.debug(f"目标格搜素{position}, 匹配程度:{max_val*100:.2f}%")
+            if max_val > threshold:
+                logger.debug("已达到检测阈值.")
+                return None 
+            
+        return position
     def Press(pos):
         if pos!=None:
             logger.debug(f'按了{pos[0]} {pos[1]}')
@@ -656,11 +674,12 @@ def Factory():
                     Sleep(2)
 
             identifyConfig = [
-                ('combatActive',          DungeonState.Combat),
+                ('combatActive',  DungeonState.Combat),
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
                 ('whowillopenit', DungeonState.Chest),
                 ('mapFlag',       DungeonState.Map)
+                ('combatActive_2',  DungeonState.Combat),
                 ]
             for pattern, state in identifyConfig:
                 if CheckIf(screen, pattern):
@@ -701,7 +720,6 @@ def Factory():
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
-                logger.info(f"==={setting._SPECIALDIALOGOPTION}")
                 if setting._SPECIALDIALOGOPTION != None:
                     for option in setting._SPECIALDIALOGOPTION:
                         if Press(CheckIf(ScreenShot(),option)):
@@ -956,18 +974,23 @@ def Factory():
                 raise KeyError("地图不可用.")
 
             targetPos = None
-            if targetPos:=CheckIf(map,target,roi):
-                logger.info(f'找到了 {target}! {targetPos}')
-                if (target == 'chest') and (swipeDir!= None):
-                    logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{swipeDir} 位置:{targetPos}")
-                if not roi:
-                    # 如果没有指定roi 我们使用二次确认
-                    logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                    DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
-                    Sleep(2)
-                    Press([1,1255])
-                    targetPos = CheckIf(ScreenShot(),target,roi)
-                break
+            if target == 'position':
+                logger.info(f"当前目标:{target}{roi}")
+                targetPos = CheckIf_ReachPosition(map,targetInfo)
+            else:
+                logger.info(f"搜索{target}...")
+                if targetPos:=CheckIf(map,target,roi):
+                    logger.info(f'找到了 {target}! {targetPos}')
+                    if (target == 'chest') and (swipeDir!= None):
+                        logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{swipeDir} 位置:{targetPos}")
+                    if not roi:
+                        # 如果没有指定roi 我们使用二次确认
+                        logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
+                        DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
+                        Sleep(2)
+                        Press([1,1255])
+                        targetPos = CheckIf(ScreenShot(),target,roi)
+                    break
         return targetPos
     def StateMoving_CheckFrozen():
         lastscreen = None
@@ -996,14 +1019,14 @@ def Factory():
             lastscreen = screen
         return dungState
     def StateSearch(waitTimer, targetInfoList : list[TargetInfo]):
-        normalPlace = ['harken','chest','leaveDung']
+        normalPlace = ['harken','chest','leaveDung','position']
         targetInfo = targetInfoList[0]
         target = targetInfo.target
-        logger.info(f"当前目标:{target}")
         # 地图已经打开.
         map = ScreenShot()
         if not CheckIf(map,'mapFlag'):
                 return None,targetInfoList # 发生了错误
+
         try:
             searchResult = StateMap_FindSwipeClick(targetInfo)
         except KeyError as e:
@@ -1012,7 +1035,7 @@ def Factory():
 
         if searchResult == None:
             logger.info(f"没有找到{target}.")
-            if target == 'chest' or target.endswith('_once'):
+            if target == 'chest' or target == 'position' or target.endswith('_once'):
                 targetInfoList.pop(0)
                 logger.info(f"不再搜索{target}")
             return DungeonState.Map,  targetInfoList
@@ -1592,21 +1615,10 @@ def Factory():
                         lambda: logger.info('第五步: 进入牛洞'),
                         lambda: stepFive()
                         )
-                    Gorgon1 = TargetInfo(
-                                'LBC/Gorgon',
-                                [[450,800,800,1200]]
-                                )
-                    Gorgon2 = TargetInfo(
-                                'LBC/Gorgon2',
-                                [[800,1200,450,800]]
-                                )
-                    Gorgon3 = TargetInfo(
-                                'LBC/Gorgon3',
-                                [[450,800,0,1200]]
-                                )
-                    LBC_quit = TargetInfo(
-                                'LBC/LBC_quit'
-                                )
+                    Gorgon1 = TargetInfo('position','左上',[134,342])
+                    Gorgon2 = TargetInfo('position','右上',[500,395])
+                    Gorgon3 = TargetInfo('position','右下',[340,1027])
+                    LBC_quit = TargetInfo('LBC/LBC_quit')
                     if setting._ACTIVE_REST:
                         RestartableSequenceExecution(
                             lambda: logger.info('第六步: 击杀一牛'),
@@ -1695,13 +1707,13 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 第一个箱子'),
                         lambda: StateDungeon([
-                                TargetInfo('SSC/goldenchest_ninja_2_once', '左上', [[0,0,900,1600],[0,0,687,1600],[752,0,148,1600]]),
-                                TargetInfo('SSC/goldenchest_ninja_1_once', '左上', [[0,0,900,1600],[0,0,313,1600],[379,0,521,1600]]),
-                                TargetInfo('chest',                        '左上', [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]]),
-                                TargetInfo('chest',                        '右上', [[0,0,900,1600],[0,0,407,1600]]),
-                                TargetInfo('chest',                        '右下', [[0,0,900,1600],[0,0,900,800]]),
-                                TargetInfo('chest',                        '左下', [[0,0,900,1600],[650,0,250,811],[507,166,179,165]]),
-                                TargetInfo('SSC/SSC_quit',                 '右下', None)
+                                TargetInfo('position',     '左上', [719,1088]),
+                                TargetInfo('position',     '左上', [346,874]),
+                                TargetInfo('chest',        '右上', [[0,0,900,1600],[0,0,407,1600]]),
+                                TargetInfo('chest',        '右下', [[0,0,900,1600],[0,0,900,800]]),
+                                TargetInfo('chest',        '左下', [[0,0,900,1600],[650,0,250,811],[507,166,179,165]]),
+                                TargetInfo('chest',        '左上', [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]]),
+                                TargetInfo('SSC/SSC_quit', '右下', None)
                             ])
                         )
 
