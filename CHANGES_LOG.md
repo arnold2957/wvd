@@ -9,12 +9,6 @@
 重构了底层的StateDungeon.
 重构了技能配置按钮.
 
-todo: 把界面的按钮改成checkbox
-todo: 数据分离
-
-todo: 卡战斗ok 全体aoe卡住 => 等重构吧
-todo: 刷内裤 => 刷不了
-
 
 **历史更新**
 ==v1.4.2==
