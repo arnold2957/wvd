@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.3-beta4'
+__version__ = '1.4.3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -665,8 +665,8 @@ class ConfigPanelApp(tk.Toplevel):
             case "[宝箱]土洞(5-9)":
                 setting._FARMTARGET = 'DOE'
                 setting._TARGETINFOLIST = [
-                    TargetInfo(),
-                    TargetInfo(),
+                    TargetInfo("DOEtarget"),
+                    TargetInfo("DOE_quit"),
                     ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
