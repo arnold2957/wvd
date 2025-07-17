@@ -678,8 +678,8 @@ def Factory():
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
                 ('whowillopenit', DungeonState.Chest),
-                ('mapFlag',       DungeonState.Map)
-                ('combatActive_2',  DungeonState.Combat),
+                ('mapFlag',       DungeonState.Map),
+                ('combatActive_2',DungeonState.Combat),
                 ]
             for pattern, state in identifyConfig:
                 if CheckIf(screen, pattern):
@@ -1509,7 +1509,8 @@ def Factory():
                     Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway','EdgeOfTown',1))
                     FindCoordsOrElseExecuteFallbackAndWait('7thDist',[1,1],1)
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['7thDist','GotoDung',[1,1]],1)
-                    StateDungeon([TargetInfo('repelEnemyForcesMid'),TargetInfo('repelEnemyForces')])
+                    StateDungeon([TargetInfo('position','左下',[559,599]),
+                                  TargetInfo('position','左下',[239,813])])
                     logger.info('已抵达目标地点, 开始战斗.')
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1)
                     for i in range(setting._RESTINTERVEL):
@@ -1529,7 +1530,7 @@ def Factory():
                                 Press(pos)
                         logger.info(f"第{i+1}轮结束.")
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo('repelEnemyForcesHarken')])
+                        lambda:StateDungeon([TargetInfo('position','左上',[612,448])])
                     )
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('returnText',[[1,1],'leaveDung','return'],3))
