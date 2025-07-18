@@ -160,7 +160,7 @@ def StartAdbServer(setting: FarmSetting):
                 [setting._ADBPATH, "start-server"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                shell=True
+                shell=False
             )
             setting._LOGGER.info("ADB 服务启动中...")
 

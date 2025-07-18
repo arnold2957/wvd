@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.4-beta3'
+__version__ = '1.4.4-beta4'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -57,10 +57,13 @@ class ConfigPanelApp(tk.Toplevel):
         self.stop_event = Event()
 
         # --- ttk Style ---
+        #
         self.style = ttk.Style()
-        self.style.configure("Active.TButton", foreground="green")
-        
-
+        self.style.configure("custom.TCheckbutton")
+        self.style.map("Custom.TCheckbutton",
+            foreground=[("selected", "#196EBF"), ("!selected", "black")])
+        self.style.configure("BoldFont.TCheckbutton", font=("微软雅黑", 9,"bold"))
+        self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
         # --- UI 变量 ---
         self.var_list = [
             #var_name,                  type,          config_name,                  default_value
@@ -78,7 +81,7 @@ class ConfigPanelApp(tk.Toplevel):
             ["adb_path_var",            tk.StringVar,  "ADB_PATH",                   ""],
             ["adb_port_var",            tk.StringVar,  "ADB_PORT",                   5555],
             ["last_version",            tk.StringVar,  "LAST_VERSION",               ""],
-            ["latest_version",          tk.StringVar,  "LATEST_VERSION",             None]
+            ["latest_version",          tk.StringVar,  "LATEST_VERSION",             None],
             ]
         
         self.config = LoadConfigFromFile()
@@ -87,9 +90,23 @@ class ConfigPanelApp(tk.Toplevel):
 
         self._spell_skill_config_internal = list(self.config.get("_SPELLSKILLCONFIG", []))
 
+        self.spellskill_table = [
+            ["btn_enable_all","所有技能",ALL_SKILLS,0,0],
+            ["btn_enable_horizontal_aoe","横排AOE",ROW_AOE_SKILLS,0,1],
+            ["btn_enable_full_aoe","全体AOE",FULL_AOE_SKILLS,1,0],
+            ["btn_enable_secret_aoe","秘术AOE",SECRET_AOE_SKILLS,1,1],
+            ["btn_enable_physical","强力单体",PHYSICAL_SKILLS,2,0],
+            ["btn_enable_cc","群体控制",CC_SKILLS,2,1]
+            ]
+        for btn,_,spellskillList,_,_ in self.spellskill_table:
+            for item in spellskillList:
+                if item not in self._spell_skill_config_internal:
+                    setattr(self,f"{btn}_var",tk.BooleanVar(value = False))
+                    break
+                setattr(self,f"{btn}_var",tk.BooleanVar(value = True))             
+
         self.create_widgets()
-        self.update_system_auto_combat() # 初始化时更新按钮状态 (包括启用/禁用)
-        self.update_skill_button_visuals() # 初始化时更新技能按钮颜色
+        self.update_system_auto_combat()
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
         self.update_change_aoe_once_check() #
 
@@ -207,7 +224,8 @@ class ConfigPanelApp(tk.Toplevel):
             frame_row3,
             text="智能开箱(测试版)",
             variable=self.randomly_open_chest_var,
-            command=self.save_config
+            command=self.save_config,
+            style="Custom.TCheckbutton"
         )
         self.random_chest_check.grid(row=0, column=0,  sticky=tk.W, pady=5)
         ttk.Label(frame_row3, text="| 开箱人选:").grid(row=0, column=1, sticky=tk.W, pady=5)
@@ -243,14 +261,16 @@ class ConfigPanelApp(tk.Toplevel):
             row_recover,
             text="跳过战后恢复",
             variable=self.skip_recover_var,
-            command=self.save_config
+            command=self.save_config,
+            style="Custom.TCheckbutton"
         )
         self.skip_recover_check.grid(row=0, column=0)
         self.skip_chest_recover_check = ttk.Checkbutton(
             row_recover,
             text="跳过开箱后恢复",
             variable=self.skip_chest_recover_var,
-            command=self.save_config
+            command=self.save_config,
+            style="Custom.TCheckbutton"
         )
         self.skip_chest_recover_check.grid(row=0, column=1)
 
@@ -266,7 +286,8 @@ class ConfigPanelApp(tk.Toplevel):
             frame_row5,
             variable=self.active_rest_var,
             text="启用旅店休息",
-            command=checkcommand
+            command=checkcommand,
+            style="Custom.TCheckbutton"
             )
         self.active_rest_check.grid(row=0, column=0)
         ttk.Label(frame_row5, text=" | 间隔:").grid(row=0, column=1, sticky=tk.W, pady=5)
@@ -348,21 +369,22 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 系统自动战斗
         row_counter += 1
-        style = ttk.Style()
-        style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 10,"bold"))  # 修改字体和字号
         self.system_auto_check = ttk.Checkbutton(
             main_frame,
             text="启用自动战斗",
             variable=self.system_auto_combat_var,
             command=self.update_system_auto_combat,
-            style="LargeFont.TCheckbutton"  # 应用自定义样式
+            style="LargeFont.TCheckbutton"
         )
         self.system_auto_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         #仅释放一次aoe
         def aoe_once_command():
-            # self.update_spell_config(FULL_AOE_SKILLS,"全体AOE")
-            # self.update_spell_config(SECRET_AOE_SKILLS,"秘术AOE")
+            if self.aoe_once_var.get():
+                if self.btn_enable_full_aoe_var.get() != True:
+                    self.btn_enable_full_aoe.invoke()
+                if self.btn_enable_secret_aoe_var.get() != True:
+                    self.btn_enable_secret_aoe.invoke()
             self.update_change_aoe_once_check()
             self.save_config()
         row_counter += 1
@@ -370,7 +392,8 @@ class ConfigPanelApp(tk.Toplevel):
             main_frame,
             text="一场战斗中仅释放一次全体AOE",
             variable=self.aoe_once_var,
-            command= aoe_once_command
+            command= aoe_once_command,
+            style="BoldFont.TCheckbutton"
         )
         self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
 
@@ -380,30 +403,24 @@ class ConfigPanelApp(tk.Toplevel):
             main_frame,
             text="全体AOE后开启自动战斗",
             variable=self.auto_after_aoe_var,
-            command= self.save_config
+            command= self.save_config,
+            style="BoldFont.TCheckbutton"
         )
         self.auto_after_aoe_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
-
-
 
         # 技能按钮框架
         row_counter += 1
         self.skills_button_frame = ttk.Frame(main_frame)
         self.skills_button_frame.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W)
-
-        self.spellButton = [
-            ["btn_enable_all","所有技能",ALL_SKILLS,0,0],
-            ["btn_enable_horizontal_aoe","横排AOE",ROW_AOE_SKILLS,0,1],
-            ["btn_enable_full_aoe","全体AOE",FULL_AOE_SKILLS,1,0],
-            ["btn_enable_secret_aoe","秘术AOE",SECRET_AOE_SKILLS,1,1],
-            ["btn_enable_physical","强力单体",PHYSICAL_SKILLS,2,0],
-            ["btn_enable_cc","群体控制",CC_SKILLS,2,1]
-            ]
-        for buttonName,buttonText,buttonSpell, row, col in self.spellButton:
-            setattr(self,buttonName,ttk.Button(
+        for buttonName,buttonText,buttonSpell, row, col in self.spellskill_table:
+            setattr(self,buttonName,ttk.Checkbutton(
                 self.skills_button_frame,
                 text=f"启用{buttonText}",
-                command=lambda spell=buttonSpell, text=buttonText :self.update_spell_config(spell,text)))
+                variable= getattr(self,f"{buttonName}_var"),
+                command=lambda spell=buttonSpell, btnN = buttonName,btnT = buttonText:self.update_spell_config(spell,btnN,btnT),
+                style="Custom.TCheckbutton"
+                )
+                )
             getattr(self, buttonName).grid(row=row,column=col,padx=2, pady=2)
 
         # 分割线
@@ -473,86 +490,52 @@ class ConfigPanelApp(tk.Toplevel):
         if is_system_auto:
             self._spell_skill_config_internal = ["systemAuto"]
         else:
-            # 确保不是 ['systemAuto']，如果是，则清空
             if self._spell_skill_config_internal == ["systemAuto"]:
                  self._spell_skill_config_internal = []
         
         # 更新其他按钮信息
         button_state = tk.DISABLED if is_system_auto else tk.NORMAL
-        for buttonName,_,_, _, _ in self.spellButton:
+        for buttonName,_,_, _, _ in self.spellskill_table:
             getattr(self,buttonName).config(state=button_state)
         self.aoe_once_check.config(state = button_state)
         self.auto_after_aoe_check.config(state = button_state)
-        if not is_system_auto and self._spell_skill_config_internal == ["systemAuto"]:
-            self._spell_skill_config_internal = []
         
         # 更新按钮颜色并保存
-        self.update_skill_button_visuals()
         self.save_config()
 
-    def update_spell_config(self, skills_to_process, category_name):
+    def update_spell_config(self, skills_to_process, buttonName, buttonText):
         if self.system_auto_combat_var.get():
             return
 
-        current_skill_set = set(self._spell_skill_config_internal)
         skills_to_process_set = set(skills_to_process)
 
-        if category_name == "所有技能":
-            # "启用所有技能" 按钮：如果当前所有技能都已启用，再次点击则清空所有技能。否则，启用所有技能。
-            if skills_to_process_set.issubset(current_skill_set) and len(skills_to_process_set) == len(current_skill_set) and len(current_skill_set) > 0 : # 确保不是空集对空集
-                self._spell_skill_config_internal = []
-                logger.info("已取消所有技能。")
-            else:
+        if buttonName == "btn_enable_all":
+            if getattr(self,f"{buttonName}_var").get():
                 self._spell_skill_config_internal = list(skills_to_process_set)
                 logger.info(f"已启用所有技能: {self._spell_skill_config_internal}")
-        else:
-            # 其他技能按钮：如果该类别的所有技能都已启用，则移除这些技能。否则，添加这些技能。
-            is_fully_active = skills_to_process_set.issubset(current_skill_set)
-
-            if is_fully_active:
-                self._spell_skill_config_internal = [s for s in self._spell_skill_config_internal if s not in skills_to_process_set]
-                logger.info(f"已禁用 {category_name} 技能. 当前技能: {self._spell_skill_config_internal}")
+                for btn,_,_,_,_ in self.spellskill_table:
+                    if btn!=buttonName:
+                        getattr(self,f"{btn}_var").set(True)
             else:
+                self._spell_skill_config_internal = []
+                for btn,_,_,_,_ in self.spellskill_table:
+                    if btn!=buttonName:
+                        getattr(self,f"{btn}_var").set(False)
+                logger.info("已取消所有技能。")
+        else:
+            if getattr(self,f"{buttonName}_var").get():
                 for skill in skills_to_process:
                     if skill not in self._spell_skill_config_internal:
                         self._spell_skill_config_internal.append(skill)
-                logger.info(f"已启用{category_name}技能. 当前技能: {self._spell_skill_config_internal}")
+                logger.info(f"已启用{buttonText}技能. 当前技能: {self._spell_skill_config_internal}")
+            else:
+                self._spell_skill_config_internal = [s for s in self._spell_skill_config_internal if s not in skills_to_process_set]
+                logger.info(f"已禁用{buttonText}技能. 当前技能: {self._spell_skill_config_internal}")
 
         # 保证唯一性，但保留顺序
         self._spell_skill_config_internal = list(dict.fromkeys(self._spell_skill_config_internal))
 
-        # 更新按钮颜色并保存
-        self.update_skill_button_visuals()
         self.save_config()
-
-    def update_skill_button_visuals(self):
-        """根据当前 _spell_skill_config_internal 更新技能按钮的样式"""
-        if self.system_auto_combat_var.get():
-            # 如果是系统自动战斗，所有按钮都应该是默认样式（因为它们被禁用了）
-            for buttonName,_,_, _, _ in self.spellButton:
-                getattr(self,buttonName).configure(style="TButton")
-            return
-
-        current_skill_set = set(self._spell_skill_config_internal)
-
-        for buttonName,buttonText,buttonSpell, row, col in self.spellButton:
-            button = getattr(self,buttonName)
-            skills_for_button = set(buttonSpell)
-            category_name = buttonText
-
-            # 特殊处理 "all" 按钮
-            if category_name == "all":
-                # 如果 ALL_SKILLS 中的所有技能都在 current_skill_set 中，并且数量一致
-                if skills_for_button and skills_for_button.issubset(current_skill_set) and len(skills_for_button) == len(current_skill_set) and len(current_skill_set) > 0:
-                    button.configure(style="Active.TButton")
-                else:
-                    button.configure(style="TButton")
-            else:
-                # 检查该按钮对应的所有技能是否都在当前配置中
-                if skills_for_button and skills_for_button.issubset(current_skill_set):
-                    button.configure(style="Active.TButton")
-                else:
-                    button.configure(style="TButton") # 恢复默认样式
 
     def set_controls_state(self, state):
         self.button_and_entry = [
@@ -585,7 +568,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         if not self.system_auto_combat_var.get():
             widgets = [
-                *[getattr(self,buttonName) for buttonName,_,_,_,_ in self.spellButton]
+                *[getattr(self,buttonName) for buttonName,_,_,_,_ in self.spellskill_table]
             ]
             for widget in widgets:
                 if isinstance(widget, ttk.Widget):
