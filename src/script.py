@@ -840,7 +840,7 @@ def Factory():
                 totalDiff += mean_diff
             logger.info(f"卡死检测耗时: {time.time()-t:.5f}秒")
             logger.info(f"卡死检测结果: {totalDiff:.5f}")
-            if totalDiff<=0.1:
+            if totalDiff<=0.15:
                 return queue, True
         return queue, False
     def StateInn():
@@ -933,9 +933,6 @@ def Factory():
                     Sleep(1)
                     scn = ScreenShot()
                     if Press(CheckIf(scn,'OK')):
-                        if setting._AOE_ONCE:
-                            setting._ENOUGH_AOE = True
-                            logger.info(f"已经释放了首次全体aoe.")
                         Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0],pos[1]+150])
@@ -943,7 +940,7 @@ def Factory():
                         if CheckIf(ScreenShot(),'notenoughsp'):
                             PressReturn()
                             Press(CheckIf(ScreenShot(),'spellskill/lv1'))
-                            Press([pos[0],pos[1]+150])
+                            Press([pos[0]-15+random.randint(30),pos[1]+150+random.randint(30)])
                             Sleep(1)
                     else:
                         Press([150,750])
@@ -955,6 +952,9 @@ def Factory():
                         Sleep(2)
                     Sleep(1)
                     castSpellSkill = True
+                    if setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
+                        setting._ENOUGH_AOE = True
+                        logger.info(f"已经释放了首次全体aoe.")
                     break
             if not castSpellSkill:
                 Press([850,1100])
@@ -1078,7 +1078,7 @@ def Factory():
             setting._TIME_CHEST = time.time()
         FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
         tryOpenCounter = 0
-        MAXTRYOPEN = 5
+        MAXTRYOPEN = 2
         MAXERROROPEN = 50
         while 1:
             scn = ScreenShot()
@@ -1505,29 +1505,41 @@ def Factory():
                     if setting._FORCESTOPING.is_set():
                         break
                     t = time.time()
-                    StateInn()
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway','EdgeOfTown',1))
-                    FindCoordsOrElseExecuteFallbackAndWait('7thDist',[1,1],1)
-                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['7thDist','GotoDung',[1,1]],1)
-                    StateDungeon([TargetInfo('position','左下',[559,599]),
-                                  TargetInfo('position','左下',[239,813])])
+                    RestartableSequenceExecution(
+                        lambda : StateInn()
+                    )
+                    RestartableSequenceExecution(
+                        lambda : Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway','EdgeOfTown',1)),
+                        lambda : FindCoordsOrElseExecuteFallbackAndWait('7thDist',[1,1],1),
+                        lambda : FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['7thDist','GotoDung',[1,1]],1),
+                    )
+                    RestartableSequenceExecution(
+                        lambda : StateDungeon([TargetInfo('position','左下',[559,599]),
+                                               TargetInfo('position','左下',[239,813])])
+                    )
                     logger.info('已抵达目标地点, 开始战斗.')
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1)
                     for i in range(setting._RESTINTERVEL):
                         logger.info(f"第{i+1}轮开始.")
                         secondcombat = False
                         while 1:
-                            FindCoordsOrElseExecuteFallbackAndWait(['combatActive','icanstillgo'],['input swipe 400 400 400 100',[1,1]],1)
-                            if CheckIf(scn:=ScreenShot(),'combatActive'):
-                                StateCombat()
-                            elif pos:=CheckIf(scn,'icanstillgo'):
-                                if secondcombat:
-                                    logger.info(f"第2场战斗结束.")
-                                    Press(CheckIf(scn,'letswithdraw'))
-                                    break
+                            Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive'],['input swipe 400 400 400 100',[1,1]],1))
+                            Sleep(1)
+                            if setting._AOE_ONCE:
+                                setting._ENOUGH_AOE = False
+                            while not (pos:=CheckIf(scn:=ScreenShot(),'icanstillgo')):
+                                if CheckIf(scn,'combatActive'):
+                                    StateCombat()
+                                else:
+                                    Press([1,1])
+                            if not secondcombat:
                                 logger.info(f"第1场战斗结束.")
                                 secondcombat = True
                                 Press(pos)
+                            else:
+                                logger.info(f"第2场战斗结束.")
+                                Press(CheckIf(ScreenShot(),'letswithdraw'))
+                                break
                         logger.info(f"第{i+1}轮结束.")
                     RestartableSequenceExecution(
                         lambda:StateDungeon([TargetInfo('position','左上',[612,448])])
@@ -1710,10 +1722,10 @@ def Factory():
                         lambda: StateDungeon([
                                 TargetInfo('position',     '左上', [719,1088]),
                                 TargetInfo('position',     '左上', [346,874]),
+                                TargetInfo('chest',        '左上', [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]]),
                                 TargetInfo('chest',        '右上', [[0,0,900,1600],[0,0,407,1600]]),
                                 TargetInfo('chest',        '右下', [[0,0,900,1600],[0,0,900,800]]),
                                 TargetInfo('chest',        '左下', [[0,0,900,1600],[650,0,250,811],[507,166,179,165]]),
-                                TargetInfo('chest',        '左上', [[0,0,900,1600],[640,0,260,1600],[506,0,200,700]]),
                                 TargetInfo('SSC/SSC_quit', '右下', None)
                             ])
                         )

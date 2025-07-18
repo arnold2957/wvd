@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.4-beta2'
+__version__ = '1.4.4-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
