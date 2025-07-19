@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.5'
+__version__ = '1.4.6-beta1'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -43,7 +43,7 @@ class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller):
         super().__init__(master_controller)
         self.controller = master_controller
-        self.geometry('550x580')
+        self.geometry('550x608')
         # self.root.resizable(False, False)
         self.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
@@ -110,9 +110,10 @@ class ConfigPanelApp(tk.Toplevel):
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
         self.update_change_aoe_once_check() #
 
-        logger.info("**********************************\n" \
-                    f"当前版本: {__version__}\n遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356\n"\
-                    "**********************************\n" )
+        logger.info("**********************************")
+        logger.info(f"当前版本: {__version__}")
+        logger.info("遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356.", extra={"summary": True})
+        logger.info("**********************************")
         
         if self.last_version.get() != __version__:
             ShowChangesLogWindow()
@@ -143,12 +144,28 @@ class ConfigPanelApp(tk.Toplevel):
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
-        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white', width = 34, height = 1)
+        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white',bd=5,relief=tk.FLAT, width = 34, height = 30)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
         self.scrolled_text_handler.setLevel(logging.INFO)
         self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
         logger.addHandler(self.scrolled_text_handler)
+
+
+        self.summary_log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='#f0f0f0',bd=2, width = 34, )
+        self.summary_log_display.grid(row=1, column=1, pady=5)
+        self.summary_text_handler = ScrolledTextHandler(self.summary_log_display)
+        self.summary_text_handler.setLevel(logging.INFO)
+        self.summary_text_handler.setFormatter(scrolled_text_formatter)
+        self.summary_text_handler.addFilter(SummaryLogFilter())
+        original_emit = self.summary_text_handler.emit
+        def new_emit(record):
+            self.summary_log_display.configure(state='normal')
+            self.summary_log_display.delete(1.0, tk.END)
+            self.summary_log_display.configure(state='disabled')
+            original_emit(record)
+        self.summary_text_handler.emit = new_emit
+        logger.addHandler(self.summary_text_handler)
 
         main_frame = ttk.Frame(self, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -342,30 +359,9 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row6, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
         ttk.Label(frame_row6, text="点").grid(row=0, column=4, sticky=tk.W, pady=5)
 
-        # 启动!
-        row_counter += 1
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=row_counter, column=0, columnspan=2, pady=5, sticky=tk.W)
-        s = ttk.Style()
-        s.configure('start.TButton', font=('微软雅黑', 15))
-        def btn_command():
-            self.toggle_start_stop()
-            self.save_config()
-        self.start_stop_btn = ttk.Button(
-            button_frame,
-            text="脚本, 启动!",
-            command=btn_command,
-            style='start.TButton'
-        )
-        self.start_stop_btn.grid(row=0, column=0, padx=2)
-
         # 分割线
         row_counter += 1
         ttk.Separator(main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
-
-        # 技能配置 文本
-        row_counter += 1
-        ttk.Label(main_frame, text="技能配置:", font=('Arial', 10, 'bold')).grid(row=row_counter, column=0, sticky=tk.W, pady=5)
 
         # 系统自动战斗
         row_counter += 1
@@ -422,6 +418,42 @@ class ConfigPanelApp(tk.Toplevel):
                 )
                 )
             getattr(self, buttonName).grid(row=row,column=col,padx=2, pady=2)
+        
+        # 分割线
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+
+        start_frame = ttk.Frame(self)
+        start_frame.grid(row=1, column=0, sticky="nsew")
+        start_frame.columnconfigure(0, weight=1)
+        start_frame.rowconfigure(1, weight=1)
+
+        ttk.Separator(start_frame, orient='horizontal').grid(row=0, column=0, columnspan=3, sticky="ew", padx=10)
+
+        button_frame = ttk.Frame(start_frame)
+        button_frame.grid(row=1, column=0, columnspan=3, pady=5, sticky="nsew")
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+        button_frame.columnconfigure(2, weight=1)
+
+        label1 = ttk.Label(button_frame, text="",  anchor='center')
+        label1.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
+
+        label3 = ttk.Label(button_frame, text="",  anchor='center')
+        label3.grid(row=0, column=2, sticky='nsew', padx=5, pady=5)
+
+        s = ttk.Style()
+        s.configure('start.TButton', font=('微软雅黑', 15), padding = (0,5))
+        def btn_command():
+            self.toggle_start_stop()
+            self.save_config()
+        self.start_stop_btn = ttk.Button(
+            button_frame,
+            text="脚本, 启动!",
+            command=btn_command,
+            style='start.TButton',
+        )
+        self.start_stop_btn.grid(row=0, column=1, sticky='nsew', padx=5, pady= 26)
 
         # 分割线
         row_counter += 1

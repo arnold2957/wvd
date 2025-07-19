@@ -223,7 +223,7 @@ def Factory():
     def ScreenShot():
         while True:
             try:
-                logger.debug('ScreenShot')
+                # logger.debug('ScreenShot')
                 screenshot = device.screencap()
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
 
@@ -1269,7 +1269,8 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成.\n本次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.\n累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.\n战斗占比{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,\n宝箱占比{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.")
+                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成.本次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.",
+                                    extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     if not setting._MEET_CHEST_OR_COMBAT:
@@ -1396,7 +1397,8 @@ def Factory():
                                 lambda: stepMain()
                                 )
                             costtime = time.time()-starttime
-                            logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.")
+                            logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
+                                        extra={"summary": True})
                             if not setting._FORCESTOPING.is_set():
                                 stepNo = 1
                             else:
@@ -1487,7 +1489,8 @@ def Factory():
                             FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
 
                             costtime = time.time()-starttime
-                            logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.")
+                            logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.",
+                                    extra={"summary": True})
                             if not setting._FORCESTOPING.is_set():
                                 stepNo = 1
                             else:
@@ -1551,7 +1554,8 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     )
                     counter+=1
-                    logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.")
+                    logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.",
+                                    extra={"summary": True})
             case 'LBC-oneGorgon':
                 checkCSC = False
                 while 1:
@@ -1559,7 +1563,8 @@ def Factory():
                         break
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.")
+                        logger.info(f"第{setting._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                                    extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     def stepOne():
@@ -1662,7 +1667,8 @@ def Factory():
                         break
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次忍洞完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.")
+                        logger.info(f"第{setting._COUNTERDUNG}次忍洞完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                                    extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     RestartableSequenceExecution(

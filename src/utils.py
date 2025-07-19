@@ -72,6 +72,13 @@ class ScrolledTextHandler(logging.Handler):
             self.text_widget.config(state=tk.DISABLED)
         except Exception:
             self.handleError(record)
+
+class SummaryLogFilter(logging.Filter):
+    def filter(self, record):
+        if hasattr(record, 'summary') and record.summary:
+            return True
+            
+        return False
 ############################################
 CONFIG_FILE = 'config.json'
 
