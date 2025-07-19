@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -664,8 +664,8 @@ class ConfigPanelApp(tk.Toplevel):
             case "[宝箱]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
                 setting._TARGETINFOLIST = [
-                    TargetInfo('DOFtarget1'),
-                    TargetInfo('DOFtarget2'),
+                    TargetInfo('position','左下',[347,866]),
+                    TargetInfo('position','左下',[400,1183]),
                     TargetInfo('DOF_quit'),
                     ]
                 setting._SYSTEMAUTOCOMBAT = True
