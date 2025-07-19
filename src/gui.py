@@ -61,7 +61,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.style = ttk.Style()
         self.style.configure("custom.TCheckbutton")
         self.style.map("Custom.TCheckbutton",
-            foreground=[("selected", "#196EBF"), ("!selected", "black")])
+            foreground=[("disabled selected", "#8CB7DF"),("disabled", "#A0A0A0"), ("selected", "#196FBF")])
         self.style.configure("BoldFont.TCheckbutton", font=("微软雅黑", 9,"bold"))
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
         # --- UI 变量 ---

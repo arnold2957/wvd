@@ -935,12 +935,12 @@ def Factory():
                     if Press(CheckIf(scn,'OK')):
                         Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
-                        Press([pos[0],pos[1]+150])
+                        Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                         Sleep(1)
                         if CheckIf(ScreenShot(),'notenoughsp'):
                             PressReturn()
                             Press(CheckIf(ScreenShot(),'spellskill/lv1'))
-                            Press([pos[0]-15+random.randint(30),pos[1]+150+random.randint(30)])
+                            Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                             Sleep(1)
                     else:
                         Press([150,750])
