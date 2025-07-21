@@ -1423,79 +1423,80 @@ def Factory():
                             else:
                                 break
             case 'fordraig':
-                stepNo = 1
-                setting._SYSTEMAUTOCOMBAT = True
-                setting._SPECIALDIALOGOPTION = ['fordraig/thedagger']
+                setting._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
                     setting._COUNTERDUNG += 1
-                    logger.info(setting._COUNTERDUNG)
+                    setting._SYSTEMAUTOCOMBAT = True
                     starttime = time.time()
-                    # logger.info('第一步: 诅咒之旅...')
-                    # RestartableSequenceExecution(
-                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
-                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
-                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
-                    #     )
-                    # Sleep(15)
+                    logger.info('第一步: 诅咒之旅...')
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
+                        )
+                    Sleep(15)
 
-                    # logger.info('第二步: 领取任务.')
-                    # FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                    # StateInn()
-                    # Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
-                    # Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                    # Sleep(2)
-                    # DeviceShell(f"input swipe 150 1000 150 200")
-                    # Sleep(2)
-                    # while 1:
-                    #     pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
-                    #     if not pos:
-                    #         DeviceShell(f"input swipe 150 200 150 250")
-                    #         Sleep(1)
-                    #     else:
-                    #         Press([pos[0]+350,pos[1]+180])
-                    #         break
-                    # FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
-                    # PressReturn()
+                    logger.info('第二步: 领取任务.')
+                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                    StateInn()
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                    Sleep(2)
+                    DeviceShell(f"input swipe 150 1000 150 200")
+                    Sleep(2)
+                    while 1:
+                        pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
+                        if not pos:
+                            DeviceShell(f"input swipe 150 200 150 250")
+                            Sleep(1)
+                        else:
+                            Press([pos[0]+350,pos[1]+180])
+                            break
+                    FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
+                    PressReturn()
 
-                    # logger.info('第三步: 进入地下城.')
-                    # Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
-                    # Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
-                    # Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
-                    # FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
+                    logger.info('第三步: 进入地下城.')
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
+                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
 
                     logger.info('第四步: 陷阱.')
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo('fordraig/b1fquit'),TargetInfo('fordraig/firstTrap')]), # 前往第一个陷阱
+                        lambda:StateDungeon([
+                            TargetInfo('position',"左上",[721,448]),
+                            TargetInfo('position',"左上",[720,608])]), # 前往第一个陷阱
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
                         )
                     logger.info('已完成第一个陷阱.')
 
-                    FindCoordsOrElseExecuteFallbackAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo('fordraig/SecondTrap')]), #前往第二个陷阱, 这个有几率中断啊
+                        lambda:StateDungeon([
+                            TargetInfo('down_stair',"左上",[721,236]),
+                            TargetInfo('position',"左下", [240,921])]), #前往第二个陷阱
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
                         )
                     logger.info('已完成第二个陷阱.')
-                    FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
-                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
-                    FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
-                    StateDungeon([TargetInfo('fordraig/B2Fquit')])
-                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
-                    FindCoordsOrElseExecuteFallbackAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
-                    StateDungeon([TargetInfo('fordraig/thirdMach')]) #前往boss战
-                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1) # 关闭地图
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
-                    logger.info('已完成第三个机关.')
-                    FindCoordsOrElseExecuteFallbackAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
-                    StateDungeon([TargetInfo('fordraig/readytoBoss')])
+
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([
+                            TargetInfo("position","左下",[33,1238]),
+                            TargetInfo("down_stair","左下",[453,1027]),
+                            TargetInfo("position","左下",[187,1027]),
+                            TargetInfo("teleport_stair","左下",[80,1026])
+                            ]), #前往第三个陷阱
+                        )
+                    logger.info('已完成第三个陷阱.')
+
+                    StateDungeon([TargetInfo('position','左下',[508,1025])]) # 前往boss战门前
                     setting._SYSTEMAUTOCOMBAT = False
-                    StateDungeon([TargetInfo('fordraig/SecondBoss')]) # 前往boss战斗
+                    StateDungeon([TargetInfo('position','左下',[720,1025])]) # 前往boss战斗
                     setting._SYSTEMAUTOCOMBAT = True
-                    StateDungeon([TargetInfo('fordraig/B4Fquit')]) # 第四层出口
+                    StateDungeon([TargetInfo('teleport_stair','左上',[665,395])]) # 第四层出口
                     FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
                     Press(FindCoordsOrElseExecuteFallbackAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
                     # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
