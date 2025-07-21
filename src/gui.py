@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.6-beta2'
+__version__ = '1.4.6-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -665,10 +665,10 @@ class ConfigPanelApp(tk.Toplevel):
             case "[宝箱]水路船二 lounge":
                 setting._FARMTARGET = 'shiphold'
                 setting._TARGETINFOLIST = [
-                    TargetInfo('shiphold_upstair_once', [[1,1,1,1]],          [[0,0,900,739]],),
-                    TargetInfo('chest',                 [[100,100,700,1500]], [[0,0,900,739],[0,529,212,106]],),
-                    TargetInfo('lounge_downstair_once', [[100,100,700,1500]], [[0,0,900,739]],),
-                    TargetInfo('harken',                None,                 None),
+                    TargetInfo('shiphold_stair', "左上", [292,394],),
+                    TargetInfo('chest',          "左上", [[0,0,900,739],[0,529,212,106]],),
+                    TargetInfo('lounge_stair',   "左上", [292,394],),
+                    TargetInfo('harken',         None,   None),
                     ]
                 StreetFarm(setting)
             case "[宝箱]水路一号街":

@@ -406,8 +406,23 @@ def Factory():
             if max_val > threshold:
                 logger.debug("已达到检测阈值.")
                 return None 
-            
         return position
+    def CheckIf_throughStair(pathOfScreen,targetInfo : TargetInfo):
+        screenshot = pathOfScreen
+        template = _CheckIfLoadImage(targetInfo.target)
+        position = targetInfo.roi
+        cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
+
+        
+        result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.80
+        _, max_val, _, _ = cv2.minMaxLoc(result)
+
+        logger.debug(f"搜索楼梯{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
+        if max_val > threshold:
+            logger.debug("大于阈值, 判断为楼梯存在, 尚未通过.")
+            return position 
+        return None
     def Press(pos):
         if pos!=None:
             logger.debug(f'按了{pos[0]} {pos[1]}')
@@ -964,6 +979,8 @@ def Factory():
                 Press([850,1100])
                 Sleep(3)
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
+        ### return = None: 视为没找到, 大约等于目标点结束.
+        ### return = [x,y]: 视为找到, [x,y]是坐标.
         target = targetInfo.target
         roi = targetInfo.roi
         for i in range(len(targetInfo.swipeDir)):
@@ -978,8 +995,11 @@ def Factory():
 
             targetPos = None
             if target == 'position':
-                logger.info(f"当前目标:{target}{roi}")
+                logger.info(f"当前目标: 地点{roi}")
                 targetPos = CheckIf_ReachPosition(map,targetInfo)
+            elif target.endswith("_stair"):
+                logger.info(f"当前目标: 楼梯{target}")
+                targetPos = CheckIf_throughStair(map,targetInfo)
             else:
                 logger.info(f"搜索{target}...")
                 if targetPos:=CheckIf(map,target,roi):
@@ -1038,12 +1058,12 @@ def Factory():
 
         if searchResult == None:
             logger.info(f"没有找到{target}.")
-            if target == 'chest' or target == 'position' or target.endswith('_once'):
+            if target == 'chest' or target == 'position' or target.endswith('_stair'):
                 targetInfoList.pop(0)
                 logger.info(f"不再搜索{target}")
             return DungeonState.Map,  targetInfoList
         else:
-            if target in normalPlace or target.endswith("_quit"):
+            if target in normalPlace or target.endswith("_quit") or target.endswith('_stair'):
                 Press(searchResult)
                 Press([280,1433]) # automove
                 return StateMoving_CheckFrozen(),targetInfoList
@@ -1218,10 +1238,6 @@ def Factory():
                                     PressReturn()
                                     shouldRecover = False
                                     break
-                    ########### TRY RESUME
-                    # Sleep(1)
-                    # Press(CheckIf(ScreenShot(), 'resume'))
-                    # StateMoving_CheckFrozen()
                     ########### OPEN MAP
                     Sleep(1)
                     Press([777,150])
@@ -1413,91 +1429,82 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    match stepNo:
-                        case 1:
-                            setting._COUNTERDUNG += 1
-                            logger.info(setting._COUNTERDUNG)
-                            starttime = time.time()
-                            logger.info('第一步: 诅咒之旅...')
-                            RestartableSequenceExecution(
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
-                                )
-                            Sleep(15)
-                            stepNo = 2
-                        case 2:
-                            logger.info('第二步: 领取任务.')
-                            FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                            StateInn()
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                            Sleep(2)
-                            DeviceShell(f"input swipe 150 1000 150 200")
-                            Sleep(2)
-                            while 1:
-                                pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
-                                if not pos:
-                                    DeviceShell(f"input swipe 150 200 150 250")
-                                    Sleep(1)
-                                else:
-                                    Press([pos[0]+350,pos[1]+180])
-                                    break
-                            FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
-                            PressReturn()
-                            stepNo = 3
-                        case 3:
-                            logger.info('第三步: 进入地下城.')
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
-                            FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
-                            stepNo = 4
-                        case 4:
-                            logger.info('第四步: 陷阱.')
-                            RestartableSequenceExecution(
-                                lambda:StateDungeon([TargetInfo('fordraig/b1fquit'),TargetInfo('fordraig/firstTrap')]), # 前往第一个陷阱
-                                lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                    setting._COUNTERDUNG += 1
+                    logger.info(setting._COUNTERDUNG)
+                    starttime = time.time()
+                    # logger.info('第一步: 诅咒之旅...')
+                    # RestartableSequenceExecution(
+                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
+                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Fordraig/Leap',['specialRequest',[1,1]],1)),
+                    #     lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('OK','leap',1)),
+                    #     )
+                    # Sleep(15)
 
-                                )
-                            logger.info('已完成第一个陷阱.')
-                            FindCoordsOrElseExecuteFallbackAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
-                            RestartableSequenceExecution(
-                                lambda:StateDungeon([TargetInfo('fordraig/SecondTrap')]), #前往第二个陷阱, 这个有几率中断啊
-                                lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
-                                )
-                            logger.info('已完成第二个陷阱.')
-                            FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
-                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
-                            FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
-                            StateDungeon([TargetInfo('fordraig/B2Fquit')])
-                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
-                            FindCoordsOrElseExecuteFallbackAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
-                            StateDungeon([TargetInfo('fordraig/thirdMach')]) #前往boss战
-                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1) # 关闭地图
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
-                            logger.info('已完成第三个机关.')
-                            FindCoordsOrElseExecuteFallbackAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
-                            StateDungeon([TargetInfo('fordraig/readytoBoss')])
-                            setting._SYSTEMAUTOCOMBAT = False
-                            StateDungeon([TargetInfo('fordraig/SecondBoss')]) # 前往boss战斗
-                            setting._SYSTEMAUTOCOMBAT = True
-                            StateDungeon([TargetInfo('fordraig/B4Fquit')]) # 第四层出口
-                            FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
-                            # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
-                            FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
+                    # logger.info('第二步: 领取任务.')
+                    # FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+                    # StateInn()
+                    # Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+                    # Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+                    # Sleep(2)
+                    # DeviceShell(f"input swipe 150 1000 150 200")
+                    # Sleep(2)
+                    # while 1:
+                    #     pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
+                    #     if not pos:
+                    #         DeviceShell(f"input swipe 150 200 150 250")
+                    #         Sleep(1)
+                    #     else:
+                    #         Press([pos[0]+350,pos[1]+180])
+                    #         break
+                    # FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
+                    # PressReturn()
 
-                            costtime = time.time()-starttime
-                            logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.",
-                                    extra={"summary": True})
-                            if not setting._FORCESTOPING.is_set():
-                                stepNo = 1
-                            else:
-                                break
+                    # logger.info('第三步: 进入地下城.')
+                    # Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
+                    # Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
+                    # Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
+                    # FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
+
+                    logger.info('第四步: 陷阱.')
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([TargetInfo('fordraig/b1fquit'),TargetInfo('fordraig/firstTrap')]), # 前往第一个陷阱
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                        )
+                    logger.info('已完成第一个陷阱.')
+
+                    FindCoordsOrElseExecuteFallbackAndWait(["fordraig/B2Fentrance","fordraig/thedagger"],[50,950],1) # 移动到下一层
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([TargetInfo('fordraig/SecondTrap')]), #前往第二个陷阱, 这个有几率中断啊
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
+                        )
+                    logger.info('已完成第二个陷阱.')
+                    FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
+                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([35,1241],[280,1433]),1) # 前往左下角
+                    FindCoordsOrElseExecuteFallbackAndWait("mapFlag",[777,150],1) # 开启地图
+                    StateDungeon([TargetInfo('fordraig/B2Fquit')])
+                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
+                    FindCoordsOrElseExecuteFallbackAndWait("fordraig/B3fentrance","input swipe 400 1200 400 200",1)
+                    StateDungeon([TargetInfo('fordraig/thirdMach')]) #前往boss战
+                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1) # 关闭地图
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/InsertTheDagger",[850,950],1)) # 第三个机关
+                    logger.info('已完成第三个机关.')
+                    FindCoordsOrElseExecuteFallbackAndWait("fordraig/B4F","input swipe 400 1200 400 200",1) # 前往下一层
+                    StateDungeon([TargetInfo('fordraig/readytoBoss')])
+                    setting._SYSTEMAUTOCOMBAT = False
+                    StateDungeon([TargetInfo('fordraig/SecondBoss')]) # 前往boss战斗
+                    setting._SYSTEMAUTOCOMBAT = True
+                    StateDungeon([TargetInfo('fordraig/B4Fquit')]) # 第四层出口
+                    FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
+                    # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
+                    FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
+
+                    costtime = time.time()-starttime
+                    logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.",
+                            extra={"summary": True})
             case 'repelEnemyForces':
                 if not setting._ACTIVE_REST:
                     logger.info("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1.")
