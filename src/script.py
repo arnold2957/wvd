@@ -207,17 +207,19 @@ def Factory():
         while True:
             try:
                 return device.shell(cmdStr)
-            except (RuntimeError, ConnectionResetError, cv2.error) as e:
-                logger.debug(f"ADB操作失败: {e}")
-                logger.info("ADB连接异常，尝试重启服务...")
+            except Exception as e:
+                logger.debug(f"{e}")
+                if isinstance(e, (RuntimeError, ConnectionResetError, cv2.error)):
+                    logger.debug(f"ADB操作失败.")
+                    logger.info("ADB连接异常，尝试重启服务...")
 
-                while True:
-                    if StartAdbServer(setting):
-                        setting._ADBDEVICE = CreateAdbDevice(setting)
-                        logger.info("ADB服务重启成功，设备重新连接")
-                        break
-                    logger.warning("ADB重启失败，5秒后重试...")
-                    time.sleep(5)
+                    while True:
+                        if StartAdbServer(setting):
+                            setting._ADBDEVICE = CreateAdbDevice(setting)
+                            logger.info("ADB服务重启成功，设备重新连接")
+                            break
+                        logger.warning("ADB重启失败，5秒后重试...")
+                        time.sleep(5)
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
@@ -248,14 +250,15 @@ def Factory():
 
                 #cv2.imwrite('screen.png', image)
                 return image
-            except (RuntimeError, ConnectionResetError, cv2.error) as e:
+            except Exception as e:
                 logger.debug(f"{e}")
-                logger.info("adb重启中...")
-                while 1:
-                    if StartAdbServer(setting):
-                        setting._ADBDEVICE = CreateAdbDevice(setting)
-                        break
-                continue
+                if isinstance(e, (RuntimeError, ConnectionResetError, cv2.error)):
+                    logger.info("adb重启中...")
+                    while 1:
+                        if StartAdbServer(setting):
+                            setting._ADBDEVICE = CreateAdbDevice(setting)
+                            break
+                    continue
     def _CheckIfLoadImage(shortPathOfTarget):
         logger.debug(f"加载{shortPathOfTarget}")
         pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
@@ -1624,7 +1627,8 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
                         )
                     def stepFive():
-                        if Press(CheckIf(ScreenShot(),'LBC/LBC')):
+                        scn = ScreenShot()
+                        if Press(CheckIf(scn,'LBC/LBC')) or CheckIf(scn,"dungFlag"):
                             pass
                         else:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
@@ -1707,7 +1711,8 @@ def Factory():
                         lambda: stepThree()
                         )
                     def stepFour():
-                        if Press(CheckIf(ScreenShot(),'SSC/SSC')):
+                        scn = ScreenShot()
+                        if Press(CheckIf(scn,'SSC/SSC')) or CheckIf(scn,"dungFlag"):
                             pass
                         else:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))

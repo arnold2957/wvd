@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.6-beta1'
+__version__ = '1.4.6-beta2'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -24,18 +24,19 @@ DUNGEON_TARGETS = ["[宝箱]水路一号街",
                    "[宝箱]水路船一 shiphold",
                    "[宝箱]水路船二 lounge",
                    "[宝箱]鸟洞三层 fordraig B3F",
+                   "[任务]角鹫之剑 fordraig",
                    "[宝箱]要塞三层",
-                   "[宝箱]卢比肯的洞窟",
+                   "[宝箱]卢比肯 宝箱",
+                   "[任务]卢比肯 三牛",
                    "[宝箱]忍洞一层 刷怪",
-                   "[宝箱]土洞(5-9)",
-                   "[宝箱]火洞(10-14)", 
-                   "[宝箱]风洞(15-19)",
-                   "[宝箱]光洞(15-19)",
+                   "[任务]忍洞一层 金箱",
+                   "——————————————————",
+                   "[矿石]土洞(5-9)",
+                   "[矿石]火洞(10-14)", 
+                   "[矿石]风洞(15-19)",
+                   "[矿石]光洞(15-19)",
                    "[金币]7000G",
                    "[经验]击退敌势力",
-                   "[任务]角鹫之剑 fordraig",
-                   "[任务]卢比肯-三牛",
-                   "[任务]忍洞-金箱"
                    ]
 
 ############################################
@@ -144,7 +145,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
-        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='white',bd=5,relief=tk.FLAT, width = 34, height = 30)
+        self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='#ffffff',bd=2,relief=tk.FLAT, width = 34, height = 30)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
         self.scrolled_text_handler.setLevel(logging.INFO)
@@ -152,7 +153,7 @@ class ConfigPanelApp(tk.Toplevel):
         logger.addHandler(self.scrolled_text_handler)
 
 
-        self.summary_log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='#f0f0f0',bd=2, width = 34, )
+        self.summary_log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg="#C6DBF4",bd=2, width = 34, )
         self.summary_log_display.grid(row=1, column=1, pady=5)
         self.summary_text_handler = ScrolledTextHandler(self.summary_log_display)
         self.summary_text_handler.setLevel(logging.INFO)
@@ -677,7 +678,7 @@ class ConfigPanelApp(tk.Toplevel):
                     TargetInfo('harken'),
                     ]
                 StreetFarm(setting)
-            case "[宝箱]土洞(5-9)":
+            case "[矿石]土洞(5-9)":
                 setting._FARMTARGET = 'DOE'
                 setting._TARGETINFOLIST = [
                     TargetInfo("position", "右下", [713,1027]),
@@ -685,7 +686,7 @@ class ConfigPanelApp(tk.Toplevel):
                     ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[宝箱]风洞(15-19)":
+            case "[矿石]风洞(15-19)":
                 setting._FARMTARGET = 'DOW'
                 setting._TARGETINFOLIST = [
                     TargetInfo('chest',    [[700,1200,100,100]], [[0,780,900,500],[0,780,150,120]],),
@@ -693,7 +694,7 @@ class ConfigPanelApp(tk.Toplevel):
                     ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[宝箱]火洞(10-14)":
+            case "[矿石]火洞(10-14)":
                 setting._FARMTARGET = 'DOF'
                 setting._TARGETINFOLIST = [
                     TargetInfo('position','左下',[347,866]),
@@ -702,14 +703,14 @@ class ConfigPanelApp(tk.Toplevel):
                     ]
                 setting._SYSTEMAUTOCOMBAT = True
                 StreetFarm(setting)
-            case "[宝箱]光洞(15-19)":
+            case "[矿石]光洞(15-19)":
                 setting._FARMTARGET = 'DOL'
                 setting._TARGETINFOLIST = [
                     TargetInfo('chest',    [[700,100,100,1200]], [[420,686,478,481]]),
                     TargetInfo('DOL_quit', [[700,100,100,1200]], None),
                     ]
                 StreetFarm(setting)
-            case "[宝箱]卢比肯的洞窟":
+            case "[宝箱]卢比肯 宝箱":
                 setting._FARMTARGET = 'LBC'
                 setting._TARGETINFOLIST = [
                     TargetInfo('chest'),
@@ -736,12 +737,12 @@ class ConfigPanelApp(tk.Toplevel):
             case "[宝箱]忍洞一层 刷怪":
                 setting._FARMTARGET = 'SSC'
                 setting._TARGETINFOLIST = [
-                    TargetInfo('SSC/SSC1F_left_once',   '左下', [[0,0,900,1600],[0,0,900,800],[500,0,400,1600]]),
-                    TargetInfo('SSC/SSC1F_left_1_once', '左下', 'default'),
-                    TargetInfo('SSC/SSC1F_left_2_once', '左下', 'default'),
-                    TargetInfo('SSC/SSC1F_left_3_once', '左下', 'default'),
-                    TargetInfo('SSC/SSC1F_right_once',  '右下', [[0,0,900,1600],[0,0,900,800]]),
-                    TargetInfo('SSC/SSC_quit',          '右下', 'default'),
+                    TargetInfo('position', '左下', [400,974]),
+                    TargetInfo('position', '左下', [560,438]),
+                    TargetInfo('position', '左下', [399,654]),
+                    TargetInfo('position', '左下', [81,226]),
+                    TargetInfo('position', '右下', [766,1078]),
+                    TargetInfo('SSC/SSC_quit','右下', 'default'),
                     ]
                 StreetFarm(setting)
             case "[任务]角鹫之剑 fordraig":
@@ -750,10 +751,10 @@ class ConfigPanelApp(tk.Toplevel):
             case "[经验]击退敌势力":
                 setting._FARMTARGET = 'repelEnemyForces'
                 QuestFarm(setting)
-            case "[任务]卢比肯-三牛":
+            case "[任务]卢比肯 三牛":
                 setting._FARMTARGET = 'LBC-oneGorgon'
                 QuestFarm(setting)
-            case "[任务]忍洞-金箱":
+            case "[任务]忍洞一层 金箱":
                 setting._FARMTARGET = 'SSC-goldenchest'
                 QuestFarm(setting)
             case _:
