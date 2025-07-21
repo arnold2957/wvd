@@ -1,9 +1,15 @@
-import tkinter as tk
-from tkinter import ttk, scrolledtext
 import json
 import os
 import logging
 import sys
+
+# 根據運行模式動態導入 tkinter
+def is_headless_mode():
+    return os.environ.get('WVD_HEADLESS', '0') == '1'
+
+if not is_headless_mode():
+    import tkinter as tk
+    from tkinter import ttk, scrolledtext
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -41,9 +47,10 @@ class LoggerStream:
 # 创建logger
 logger = logging.getLogger('WvDASLogger')
 logger.setLevel(logging.DEBUG)
-# cmd文件句柄
-sys.stdout = LoggerStream(logger, logging.DEBUG)
-sys.stderr = LoggerStream(logger, logging.ERROR)
+# 只在非無頭模式下重定向 stdout 和 stderr
+if not is_headless_mode():
+    sys.stdout = LoggerStream(logger, logging.DEBUG)
+    sys.stderr = LoggerStream(logger, logging.ERROR)
 # 文件句柄
 file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)
@@ -58,20 +65,26 @@ scrolled_text_formatter = logging.Formatter(
     '%(message)s'
 )
 class ScrolledTextHandler(logging.Handler):
-    def __init__(self, text_widget):
+    def __init__(self, text_widget=None):
         super().__init__()
         self.text_widget = text_widget
-        self.text_widget.config(state=tk.DISABLED)
+        if not is_headless_mode() and text_widget:
+            self.text_widget.config(state=tk.DISABLED)
 
     def emit(self, record):
         msg = self.format(record)
-        try:
-            self.text_widget.config(state=tk.NORMAL)
-            self.text_widget.insert(tk.END, msg + '\n')
-            self.text_widget.see(tk.END)
-            self.text_widget.config(state=tk.DISABLED)
-        except Exception:
-            self.handleError(record)
+        if is_headless_mode():
+            # 在無頭模式下，使用格式化的輸出
+            formatted_msg = f"{record.asctime} - {record.levelname} - {msg}"
+            print(formatted_msg)
+        else:
+            try:
+                self.text_widget.config(state=tk.NORMAL)
+                self.text_widget.insert(tk.END, msg + '\n')
+                self.text_widget.see(tk.END)
+                self.text_widget.config(state=tk.DISABLED)
+            except Exception:
+                self.handleError(record)
 
 class SummaryLogFilter(logging.Filter):
     def filter(self, record):
@@ -80,38 +93,41 @@ class SummaryLogFilter(logging.Filter):
             
         return False
 ############################################
-CONFIG_FILE = 'config.json'
+DEFAULT_CONFIG_FILE = 'config.json'
 
-def SaveConfigToFile(config_data):
+def SaveConfigToFile(config_data, config_file=None):
+    file_path = config_file or DEFAULT_CONFIG_FILE
     try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=4)
-        logger.info("配置已保存。")
+        logger.info(f"配置已保存到 {file_path}")
         return True
     except Exception as e:
-        logger.error(f"保存配置时发生错误: {e}")
+        logger.error(f"保存配置到 {file_path} 時发生错误: {e}")
         return False
 
 
-def LoadConfigFromFile():
-    if os.path.exists(CONFIG_FILE):
+def LoadConfigFromFile(config_file=None):
+    file_path = config_file or DEFAULT_CONFIG_FILE
+    if os.path.exists(file_path):
         try:
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 loaded_config = json.load(f)
                 return loaded_config
         except json.JSONDecodeError:
-            logger.error(f"错误: 无法解析 {CONFIG_FILE}。将使用默认配置。")
+            logger.error(f"错误: 无法解析 {file_path}。将使用默认配置。")
             return {}
         except Exception as e:
             logger.error(f"错误: 加载配置时发生错误: {e}。将使用默认配置。")
             return {}
     else:
+        logger.error(f"錯誤: 配置檔案 {file_path} 不存在。將使用預設配置。")
         return {}
     
-def SetOneVarInConfig(var, value):
-    data = LoadConfigFromFile()
+def SetOneVarInConfig(var, value, config_file=None):
+    data = LoadConfigFromFile(config_file)
     data[var] = value
-    SaveConfigToFile(data)
+    SaveConfigToFile(data, config_file)
 
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"
