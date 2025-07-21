@@ -1498,7 +1498,7 @@ def Factory():
                     setting._SYSTEMAUTOCOMBAT = True
                     StateDungeon([TargetInfo('teleport_stair','左上',[665,395])]) # 第四层出口
                     FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("return",["leaveDung",[455,1200]],3.75)) # 回城
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
                     # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
                     Press(FindCoordsOrElseExecuteFallbackAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
