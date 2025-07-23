@@ -33,7 +33,6 @@ SPELLSEKILL_TABLE = [
             ]
 
 DUNGEON_TARGETS = BuildQuestReflection()
-logger.info(DUNGEON_TARGETS)
 
 ####################################
 CONFIG_VAR_LIST = [
@@ -232,7 +231,7 @@ def Factory():
                 if hasattr(setting, key):
                     setattr(setting, key, value)
                 else:
-                    print(f"Warning: Config has no attribute '{key}' to override")
+                    logger.info(f"Warning: Config has no attribute '{key}' to override")
         return quest
     ##################################################################
     def DeviceShell(cmdStr):
@@ -756,8 +755,8 @@ def Factory():
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
-                if setting._SPECIALDIALOGOPTION != None:
-                    for option in setting._SPECIALDIALOGOPTION:
+                if quest._SPECIALDIALOGOPTION != None:
+                    for option in quest._SPECIALDIALOGOPTION:
                         if Press(CheckIf(ScreenShot(),option)):
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
@@ -1393,7 +1392,7 @@ def Factory():
                             else:
                                 break
             case 'fordraig':
-                setting._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
+                quest._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
@@ -1649,7 +1648,7 @@ def Factory():
                             )
             case 'SSC-goldenchest':
                 while 1:
-                    setting._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
+                    quest._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
                     if setting._FORCESTOPING.is_set():
                         break
                     if setting._LAPTIME!= 0:
@@ -1710,7 +1709,7 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('SSC/trapdeactived',['input swipe 450 1050 450 850',[445,721]],4),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[1,1],1)
                     )
-                    setting._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
+                    quest._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 第一个箱子'),
                         lambda: StateDungeon([
@@ -1731,9 +1730,11 @@ def Factory():
         nonlocal quest
         setting = set
 
-        if setting._ADBDEVICE == None:
-            CreateAdbDevice(setting)
-        
+        if not StartAdbServer(setting):
+            setting._FINISHINGCALLBACK()
+            return
+        setting._ADBDEVICE = CreateAdbDevice(setting)
+
         quest = LoadQuest(setting._FARMTARGET)
         if quest._TYPE =="dungeon":
             DungeonFarm()

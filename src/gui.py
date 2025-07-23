@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.7-beta2'
+__version__ = '1.4.7-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -401,8 +401,8 @@ class ConfigPanelApp(tk.Toplevel):
         s = ttk.Style()
         s.configure('start.TButton', font=('微软雅黑', 15), padding = (0,5))
         def btn_command():
-            self.toggle_start_stop()
             self.save_config()
+            self.toggle_start_stop()
         self.start_stop_btn = ttk.Button(
             button_frame,
             text="脚本, 启动!",
@@ -573,8 +573,7 @@ class ConfigPanelApp(tk.Toplevel):
         if self.thread is None:
             self.start_stop_btn.config(text="中断")
             self.set_controls_state(tk.DISABLED)
-            self.thread = Thread(target=self.dungeonLoop)
-            self.thread.start()
+            self.dungeonLoop()
         else: # self.thread is NOT None
             if self.thread.is_alive():
                 logger.info("等待当前步骤执行完毕, 执行完毕后将中断脚本. 这可能需要一些时间...")
@@ -589,7 +588,6 @@ class ConfigPanelApp(tk.Toplevel):
     def dungeonLoop(self):
         setting = FarmConfig()
         config = LoadConfigFromFile()
-
         for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
             setattr(setting, var_config_name, config[var_config_name])
         logger.info(f"目标地下城:{setting._FARMTARGET_TEXT}")
@@ -597,7 +595,9 @@ class ConfigPanelApp(tk.Toplevel):
         setting._FINISHINGCALLBACK = self.finishingcallback
         setting._FORCESTOPING = self.stop_event
 
-        Factory()(setting)
+        Farm = Factory()
+        self.thread = Thread(target=Farm,args=(setting,))
+        self.thread.start()
              
 class AppController(tk.Tk):
     def __init__(self):
