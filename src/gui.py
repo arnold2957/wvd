@@ -12,12 +12,15 @@ __version__ = '1.4.7-beta3'
 
 OWNER = "arnold2957"
 REPO = "wvd"
+
+TITLE = f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)"
+INTRODUCTION = "遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356."
+
 ############################################
 RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
 if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
     shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
-
 ############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller):
@@ -25,7 +28,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.controller = master_controller
         self.geometry('550x608')
         # self.root.resizable(False, False)
-        self.title(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
+        self.title(TITLE)
 
         self.adb_active = False
 
@@ -67,7 +70,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         logger.info("**********************************")
         logger.info(f"当前版本: {__version__}")
-        logger.info("遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356.", extra={"summary": True})
+        logger.info(INTRODUCTION, extra={"summary": True})
         logger.info("**********************************")
         
         if self.last_version.get() != __version__:
