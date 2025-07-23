@@ -1,0 +1,169 @@
+{
+    "lounge":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]水路船二lounge",
+        "_TARGETINFOLIST":[
+            ["up_stair","左上",[292,394]],
+            ["chest","左上",[[0,0,900,739],[0,529,212,106]]],
+            ["down_stair","左上",[292,394]],
+            ["harken",null,null]
+        ],
+        "_EOT":[
+            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
+            ["press","lounge",[1,1],1]
+        ]
+    },
+
+    "LBC":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]卢比肯宝箱",
+        "_TARGETINFOLIST":[
+            ["chest"],
+            ["LBC/LBC_quit"]
+        ],
+        "_preEOTcheck":"LBC/LBC",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
+            ["press","LBC/LBC","inputswipe1001007001500",1]
+        ]
+    },
+
+    "SSC":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]忍洞一层刷怪",
+        "_TARGETINFOLIST":[
+            ["position","左下",[400,974]],
+            ["position","左下",[560,438]],
+            ["position","左下",[399,654]],
+            ["position","左下",[81,226]],
+            ["position","右下",[766,1078]],
+            ["SSC/SSC_quit","右下","default"]
+        ],
+        "_preEOTcheck":"SSC/SSC",
+        "_EOT":[
+            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
+            ["press","SSC/SSC","input swipe 700 100 100 100",1]
+        ]
+    },
+
+    "fordraig-B3F":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]鸟洞三层fordraigB3F",
+        "_TARGETINFOLIST":[
+            ["chest",null],
+            ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
+        ],
+        "_preEOTcheck":"fordraig/B3F",
+        "_EOT":[
+            ["press","intoWorldMap",[40,1184],2],
+            ["press","labyrinthOfFordraig","input swipe 450 150 500 150",1],
+            ["press","fordraig/B3F",["labyrinthOfFordraig",[1,1]],1]
+        ]
+    },
+
+    "fortress-B3F":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]要塞三层",
+        "_TARGETINFOLIST":[
+            ["chest",[[100,1200,700,100]],[[0,355,480,805],[320,1053,300,200]]],
+            ["harken2",[[100,1200,700,100]],null]
+        ],
+        "_EOT":[
+            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+            ["press","fortressb3f","input swipe 650 250 650 900",1]
+        ]
+    },
+
+    "Dist":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]水路一号街",
+        "_TARGETINFOLIST":[
+            ["chest"],
+            ["harken"]
+        ],
+        "_EOT":[
+            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
+            ["press","Dist","input swipe 650 250 650 900",1]
+        ]
+    },
+
+    "DOE":{
+        "_TYPE":"dungeon",
+        "questName":"[矿]土洞(5-9)自动战斗",
+        "_EOT":[
+            ["press","DOE",["EdgeOfTown",[1,1]],1],
+            ["press","DOEB1F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["position", "右下", [713,1027]],
+            ["DOE_quit"]
+        ]
+    },
+
+    "DOL":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]光洞(15-19)",
+        "_TARGETINFOLIST":[
+            ["chest",[[700,100,100,1200]],[[420,686,478,481]]],
+            ["DOL_quit",[[700,100,100,1200]],null]
+        ],
+        "_EOT":[
+            ["press","DOL",["EdgeOfTown",[1,1]],1],
+            ["press","DOLB1F",[1,1],1]
+        ]
+    },
+
+    "DOF": {
+        "_TYPE":"dungeon",
+        "questName":"[矿石]火洞(10-14)",
+        "_TARGETINFOLIST":[
+            ["position","左下",[347,866]],
+            ["position","左下",[400,1183]],
+            ["DOF_quit"]
+        ],
+        "_EOT":[
+            ["press","DOF",["EdgeOfTown",[1,1]],1],
+            ["press","DOFB1F",[1,1],1]
+        ]
+    },
+
+    "DOW":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]风洞(15-19)",
+        "_TARGETINFOLIST":[
+        ["chest",[[700,1200,100,100]],[[0,780,900,500],[0,780,150,120]]],
+        ["DOW_quit",[[700,1200,100,100]],null]
+        ],
+        "_EOT":[
+            ["press","DOW",["EdgeOfTown",[1,1]],1],
+            ["press","DOWB1F",[1,1],1]
+        ]
+    },
+    
+    "7000G":{
+        "questName":"[金币]7000G",
+        "_TYPE":"quest"
+    },
+
+    "fordraig":{
+        "questName":"[任务]角鹫之剑 fordraig",
+        "_TYPE":"quest"
+    },
+
+    "repelEnemyForces":{
+        "questName":"[经验]击退敌势力",
+        "_TYPE":"quest"
+    },
+
+    "LBC-oneGorgon":{
+        "questName":"[任务]卢比肯 三牛",
+        "_TYPE":"quest"
+    },
+
+    "SSC-goldenchest":{
+        "questName":"[任务]忍洞一层 金箱",
+        "_TYPE":"quest"
+    }
+}

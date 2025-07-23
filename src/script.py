@@ -1,19 +1,18 @@
 from ppadb.client import Client as AdbClient
 import numpy as np
-import cv2
 import time
 from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from enum import Enum
 from datetime import datetime
-import sys
 import os
 import subprocess
 import socket
 import time
 from utils import *
 import random
+from pathlib import Path
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
@@ -24,55 +23,78 @@ PHYSICAL_SKILLS = ["FPS","tzalik","QS","PS","DTS","AP","AB","BCS","HA","FS","SB"
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
 
-class FarmSetting:
-    #### 任务信息
-    _FARMTARGET = "shiphold"
+SPELLSEKILL_TABLE = [
+            ["btn_enable_all","所有技能",ALL_SKILLS,0,0],
+            ["btn_enable_horizontal_aoe","横排AOE",ROW_AOE_SKILLS,0,1],
+            ["btn_enable_full_aoe","全体AOE",FULL_AOE_SKILLS,1,0],
+            ["btn_enable_secret_aoe","秘术AOE",SECRET_AOE_SKILLS,1,1],
+            ["btn_enable_physical","强力单体",PHYSICAL_SKILLS,2,0],
+            ["btn_enable_cc","群体控制",CC_SKILLS,2,1]
+            ]
+
+DUNGEON_TARGETS = BuildQuestReflection()
+logger.info(DUNGEON_TARGETS)
+
+####################################
+CONFIG_VAR_LIST = [
+            #var_name,                      type,          config_name,                  default_value
+            ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
+            ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
+            ["randomly_open_chest_var",     tk.BooleanVar, "_RANDOMLYOPENCHEST",         False],
+            ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
+            ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
+            ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
+            ["system_auto_combat_var",      tk.BooleanVar, "_SYSTEMAUTOCOMBAT",          False],
+            ["aoe_once_var",                tk.BooleanVar, "_AOE_ONCE",                  False],
+            ["auto_after_aoe_var",          tk.BooleanVar, "_AUTO_AFTER_AOE",            False],
+            ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
+            ["rest_intervel_var",           tk.IntVar,  "_RESTINTERVEL",              0],
+            ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
+            ["adb_path_var",                tk.StringVar,  "_ADBPATH",                   ""],
+            ["adb_port_var",                tk.StringVar,  "_ADBPORT",                   5555],
+            ["last_version",                tk.StringVar,  "LAST_VERSION",               ""],
+            ["latest_version",              tk.StringVar,  "LATEST_VERSION",             None],
+            ["_spell_skill_config_internal",list,          "_SPELLSKILLCONFIG",          []]
+            ]
+
+class FarmConfig:
+    for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+        locals()[var_config_name] = var_default_value
+    def __init__(self):
+        #### 统计信息
+        self._LAPTIME = 0
+        self._TOTALTIME = 0
+        self._COUNTERDUNG = 0
+        self._COUNTERCOMBAT = 0
+        self._COUNTERCHEST = 0
+        self._TIME_COMBAT= 0
+        self._TIME_COMBAT_TOTAL = 0
+        self._TIME_CHEST = 0
+        self._TIME_CHEST_TOTAL = 0
+        #### 面板配置其他
+        self._FORCESTOPING = None
+        self._FINISHINGCALLBACK = None
+        #### 临时参数
+        self._MEET_CHEST_OR_COMBAT = False
+        self._ENOUGH_AOE = False
+        self._COMBATSPD = False
+        self._SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
+        self._MAXRETRYLIMIT = 20
+        #### 底层接口
+        self._ADBDEVICE = None
+    def __getattr__(self, name):
+        # 当访问不存在的属性时，抛出AttributeError
+        raise AttributeError(f"FarmConfig对象没有属性'{name}'")
+class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
-    _EOTINFO = None
-    _PREEOTCHECK = None
+    _EOT = None
+    _preEOTcheck = None
     _SPECIALDIALOGOPTION = None
-    #### 统计信息
-    _LAPTIME = 0
-    _TOTALTIME = 0
-    _COUNTERDUNG = 0
-    _COUNTERCOMBAT = 0
-    _COUNTERCHEST = 0
-    _TIME_COMBAT= 0
-    _TIME_COMBAT_TOTAL = 0
-    _TIME_CHEST = 0
-    _TIME_CHEST_TOTAL = 0
-    #### 面板配置
-    ######## 技能与aoe
-    _SPELLSKILLCONFIG = None
-    _SYSTEMAUTOCOMBAT = False
-    _AOE_ONCE = False
-    _AUTO_AFTER_AOE = False
-    ######## 宝箱相关
-    _RANDOMLYOPENCHEST = True
-    _WHOWILLOPENIT = 0
-    ######## 休息
-    _ACTIVE_REST = True
-    _RESTINTERVEL = 0
-    _SKIPCOMBATRECOVER = False
-    _SKIPCHESTRECOVER = False
-    ######## 善恶
-    _KARMAADJUST = "+0"
-    ######## 其他
-    _FORCESTOPING = None
-    _FINISHINGCALLBACK = None
-    #### 临时参数
-    _MEET_CHEST_OR_COMBAT = False
-    _ENOUGH_AOE = False
-    _COMBATSPD = False
-    _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
-    _MAXRETRYLIMIT = 20
-    #### 底层接口
-    _ADBDEVICE = None
-    _LOGGER = None
-    _ADBPATH = None
-    _ADBPORT = None
-
+    _TYPE = None
+    def __getattr__(self, name):
+        # 当访问不存在的属性时，抛出AttributeError
+        raise AttributeError(f"FarmQuest对象没有属性'{name}'")
 class TargetInfo:
     def __init__(self, target: str, swipeDir: list = None, roi=None):
         self.target = target
@@ -125,21 +147,7 @@ class TargetInfo:
 
 ##################################################################
 
-def resource_path(relative_path):
-    """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
-    try:
-        # PyInstaller 创建一个临时文件夹并将路径存储在 _MEIPASS 中
-        base_path = sys._MEIPASS
-    except Exception:
-        # 未打包状态 (开发环境)
-        # 假设 script.py 位于 C:\Users\Arnold\Desktop\andsimscripts\src\
-        # 并且 resources 位于 C:\Users\Arnold\Desktop\andsimscripts\resources\
-        # 我们需要从 script.py 的目录 (src) 回到上一级 (andsimscripts)
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        # 如果你的 script.py 和 resources 文件夹都在项目根目录，则 base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-def StartAdbServer(setting: FarmSetting):
+def StartAdbServer(setting: FarmConfig):
     def check_adb_connection():
         try:
             # 创建socket检测端口连接
@@ -148,13 +156,13 @@ def StartAdbServer(setting: FarmSetting):
             result = sock.connect_ex(("127.0.0.1", 5037))
             return result == 0  # 返回0表示连接成功
         except Exception as e:
-            setting._LOGGER.info(f"连接检测异常: {str(e)}")
+            logger.info(f"连接检测异常: {str(e)}")
             return False
         finally:
             sock.close()
     try:
         if not check_adb_connection():
-            setting._LOGGER.info(f"开始启动ADB服务, 路径:{setting._ADBPATH}")
+            logger.info(f"开始启动ADB服务, 路径:{setting._ADBPATH}")
             # 启动adb服务（非阻塞模式）
             subprocess.Popen(
                 [setting._ADBPATH, "start-server"],
@@ -162,23 +170,23 @@ def StartAdbServer(setting: FarmSetting):
                 stderr=subprocess.DEVNULL,
                 shell=False
             )
-            setting._LOGGER.info("ADB 服务启动中...")
+            logger.info("ADB 服务启动中...")
 
             # 循环检测连接（最多重试5次）
             for _ in range(5):
                 if check_adb_connection():
-                    setting._LOGGER.info("ADB 连接成功")
+                    logger.info("ADB 连接成功")
                     return True
                 time.sleep(1)  # 每次检测间隔1秒
 
-            setting._LOGGER.info("ADB 连接超时")
+            logger.info("ADB 连接超时")
             return False
         else:
             return True
     except Exception as e:
-        setting._LOGGER.info(f"启动ADB失败: {str(e)}")
+        logger.info(f"启动ADB失败: {str(e)}")
         return False
-def CreateAdbDevice(setting: FarmSetting):
+def CreateAdbDevice(setting: FarmConfig):
     client = AdbClient(host="127.0.0.1", port=5037)
 
     target_device = f"127.0.0.1:{setting._ADBPORT}"
@@ -188,25 +196,49 @@ def CreateAdbDevice(setting: FarmSetting):
         client.remote_disconnect("127.0.0.1", int(setting._ADBPORT))
         time.sleep(0.5)
 
-    setting._LOGGER.info(f"尝试创建adb连接 127.0.0.1:{setting._ADBPORT}...")
+    logger.info(f"尝试创建adb连接 127.0.0.1:{setting._ADBPORT}...")
     client.remote_connect("127.0.0.1", int(setting._ADBPORT))
     devices = client.devices()
     if (not devices) or not (devices[0]):
-        setting._LOGGER.info("创建adb链接失败.")
+        logger.info("创建adb链接失败.")
         setting._FINISHINGCALLBACK()
         return
     return devices[0]
 
 def Factory():
     toaster = ToastNotifier()
-    device = None
-    logger = None
     setting =  None
+    quest = None
+    def LoadQuest(farmtarget):
+        # 构建文件路径
+        data = LoadJson(ResourcePath(QUEST_FILE))[setting._FARMTARGET]
+        
+
+        
+        # 创建 Quest 实例并填充属性
+        quest = FarmQuest()
+        for key, value in data.items():
+            if key == '_TARGETINFOLIST':
+                setattr(quest, key, [TargetInfo(*args) for args in value])
+            elif hasattr(FarmQuest, key):
+                setattr(quest, key, value)
+            elif key in ["type","questName","questId",'extraConfig']:
+                pass
+            else:
+                logger.info(f"'{key}'并不存在于FarmQuest中.")
+        
+        if 'extraConfig' in data and isinstance(data['extraConfig'], dict):
+            for key, value in data['extraConfig'].items():
+                if hasattr(setting, key):
+                    setattr(setting, key, value)
+                else:
+                    print(f"Warning: Config has no attribute '{key}' to override")
+        return quest
     ##################################################################
     def DeviceShell(cmdStr):
         while True:
             try:
-                return device.shell(cmdStr)
+                return setting._ADBDEVICE.shell(cmdStr)
             except Exception as e:
                 logger.debug(f"{e}")
                 if isinstance(e, (RuntimeError, ConnectionResetError, cv2.error)):
@@ -226,7 +258,7 @@ def Factory():
         while True:
             try:
                 # logger.debug('ScreenShot')
-                screenshot = device.screencap()
+                screenshot = setting._ADBDEVICE.screencap()
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
 
                 if screenshot_np.size == 0:
@@ -252,27 +284,13 @@ def Factory():
                 return image
             except Exception as e:
                 logger.debug(f"{e}")
-                if isinstance(e, (RuntimeError, ConnectionResetError, cv2.error)):
+                if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info("adb重启中...")
                     while 1:
                         if StartAdbServer(setting):
                             setting._ADBDEVICE = CreateAdbDevice(setting)
                             break
                     continue
-    def _CheckIfLoadImage(shortPathOfTarget):
-        logger.debug(f"加载{shortPathOfTarget}")
-        pathOfTarget = resource_path(fr'resources/images/{shortPathOfTarget}.png')
-        try:
-            # 尝试读取图片
-            template = cv2.imread(pathOfTarget, cv2.IMREAD_COLOR)
-            if template is None:
-            # 手动抛出异常
-                raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {pathOfTarget}(注意: 路径中不能包含中文.)")
-        except Exception as e:
-            setting._FORCESTOPING.set()
-            logger.info(f"加载图片失败: {str(e)}")
-            return None
-        return template
     def CheckIf(pathOfScreen, shortPathOfTarget, roi = None, outputMatchResult = False):
         def cutRoI(screenshot,roi):
             if roi is None:
@@ -316,7 +334,7 @@ def Factory():
             return screenshot
 
         nonlocal setting
-        template = _CheckIfLoadImage(shortPathOfTarget)
+        template = LoadTemplateImage(shortPathOfTarget)
         screenshot = pathOfScreen
         threshold = 0.80
         pos = None
@@ -338,7 +356,7 @@ def Factory():
             cv2.imwrite("Matched Result.png", screenshot)
         return pos
     def CheckIf_MultiRect(pathOfScreen, shortPathOfTarget):
-        template = _CheckIfLoadImage(shortPathOfTarget)
+        template = LoadTemplateImage(shortPathOfTarget)
         screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
@@ -361,7 +379,7 @@ def Factory():
         # cv2.imwrite("Matched_Result.png", screenshot)
         return pos_list
     def CheckIf_FocusCursor(pathOfScreen, shortPathOfTarget):
-        template = _CheckIfLoadImage(shortPathOfTarget)
+        template = LoadTemplateImage(shortPathOfTarget)
         screenshot = pathOfScreen
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
@@ -396,7 +414,7 @@ def Factory():
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
 
         for i in range(4):
-            template = _CheckIfLoadImage(f"cursor_{i}")
+            template = LoadTemplateImage(f"cursor_{i}")
         
             result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.80
@@ -409,7 +427,7 @@ def Factory():
         return position
     def CheckIf_throughStair(pathOfScreen,targetInfo : TargetInfo):
         screenshot = pathOfScreen
-        template = _CheckIfLoadImage(targetInfo.target)
+        template = LoadTemplateImage(targetInfo.target)
         position = targetInfo.roi
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
 
@@ -827,7 +845,7 @@ def Factory():
                 PressReturn()
                 PressReturn()
             if counter>15:
-                black = _CheckIfLoadImage("blackScreen")
+                black = LoadTemplateImage("blackScreen")
                 mean_diff = cv2.absdiff(black, screen).mean()/255
                 if mean_diff<0.02:
                     logger.info(f"警告: 游戏画面长时间处于黑屏中, 即将重启({25-counter})")
@@ -870,50 +888,13 @@ def Factory():
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
     def StateEoT():
-        match setting._FARMTARGET:
-            case "shiphold":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('shiphold',[1,1],1))
-            case "lounge":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('lounge',[1,1],1))
-            case "LBC":
-                if Press(CheckIf(ScreenShot(),'LBC/LBC')):
-                    pass
-                else:
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
-            case "SSC":
-                if Press(CheckIf(ScreenShot(),'SSC/SSC')):
-                    pass
-                else:
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 700 100 100 100',1))
-            case "fordraig-B3F":
-                if Press(CheckIf(ScreenShot(),'fordraig/B3F')):
-                    pass
-                else:
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/B3F',['labyrinthOfFordraig',[1,1]],1))
-            case 'fortress-B3F':
-                Press(FindCoordsOrElseExecuteFallbackAndWait('impregnableFortress',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('fortressb3f', 'input swipe 650 250 650 900',1))
-            case "Dist":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('TradeWaterway',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('Dist', 'input swipe 650 250 650 900',1))
-            case "DOE":
-                Press(FindCoordsOrElseExecuteFallbackAndWait("DOE",["EdgeOfTown",[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait("DOEB1F",[1,1],1))
-            case "DOL":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOL',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOLB1F',[1,1],1))
-            case "DOF":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOF',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOFB1F',[1,1],1))
-            case "DOW":
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOW',['EdgeOfTown',[1,1]],1))
-                Press(FindCoordsOrElseExecuteFallbackAndWait('DOWB1F',[1,1],1))
+        if quest._preEOTcheck:
+            if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
+                pass
+        for info in quest._EOT:
+            pos = FindCoordsOrElseExecuteFallbackAndWait(info[1],info[2],info[3])
+            if info[0]=="press":
+                Press(pos)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
@@ -1149,7 +1130,6 @@ def Factory():
             if tryOpenCounter > MAXERROROPEN:
                 logger.info(f"错误: 尝试次数过多. 疑似卡死.")
                 return None
-
     def StateDungeon(targetInfoList : list[TargetInfo]):
         gameFrozen_none = []
         gameFrozen_map = []
@@ -1258,13 +1238,8 @@ def Factory():
                     StateCombat()
                     dungState = None
 
-    def StreetFarm(set:FarmSetting):
+    def DungeonFarm():
         nonlocal setting
-        nonlocal device
-        nonlocal logger
-        setting = set
-        device = setting._ADBDEVICE
-        logger = setting._LOGGER
         state = None
         while 1:
             logger.info("======================")
@@ -1311,19 +1286,14 @@ def Factory():
                         )
                     state = State.Dungeon
                 case State.Dungeon:
-                    targetInfoList = setting._TARGETINFOLIST.copy()
+                    targetInfoList = quest._TARGETINFOLIST.copy()
                     RestartableSequenceExecution(
                         lambda: StateDungeon(targetInfoList)
                         )
                     state = None
         setting._FINISHINGCALLBACK()
-    def QuestFarm(set:FarmSetting):
+    def QuestFarm():
         nonlocal setting
-        nonlocal device
-        nonlocal logger
-        setting = set
-        device = setting._ADBDEVICE
-        logger = setting._LOGGER
         match setting._FARMTARGET:
             case '7000G':
                 stepNo = 1
@@ -1541,7 +1511,12 @@ def Factory():
                             Sleep(1)
                             if setting._AOE_ONCE:
                                 setting._ENOUGH_AOE = False
-                            while not (pos:=CheckIf(scn:=ScreenShot(),'icanstillgo')):
+                            while 1:
+                                scn=ScreenShot()
+                                if Press(CheckIf(scn,'retry')):
+                                    continue
+                                if Press(CheckIf(scn,'icanstillgo')):
+                                    break
                                 if CheckIf(scn,'combatActive'):
                                     StateCombat()
                                 else:
@@ -1751,4 +1726,17 @@ def Factory():
 
         setting._FINISHINGCALLBACK()
         return
-    return StreetFarm, QuestFarm
+    def Farm(set:FarmConfig):
+        nonlocal setting
+        nonlocal quest
+        setting = set
+
+        if setting._ADBDEVICE == None:
+            CreateAdbDevice(setting)
+        
+        quest = LoadQuest(setting._FARMTARGET)
+        if quest._TYPE =="dungeon":
+            DungeonFarm()
+        else:
+            QuestFarm()
+    return Farm
