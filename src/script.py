@@ -1599,7 +1599,7 @@ def Factory():
                                 DeviceShell(f"input swipe 150 200 150 250")
                                 Sleep(1)
                             else:
-                                Press([pos[0]+300,pos[1]+200])
+                                Press([pos[0]+300,pos[1]+130])
                                 break
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
