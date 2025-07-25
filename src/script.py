@@ -47,7 +47,7 @@ CONFIG_VAR_LIST = [
             ["aoe_once_var",                tk.BooleanVar, "_AOE_ONCE",                  False],
             ["auto_after_aoe_var",          tk.BooleanVar, "_AUTO_AFTER_AOE",            False],
             ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
-            ["rest_intervel_var",           tk.IntVar,  "_RESTINTERVEL",              0],
+            ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              0],
             ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
             ["adb_path_var",                tk.StringVar,  "_ADBPATH",                   ""],
             ["adb_port_var",                tk.StringVar,  "_ADBPORT",                   5555],
@@ -1219,6 +1219,8 @@ def Factory():
                                     break
                     ########### OPEN MAP
                     Sleep(1)
+                    Press(CheckIf(ScreenShot(), 'resume'))
+                    StateMoving_CheckFrozen()
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
