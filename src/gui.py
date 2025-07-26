@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -66,7 +66,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.create_widgets()
         self.update_system_auto_combat()
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
-        self.update_change_aoe_once_check() #
+        
 
         logger.info("**********************************")
         logger.info(f"当前版本: {__version__}")
@@ -492,7 +492,10 @@ class ConfigPanelApp(tk.Toplevel):
         for buttonName,_,_, _, _ in SPELLSEKILL_TABLE:
             getattr(self,buttonName).config(state=button_state)
         self.aoe_once_check.config(state = button_state)
-        self.auto_after_aoe_check.config(state = button_state)
+        if is_system_auto:
+            self.auto_after_aoe_check.config(state = button_state)
+        else:
+            self.update_change_aoe_once_check()
         
         # 更新按钮颜色并保存
         self.save_config()

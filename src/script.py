@@ -425,21 +425,35 @@ def Factory():
                 return None 
         return position
     def CheckIf_throughStair(pathOfScreen,targetInfo : TargetInfo):
+        stair_img = ["stair_up","stair_down","stair_teleport"]
         screenshot = pathOfScreen
-        template = LoadTemplateImage(targetInfo.target)
         position = targetInfo.roi
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
-
         
-        result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.80
-        _, max_val, _, _ = cv2.minMaxLoc(result)
+        if (targetInfo.target not in stair_img):
+            # 验证楼层
+            template = LoadTemplateImage(targetInfo.target)
+            result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+            threshold = 0.80
+            _, max_val, _, _ = cv2.minMaxLoc(result)
 
-        logger.debug(f"搜索楼梯{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
-        if max_val > threshold:
-            logger.debug("大于阈值, 判断为楼梯存在, 尚未通过.")
-            return position 
-        return None
+            logger.debug(f"搜索楼层标识{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
+            if max_val > threshold:
+                logger.info("楼层正确, 判定为已通过")
+                return None
+            return position
+            
+        else: #equal: targetInfo.target IN stair_img
+            template = LoadTemplateImage(targetInfo.target)
+            result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
+            threshold = 0.80
+            _, max_val, _, _ = cv2.minMaxLoc(result)
+
+            logger.debug(f"搜索楼梯{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
+            if max_val > threshold:
+                logger.info("判定为楼梯存在, 尚未通过.")
+                return position
+            return None
     def Press(pos):
         if pos!=None:
             logger.debug(f'按了{pos[0]} {pos[1]}')
@@ -538,9 +552,9 @@ def Factory():
                 logger.info("任务进度重置中...")
                 continue
     ##################################################################
-    def getCursorCoordinates(input, template_path, threshold=0.8):
+    def getCursorCoordinates(input, threshold=0.8):
         """在本地图片中查找模板位置"""
-        template = cv2.imread(resource_path(fr'resources/images/{template_path}.png'))
+        template = LoadTemplateImage('cursor')
         if template is None:
             raise ValueError("无法加载模板图片！")
 
@@ -638,7 +652,7 @@ def Factory():
                 Sleep(0.2)
                 t = float(DeviceShell("date +%s.%N").strip())
                 s = ScreenShot()
-                x = getCursorCoordinates(s,'cursor')
+                x = getCursorCoordinates(s)
                 if x != None:
                     ts.append(t-t0)
                     xs.append(x/900)
@@ -654,7 +668,7 @@ def Factory():
 
             t = float(DeviceShell("date +%s.%N").strip())
             s = ScreenShot()
-            x = getCursorCoordinates(s,'cursor')
+            x = getCursorCoordinates(s)
             target = findWidestRectMid(s)
             logger.debug(f"理论点: {triangularWave(t-t0,p,c)*900}")
             logger.debug(f"起始点: {x}")
@@ -977,7 +991,7 @@ def Factory():
             if target == 'position':
                 logger.info(f"当前目标: 地点{roi}")
                 targetPos = CheckIf_ReachPosition(map,targetInfo)
-            elif target.endswith("_stair"):
+            elif target.startswith("stair"):
                 logger.info(f"当前目标: 楼梯{target}")
                 targetPos = CheckIf_throughStair(map,targetInfo)
             else:
@@ -1037,13 +1051,22 @@ def Factory():
             return None,  targetInfoList
 
         if searchResult == None:
-            logger.info(f"没有找到{target}.")
-            if target == 'chest' or target == 'position' or target.endswith('_stair'):
+            if target == 'chest':
+                # 结束, 弹出.
                 targetInfoList.pop(0)
-                logger.info(f"不再搜索{target}")
+                logger.info(f"没有找到宝箱.\n停止检索宝箱.")
+            elif (target == 'position' or target.startswith('stair')):
+                # 结束, 弹出.
+                targetInfoList.pop(0)
+                logger.info(f"已经抵达目标地点或目标楼层.")
+            else:
+                # 这种时候我们认为真正失败了. 所以不弹出.
+                # 当然, 更好的做法时传递finish标识()
+                logger.info(f"未找到目标{target}.")
+
             return DungeonState.Map,  targetInfoList
         else:
-            if target in normalPlace or target.endswith("_quit") or target.endswith('_stair'):
+            if target in normalPlace or target.endswith("_quit") or target.startswith('stair'):
                 Press(searchResult)
                 Press([280,1433]) # automove
                 return StateMoving_CheckFrozen(),targetInfoList
@@ -1446,7 +1469,7 @@ def Factory():
 
                     RestartableSequenceExecution(
                         lambda:StateDungeon([
-                            TargetInfo('down_stair',"左上",[721,236]),
+                            TargetInfo('stair_down',"左上",[721,236]),
                             TargetInfo('position',"左下", [240,921])]), #前往第二个陷阱
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1), # 关闭地图
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("fordraig/TryPushingIt",["input swipe 100 250 800 250",[400,800],[400,800],[400,800]],1)), # 转向来开启机关
@@ -1456,9 +1479,9 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda:StateDungeon([
                             TargetInfo("position","左下",[33,1238]),
-                            TargetInfo("down_stair","左下",[453,1027]),
+                            TargetInfo("stair_down","左下",[453,1027]),
                             TargetInfo("position","左下",[187,1027]),
-                            TargetInfo("teleport_stair","左下",[80,1026])
+                            TargetInfo("stair_teleport","左下",[80,1026])
                             ]), #前往第三个陷阱
                         )
                     logger.info('已完成第三个陷阱.')
@@ -1467,7 +1490,7 @@ def Factory():
                     setting._SYSTEMAUTOCOMBAT = False
                     StateDungeon([TargetInfo('position','左下',[720,1025])]) # 前往boss战斗
                     setting._SYSTEMAUTOCOMBAT = True
-                    StateDungeon([TargetInfo('teleport_stair','左上',[665,395])]) # 第四层出口
+                    StateDungeon([TargetInfo('stai_rteleport','左上',[665,395])]) # 第四层出口
                     FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
                     Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
                     # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
