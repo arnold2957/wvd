@@ -2,14 +2,7 @@ import json
 import os
 import logging
 import sys
-
-# 根據運行模式動態導入 tkinter
-def is_headless_mode():
-    return os.environ.get('WVD_HEADLESS', '0') == '1'
-
-if not is_headless_mode():
-    import tkinter as tk
-    from tkinter import ttk, scrolledtext
+import cv2
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -93,10 +86,48 @@ class SummaryLogFilter(logging.Filter):
             
         return False
 ############################################
-DEFAULT_CONFIG_FILE = 'config.json'
+def ResourcePath(relative_path):
+    """ 获取资源的绝对路径，适用于开发环境和 PyInstaller 打包环境 """
+    try:
+        # PyInstaller 创建一个临时文件夹并将路径存储在 _MEIPASS 中
+        base_path = sys._MEIPASS
+    except Exception:
+        # 未打包状态 (开发环境)
+        # 假设 script.py 位于 C:\Users\Arnold\Desktop\andsimscripts\src\
+        # 并且 resources 位于 C:\Users\Arnold\Desktop\andsimscripts\resources\
+        # 我们需要从 script.py 的目录 (src) 回到上一级 (andsimscripts)
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        # 如果你的 script.py 和 resources 文件夹都在项目根目录，则 base_path = os.path.abspath(".")
 
-def SaveConfigToFile(config_data, config_file=None):
-    file_path = config_file or DEFAULT_CONFIG_FILE
+    return os.path.join(base_path, relative_path)
+def LoadJson(path):
+    try:
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                loaded_config = json.load(f)
+                return loaded_config
+        else:
+            return {}   
+    except json.JSONDecodeError:
+        logger.error(f"错误: 无法解析 {path}。将使用默认配置。")
+        return {}
+    except Exception as e:
+        logger.error(f"错误: 加载配置时发生错误: {e}。将使用默认配置。")
+        return {}
+def LoadImage(path):
+    try:
+        # 尝试读取图片
+        img = cv2.imread(path, cv2.IMREAD_COLOR)
+        if img is None:
+        # 手动抛出异常
+            raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {path}(注意: 路径中不能包含中文.)")
+    except Exception as e:
+        logger.Error(f"加载图片失败: {str(e)}")
+        return None
+    return img
+############################################
+CONFIG_FILE = 'config.json'
+def SaveConfigToFile(config_data):
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=4)
@@ -105,30 +136,12 @@ def SaveConfigToFile(config_data, config_file=None):
     except Exception as e:
         logger.error(f"保存配置到 {file_path} 時发生错误: {e}")
         return False
-
-
-def LoadConfigFromFile(config_file=None):
-    file_path = config_file or DEFAULT_CONFIG_FILE
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                loaded_config = json.load(f)
-                return loaded_config
-        except json.JSONDecodeError:
-            logger.error(f"错误: 无法解析 {file_path}。将使用默认配置。")
-            return {}
-        except Exception as e:
-            logger.error(f"错误: 加载配置时发生错误: {e}。将使用默认配置。")
-            return {}
-    else:
-        logger.error(f"錯誤: 配置檔案 {file_path} 不存在。將使用預設配置。")
-        return {}
-    
-def SetOneVarInConfig(var, value, config_file=None):
-    data = LoadConfigFromFile(config_file)
+def LoadConfigFromFile(config_file_path = CONFIG_FILE):
+    return LoadJson((config_file_path))
+def SetOneVarInConfig(var, value):
+    data = LoadConfigFromFile()
     data[var] = value
-    SaveConfigToFile(data, config_file)
-
+    SaveConfigToFile(data)
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"
 def ShowChangesLogWindow():
@@ -174,7 +187,44 @@ def ShowChangesLogWindow():
         text_area.configure(state='normal')
         text_area.insert(tk.INSERT, f"读取文件时出错: {str(e)}")
         text_area.configure(state='disabled')
+###########################################
+QUEST_FILE = 'resources/quest/quest.json'
+def BuildQuestReflection():
+    try:
+        data = LoadJson(ResourcePath(QUEST_FILE))
+        
+        quest_reflect_map = {}
+        seen_names = set()
+        
+        # 遍历所有任务代号
+        for quest_code, quest_info in data.items():
+            # 获取本地化任务名称
+            quest_name = quest_info["questName"]
+            
+            # 检查名称是否重复
+            if quest_name in seen_names:
+                raise ValueError(f"Duplicate questName found: '{quest_name}'")
+            
+            # 添加到映射表和已见集合
+            quest_reflect_map[quest_name] = quest_code
+            seen_names.add(quest_name)
+        
+        return quest_reflect_map
     
+    except KeyError as e:
+        raise KeyError(f"不存在'questName'属性: {e}.")
+    except json.JSONDecodeError as e:
+        logger.info(f"Error at line {e.lineno}, column {e.colno}: {e.msg}")
+        logger.info(f"Problematic text: {e.doc[e.pos-30:e.pos+30]}")  # 显示错误上下文
+        exit()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"{e}")
+###########################################
+IMAGE_FOLDER = fr'resources/images/'
+def LoadTemplateImage(shortPathOfTarget):
+    logger.debug(f"加载{shortPathOfTarget}")
+    pathOfTarget = ResourcePath(os.path.join(IMAGE_FOLDER + f"{shortPathOfTarget}.png"))
+    return LoadImage(pathOfTarget)
 ###########################################
 class Tooltip:
     def __init__(self, widget, text):
