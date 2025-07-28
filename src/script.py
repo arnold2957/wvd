@@ -1,6 +1,7 @@
 from ppadb.client import Client as AdbClient
 import numpy as np
 import time
+from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from enum import Enum
@@ -12,13 +13,6 @@ import time
 from utils import *
 import random
 from pathlib import Path
-
-# 根據運行模式決定是否導入通知模組
-if not is_headless_mode():
-    from win10toast import ToastNotifier
-    toaster = ToastNotifier()
-else:
-    toaster = None
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
@@ -211,8 +205,8 @@ def CreateAdbDevice(setting: FarmConfig):
     return devices[0]
 
 def Factory():
-    # toaster 已在全局範圍內初始化
-    setting = None
+    toaster = ToastNotifier()
+    setting =  None
     quest = None
     def LoadQuest(farmtarget):
         # 构建文件路径

@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import ttk, scrolledtext
 import json
 import os
 import logging
@@ -40,10 +42,7 @@ class LoggerStream:
 # 创建logger
 logger = logging.getLogger('WvDASLogger')
 logger.setLevel(logging.DEBUG)
-# 只在非無頭模式下重定向 stdout 和 stderr
-if not is_headless_mode():
-    sys.stdout = LoggerStream(logger, logging.DEBUG)
-    sys.stderr = LoggerStream(logger, logging.ERROR)
+# cmd文件句柄
 # 文件句柄
 file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)
@@ -58,26 +57,20 @@ scrolled_text_formatter = logging.Formatter(
     '%(message)s'
 )
 class ScrolledTextHandler(logging.Handler):
-    def __init__(self, text_widget=None):
+    def __init__(self, text_widget):
         super().__init__()
         self.text_widget = text_widget
-        if not is_headless_mode() and text_widget:
-            self.text_widget.config(state=tk.DISABLED)
+        self.text_widget.config(state=tk.DISABLED)
 
     def emit(self, record):
         msg = self.format(record)
-        if is_headless_mode():
-            # 在無頭模式下，使用格式化的輸出
-            formatted_msg = f"{record.asctime} - {record.levelname} - {msg}"
-            print(formatted_msg)
-        else:
-            try:
-                self.text_widget.config(state=tk.NORMAL)
-                self.text_widget.insert(tk.END, msg + '\n')
-                self.text_widget.see(tk.END)
-                self.text_widget.config(state=tk.DISABLED)
-            except Exception:
-                self.handleError(record)
+        try:
+            self.text_widget.config(state=tk.NORMAL)
+            self.text_widget.insert(tk.END, msg + '\n')
+            self.text_widget.see(tk.END)
+            self.text_widget.config(state=tk.DISABLED)
+        except Exception:
+            self.handleError(record)
 
 class SummaryLogFilter(logging.Filter):
     def filter(self, record):
@@ -129,12 +122,12 @@ def LoadImage(path):
 CONFIG_FILE = 'config.json'
 def SaveConfigToFile(config_data):
     try:
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=4)
-        logger.info(f"配置已保存到 {file_path}")
+        logger.info("配置已保存。")
         return True
     except Exception as e:
-        logger.error(f"保存配置到 {file_path} 時发生错误: {e}")
+        logger.error(f"保存配置时发生错误: {e}")
         return False
 def LoadConfigFromFile(config_file_path = CONFIG_FILE):
     if config_file_path == None:
