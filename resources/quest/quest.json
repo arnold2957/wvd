@@ -3,14 +3,14 @@
         "_TYPE":"dungeon",
         "questName":"[宝箱]水路船二lounge",
         "_TARGETINFOLIST":[
-            ["up_stair","左上",[292,394]],
+            ["stair_lounge","左上",[292,394]],
             ["chest","左上",[[0,0,900,739],[0,529,212,106]]],
-            ["down_stair","左上",[292,394]],
+            ["stair_shiphold","左上",[292,394]],
             ["harken",null,null]
         ],
         "_EOT":[
             ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","lounge",[1,1],1]
+            ["press","shiphold",[1,1],1]
         ]
     },
 
@@ -25,7 +25,7 @@
         "_EOT":
         [
             ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","LBC/LBC","inputswipe1001007001500",1]
+            ["press","LBC/LBC","input swipe 100 100 700 1500",1]
         ]
     },
 

@@ -137,6 +137,8 @@ def SaveConfigToFile(config_data):
         logger.error(f"保存配置到 {file_path} 時发生错误: {e}")
         return False
 def LoadConfigFromFile(config_file_path = CONFIG_FILE):
+    if config_file_path == None:
+        config_file_path = CONFIG_FILE
     return LoadJson((config_file_path))
 def SetOneVarInConfig(var, value):
     data = LoadConfigFromFile()

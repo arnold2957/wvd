@@ -53,7 +53,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --add-data "resources/images;resources/images/" src/gui.py -n wvd
+        pyinstaller --onedir --add-data "resources;resources/" src/gui.py -n wvd
         Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP
