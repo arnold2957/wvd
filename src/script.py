@@ -1325,7 +1325,7 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次地下城完成.本次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.",
+                        logger.info(f"已完成{setting._COUNTERDUNG}次地下城. 最后一次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.",
                                     extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1

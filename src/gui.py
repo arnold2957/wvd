@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -126,12 +126,12 @@ class ConfigPanelApp(tk.Toplevel):
         self.summary_text_handler.emit = new_emit
         logger.addHandler(self.summary_text_handler)
 
-        main_frame = ttk.Frame(self, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.main_frame = ttk.Frame(self, padding="10")
+        self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         #设定adb
         row_counter = 0
-        frame_row0 = ttk.Frame(main_frame)
+        frame_row0 = ttk.Frame(self.main_frame)
         frame_row0.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 首行框架
         self.adb_status_label = ttk.Label(frame_row0)
         self.adb_status_label.grid(row=0, column=0,)
@@ -181,11 +181,11 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 分割线.
         row_counter += 1
-        ttk.Separator(main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
+        ttk.Separator(self.main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
         # 地下城目标
         row_counter += 1
-        frame_row2 = ttk.Frame(main_frame)
+        frame_row2 = ttk.Frame(self.main_frame)
         frame_row2.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         ttk.Label(frame_row2, text="地下城目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.farm_target_combo = ttk.Combobox(frame_row2, textvariable=self.farm_target_text_var, values=list(DUNGEON_TARGETS.keys()), state="readonly")
@@ -194,7 +194,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 开箱子设置
         row_counter += 1
-        frame_row3 = ttk.Frame(main_frame)
+        frame_row3 = ttk.Frame(self.main_frame)
         frame_row3.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
             frame_row3,
@@ -231,7 +231,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 跳过恢复
         row_counter += 1
-        row_recover = tk.Frame(main_frame)
+        row_recover = tk.Frame(self.main_frame)
         row_recover.grid(row = row_counter,column=0, columnspan=2, sticky=tk.W, pady=5)
         self.skip_recover_check = ttk.Checkbutton(
             row_recover,
@@ -252,7 +252,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 休息设置
         row_counter += 1
-        frame_row5 = ttk.Frame(main_frame)
+        frame_row5 = ttk.Frame(self.main_frame)
         frame_row5.grid(row=row_counter, column=0, sticky="ew", pady=5)
 
         def checkcommand():
@@ -283,7 +283,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 善恶设置
         row_counter += 1
-        frame_row6 = ttk.Frame(main_frame)
+        frame_row6 = ttk.Frame(self.main_frame)
         frame_row6.grid(row=row_counter, column=0, sticky="ew", pady=5)
         ttk.Label(frame_row6, text=f"善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.karma_adjust_mapping = {
@@ -320,12 +320,12 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 分割线
         row_counter += 1
-        ttk.Separator(main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
+        ttk.Separator(self.main_frame, orient='horizontal').grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
         # 系统自动战斗
         row_counter += 1
         self.system_auto_check = ttk.Checkbutton(
-            main_frame,
+            self.main_frame,
             text="启用自动战斗",
             variable=self.system_auto_combat_var,
             command=self.update_system_auto_combat,
@@ -344,7 +344,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.save_config()
         row_counter += 1
         self.aoe_once_check = ttk.Checkbutton(
-            main_frame,
+            self.main_frame,
             text="一场战斗中仅释放一次全体AOE",
             variable=self.aoe_once_var,
             command= aoe_once_command,
@@ -355,7 +355,7 @@ class ConfigPanelApp(tk.Toplevel):
         #任何aoe后自动战斗
         row_counter += 1
         self.auto_after_aoe_check = ttk.Checkbutton(
-            main_frame,
+            self.main_frame,
             text="全体AOE后开启自动战斗",
             variable=self.auto_after_aoe_var,
             command= self.save_config,
@@ -365,7 +365,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 技能按钮框架
         row_counter += 1
-        self.skills_button_frame = ttk.Frame(main_frame)
+        self.skills_button_frame = ttk.Frame(self.main_frame)
         self.skills_button_frame.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W)
         for buttonName,buttonText,buttonSpell, row, col in SPELLSEKILL_TABLE:
             setattr(self,buttonName,ttk.Checkbutton(
@@ -416,12 +416,12 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 分割线
         row_counter += 1
-        self.update_sep = ttk.Separator(main_frame, orient='horizontal')
+        self.update_sep = ttk.Separator(self.main_frame, orient='horizontal')
         self.update_sep.grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
         #更新按钮
         row_counter += 1
-        frame_row_update = tk.Frame(main_frame)
+        frame_row_update = tk.Frame(self.main_frame)
         frame_row_update.grid(row=row_counter, column=0, sticky=tk.W)
 
         self.find_update = ttk.Label(frame_row_update, text="发现新版本:",foreground="red")
@@ -594,6 +594,14 @@ class ConfigPanelApp(tk.Toplevel):
 
     def turn_to_7000G(self):
         self.summary_log_display.config(bg="#F4C6DB" )
+        self.main_frame.grid_remove()
+        summary = self.summary_log_display.get("1.0", "end-1c")
+        if INTRODUCTION in summary:
+            summary = "唔, 看起来一次成功的地下城都没有完成."
+        text = f"你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n{summary}\n\n不过没关系, 至少, 你还可以找公主要钱.\n\n赞美公主殿下!\n"
+        turn_to_7000G_label = ttk.Label(self, text = text)
+        turn_to_7000G_label.grid(row=0, column=0,)
+
              
 class AppController(tk.Tk):
     def __init__(self):
