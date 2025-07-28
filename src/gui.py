@@ -8,7 +8,7 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.4.8'
+__version__ = '1.5.0'
 
 OWNER = "arnold2957"
 REPO = "wvd"
@@ -23,9 +23,10 @@ if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 ############################################
 class ConfigPanelApp(tk.Toplevel):
-    def __init__(self, master_controller):
+    def __init__(self, master_controller, msg_queue):
         super().__init__(master_controller)
         self.controller = master_controller
+        self.msg_queue = msg_queue
         self.geometry('550x608')
         # self.root.resizable(False, False)
         self.title(TITLE)
@@ -35,9 +36,8 @@ class ConfigPanelApp(tk.Toplevel):
         # 关闭时退出整个程序
         self.protocol("WM_DELETE_WINDOW", self.controller.destroy)
 
-        # --- 后台线程 ---
-        self.thread = None
-        self.stop_event = Event()
+        # --- 任务状态 ---
+        self.quest_active = False
 
         # --- ttk Style ---
         #
@@ -572,50 +572,42 @@ class ConfigPanelApp(tk.Toplevel):
                     widget.state([state.lower()] if state != tk.NORMAL else ['!disabled'])
 
     def toggle_start_stop(self):
-        if self.thread and (not self.thread.is_alive()):
-            self.thread.join()
-            self.thread = None
-            self.stop_event.clear()
-        if self.thread is None:
-            self.start_stop_btn.config(text="中断")
+        if not self.quest_active:
+            self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
-            self.dungeonLoop()
-        else: # self.thread is NOT None
-            if self.thread.is_alive():
-                logger.info("等待当前步骤执行完毕, 执行完毕后将中断脚本. 这可能需要一些时间...")
-                self.stop_event.set()
+            setting = FarmConfig()
+            config = LoadConfigFromFile()
+            for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+                setattr(setting, var_config_name, config[var_config_name])
+            setting._FINISHINGCALLBACK = self.finishingcallback
+            self.msg_queue.put(('start_quest', setting))
+            self.quest_active = True
+        else:
+            self.msg_queue.put(('stop_quest', None))
 
     def finishingcallback(self):
-        logger.info("已中断.")
+        logger.info("已停止.")
         self.start_stop_btn.config(text="脚本, 启动!")
         self.set_controls_state(tk.NORMAL)
         self.updata_config()
+        self.quest_active = False
 
-    def dungeonLoop(self):
-        setting = FarmConfig()
-        config = LoadConfigFromFile()
-        for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
-            setattr(setting, var_config_name, config[var_config_name])
-        logger.info(f"目标地下城:{setting._FARMTARGET_TEXT}")
-
-        setting._FINISHINGCALLBACK = self.finishingcallback
-        setting._FORCESTOPING = self.stop_event
-
-        Farm = Factory()
-        self.thread = Thread(target=Farm,args=(setting,))
-        self.thread.start()
+    def turn_to_7000G(self):
+        self.summary_log_display.config(bg="#F4C6DB" )
              
 class AppController(tk.Tk):
     def __init__(self):
         super().__init__()
         # 关键：立即隐藏根窗口
         self.withdraw()
+        self.msg_queue = queue.Queue()
         self.main_window = None
         if not self.main_window:
-            self.main_window = ConfigPanelApp(self)
-
-        self.msg_queue = queue.Queue()
+            self.main_window = ConfigPanelApp(self, self.msg_queue)
         
+        self.quest_threading = None
+        self.quest_setting = None
+
         self.is_checking_for_update = False 
         self.updater = AutoUpdater(
             msg_queue=self.msg_queue,
@@ -648,63 +640,91 @@ class AppController(tk.Tk):
             command, value = message
             
             # --- 这是处理更新逻辑的核心部分 ---
-            if command == 'update_available':
-                # 在面板上显示提示
-                update_data = value
-                version = update_data['version']
+            match command:
+                case 'start_quest':
+                    logger.info('启动任务...')
+                    self.quest_setting = value                    
+                    self.quest_setting._MSGQUEUE = self.msg_queue
+                    self.quest_setting._FORCESTOPING = Event()
+                    Farm = Factory()
+                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                    self.quest_threading.start()
+
+                case 'stop_quest':
+                    logger.info('停止任务...')
+                    if hasattr(self, 'quest_threading') and self.quest_threading.is_alive():
+                        if hasattr(self.quest_setting, '_FORCESTOPING'):
+                            self.quest_setting._FORCESTOPING.set()
                 
-                self.main_window.find_update.grid()
-                self.main_window.update_text.grid()
-                self.main_window.latest_version.set(version)
-                self.main_window.button_auto_download.grid()
-                self.main_window.button_manual_download.grid()
-                self.main_window.update_sep.grid()
-                self.main_window.save_config()
-                width, height = map(int, self.main_window.geometry().split('+')[0].split('x'))
-                self.main_window.geometry(f'{width}x{height+50}')
+                case 'turn_to_7000G':
+                    logger.info('开始要钱...')
+                    self.quest_setting._FARMTARGET = "7000G"
+                    while 1:
+                        if not self.quest_threading.is_alive():
+                            Farm = Factory()
+                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                            self.quest_threading.start()
+                            break
+                    if self.main_window:
+                        self.main_window.turn_to_7000G()
 
-                self.main_window.button_auto_download.config(command=lambda:self.run_in_thread(self.updater.download))          
-            elif command == 'download_started':
-                # 控制器决定创建并显示进度条窗口
-                if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
-                    self.progress_window = Progressbar(self.main_window,title="下载中...",max_size = value)
+                case 'update_available':
+                    # 在面板上显示提示
+                    update_data = value
+                    version = update_data['version']
+                    
+                    self.main_window.find_update.grid()
+                    self.main_window.update_text.grid()
+                    self.main_window.latest_version.set(version)
+                    self.main_window.button_auto_download.grid()
+                    self.main_window.button_manual_download.grid()
+                    self.main_window.update_sep.grid()
+                    self.main_window.save_config()
+                    width, height = map(int, self.main_window.geometry().split('+')[0].split('x'))
+                    self.main_window.geometry(f'{width}x{height+50}')
 
-            elif command == 'progress':
-                # 控制器更新进度条UI
-                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                    self.progress_window.update_progress(value)
-                    self.update()
-                    None
+                    self.main_window.button_auto_download.config(command=lambda:self.run_in_thread(self.updater.download))          
+                case 'download_started':
+                    # 控制器决定创建并显示进度条窗口
+                    if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
+                        self.progress_window = Progressbar(self.main_window,title="下载中...",max_size = value)
 
-            elif command == 'download_complete':
-                # 控制器关闭进度条并显示成功信息
-                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                    self.progress_window.destroy()
+                case 'progress':
+                    # 控制器更新进度条UI
+                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                        self.progress_window.update_progress(value)
+                        self.update()
+                        None
 
-            elif command == 'error':
-                 # 控制器处理错误显示
-                if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                    self.progress_window.destroy()
-                messagebox.showerror("错误", value, parent=self.main_window)
+                case 'download_complete':
+                    # 控制器关闭进度条并显示成功信息
+                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                        self.progress_window.destroy()
 
-            elif command == 'restart_ready':
-                script_path = value
-                messagebox.showinfo(
-                    "更新完成",
-                    "新版本已准备就绪，应用程序即将重启！",
-                    parent=self.main_window
-                )
-                
-                if sys.platform == "win32":
-                    subprocess.Popen([script_path], shell=True)
-                else:
-                    os.system(script_path)
-                
-                self.destroy()
-                
-            elif command == 'no_update_found':
-                # （可选）可以给个安静的提示，或什么都不做
-                print("UI: 未发现更新。")
+                case 'error':
+                    # 控制器处理错误显示
+                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
+                        self.progress_window.destroy()
+                    messagebox.showerror("错误", value, parent=self.main_window)
+
+                case 'restart_ready':
+                    script_path = value
+                    messagebox.showinfo(
+                        "更新完成",
+                        "新版本已准备就绪，应用程序即将重启！",
+                        parent=self.main_window
+                    )
+                    
+                    if sys.platform == "win32":
+                        subprocess.Popen([script_path], shell=True)
+                    else:
+                        os.system(script_path)
+                    
+                    self.destroy()
+                    
+                case 'no_update_found':
+                    # （可选）可以给个安静的提示，或什么都不做
+                    print("UI: 未发现更新。")
 
         except queue.Empty:
             pass

@@ -73,6 +73,7 @@ class FarmConfig:
         #### 面板配置其他
         self._FORCESTOPING = None
         self._FINISHINGCALLBACK = None
+        self._MSGQUEUE = None
         #### 临时参数
         self._MEET_CHEST_OR_COMBAT = False
         self._ENOUGH_AOE = False
@@ -200,7 +201,6 @@ def CreateAdbDevice(setting: FarmConfig):
     devices = client.devices()
     if (not devices) or not (devices[0]):
         logger.info("创建adb链接失败.")
-        setting._FINISHINGCALLBACK()
         return
     return devices[0]
 
@@ -246,9 +246,10 @@ def Factory():
 
                     while True:
                         if StartAdbServer(setting):
-                            setting._ADBDEVICE = CreateAdbDevice(setting)
-                            logger.info("ADB服务重启成功，设备重新连接")
-                            break
+                            if device := CreateAdbDevice(setting):
+                                setting._ADBDEVICE = device
+                                logger.info("ADB服务重启成功，设备重新连接")
+                                break
                         logger.warning("ADB重启失败，5秒后重试...")
                         time.sleep(5)
     def Sleep(t=1):
@@ -285,12 +286,16 @@ def Factory():
                 logger.debug(f"{e}")
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info("adb重启中...")
-                    while 1:
+                    while True:
                         if StartAdbServer(setting):
-                            setting._ADBDEVICE = CreateAdbDevice(setting)
-                            break
+                            if device := CreateAdbDevice(setting):
+                                setting._ADBDEVICE = device
+                                logger.info("ADB服务重启成功，设备重新连接")
+                                break
+                        logger.warning("ADB重启失败，5秒后重试...")
+                        time.sleep(5)
                     continue
-    def CheckIf(pathOfScreen, shortPathOfTarget, roi = None, outputMatchResult = False):
+    def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         def cutRoI(screenshot,roi):
             if roi is None:
                 return screenshot
@@ -334,7 +339,7 @@ def Factory():
 
         nonlocal setting
         template = LoadTemplateImage(shortPathOfTarget)
-        screenshot = pathOfScreen
+        screenshot = screenImage
         threshold = 0.80
         pos = None
         search_area = cutRoI(screenshot, roi)
@@ -354,9 +359,9 @@ def Factory():
             cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
             cv2.imwrite("Matched Result.png", screenshot)
         return pos
-    def CheckIf_MultiRect(pathOfScreen, shortPathOfTarget):
+    def CheckIf_MultiRect(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
-        screenshot = pathOfScreen
+        screenshot = screenImage
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
         threshold = 0.8
@@ -377,9 +382,9 @@ def Factory():
             # cv2.rectangle(screenshot, (x, y), (x + w, y + h), (0, 255, 0), 2)
         # cv2.imwrite("Matched_Result.png", screenshot)
         return pos_list
-    def CheckIf_FocusCursor(pathOfScreen, shortPathOfTarget):
+    def CheckIf_FocusCursor(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
-        screenshot = pathOfScreen
+        screenshot = screenImage
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
         threshold = 0.80
@@ -407,8 +412,8 @@ def Factory():
             if mean_diff<0.2:
                 return True
         return False
-    def CheckIf_ReachPosition(pathOfScreen,targetInfo : TargetInfo):
-        screenshot = pathOfScreen
+    def CheckIf_ReachPosition(screenImage,targetInfo : TargetInfo):
+        screenshot = screenImage
         position = targetInfo.roi
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
 
@@ -424,9 +429,9 @@ def Factory():
                 logger.debug("已达到检测阈值.")
                 return None 
         return position
-    def CheckIf_throughStair(pathOfScreen,targetInfo : TargetInfo):
+    def CheckIf_throughStair(screenImage,targetInfo : TargetInfo):
         stair_img = ["stair_up","stair_down","stair_teleport"]
-        screenshot = pathOfScreen
+        screenshot = screenImage
         position = targetInfo.roi
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
         
@@ -454,6 +459,21 @@ def Factory():
                 logger.info("判定为楼梯存在, 尚未通过.")
                 return position
             return None
+    def CheckIf_fastForwardOff(screenImage):
+        position = [240,1490]
+        template =  LoadTemplateImage(f"fastforward_off")
+        screenshot =  screenImage
+        cropped = screenshot[position[1]-50:position[1]+50, position[0]-50:position[0]+50]
+        
+        result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        threshold = 0.80
+        pos=[position[0]+max_loc[0] - cropped.shape[1]//2, position[1]+max_loc[1] -cropped.shape[0]//2]
+
+        if max_val > threshold:
+            logger.info(f"快进未开启, 即将开启.{pos}")
+            return pos
+        return None
     def Press(pos):
         if pos!=None:
             logger.debug(f'按了{pos[0]} {pos[1]}')
@@ -483,6 +503,9 @@ def Factory():
                 # OrElse
                 if Press(CheckIf(scn,'retry')):
                     logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+                    Sleep(1)
+                    continue
+                if Press(CheckIf_fastForwardOff(scn)):
                     Sleep(1)
                     continue
                 def pressTarget(target):
@@ -523,6 +546,8 @@ def Factory():
         nonlocal setting
         setting._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         setting._MAXRETRYLIMIT = min(50, setting._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
+        setting._TIME_CHEST = 0
+        setting._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -780,6 +805,9 @@ def Factory():
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
+                if (CheckIf(screen,'cursedWheel_timeLeap')):
+                    setting._MSGQUEUE.put(('turn_to_7000G',""))
+                    raise SystemExit
                 if (pos:=CheckIf(screen,'ambush')) and setting._KARMAADJUST.startswith('-'):
                     new_str = None
                     num_str = setting._KARMAADJUST[1:]
@@ -893,11 +921,7 @@ def Factory():
                 return queue, True
         return queue, False
     def StateInn():
-        Press(FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1))
-        Press(FindCoordsOrElseExecuteFallbackAndWait('Stay',['Inn',[1,1]],2))
-        Press(FindCoordsOrElseExecuteFallbackAndWait('Economy',['Stay',[1,1]],2))
-        Sleep(0.5)
-        Press(FindCoordsOrElseExecuteFallbackAndWait('OK',['Economy',[1,1]],2))
+        FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
     def StateEoT():
@@ -1163,7 +1187,7 @@ def Factory():
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
-                logger.info("即将中断脚本...")
+                logger.info("即将停止脚本...")
                 dungState = DungeonState.Quit
             logger.info(f"当前状态(地下城): {dungState}")
 
@@ -1174,11 +1198,23 @@ def Factory():
                         break
                     gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
                     if result:
+                        logger.info("由于画面卡死, 在state:None中重启.")
+                        restartGame()
+                    MAXTIMEOUT = 300
+                    if (setting._TIME_CHEST != 0 ) and (time.time()-setting._TIME_CHEST > MAXTIMEOUT):
+                        logger.info("由于宝箱用时过久, 在state:None中重启.")
+                        restartGame()
+                    if (setting._TIME_COMBAT != 0) and (time.time()-setting._TIME_COMBAT > MAXTIMEOUT):
+                        logger.info("由于战斗用时过久, 在state:None中重启.")
                         restartGame()
                 case DungeonState.Quit:
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
+                    ########### RESUME
+                    shouldResume = False # 我们假定不需要resume, 但是如果检测到战斗或宝箱, 那么尝试resume.
+                    if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
+                        shouldResume = True
                     ########### COMBAT RESET
                     # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
@@ -1240,10 +1276,12 @@ def Factory():
                                     PressReturn()
                                     shouldRecover = False
                                     break
-                    ########### OPEN MAP
+                    ########### REUSME
                     Sleep(1)
-                    Press(CheckIf(ScreenShot(), 'resume'))
-                    StateMoving_CheckFrozen()
+                    if shouldResume:
+                        Press(CheckIf(ScreenShot(), 'resume'))
+                        StateMoving_CheckFrozen()
+                    ########### OPEN MAP
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
@@ -1269,7 +1307,7 @@ def Factory():
             logger.info("======================")
             Sleep(1)
             if setting._FORCESTOPING.is_set():
-                logger.info("即将中断脚本...")
+                logger.info("即将停止脚本...")
                 break
             logger.info(f"当前状态: {state}")
             match state:
@@ -1282,7 +1320,7 @@ def Factory():
                         )
                     logger.info(f"下一状态: {state}")
                     if state ==State.Quit:
-                        logger.info("即将中断脚本...")
+                        logger.info("即将停止脚本...")
                         break
                 case State.Inn:
                     if setting._LAPTIME!= 0:
@@ -1324,98 +1362,91 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    match stepNo:
-                        case 1:
-                            starttime = time.time()
-                            setting._COUNTERDUNG += 1
-                            def stepMain():
-                                logger.info("第一步: 开始诅咒之旅...")
-                                Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
-                                Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
-                                if not Press(CheckIf(ScreenShot(),'FortressArrival')):
-                                    DeviceShell(f"input swipe 450 1200 450 200")
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
+                    starttime = time.time()
+                    setting._COUNTERDUNG += 1
+                    def stepMain():
+                        logger.info("第一步: 开始诅咒之旅...")
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
-                                while pos:= CheckIf(ScreenShot(), 'leap'):
-                                    Press(pos)
-                                    Sleep(2)
-                                    Press(CheckIf(ScreenShot(),'FortressArrival'))
-                            RestartableSequenceExecution(
-                                lambda: stepMain()
-                                )
-                            stepNo = 2
-                        case 2:
-                            Sleep(10)
-                            logger.info("第二步: 返回要塞...")
-                            RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
-                                )
-                            stepNo = 3
-                        case 3:
-                            logger.info("第三步: 前往王城...")
-                            RestartableSequenceExecution(
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
-                                lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
-                                )
-                            stepNo = 4
-                        case 4:
-                            logger.info("第四步: 给我!(伸手)")
-                            stepMark = -1
-                            def stepMain():
-                                nonlocal stepMark
-                                if stepMark == -1:
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
-                                    Sleep(15)
-                                    FindCoordsOrElseExecuteFallbackAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
-                                    if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
-                                        Press(pos)
-                                    else:
-                                        Press(CheckIf(scn,'7000G/iminhungry'))
-                                        Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],2))
-                                    stepMark = 0
-                                if stepMark == 0:
-                                    Sleep(4)
-                                    Press([1,1])
-                                    Press([1,1])
-                                    Sleep(8)
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/royalcapital',[1,1],2))
-                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[1,1],2)
-                                    stepMark = 1
-                                if stepMark == 1:
-                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[450,1111],0)
-                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                                    stepMark = 2
-                                if stepMark == 2:
-                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[200,1180],0)
-                                    FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
-                                    stepMark = 3
-                                if stepMark == 3:
-                                    FindCoordsOrElseExecuteFallbackAndWait('fastforward',[680,1200],0)
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
-                                    stepMark = 4
-                                if stepMark == 4:
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/icantagreewithU',[1,1],1))
-                                    stepMark = 5
-                                if stepMark == 5:
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[[1,1],'7000G/olddist'],1))
-                                    stepMark = 6
-                                if stepMark == 6:
-                                    Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
-                                    stepMark = 7
-                                FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
-                            RestartableSequenceExecution(
-                                lambda: stepMain()
-                                )
-                            costtime = time.time()-starttime
-                            logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
-                                        extra={"summary": True})
-                            if not setting._FORCESTOPING.is_set():
-                                stepNo = 1
+                        if not Press(CheckIf(ScreenShot(),'FortressArrival')):
+                            DeviceShell(f"input swipe 450 1200 450 200")
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('FortressArrival','input swipe 50 1200 50 1300',1))
+
+                        while pos:= CheckIf(ScreenShot(), 'leap'):
+                            Press(pos)
+                            Sleep(2)
+                            Press(CheckIf(ScreenShot(),'FortressArrival'))
+                    RestartableSequenceExecution(
+                        lambda: stepMain()
+                        )
+
+                    Sleep(10)
+                    logger.info("第二步: 返回要塞...")
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+
+                    logger.info("第三步: 前往王城...")
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        )
+
+                    logger.info("第四步: 给我!(伸手)")
+                    stepMark = -1
+                    def stepMain():
+                        nonlocal stepMark
+                        if stepMark == -1:
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('guild',[1,1],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgonow',[1,1],1))
+                            Sleep(15)
+                            FindCoordsOrElseExecuteFallbackAndWait(['7000G/olddist','7000G/iminhungry'],[1,1],2)
+                            if pos:=CheckIf(scn:=ScreenShot(),'7000G/olddist'):
+                                Press(pos)
                             else:
-                                break
+                                Press(CheckIf(scn,'7000G/iminhungry'))
+                                Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/olddist',[1,1],2))
+                            stepMark = 0
+                        if stepMark == 0:
+                            Sleep(4)
+                            Press([1,1])
+                            Press([1,1])
+                            Sleep(8)
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/royalcapital',[1,1],2))
+                            FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[1,1],2)
+                            stepMark = 1
+                        if stepMark == 1:
+                            FindCoordsOrElseExecuteFallbackAndWait('fastforward',[450,1111],0)
+                            FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                            stepMark = 2
+                        if stepMark == 2:
+                            FindCoordsOrElseExecuteFallbackAndWait('fastforward',[200,1180],0)
+                            FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['7000G/why',[1,1]],2)
+                            stepMark = 3
+                        if stepMark == 3:
+                            FindCoordsOrElseExecuteFallbackAndWait('fastforward',[680,1200],0)
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/leavethechild',['7000G/why',[1,1]],2))
+                            stepMark = 4
+                        if stepMark == 4:
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/icantagreewithU',[1,1],1))
+                            stepMark = 5
+                        if stepMark == 5:
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[[1,1],'7000G/olddist'],1))
+                            stepMark = 6
+                        if stepMark == 6:
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
+                            stepMark = 7
+                        FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
+                    RestartableSequenceExecution(
+                        lambda: stepMain()
+                        )
+                    costtime = time.time()-starttime
+                    logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
+                                extra={"summary": True})
+
             case 'fordraig':
                 quest._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
                 while 1:
@@ -1523,7 +1554,7 @@ def Factory():
                     )
                     RestartableSequenceExecution(
                         lambda : StateDungeon([TargetInfo('position','左下',[559,599]),
-                                               TargetInfo('position','左下',[239,813])])
+                                               TargetInfo('position','左下',[186,813])])
                     )
                     logger.info('已抵达目标地点, 开始战斗.')
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1)
@@ -1539,7 +1570,7 @@ def Factory():
                                 scn=ScreenShot()
                                 if Press(CheckIf(scn,'retry')):
                                     continue
-                                if Press(CheckIf(scn,'icanstillgo')):
+                                if CheckIf(scn,'icanstillgo'):
                                     break
                                 if CheckIf(scn,'combatActive'):
                                     StateCombat()
@@ -1548,7 +1579,7 @@ def Factory():
                             if not secondcombat:
                                 logger.info(f"第1场战斗结束.")
                                 secondcombat = True
-                                Press(pos)
+                                Press(CheckIf(ScreenShot(),'icanstillgo'))
                             else:
                                 logger.info(f"第2场战斗结束.")
                                 Press(CheckIf(ScreenShot(),'letswithdraw'))
@@ -1624,7 +1655,7 @@ def Factory():
                                 DeviceShell(f"input swipe 150 200 150 250")
                                 Sleep(1)
                             else:
-                                Press([pos[0]+300,pos[1]+130])
+                                Press([pos[0]+263,pos[1]+172])
                                 break
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
