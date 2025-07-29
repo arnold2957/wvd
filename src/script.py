@@ -1146,16 +1146,8 @@ def Factory():
             if CheckIf(ScreenShot(),'chestOpening'):
                 Sleep(1)
                 if not setting._RANDOMLYOPENCHEST:
-                    while 1:
-                        screen = ScreenShot()
-                        if Press(CheckIf(screen,'retry')):
-                            logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
-                            Sleep(1)
-                            screen = ScreenShot()
-                        if CheckIf(screen, 'chestOpening'):
-                            Press([450,900])
-                        else:
-                            break
+                    FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','combatActive'],[450,900],1)
+                    break
                 else:
                     if CheckIf(ScreenShot(),'chestOpening'):
                         ChestOpen()
@@ -1178,7 +1170,7 @@ def Factory():
                 return None
     def StateDungeon(targetInfoList : list[TargetInfo]):
         gameFrozen_none = []
-        gameFrozen_map = []
+        gameFrozen_map = 0
         dungState = None
         shouldRecover = False
         waitTimer = time.time()
@@ -1285,10 +1277,17 @@ def Factory():
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
-                    gameFrozen_map, result = GameFrozenCheck(gameFrozen_map,ScreenShot())
-                    if result:
+                    dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
+                    
+                    if newTargetInfoList == targetInfoList:
+                        gameFrozen_map +=1
+                        logger.info("地图卡死检测:{gameFrozen_map}")
+                    else:
+                        gameFrozen_map = 0
+                    if gameFrozen_map > 50:
+                        gameFrozen_map = 0
                         restartGame()
-                    dungState, targetInfoList = StateSearch(waitTimer,targetInfoList)
+
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
                         break
@@ -1649,21 +1648,14 @@ def Factory():
                         Sleep(1)
                         DeviceShell(f"input swipe 150 1300 150 200")
                         Sleep(2)
-                        while 1:
-                            pos = CheckIf(ScreenShot(),'LBC/Request')
-                            if not pos:
-                                DeviceShell(f"input swipe 150 200 150 250")
-                                Sleep(1)
-                            else:
-                                Press([pos[0]+263,pos[1]+172])
-                                break
+                        pos = FindCoordsOrElseExecuteFallbackAndWait('LBC/Request',['input swipe 150 200 150 250',[1,1]],1)
+                        FindCoordsOrElseExecuteFallbackAndWait('Inn',[[pos[0]+263,pos[1]+172],[1,1]],1)
+                        
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
                         lambda: stepFour()
                         )
-                    RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                        )
+
                     def stepFive():
                         scn = ScreenShot()
                         if Press(CheckIf(scn,'LBC/LBC')) or CheckIf(scn,"dungFlag"):
