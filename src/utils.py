@@ -43,8 +43,6 @@ class LoggerStream:
 logger = logging.getLogger('WvDASLogger')
 logger.setLevel(logging.DEBUG)
 # cmd文件句柄
-sys.stdout = LoggerStream(logger, logging.DEBUG)
-sys.stderr = LoggerStream(logger, logging.ERROR)
 # 文件句柄
 file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)
