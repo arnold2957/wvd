@@ -178,6 +178,7 @@ def main():
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
+    RegisterFileHandler(with_timestamp=True)
 
     setting = FarmConfig()
     config = LoadConfigFromFile(config_path)
