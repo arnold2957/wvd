@@ -8,13 +8,6 @@ from utils import *
 from threading import Thread,Event
 import shutil
 
-__version__ = '1.5.3-beta1'
-
-OWNER = "arnold2957"
-REPO = "wvd"
-
-TITLE = f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)"
-INTRODUCTION = "遇到问题? 请访问:\nhttps://github.com/arnold2957/wvd \n或加入Q群: 922497356."
 
 ############################################
 RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
@@ -23,13 +16,19 @@ if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 ############################################
 class ConfigPanelApp(tk.Toplevel):
-    def __init__(self, master_controller, msg_queue):
+    def __init__(self, master_controller, version, msg_queue):
+        self.URL = "https://github.com/arnold2957/wvd"
+        self.TITLE = f"WvDAS 巫术daphne自动刷怪 v{version} @德德Dellyla(B站)"
+        self.INTRODUCTION = f"遇到问题? 请访问:\n{self.URL} \n或加入Q群: 922497356."
+
+        RegisterFileHandler()
+
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
         self.geometry('550x608')
-        # self.root.resizable(False, False)
-        self.title(TITLE)
+        
+        self.title(self.TITLE)
 
         self.adb_active = False
 
@@ -69,13 +68,13 @@ class ConfigPanelApp(tk.Toplevel):
         
 
         logger.info("**********************************")
-        logger.info(f"当前版本: {__version__}")
-        logger.info(INTRODUCTION, extra={"summary": True})
+        logger.info(f"当前版本: {version}")
+        logger.info(self.INTRODUCTION, extra={"summary": True})
         logger.info("**********************************")
         
-        if self.last_version.get() != __version__:
+        if self.last_version.get() != version:
             ShowChangesLogWindow()
-            self.last_version.set(__version__)
+            self.last_version.set(version)
             self.save_config()
 
     def save_config(self):
@@ -103,6 +102,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
     def create_widgets(self):
+        scrolled_text_formatter = logging.Formatter('%(message)s')
         self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='#ffffff',bd=2,relief=tk.FLAT, width = 34, height = 30)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
@@ -438,7 +438,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.button_auto_download.grid(row=0, column=2, sticky=tk.W, padx= 5)
 
         def open_url():
-            url = f"https://github.com/{OWNER}/{REPO}/releases"
+            url = os.path.join(self.URL, "releases")
             if sys.platform == "win32":
                 os.startfile(url)
             elif sys.platform == "darwin":
@@ -596,152 +596,8 @@ class ConfigPanelApp(tk.Toplevel):
         self.summary_log_display.config(bg="#F4C6DB" )
         self.main_frame.grid_remove()
         summary = self.summary_log_display.get("1.0", "end-1c")
-        if INTRODUCTION in summary:
+        if self.INTRODUCTION in summary:
             summary = "唔, 看起来一次成功的地下城都没有完成."
         text = f"你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n{summary}\n\n不过没关系, 至少, 你还可以找公主要钱.\n\n赞美公主殿下!\n"
         turn_to_7000G_label = ttk.Label(self, text = text)
         turn_to_7000G_label.grid(row=0, column=0,)
-
-             
-class AppController(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        # 关键：立即隐藏根窗口
-        self.withdraw()
-        self.msg_queue = queue.Queue()
-        self.main_window = None
-        if not self.main_window:
-            self.main_window = ConfigPanelApp(self, self.msg_queue)
-        
-        self.quest_threading = None
-        self.quest_setting = None
-
-        self.is_checking_for_update = False 
-        self.updater = AutoUpdater(
-            msg_queue=self.msg_queue,
-            github_user=OWNER,
-            github_repo=REPO,
-            current_version=__version__
-        )
-        self.schedule_periodic_update_check()
-        self.check_queue()
-
-    def run_in_thread(self, target_func, *args):
-        thread = threading.Thread(target=target_func, args=args, daemon=True)
-        thread.start()
-    def schedule_periodic_update_check(self):
-        # 如果当前没有在检查或下载，则启动一个新的检查
-        if not self.is_checking_for_update:
-            # print("调度器：正在启动一小时一次的后台更新检查...")
-            self.is_checking_for_update = True  # 设置标志，防止重复
-            self.run_in_thread(self.updater.check_for_updates)
-            self.is_checking_for_update = False
-        else:
-            # print("调度器：上一个检查/下载任务尚未完成，跳过本次检查。")
-            None
-        self.after(3600000, self.schedule_periodic_update_check)
-
-    def check_queue(self):
-        """处理来自AutoUpdater和其他服务的消息"""
-        try:
-            message = self.msg_queue.get_nowait()
-            command, value = message
-            
-            # --- 这是处理更新逻辑的核心部分 ---
-            match command:
-                case 'start_quest':
-                    logger.info('启动任务...')
-                    self.quest_setting = value                    
-                    self.quest_setting._MSGQUEUE = self.msg_queue
-                    self.quest_setting._FORCESTOPING = Event()
-                    Farm = Factory()
-                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
-                    self.quest_threading.start()
-
-                case 'stop_quest':
-                    logger.info('停止任务...')
-                    if hasattr(self, 'quest_threading') and self.quest_threading.is_alive():
-                        if hasattr(self.quest_setting, '_FORCESTOPING'):
-                            self.quest_setting._FORCESTOPING.set()
-                
-                case 'turn_to_7000G':
-                    logger.info('开始要钱...')
-                    self.quest_setting._FARMTARGET = "7000G"
-                    while 1:
-                        if not self.quest_threading.is_alive():
-                            Farm = Factory()
-                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
-                            self.quest_threading.start()
-                            break
-                    if self.main_window:
-                        self.main_window.turn_to_7000G()
-
-                case 'update_available':
-                    # 在面板上显示提示
-                    update_data = value
-                    version = update_data['version']
-                    
-                    self.main_window.find_update.grid()
-                    self.main_window.update_text.grid()
-                    self.main_window.latest_version.set(version)
-                    self.main_window.button_auto_download.grid()
-                    self.main_window.button_manual_download.grid()
-                    self.main_window.update_sep.grid()
-                    self.main_window.save_config()
-                    width, height = map(int, self.main_window.geometry().split('+')[0].split('x'))
-                    self.main_window.geometry(f'{width}x{height+50}')
-
-                    self.main_window.button_auto_download.config(command=lambda:self.run_in_thread(self.updater.download))          
-                case 'download_started':
-                    # 控制器决定创建并显示进度条窗口
-                    if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
-                        self.progress_window = Progressbar(self.main_window,title="下载中...",max_size = value)
-
-                case 'progress':
-                    # 控制器更新进度条UI
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.update_progress(value)
-                        self.update()
-                        None
-
-                case 'download_complete':
-                    # 控制器关闭进度条并显示成功信息
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.destroy()
-
-                case 'error':
-                    # 控制器处理错误显示
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.destroy()
-                    messagebox.showerror("错误", value, parent=self.main_window)
-
-                case 'restart_ready':
-                    script_path = value
-                    messagebox.showinfo(
-                        "更新完成",
-                        "新版本已准备就绪，应用程序即将重启！",
-                        parent=self.main_window
-                    )
-                    
-                    if sys.platform == "win32":
-                        subprocess.Popen([script_path], shell=True)
-                    else:
-                        os.system(script_path)
-                    
-                    self.destroy()
-                    
-                case 'no_update_found':
-                    # （可选）可以给个安静的提示，或什么都不做
-                    print("UI: 未发现更新。")
-
-        except queue.Empty:
-            pass
-        finally:
-            # 持续监听
-            self.after(100, self.check_queue)
-
-if __name__ == "__main__":
-    # 程序的入口点是创建控制器
-    controller = AppController()
-    # 控制器自己运行事件循环
-    controller.mainloop()
