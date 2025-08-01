@@ -1004,6 +1004,7 @@ def Factory():
         for i in range(len(targetInfo.swipeDir)):
             swipeDir = targetInfo.swipeDir[i]
             if swipeDir!=None:
+                logger.debug(f"拖动地图:{swipeDir[0]} {swipeDir[1]} {swipeDir[2]} {swipeDir[3]}")
                 DeviceShell(f"input swipe {swipeDir[0]} {swipeDir[1]} {swipeDir[2]} {swipeDir[3]}")
                 Sleep(2)
 
@@ -1281,7 +1282,7 @@ def Factory():
                     
                     if newTargetInfoList == targetInfoList:
                         gameFrozen_map +=1
-                        logger.info("地图卡死检测:{gameFrozen_map}")
+                        logger.info(f"地图卡死检测:{gameFrozen_map}")
                     else:
                         gameFrozen_map = 0
                     if gameFrozen_map > 50:

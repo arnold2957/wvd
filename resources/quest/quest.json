@@ -90,7 +90,7 @@
 
     "DOE":{
         "_TYPE":"dungeon",
-        "questName":"[矿]土洞(5-9)自动战斗",
+        "questName":"[矿石]土洞(5-9)",
         "_EOT":[
             ["press","DOE",["EdgeOfTown",[1,1]],1],
             ["press","DOEB1F",[1,1],1]
@@ -98,20 +98,8 @@
         "_TARGETINFOLIST":
         [
             ["position", "右下", [713,1027]],
+            ["chest","右下",[[421,768,479,480]]],
             ["DOE_quit"]
-        ]
-    },
-
-    "DOL":{
-        "_TYPE":"dungeon",
-        "questName":"[矿石]光洞(15-19)",
-        "_TARGETINFOLIST":[
-            ["chest",[[700,100,100,1200]],[[420,686,478,481]]],
-            ["DOL_quit",[[700,100,100,1200]],null]
-        ],
-        "_EOT":[
-            ["press","DOL",["EdgeOfTown",[1,1]],1],
-            ["press","DOLB1F",[1,1],1]
         ]
     },
 
@@ -121,6 +109,7 @@
         "_TARGETINFOLIST":[
             ["position","左下",[347,866]],
             ["position","左下",[400,1183]],
+            ["chest","左下",[[0,783,480,480],[371,888,127,118]]],
             ["DOF_quit"]
         ],
         "_EOT":[
@@ -139,6 +128,19 @@
         "_EOT":[
             ["press","DOW",["EdgeOfTown",[1,1]],1],
             ["press","DOWB1F",[1,1],1]
+        ]
+    },
+
+    "DOL":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]光洞(15-19)",
+        "_TARGETINFOLIST":[
+            ["chest",[[700,100,100,1200]],[[420,686,478,481]]],
+            ["DOL_quit",[[700,100,100,1200]],null]
+        ],
+        "_EOT":[
+            ["press","DOL",["EdgeOfTown",[1,1]],1],
+            ["press","DOLB1F",[1,1],1]
         ]
     },
     
