@@ -13,11 +13,11 @@ jobs:
       uses: actions/checkout@v4
 
     # Step 1: Extract version from source code and check if it's a pre-release.
-    - name: Extract SemVer version from src\gui.py
+    - name: Extract SemVer version from src\main.py
       id: extract-version
       shell: pwsh
       run: |
-        $filePath = ".\src\gui.py"
+        $filePath = ".\src\main.py"
         if (-not (Test-Path -Path $filePath)) {
           Write-Error "File $filePath not found!"
           exit 1
@@ -53,7 +53,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --add-data "resources;resources/" src/gui.py -n wvd
+        pyinstaller --onedir --add-data "resources;resources/" src/main.py -n wvd
         Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP

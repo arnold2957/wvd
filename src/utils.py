@@ -5,6 +5,7 @@ import os
 import logging
 import sys
 import cv2
+import time
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -14,10 +15,7 @@ import cv2
 
 ############################################
 LOG_FILE_NAME = "log.txt"
-if os.path.exists(LOG_FILE_NAME):
-    os.remove(LOG_FILE_NAME)
-with open(LOG_FILE_NAME, 'w', encoding='utf-8') as f:
-    pass
+logger = logging.getLogger('WvDASLogger')
 
 class LoggerStream:
     """自定义流，将输出重定向到logger"""
@@ -39,25 +37,40 @@ class LoggerStream:
         if self.buffer:
             self.logger.log(self.log_level, self.buffer)
             self.buffer = ''
-# 创建logger
-logger = logging.getLogger('WvDASLogger')
-logger.setLevel(logging.DEBUG)
-# cmd文件句柄
-sys.stdout = LoggerStream(logger, logging.DEBUG)
-sys.stderr = LoggerStream(logger, logging.ERROR)
-# 文件句柄
-file_handler = logging.FileHandler(LOG_FILE_NAME, mode='a', encoding='utf-8')
-file_handler.setLevel(logging.DEBUG)
-file_formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-# tk组件句柄
-scrolled_text_formatter = logging.Formatter(
-    '%(message)s'
-)
+
+def RegisterFileHandler(with_timestamp = False):
+    if not with_timestamp:
+        log_file_path = LOG_FILE_NAME
+    else:
+        log_file_path = f"log_{time.time()}.txt"
+    sys.stdout = LoggerStream(logger, logging.DEBUG)
+    sys.stderr = LoggerStream(logger, logging.ERROR)
+
+    if os.path.exists(log_file_path):
+        os.remove(log_file_path)
+    with open(log_file_path, 'w', encoding='utf-8') as f:
+        pass
+    
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+def RegisterConsoleHandler():
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+
+    logger.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
 class ScrolledTextHandler(logging.Handler):
     def __init__(self, text_widget):
         super().__init__()
@@ -73,7 +86,6 @@ class ScrolledTextHandler(logging.Handler):
             self.text_widget.config(state=tk.DISABLED)
         except Exception:
             self.handleError(record)
-
 class SummaryLogFilter(logging.Filter):
     def filter(self, record):
         if hasattr(record, 'summary') and record.summary:

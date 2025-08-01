@@ -1,6 +1,5 @@
 from ppadb.client import Client as AdbClient
 import numpy as np
-import time
 from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
@@ -9,7 +8,6 @@ from datetime import datetime
 import os
 import subprocess
 import socket
-import time
 from utils import *
 import random
 from pathlib import Path
