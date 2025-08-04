@@ -1000,26 +1000,27 @@ def Factory():
         target = targetInfo.target
         roi = targetInfo.roi
         for i in range(len(targetInfo.swipeDir)):
+            scn = ScreenShot()
+            if not CheckIf(scn,'mapFlag'):
+                raise KeyError("地图不可用.")
+
             swipeDir = targetInfo.swipeDir[i]
             if swipeDir!=None:
                 logger.debug(f"拖动地图:{swipeDir[0]} {swipeDir[1]} {swipeDir[2]} {swipeDir[3]}")
                 DeviceShell(f"input swipe {swipeDir[0]} {swipeDir[1]} {swipeDir[2]} {swipeDir[3]}")
                 Sleep(2)
-
-            map = ScreenShot()
-            if not CheckIf(map,'mapFlag'):
-                raise KeyError("地图不可用.")
-
+                scn = ScreenShot()
+            
             targetPos = None
             if target == 'position':
                 logger.info(f"当前目标: 地点{roi}")
-                targetPos = CheckIf_ReachPosition(map,targetInfo)
+                targetPos = CheckIf_ReachPosition(scn,targetInfo)
             elif target.startswith("stair"):
                 logger.info(f"当前目标: 楼梯{target}")
-                targetPos = CheckIf_throughStair(map,targetInfo)
+                targetPos = CheckIf_throughStair(scn,targetInfo)
             else:
                 logger.info(f"搜索{target}...")
-                if targetPos:=CheckIf(map,target,roi):
+                if targetPos:=CheckIf(scn,target,roi):
                     logger.info(f'找到了 {target}! {targetPos}')
                     if (target == 'chest') and (swipeDir!= None):
                         logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{swipeDir} 位置:{targetPos}")
@@ -1519,7 +1520,7 @@ def Factory():
                     setting._SYSTEMAUTOCOMBAT = False
                     StateDungeon([TargetInfo('position','左下',[720,1025])]) # 前往boss战斗
                     setting._SYSTEMAUTOCOMBAT = True
-                    StateDungeon([TargetInfo('stai_rteleport','左上',[665,395])]) # 第四层出口
+                    StateDungeon([TargetInfo('stair_teleport','左上',[665,395])]) # 第四层出口
                     FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
                     Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
                     # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.

@@ -47,6 +47,26 @@
         ]
     },
 
+    "SSC_chest":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]忍洞一层全拿",
+        "_TARGETINFOLIST":[
+            ["position","左下",[400,974]],
+            ["position","左下",[560,438]],
+            ["position","左下",[399,654]],
+            ["position","左下",[81,226]],
+            ["chest","左下",[[0,0,900,1600],[650,0,250,811],[507,166,179,165]]],
+            ["chest","右下",[[0,0,900,1600],[0,0,900,800]]],
+            ["position","右下",[766,1078]],
+            ["SSC/SSC_quit","右下","default"]
+        ],
+        "_preEOTcheck":"SSC/SSC",
+        "_EOT":[
+            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
+            ["press","SSC/SSC","input swipe 700 100 100 100",1]
+        ]
+    },
+
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鸟洞三层fordraigB3F",
@@ -59,19 +79,6 @@
             ["press","intoWorldMap",[40,1184],2],
             ["press","labyrinthOfFordraig","input swipe 450 150 500 150",1],
             ["press","fordraig/B3F",["labyrinthOfFordraig",[1,1]],1]
-        ]
-    },
-
-    "fortress-B3F":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]要塞三层",
-        "_TARGETINFOLIST":[
-            ["chest",[[100,1200,700,100]],[[0,355,480,805],[320,1053,300,200]]],
-            ["harken2",[[100,1200,700,100]],null]
-        ],
-        "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressb3f","input swipe 650 250 650 900",1]
         ]
     },
 
