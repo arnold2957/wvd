@@ -1332,7 +1332,7 @@ def Factory():
         Sleep(2)
         pos = FindCoordsOrElseExecuteFallbackAndWait(request,['input swipe 150 200 150 250',[1,1]],1)
         if not CheckIf(ScreenShot(),'request_accepted',[[0,pos[1]-200,900,pos[1]+200]]):
-            FindCoordsOrElseExecuteFallbackAndWait(['Inn','guildRequest'],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],[1,1],'return'],1)
+            FindCoordsOrElseExecuteFallbackAndWait(['Inn','guildRequest'],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],'return',[1,1]],1)
             FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
         else:
             logger.info("奇怪, 任务怎么已经接了.")
