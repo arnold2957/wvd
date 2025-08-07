@@ -5,7 +5,7 @@ bot_token = ""
 chat_id = ""
 
 class TelegramBot:
-    def __init__(self, bot_token, chat_id):
+    def __init__(self):
         self.token = bot_token
         self.chat_id = int(chat_id)
         # Telegram API URL
