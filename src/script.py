@@ -11,6 +11,7 @@ import socket
 from utils import *
 import random
 from pathlib import Path
+from tg import bot as tg_bot
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
@@ -80,6 +81,7 @@ class FarmConfig:
         self._MAXRETRYLIMIT = 20
         #### 底层接口
         self._ADBDEVICE = None
+        self._FINISHINGCALLBACK = lambda: True
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(f"FarmConfig对象没有属性'{name}'")
@@ -798,12 +800,14 @@ def Factory():
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     setting._SUICIDE = False # 死了 自杀成功 设置为false
+                    tg_bot.send_message("死了一次, 快快请起")
                     logger.info("快快请起.")
                     # logger.info("REZ.")
                     Press([450,750])
                     Sleep(10)
                     return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
+                    tg_bot.send_message("死到不行，開始跟王女要錢")
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
                     raise SystemExit
                 if (pos:=CheckIf(screen,'ambush')) and setting._KARMAADJUST.startswith('-'):
@@ -879,6 +883,7 @@ def Factory():
                     # logger.info("")
                     Sleep(2)
                 if Press(CheckIf(screen,'totitle')):
+                    tg_bot.send_message("网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!")
                     logger.info("网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!")
                     return IdentifyState()
                 PressReturn()
@@ -887,8 +892,10 @@ def Factory():
                 black = LoadTemplateImage("blackScreen")
                 mean_diff = cv2.absdiff(black, screen).mean()/255
                 if mean_diff<0.02:
+                    tg_bot.send_message(f"警告: 游戏画面长时间处于黑屏中, 即将重启({25-counter})")
                     logger.info(f"警告: 游戏画面长时间处于黑屏中, 即将重启({25-counter})")
             if counter>= 25:
+                tg_bot.send_message(f"看起来遇到了一些非同寻常的情况...重启游戏.")
                 logger.info("看起来遇到了一些非同寻常的情况...重启游戏.")
                 restartGame()
                 counter = 0
@@ -1166,6 +1173,7 @@ def Factory():
             else:
                 logger.info(f"随机开箱已经启用.")
             if tryOpenCounter > MAXERROROPEN:
+                tg_bot.send_message(f"错误: 尝试開箱次数过多. 疑似卡死.")
                 logger.info(f"错误: 尝试次数过多. 疑似卡死.")
                 return None
     def StateDungeon(targetInfoList : list[TargetInfo]):
@@ -1190,13 +1198,16 @@ def Factory():
                         break
                     gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
                     if result:
+                        tg_bot.send_message("由于画面卡死, 在state:None中重启.")
                         logger.info("由于画面卡死, 在state:None中重启.")
                         restartGame()
                     MAXTIMEOUT = 300
                     if (setting._TIME_CHEST != 0 ) and (time.time()-setting._TIME_CHEST > MAXTIMEOUT):
+                        tg_bot.send_message("由于宝箱用时过久, 在state:None中重启.")
                         logger.info("由于宝箱用时过久, 在state:None中重启.")
                         restartGame()
                     if (setting._TIME_COMBAT != 0) and (time.time()-setting._TIME_COMBAT > MAXTIMEOUT):
+                        tg_bot.send_message("由于战斗用时过久, 在state:None中重启.")
                         logger.info("由于战斗用时过久, 在state:None中重启.")
                         restartGame()
                 case DungeonState.Quit:
@@ -1324,6 +1335,7 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        tg_bot.send_message(f"已完成{setting._COUNTERDUNG}次地下城. 最后一次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.")
                         logger.info(f"已完成{setting._COUNTERDUNG}次地下城. 最后一次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.",
                                     extra={"summary": True})
                     setting._LAPTIME = time.time()

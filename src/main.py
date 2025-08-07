@@ -1,5 +1,6 @@
 from gui import *
 import argparse
+from tg import bot as tg_bot
 
 __version__ = '1.5.4'
 OWNER = "arnold2957"
@@ -51,12 +52,15 @@ class AppController(tk.Tk):
     def check_queue(self):
         """处理来自AutoUpdater和其他服务的消息"""
         try:
+            Thread(target=tg_bot.get_latest_update).run()
+            
             message = self.msg_queue.get_nowait()
             command, value = message
             
             # --- 这是处理更新逻辑的核心部分 ---
             match command:
                 case 'start_quest':
+                    tg_bot.send_message("启动任务...")
                     logger.info('启动任务...')
                     self.quest_setting = value                    
                     self.quest_setting._MSGQUEUE = self.msg_queue
@@ -66,6 +70,7 @@ class AppController(tk.Tk):
                     self.quest_threading.start()
 
                 case 'stop_quest':
+                    tg_bot.send_message("停止任务...")
                     logger.info('停止任务...')
                     if hasattr(self, 'quest_threading') and self.quest_threading.is_alive():
                         if hasattr(self.quest_setting, '_FORCESTOPING'):
@@ -176,7 +181,7 @@ def main():
     controller = AppController(args.headless, args.config)
     controller.mainloop()
 
-def HeadlessActive(config_path,msg_queue):
+def HeadlessActive(config_path, msg_queue):
     RegisterConsoleHandler()
     RegisterFileHandler(with_timestamp=True)
 
@@ -185,7 +190,21 @@ def HeadlessActive(config_path,msg_queue):
     for _, _, var_config_name, _ in CONFIG_VAR_LIST:
         setattr(setting, var_config_name, config[var_config_name])
     msg_queue.put(('start_quest', setting))
-
+    
+    # 定義接收TG任務訊號
+    def check_pause_quest(tg_update): 
+        return tg_bot.check_message_and_chat_id(tg_update, '/farm_pause')
+    def check_continue_quest(tg_update): 
+        return tg_bot.check_message_and_chat_id(tg_update, '/farm_continue')
+    def fn_pause_quest():
+        tg_bot.send_message('嘗試停止任務')
+        msg_queue.put(('stop_quest', None))
+    def fn_continue_quest():
+        tg_bot.send_message('嘗試啟動任務')
+        msg_queue.put(('start_quest', setting))
+        
+    tg_bot.add_message_handler(check_pause_quest, fn_pause_quest)
+    tg_bot.add_message_handler(check_continue_quest, fn_continue_quest)
 
     logger.info(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
 
