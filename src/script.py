@@ -200,9 +200,33 @@ def CreateAdbDevice(setting: FarmConfig):
     client.remote_connect("127.0.0.1", int(setting._ADBPORT))
     devices = client.devices()
     if (not devices) or not (devices[0]):
-        logger.info("创建adb链接失败.")
-        return
+        logger.info("创建adb链接失败.尝试启动模拟器.")
+        if StartEmulator(setting):
+            return CreateAdbDevice(setting)
+        else:
+            return
     return devices[0]
+
+def StartEmulator(setting):
+    hd_player_path = setting._ADBPATH.replace("HD-Adb.exe", "HD-Player.exe")
+    if not os.path.exists(hd_player_path):
+        logger.error(f"模拟器启动程序不存在: {hd_player_path}")
+        return False
+    
+    try:
+        logger.info(f"启动模拟器: {hd_player_path}")
+        subprocess.Popen(
+            hd_player_path, 
+            shell=True,
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL,
+            cwd=os.path.dirname(hd_player_path))
+    except Exception as e:
+        logger.error(f"启动模拟器失败: {str(e)}")
+        return False
+    
+    logger.info("等待模拟器启动...")
+    time.sleep(15)
 
 def Factory():
     toaster = ToastNotifier()
@@ -1309,6 +1333,21 @@ def Factory():
                     needRecoverBecauseCombat =True
                     StateCombat()
                     dungState = None
+    def StateAcceptRequest(request: str, pressbias:list = [0,0]):
+        FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
+        StateInn()
+        Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
+        Sleep(2)
+        DeviceShell(f"input swipe 150 1000 150 200")
+        Sleep(2)
+        pos = FindCoordsOrElseExecuteFallbackAndWait(request,['input swipe 150 200 150 250',[1,1]],1)
+        if not CheckIf(ScreenShot(),'request_accepted',[[0,pos[1]-200,900,pos[1]+200]]):
+            FindCoordsOrElseExecuteFallbackAndWait(['Inn','guildRequest'],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],[1,1],'return'],1)
+            FindCoordsOrElseExecuteFallbackAndWait('Inn','return',1)
+        else:
+            logger.info("奇怪, 任务怎么已经接了.")
+            FindCoordsOrElseExecuteFallbackAndWait('Inn','return',1)
 
     def DungeonFarm():
         nonlocal setting
@@ -1474,24 +1513,10 @@ def Factory():
                         )
                     Sleep(15)
 
-                    logger.info('第二步: 领取任务.')
-                    FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                    StateInn()
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                    Sleep(2)
-                    DeviceShell(f"input swipe 150 1000 150 200")
-                    Sleep(2)
-                    while 1:
-                        pos = CheckIf(ScreenShot(),'fordraig/RequestAccept')
-                        if not pos:
-                            DeviceShell(f"input swipe 150 200 150 250")
-                            Sleep(1)
-                        else:
-                            Press([pos[0]+350,pos[1]+180])
-                            break
-                    FindCoordsOrElseExecuteFallbackAndWait('guildRequest',[1,1],1)
-                    PressReturn()
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第二步: 领取任务.'),
+                        lambda: StateAcceptRequest('fordraig/RequestAccept',[350,180])
+                        )
 
                     logger.info('第三步: 进入地下城.')
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
@@ -1652,24 +1677,10 @@ def Factory():
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
-                    def stepFour():
-                        FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
-                        StateInn()
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-                        Sleep(1)
-                        DeviceShell(f"input swipe 150 1300 150 200")
-                        Sleep(2)
-                        pos = FindCoordsOrElseExecuteFallbackAndWait('LBC/Request',['input swipe 150 200 150 250',[1,1]],1)
-                        if not CheckIf(ScreenShot(),'request_accepted',[[0,pos[1]-200,900,pos[1]+200]]):
-                            FindCoordsOrElseExecuteFallbackAndWait('Inn',[[pos[0]+266,pos[1]+237],[1,1]],1)
-                        else:
-                            logger.info("奇怪, 任务怎么已经接了.")
-                            FindCoordsOrElseExecuteFallbackAndWait('Inn','return',1)
-                        
+                                           
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
-                        lambda: stepFour()
+                        lambda: StateAcceptRequest('LBC/Request',[266,237])
                         )
 
                     def stepFive():
