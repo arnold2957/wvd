@@ -198,9 +198,11 @@ def HeadlessActive(config_path, msg_queue):
         return tg_bot.check_message_and_chat_id(tg_update, '/farm_continue')
     def fn_pause_quest():
         tg_bot.send_message('嘗試停止任務')
+        logger.info('從電報收到信號暫停任務')
         msg_queue.put(('stop_quest', None))
     def fn_continue_quest():
         tg_bot.send_message('嘗試啟動任務')
+        logger.info('從電報收到信號啟動任務')
         msg_queue.put(('start_quest', setting))
         
     tg_bot.add_message_handler(check_pause_quest, fn_pause_quest)
