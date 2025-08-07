@@ -259,12 +259,12 @@ def Factory():
     def DeviceShell(cmdStr):
         while True:
             try:
-                return setting._ADBDEVICE.shell(cmdStr)
+                return setting._ADBDEVICE.shell(cmdStr, timeout = 5)
             except Exception as e:
                 logger.debug(f"{e}")
-                if isinstance(e, (RuntimeError, ConnectionResetError, cv2.error)):
-                    logger.debug(f"ADB操作失败.")
-                    logger.info("ADB连接异常，尝试重启服务...")
+                if isinstance(e, (RuntimeError, ConnectionResetError,TimeoutError, cv2.error)):
+                    logger.debug(f"ADB操作失败. {e}")
+                    logger.info(f"ADB异常({type(e).__name__})，尝试重启服务...")
 
                     while True:
                         if StartAdbServer(setting):
@@ -1333,10 +1333,10 @@ def Factory():
         pos = FindCoordsOrElseExecuteFallbackAndWait(request,['input swipe 150 200 150 250',[1,1]],1)
         if not CheckIf(ScreenShot(),'request_accepted',[[0,pos[1]-200,900,pos[1]+200]]):
             FindCoordsOrElseExecuteFallbackAndWait(['Inn','guildRequest'],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],[1,1],'return'],1)
-            FindCoordsOrElseExecuteFallbackAndWait('Inn','return',1)
+            FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
         else:
             logger.info("奇怪, 任务怎么已经接了.")
-            FindCoordsOrElseExecuteFallbackAndWait('Inn','return',1)
+            FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
 
     def DungeonFarm():
         nonlocal setting
@@ -1665,12 +1665,7 @@ def Factory():
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
-                                           
-                    RestartableSequenceExecution(
-                        lambda: logger.info('第四步: 领取任务'),
-                        lambda: StateAcceptRequest('LBC/Request',[266,237])
-                        )
-
+                    
                     def stepFive():
                         scn = ScreenShot()
                         if Press(CheckIf(scn,'LBC/LBC')) or CheckIf(scn,"dungFlag"):
@@ -1678,10 +1673,14 @@ def Factory():
                         else:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
                             Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
+                                           
                     RestartableSequenceExecution(
+                        lambda: logger.info('第四步: 领取任务'),
+                        lambda: StateAcceptRequest('LBC/Request',[266,257]),
                         lambda: logger.info('第五步: 进入牛洞'),
                         lambda: stepFive()
                         )
+
                     Gorgon1 = TargetInfo('position','左上',[134,342])
                     Gorgon2 = TargetInfo('position','右上',[500,395])
                     Gorgon3 = TargetInfo('position','右下',[340,1027])
