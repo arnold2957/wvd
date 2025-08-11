@@ -10,6 +10,7 @@ import subprocess
 import socket
 from utils import *
 import random
+from threading import Thread,Event
 from pathlib import Path
 
 CC_SKILLS = ["KANTIOS"]
@@ -47,7 +48,7 @@ CONFIG_VAR_LIST = [
             ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
             ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              0],
             ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
-            ["adb_path_var",                tk.StringVar,  "_ADBPATH",                   ""],
+            ["emu_path_var",                tk.StringVar,  "_EMUPATH",                   ""],
             ["adb_port_var",                tk.StringVar,  "_ADBPORT",                   5555],
             ["last_version",                tk.StringVar,  "LAST_VERSION",               ""],
             ["latest_version",              tk.StringVar,  "LATEST_VERSION",             None],
@@ -160,10 +161,11 @@ def StartAdbServer(setting: FarmConfig):
             sock.close()
     try:
         if not check_adb_connection():
-            logger.info(f"开始启动ADB服务, 路径:{setting._ADBPATH}")
+            adb_path = setting._EMUPATH.replace("HD-Player.exe", "HD-Adb.exe")
+            logger.info(f"开始启动ADB服务, 路径:{adb_path}")
             # 启动adb服务（非阻塞模式）
             subprocess.Popen(
-                [setting._ADBPATH, "start-server"],
+                [adb_path, "start-server"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 shell=False
@@ -206,7 +208,7 @@ def CreateAdbDevice(setting: FarmConfig):
     return devices[0]
 
 def StartEmulator(setting):
-    hd_player_path = setting._ADBPATH.replace("HD-Adb.exe", "HD-Player.exe")
+    hd_player_path = setting._EMUPATH
     if not os.path.exists(hd_player_path):
         logger.error(f"模拟器启动程序不存在: {hd_player_path}")
         return False
@@ -258,22 +260,53 @@ def Factory():
     ##################################################################
     def DeviceShell(cmdStr):
         while True:
-            try:
-                return setting._ADBDEVICE.shell(cmdStr, timeout = 5)
-            except Exception as e:
-                logger.debug(f"{e}")
-                if isinstance(e, (RuntimeError, ConnectionResetError,TimeoutError, cv2.error)):
-                    logger.debug(f"ADB操作失败. {e}")
-                    logger.info(f"ADB异常({type(e).__name__})，尝试重启服务...")
-
-                    while True:
-                        if StartAdbServer(setting):
-                            if device := CreateAdbDevice(setting):
-                                setting._ADBDEVICE = device
-                                logger.info("ADB服务重启成功，设备重新连接")
-                                break
-                        logger.warning("ADB重启失败，5秒后重试...")
-                        time.sleep(5)
+            # 使用共享变量存储结果
+            exception = None
+            result = None
+            completed = Event()
+            
+            def adb_command_thread():
+                nonlocal exception,result
+                try:
+                    result = setting._ADBDEVICE.shell(cmdStr, timeout=5)
+                except Exception as e:
+                    exception = e
+                finally:
+                    completed.set()
+            
+            # 创建并启动线程
+            thread = Thread(target=adb_command_thread)
+            thread.daemon = True
+            thread.start()
+            
+            # 等待线程完成，设置总超时时间
+            completed.wait(timeout=7)  # 比ADB命令超时稍长
+            
+            if not completed.is_set():
+                # 线程超时未完成
+                logger.debug("外部检测: ADB命令执行超时")
+                exception = TimeoutError("外部检测: ADB命令执行超时")
+            
+            if exception is None:
+                return result
+            
+            # 处理异常情况
+            logger.debug(f"{exception}")
+            if isinstance(exception, (RuntimeError, ConnectionResetError, TimeoutError, cv2.error)):
+                logger.debug(f"ADB操作失败. {exception}")
+                logger.info(f"ADB异常({type(exception).__name__})，尝试重启服务...")
+                
+                while True:
+                    if StartAdbServer(setting):
+                        if device := CreateAdbDevice(setting):
+                            setting._ADBDEVICE = device
+                            logger.info("ADB服务重启成功，设备重新连接")
+                            break
+                    logger.warning("ADB重启失败，5秒后重试...")
+                    time.sleep(5)
+            else:
+                raise exception  # 非预期异常直接抛出
+    
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
@@ -995,7 +1028,7 @@ def Factory():
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                         Sleep(1)
-                        if CheckIf(ScreenShot(),'notenoughsp'):
+                        if CheckIf(ScreenShot(),'notenoughsp') or CheckIf(ScreenShot(),'notenoughmp'):
                             PressReturn()
                             Press(CheckIf(ScreenShot(),'spellskill/lv1'))
                             Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
