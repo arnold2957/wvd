@@ -13,6 +13,10 @@ RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
 if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
     shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
 os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
+POSITIONS_SCREENSHOT_FOLDER_NAME = "positions"
+if os.path.exists(POSITIONS_SCREENSHOT_FOLDER_NAME):
+    shutil.rmtree(POSITIONS_SCREENSHOT_FOLDER_NAME)
+os.makedirs(POSITIONS_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 ############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller, version, msg_queue):
