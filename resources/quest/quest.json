@@ -150,6 +150,22 @@
             ["press","DOLB1F",[1,1],1]
         ]
     },
+
+    "COS_chest":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]离别洞窟",
+        "_TARGETINFOLIST":[
+            ["chest",null,null],
+            ["stair_down","左上",[720,822]],
+            ["chest",null,null],
+            ["stair_up","左下",[827,547]],
+            ["harken","左下",null]
+        ],
+        "_EOT":[
+            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
+            ["press","COS/COSB2F",[1,1],1]
+        ]
+    },
     
     "7000G":{
         "questName":"[金币]7000G",
@@ -173,6 +189,11 @@
 
     "SSC-goldenchest":{
         "questName":"[任务]忍洞一层 金箱",
+        "_TYPE":"quest"
+    },
+
+    "CaveOfSeperation":{
+        "questName":"[任务]别离洞窟 约定之剑",
         "_TYPE":"quest"
     }
 }

@@ -90,6 +90,7 @@ class FarmQuest:
     _EOT = None
     _preEOTcheck = None
     _SPECIALDIALOGOPTION = None
+    _SPECIALFORCESTOPINGSYMBOL = None
     _TYPE = None
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
@@ -847,11 +848,16 @@ def Factory():
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
 
+            if quest._SPECIALFORCESTOPINGSYMBOL != None:
+                for symbol in quest._SPECIALFORCESTOPINGSYMBOL:
+                        if CheckIf(screen,symbol):
+                            return State.Quit,DungeonState.Quit,None
+
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
                 if quest._SPECIALDIALOGOPTION != None:
                     for option in quest._SPECIALDIALOGOPTION:
-                        if Press(CheckIf(ScreenShot(),option)):
+                        if Press(CheckIf(screen,option)):
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     setting._SUICIDE = False # 死了 自杀成功 设置为false
@@ -1015,6 +1021,7 @@ def Factory():
             Press(CheckIf(screen,'defend'))
         else:
             castSpellSkill = False
+            castAndPressOK = False
             for skillspell in setting._SPELLSKILLCONFIG:
                 if setting._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
                     #logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
@@ -1024,6 +1031,7 @@ def Factory():
                     Sleep(1)
                     scn = ScreenShot()
                     if Press(CheckIf(scn,'OK')):
+                        castAndPressOK = True
                         Sleep(2)
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
@@ -1043,7 +1051,7 @@ def Factory():
                         Sleep(2)
                     Sleep(1)
                     castSpellSkill = True
-                    if setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
+                    if castAndPressOK and setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
                         setting._ENOUGH_AOE = True
                         logger.info(f"已经释放了首次全体aoe.")
                     break
@@ -1676,8 +1684,14 @@ def Factory():
 
                         while CheckIf(ScreenShot(), 'leap'):
                             if not checkCSC:
-                                Press(CheckIf(ScreenShot(),'CSC'))
-                                Press(CheckIf(ScreenShot(),'LBC/didnottakethequest'))
+                                FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
+                                while 1:
+                                    scn_b = ScreenShot() *np.array([0, 1, 2])
+                                    scaled_image = np.clip(scn_b, 0, 255).astype(np.uint8)
+                                    if Press(CheckIf(scaled_image,'LBC/didnottakethequest')):
+                                        continue
+                                    else:
+                                        break
                                 PressReturn()
                                 checkCSC = True
                             Press(CheckIf(ScreenShot(),'leap'))
@@ -1817,7 +1831,122 @@ def Factory():
                                 TargetInfo('SSC/SSC_quit', '右下', None)
                             ])
                         )
+            case 'CaveOfSeperation':
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if setting._LAPTIME!= 0:
+                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        logger.info(f"第{setting._COUNTERDUNG}次约定之剑完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                                    extra={"summary": True})
+                    setting._LAPTIME = time.time()
+                    setting._COUNTERDUNG+=1
+                    def stepOne():
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
+                        if not Press(CheckIf(ScreenShot(),'COS/GhostsOfYore')):
+                            DeviceShell(f"input swipe 450 1200 450 200")
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('COS/GhostsOfYore','input swipe 50 1200 50 1300',1))
+
+                        while CheckIf(ScreenShot(), 'leap'):
+                            FindCoordsOrElseExecuteFallbackAndWait('COS/ArnasPast','CSC',1)
+                            while 1:
+                                scn_b = ScreenShot() *np.array([0, 1, 2])
+                                scaled_image = np.clip(scn_b, 0, 255).astype(np.uint8)
+                                if Press(CheckIf(scaled_image,'COS/didnottakethequest')):
+                                    continue
+                                else:
+                                    break
+                            PressReturn()
+                            Press(CheckIf(ScreenShot(),'leap'))
+                            Sleep(2)
+                            Press(CheckIf(ScreenShot(),'COS/GhostsOfYore'))
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第一步: 重置因果'),
+                        lambda: stepOne()
+                        )
+                    Sleep(10)
+                    RestartableSequenceExecution(
+                        lambda: logger.info("第二步: 返回要塞"),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+                    RestartableSequenceExecution(
+                        lambda: logger.info("第三步: 前往王城"),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        )
+                    
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第四步: 领取任务'),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait(['COS/Okay','guildRequest'],['guild',[1,1]],1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['COS/Okay','return',[1,1]],1),
+                        lambda: StateInn(),
+                        )
+                    
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第五步: 进入洞窟'),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('COS/COS',['EdgeOfTown',[1,1]],1)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('COS/COSENT',[1,1],1))
+                        )
+                    quest._SPECIALDIALOGOPTION = ['COS/takehimwithyou']
+                    cosb1f = [TargetInfo('position',"右下",[286-54,440]),
+                              TargetInfo('position',"右下",[819,653+54]),
+                              TargetInfo('position',"右上",[659-54,501]),
+                              TargetInfo('position',"右上",[126,342]),
+                        ]
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第六步: 1层找人'),
+                        lambda: StateDungeon(cosb1f)
+                        )
+                    
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait(
+                            'COS/b2fentrance',["input swipe 150 1000 150 200",[1,1]],1),
+                        )
+
+                    quest._SPECIALFORCESTOPINGSYMBOL = ['COS/EnaTheAdventurer']
+                    cosb2f = [TargetInfo('position',"右上",[340+54,448]),
+                              TargetInfo('position',"右上",[500-54,1088]),
+                              TargetInfo('position',"左上",[398+54,766]),
+                        ]
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第七步: 2层找人'),
+                        lambda: StateDungeon(cosb2f)
+                        )
+
+                    quest._SPECIALFORCESTOPINGSYMBOL = ['COS/requestwasfor'] 
+                    cosb3f = [TargetInfo('stair_down',"左上",[720,822]),
+                              TargetInfo('position',"左下",[239,600]),
+                              TargetInfo('position',"左下",[185,1185]),
+                              TargetInfo('position',"左下",[560,652]),
+                              ]
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第八步: 3层找人'),
+                        lambda: StateDungeon(cosb3f)
+                        )
+
+                    quest._SPECIALFORCESTOPINGSYMBOL = None
+                    quest._SPECIALDIALOGOPTION = ['COS/requestwasfor'] 
+                    cosback2f = [TargetInfo('stair_up',"左下",[827,547]),
+                                 TargetInfo('position',"右上",[340+54,448]),
+                                 TargetInfo('position',"右上",[500-54,1088]),
+                                 TargetInfo('position',"左上",[398+54,766]),
+                                 TargetInfo('position',"左上",[559,1087])
+                        ]
+                    RestartableSequenceExecution(
+                        lambda: logger.info('第九步: 回2楼'),
+                        lambda: StateDungeon(cosback2f)
+                        )
+                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1),
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
+                    # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1)) # 回城
+                    FindCoordsOrElseExecuteFallbackAndWait("Inn",['return',[1,1]],1)
+                    
+                pass
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):

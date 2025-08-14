@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '1.5.6'
+__version__ = '1.6.0-beta1'
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -74,6 +74,7 @@ class AppController(tk.Tk):
                 case 'turn_to_7000G':
                     logger.info('开始要钱...')
                     self.quest_setting._FARMTARGET = "7000G"
+                    self.quest_setting._COUNTERDUNG = 0
                     while 1:
                         if not self.quest_threading.is_alive():
                             Farm = Factory()
