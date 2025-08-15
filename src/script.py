@@ -1056,6 +1056,7 @@ def Factory():
                         logger.info(f"已经释放了首次全体aoe.")
                     break
             if not castSpellSkill:
+                Press(CheckIf(ScreenShot(),'combatClose'))
                 Press([850,1100])
                 Press([850,1100])
                 Sleep(3)
@@ -1692,6 +1693,7 @@ def Factory():
                                         continue
                                     else:
                                         break
+                                Press(CheckIf(ScreenShot(),"LBC/EnaWasSaved"))
                                 PressReturn()
                                 checkCSC = True
                             Press(CheckIf(ScreenShot(),'leap'))
@@ -1894,17 +1896,11 @@ def Factory():
                     cosb1f = [TargetInfo('position',"右下",[286-54,440]),
                               TargetInfo('position',"右下",[819,653+54]),
                               TargetInfo('position',"右上",[659-54,501]),
-                              TargetInfo('position',"右上",[126,342]),
+                              TargetInfo('stair_down',"右上",[126-54,342]),
                         ]
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 1层找人'),
                         lambda: StateDungeon(cosb1f)
-                        )
-                    
-                    RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait(
-                            'COS/b2fentrance',["input swipe 150 1000 150 200",[1,1]],1),
                         )
 
                     quest._SPECIALFORCESTOPINGSYMBOL = ['COS/EnaTheAdventurer']
