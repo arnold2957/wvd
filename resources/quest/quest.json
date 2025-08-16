@@ -156,9 +156,9 @@
         "questName":"[宝箱]离别洞窟",
         "_TARGETINFOLIST":[
             ["chest",null,null],
-            ["stair_down","左上",[720,822]],
+            ["stair_3","左上",[720,822]],
             ["chest",null,null],
-            ["stair_up","左下",[827,547]],
+            ["stair_2","左下",[827,547]],
             ["harken","左下",null]
         ],
         "_EOT":[

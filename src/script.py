@@ -1405,7 +1405,7 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"已完成{setting._COUNTERDUNG}次{setting._FARMTARGET_TEXT}地下城. 最后一次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n累计开箱子{setting._COUNTERCHEST}次.累计战斗{setting._COUNTERCOMBAT}次.\n累计用时{round(setting._TOTALTIME,2)}秒.战斗{round(setting._TIME_COMBAT_TOTAL*100/setting._TOTALTIME,2)}%,宝箱{round(setting._TIME_CHEST_TOTAL*100/setting._TOTALTIME,2)}%.",
+                        logger.info(f"已完成{setting._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(setting._TOTALTIME,2)}秒.上次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n箱子效率{round(setting._TOTALTIME/setting._COUNTERCHEST,2)}秒/箱.\n累计开箱{setting._COUNTERCHEST}次,开箱平均耗时{round(setting._TIME_CHEST_TOTAL/setting._COUNTERCHEST,2)}秒.\n累计战斗{setting._COUNTERCOMBAT}次.战斗平均用时{round(setting._TIME_COMBAT_TOTAL/setting._COUNTERCOMBAT,2)}秒.",
                                     extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
@@ -1896,7 +1896,7 @@ def Factory():
                     cosb1f = [TargetInfo('position',"右下",[286-54,440]),
                               TargetInfo('position',"右下",[819,653+54]),
                               TargetInfo('position',"右上",[659-54,501]),
-                              TargetInfo('stair_down',"右上",[126-54,342]),
+                              TargetInfo('stair_2',"右上",[126-54,342]),
                         ]
                     RestartableSequenceExecution(
                         lambda: logger.info('第六步: 1层找人'),
@@ -1914,7 +1914,7 @@ def Factory():
                         )
 
                     quest._SPECIALFORCESTOPINGSYMBOL = ['COS/requestwasfor'] 
-                    cosb3f = [TargetInfo('stair_down',"左上",[720,822]),
+                    cosb3f = [TargetInfo('stair_3',"左上",[720,822]),
                               TargetInfo('position',"左下",[239,600]),
                               TargetInfo('position',"左下",[185,1185]),
                               TargetInfo('position',"左下",[560,652]),
@@ -1926,7 +1926,7 @@ def Factory():
 
                     quest._SPECIALFORCESTOPINGSYMBOL = None
                     quest._SPECIALDIALOGOPTION = ['COS/requestwasfor'] 
-                    cosback2f = [TargetInfo('stair_up',"左下",[827,547]),
+                    cosback2f = [TargetInfo('stair_2',"左下",[827,547]),
                                  TargetInfo('position',"右上",[340+54,448]),
                                  TargetInfo('position',"右上",[500-54,1088]),
                                  TargetInfo('position',"左上",[398+54,766]),
