@@ -769,7 +769,7 @@ def Factory():
                 if waittime > 0.270 :
                     logger.debug(f"预计等待 {waittime}")
                     Sleep(waittime-0.270)
-                    DeviceShell(f"input tap 450 900") # 这里和retry重合 可以按.
+                    DeviceShell(f"input tap 527 920") # 这里和retry重合, 也和to_title+retry重合.
                     Sleep(3)
                 else:
                     logger.debug(f"等待时间过短: {waittime}")
@@ -851,7 +851,7 @@ def Factory():
             if quest._SPECIALFORCESTOPINGSYMBOL != None:
                 for symbol in quest._SPECIALFORCESTOPINGSYMBOL:
                         if CheckIf(screen,symbol):
-                            return State.Quit,DungeonState.Quit,None
+                            return State.Quit,DungeonState.Quit,scn
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
@@ -963,6 +963,8 @@ def Factory():
             counter += 1
         return None, None, screen
     def GameFrozenCheck(queue, scn):
+        if scn is None:
+            raise ValueError("GameFrozenCheck被传入了一个空值.")
         logger.info("卡死检测截图")
         LENGTH = 10
         if len(queue) > LENGTH:
@@ -1192,27 +1194,47 @@ def Factory():
         nonlocal setting
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
-        FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
+
         tryOpenCounter = 0
         MAXTRYOPEN = 2
         MAXERROROPEN = 50
         while 1:
-            scn = ScreenShot()
-            Press(CheckIf(scn,'chestFlag'))
-            if CheckIf(scn,'whowillopenit'):
-                if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
-                    whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
+            FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
+
+            if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
+                whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
+            else:
+                # 其他时候都使用随机
+                others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
+                whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
+            Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
+
+            FindCoordsOrElseExecuteFallbackAndWait(
+                ['dungFlag','combatActive','chestOpening','whowillopenit'],
+                [[1,1],[1,1],],
+                1)
+
+            if CheckIf(ScreenShot(),'whowillopenit'):
+                tryOpenCounter += 1
+                logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
+                if tryOpenCounter <=MAXTRYOPEN:
+                    logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
                 else:
-                    # 其他时候都使用随机
-                    others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
-                    whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
-                Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
-                Sleep(1)
-            Press([1,1])
+                    logger.info(f"随机开箱已经启用.")
+                if tryOpenCounter > MAXERROROPEN:
+                    logger.info(f"错误: 尝试次数过多. 疑似卡死.")
+                    return None
+                
+                continue
+            
             if CheckIf(ScreenShot(),'chestOpening'):
+                logger.info(f"进入chestOpening, 用时{time.time() - setting._TIME_CHEST}")
                 Sleep(1)
                 if not setting._RANDOMLYOPENCHEST:
-                    FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','combatActive'],[450,900],1)
+                    FindCoordsOrElseExecuteFallbackAndWait(
+                        ['dungFlag','combatActive'],
+                        [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
+                        1)
                     break
                 else:
                     if CheckIf(ScreenShot(),'chestOpening'):
@@ -1224,16 +1246,7 @@ def Factory():
                 return DungeonState.Combat
             if Press(CheckIf(ScreenShot(),'retry')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
-                continue
-            tryOpenCounter += 1
-            logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
-            if tryOpenCounter <=MAXTRYOPEN:
-                logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
-            else:
-                logger.info(f"随机开箱已经启用.")
-            if tryOpenCounter > MAXERROROPEN:
-                logger.info(f"错误: 尝试次数过多. 疑似卡死.")
-                return None
+
     def StateDungeon(targetInfoList : list[TargetInfo]):
         gameFrozen_none = []
         gameFrozen_map = 0
@@ -1252,7 +1265,7 @@ def Factory():
             match dungState:
                 case None:
                     s, dungState,scn = IdentifyState()
-                    if (s == State.Inn)or(s == DungeonState.Quit):
+                    if (s == State.Inn) or (dungState == DungeonState.Quit):
                         break
                     gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
                     if result:
@@ -1405,8 +1418,12 @@ def Factory():
                 case State.Inn:
                     if setting._LAPTIME!= 0:
                         setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"已完成{setting._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(setting._TOTALTIME,2)}秒.上次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n箱子效率{round(setting._TOTALTIME/setting._COUNTERCHEST,2)}秒/箱.\n累计开箱{setting._COUNTERCHEST}次,开箱平均耗时{round(setting._TIME_CHEST_TOTAL/setting._COUNTERCHEST,2)}秒.\n累计战斗{setting._COUNTERCOMBAT}次.战斗平均用时{round(setting._TIME_COMBAT_TOTAL/setting._COUNTERCOMBAT,2)}秒.",
-                                    extra={"summary": True})
+                        summary_text = f"已完成{setting._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(setting._TOTALTIME,2)}秒.上次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n"
+                        if setting._COUNTERCHEST > 0:
+                            summary_text += f"箱子效率{round(setting._TOTALTIME/setting._COUNTERCHEST,2)}秒/箱.\n累计开箱{setting._COUNTERCHEST}次,开箱平均耗时{round(setting._TIME_CHEST_TOTAL/setting._COUNTERCHEST,2)}秒.\n"
+                        if setting._COUNTERCOMBAT > 0:
+                            summary_text += f"累计战斗{setting._COUNTERCOMBAT}次.战斗平均用时{round(setting._TIME_COMBAT_TOTAL/setting._COUNTERCOMBAT,2)}秒."
+                        logger.info(summary_text,extra={"summary": True})
                     setting._LAPTIME = time.time()
                     setting._COUNTERDUNG+=1
                     if not setting._MEET_CHEST_OR_COMBAT:
