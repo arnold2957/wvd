@@ -118,13 +118,13 @@ class TargetInfo:
                         [100,800,700,800],
                         ]
             case "左上":
-                value = [[100,100,700,1200]]
+                value = [[100,250,700,1200]]
             case "右上":
-                value = [[700,100,100,1200]]
+                value = [[700,250,100,1200]]
             case "右下":
-                value = [[700,1200,100,100]]
+                value = [[700,1200,100,250]]
             case "左下":
-                value = [[100,1200,700,100]]
+                value = [[100,1200,700,250]]
             case _:
                 value = inputValue
         
@@ -851,7 +851,7 @@ def Factory():
             if quest._SPECIALFORCESTOPINGSYMBOL != None:
                 for symbol in quest._SPECIALFORCESTOPINGSYMBOL:
                         if CheckIf(screen,symbol):
-                            return State.Quit,DungeonState.Quit,scn
+                            return State.Quit,DungeonState.Quit,screen
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
@@ -1192,54 +1192,48 @@ def Factory():
         return DungeonState.Map,  targetInfoList
     def StateChest():
         nonlocal setting
-        if setting._TIME_CHEST==0:
-            setting._TIME_CHEST = time.time()
-
         tryOpenCounter = 0
         MAXTRYOPEN = 2
         MAXERROROPEN = 50
+
+        if setting._TIME_CHEST==0:
+            setting._TIME_CHEST = time.time()
+
         while 1:
-            FindCoordsOrElseExecuteFallbackAndWait('whowillopenit', ['chestFlag',[1,1]],1)
-
-            if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
-                whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
-            else:
-                # 其他时候都使用随机
-                others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
-                whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
-            Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
-
             FindCoordsOrElseExecuteFallbackAndWait(
                 ['dungFlag','combatActive','chestOpening','whowillopenit'],
-                [[1,1],[1,1],],
+                [[1,1],[1,1],'chestFlag'],
                 1)
 
             if CheckIf(ScreenShot(),'whowillopenit'):
-                tryOpenCounter += 1
-                logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
-                if tryOpenCounter <=MAXTRYOPEN:
-                    logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
+                if tryOpenCounter > 1:
+                    logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
+                    if tryOpenCounter <=MAXTRYOPEN:
+                        logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
+                    else:
+                        logger.info(f"随机开箱已经启用.")
+                    if tryOpenCounter > MAXERROROPEN:
+                        logger.info(f"错误: 尝试次数过多. 疑似卡死.")
+                        return None
+                tryOpenCounter +=1
+
+                if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
+                    whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
                 else:
-                    logger.info(f"随机开箱已经启用.")
-                if tryOpenCounter > MAXERROROPEN:
-                    logger.info(f"错误: 尝试次数过多. 疑似卡死.")
-                    return None
-                
+                    # 其他时候都使用随机
+                    others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
+                    whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
+                Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
                 continue
-            
+
             if CheckIf(ScreenShot(),'chestOpening'):
-                logger.info(f"进入chestOpening, 用时{time.time() - setting._TIME_CHEST}")
                 Sleep(1)
-                if not setting._RANDOMLYOPENCHEST:
-                    FindCoordsOrElseExecuteFallbackAndWait(
-                        ['dungFlag','combatActive'],
-                        [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
-                        1)
-                    break
-                else:
-                    if CheckIf(ScreenShot(),'chestOpening'):
-                        ChestOpen()
-                return None
+                if setting._RANDOMLYOPENCHEST:
+                    ChestOpen()
+                FindCoordsOrElseExecuteFallbackAndWait(
+                    ['dungFlag','combatActive','chestFlag'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                    [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
+                    1)
             if CheckIf(ScreenShot(),'dungFlag'):
                 return DungeonState.Dungeon
             if CheckIf(ScreenShot(),'combatActive'):
@@ -1943,19 +1937,19 @@ def Factory():
 
                     quest._SPECIALFORCESTOPINGSYMBOL = None
                     quest._SPECIALDIALOGOPTION = ['COS/requestwasfor'] 
-                    cosback2f = [TargetInfo('stair_2',"左下",[827,547]),
+                    cosback2f = [
+                                 TargetInfo('stair_2',"左下",[827,547]),
                                  TargetInfo('position',"右上",[340+54,448]),
                                  TargetInfo('position',"右上",[500-54,1088]),
                                  TargetInfo('position',"左上",[398+54,766]),
-                                 TargetInfo('position',"左上",[559,1087])
+                                 TargetInfo('position',"左上",[559,1087]),
+                                 TargetInfo('stair_1',"左上",[666,448]),
+                                 TargetInfo('position', "右下",[660,919])
                         ]
                     RestartableSequenceExecution(
-                        lambda: logger.info('第九步: 回2楼'),
+                        lambda: logger.info('第九步: 离开洞穴'),
                         lambda: StateDungeon(cosback2f)
                         )
-                    FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['return',[1,1]],1),
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
-                    # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
                     Press(FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1)) # 回城
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",['return',[1,1]],1)
                     
