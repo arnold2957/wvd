@@ -1038,8 +1038,9 @@ def Factory():
                     elif pos:=(CheckIf(scn,'next')):
                         Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                         Sleep(1)
-                        if CheckIf(ScreenShot(),'notenoughsp') or CheckIf(ScreenShot(),'notenoughmp'):
-                            PressReturn()
+                        scn = ScreenShot()
+                        if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
+                            Press(CheckIf(scn,'notenough_close'))
                             Press(CheckIf(ScreenShot(),'spellskill/lv1'))
                             Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                             Sleep(1)
@@ -1231,14 +1232,17 @@ def Factory():
                 if setting._RANDOMLYOPENCHEST:
                     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
-                    ['dungFlag','combatActive','chestFlag'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                    ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
                     [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
                     1)
-            if CheckIf(ScreenShot(),'dungFlag'):
+            scn = ScreenShot()
+            if CheckIf(scn,'RiseAgain'):
+                return None
+            if CheckIf(scn,'dungFlag'):
                 return DungeonState.Dungeon
-            if CheckIf(ScreenShot(),'combatActive'):
+            if CheckIf(scn,'combatActive'):
                 return DungeonState.Combat
-            if Press(CheckIf(ScreenShot(),'retry')):
+            if Press(CheckIf(scn,'retry')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
 
     def StateDungeon(targetInfoList : list[TargetInfo]):
