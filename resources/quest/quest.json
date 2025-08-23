@@ -138,27 +138,29 @@
         ]
     },
 
-    "DOL":{
-        "_TYPE":"dungeon",
-        "questName":"[矿石]光洞(15-19)",
-        "_TARGETINFOLIST":[
-            ["chest",[[700,100,100,1200]],[[420,686,478,481]]],
-            ["DOL_quit",[[700,100,100,1200]],null]
-        ],
-        "_EOT":[
-            ["press","DOL",["EdgeOfTown",[1,1]],1],
-            ["press","DOLB1F",[1,1],1]
-        ]
-    },
-
     "COS_chest":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]离别洞窟",
         "_TARGETINFOLIST":[
-            ["chest",null,null],
+            ["chest","左上",null],
+            ["chest","右上",null],
             ["stair_3","左上",[720,822]],
-            ["chest",null,null],
+            ["chest","左上",null],
+            ["chest","左下",null],
             ["stair_2","左下",[827,547]],
+            ["harken","左下",null]
+        ],
+        "_EOT":[
+            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
+            ["press","COS/COSB2F",[1,1],1]
+        ]
+    },
+    "COS_chest_short":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]离别洞窟(只刷2f)",
+        "_TARGETINFOLIST":[
+            ["chest","左上",null],
+            ["chest","右上",null],
             ["harken","左下",null]
         ],
         "_EOT":[

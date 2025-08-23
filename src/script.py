@@ -1193,9 +1193,7 @@ def Factory():
         return DungeonState.Map,  targetInfoList
     def StateChest():
         nonlocal setting
-        tryOpenCounter = 0
-        MAXTRYOPEN = 2
-        MAXERROROPEN = 50
+        availableChar = [0, 1, 2, 3, 4, 5]
 
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
@@ -1205,29 +1203,28 @@ def Factory():
                 ['dungFlag','combatActive','chestOpening','whowillopenit'],
                 [[1,1],[1,1],'chestFlag'],
                 1)
+            scn = ScreenShot()
 
-            if CheckIf(ScreenShot(),'whowillopenit'):
-                if tryOpenCounter > 1:
-                    logger.info(f"似乎选择人物失败了,当前已经尝次数:{tryOpenCounter}.")
-                    if tryOpenCounter <=MAXTRYOPEN:
-                        logger.info(f"尝试{MAXTRYOPEN}次后若失败则会变为随机开箱.")
+            if CheckIf(scn,'whowillopenit'):
+                while 1:
+                    pointSomeone = setting._WHOWILLOPENIT - 1
+                    if (pointSomeone != -1) and (pointSomeone in availableChar):
+                        whowillopenit = pointSomeone # 如果指定了一个角色并且该角色可用, 使用它
                     else:
-                        logger.info(f"随机开箱已经启用.")
-                    if tryOpenCounter > MAXERROROPEN:
-                        logger.info(f"错误: 尝试次数过多. 疑似卡死.")
-                        return None
-                tryOpenCounter +=1
+                        whowillopenit = random.choice(availableChar) # 否则从列表里随机选一个
+                    pos = [193+(whowillopenit%3)*257, 1161+((whowillopenit)//3)%2*184]
+                    # logger.info(f"{availableChar},{pos}")
+                    if CheckIf(scn,'chestfear',[[pos[0]-125,pos[1]-82,250,164]]):
+                        if whowillopenit in availableChar:
+                            availableChar.remove(whowillopenit) # 如果发现了恐惧, 删除这个角色.
+                    else:
+                        Press(pos)
+                        Sleep(1.5)
+                        for _ in range(8):
+                            Press([527,920])
+                        break
 
-                if (tryOpenCounter<=MAXTRYOPEN) and (setting._WHOWILLOPENIT != 0):
-                    whowillopenit = setting._WHOWILLOPENIT - 1 # 如果指定了人选且次数没超过尝试次数, 使用指定的序号
-                else:
-                    # 其他时候都使用随机
-                    others = [num for num in [1, 2, 3, 4, 5, 6] if num != setting._WHOWILLOPENIT] # setting._WHOWILLOPENIT可以等于0, 这种情况就是完全随机
-                    whowillopenit = random.choice(others) # 如果超过了尝试次数, 那么排除指定的人选后随机
-                Press([200+(whowillopenit%3)*200, 1200+((whowillopenit)//3)%2*150])
-                continue
-
-            if CheckIf(ScreenShot(),'chestOpening'):
+            if CheckIf(scn,'chestOpening'):
                 Sleep(1)
                 if setting._RANDOMLYOPENCHEST:
                     ChestOpen()
@@ -1235,7 +1232,7 @@ def Factory():
                     ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
                     [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
                     1)
-            scn = ScreenShot()
+            
             if CheckIf(scn,'RiseAgain'):
                 return None
             if CheckIf(scn,'dungFlag'):
