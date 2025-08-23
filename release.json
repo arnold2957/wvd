@@ -1,7 +1,7 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/1.6.4",
-  "release_date": "2025-08-22 16:38:04",
+  "md5": "b463fa8d537ddddfade7d166f666c05e",
+  "release_date": "2025-08-23 01:28:50",
   "download_url": "https://github.com/arnold2957/wvd/releases/download/1.6.4/wvd.zip",
-  "md5": "40d9e0e9c50c06410db35df8740a967a",
-  "version": "1.6.4"
+  "version": "1.6.4",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/1.6.4"
 }
