@@ -232,7 +232,7 @@ def BuildQuestReflection():
 IMAGE_FOLDER = fr'resources/images/'
 def LoadTemplateImage(shortPathOfTarget):
     logger.debug(f"加载{shortPathOfTarget}")
-    pathOfTarget = ResourcePath(os.path.join(IMAGE_FOLDER + f"{shortPathOfTarget}.png"))
+    pathOfTarget = ResourcePath(os.path.join(IMAGE_FOLDER, f"{shortPathOfTarget}.png"))
     return LoadImage(pathOfTarget)
 ###########################################
 class Tooltip:
