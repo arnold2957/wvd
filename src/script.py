@@ -1011,13 +1011,8 @@ def Factory():
             if Press(CheckIf(screen,'combatSpd')):
                 setting._COMBATSPD = True
 
-        if setting._SYSTEMAUTOCOMBAT:
+        if (setting._SYSTEMAUTOCOMBAT) or (setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
             Press(CheckIf(WrapImage(screen,0,0,255/155),'combatAuto'))
-            Sleep(5)
-            return
-
-        if setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE:
-            Press(CheckIf(screen,'combatAuto'))
             Sleep(5)
             return
 
@@ -1333,10 +1328,9 @@ def Factory():
                             logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
-                        Press([100,1250])
                         FindCoordsOrElseExecuteFallbackAndWait(
                             ['trait','combatActive','chestFlag'],
-                            [100,1250],
+                            [36,1425],
                             1
                             )
                         if CheckIf(ScreenShot(),'trait'):
@@ -1354,13 +1348,8 @@ def Factory():
                                 PressReturn()
                                 PressReturn()
                                 shouldRecover = False
-                                break
-                    ########### REUSME
-                    Sleep(1)
-                    if shouldResume:
-                        Press(CheckIf(ScreenShot(), 'resume'))
-                        StateMoving_CheckFrozen()
                     ########### OPEN MAP
+                    Sleep(1)
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
