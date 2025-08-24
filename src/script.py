@@ -402,6 +402,11 @@ def Factory():
         result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
+        if outputMatchResult:
+            cv2.imwrite("origin.png", screenshot)
+            cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+            cv2.imwrite("matched.png", screenshot)
+
         logger.debug(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
         if max_val < threshold:
             logger.debug("匹配程度不足阈值.")
@@ -410,10 +415,6 @@ def Factory():
             logger.debug(f"警告: {shortPathOfTarget}的匹配程度超过了{threshold*100:.0f}%但不足90%")
 
         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
-
-        if outputMatchResult:
-            cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            cv2.imwrite("Matched Result.png", screenshot)
         return pos
     def CheckIf_MultiRect(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
@@ -539,6 +540,9 @@ def Factory():
     def PressReturn():
         logger.debug("按了返回.")
         DeviceShell('input keyevent KEYCODE_BACK')
+    def WrapImage(image,r,g,b):
+        scn_b = image * np.array([b, g, r])
+        return np.clip(scn_b, 0, 255).astype(np.uint8)
     ##################################################################
     def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
         # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
@@ -1008,7 +1012,7 @@ def Factory():
                 setting._COMBATSPD = True
 
         if setting._SYSTEMAUTOCOMBAT:
-            Press(CheckIf(screen,'combatAuto'))
+            Press(CheckIf(WrapImage(screen,0,0,255/155),'combatAuto'))
             Sleep(5)
             return
 
@@ -1194,13 +1198,14 @@ def Factory():
     def StateChest():
         nonlocal setting
         availableChar = [0, 1, 2, 3, 4, 5]
+        disarm = [445,1000]  # 527,920 或许有点问题
 
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
-                ['dungFlag','combatActive','chestOpening','whowillopenit'],
+                ['dungFlag','combatActive','chestOpening','whowillopenit','RiseAgain'],
                 [[1,1],[1,1],'chestFlag'],
                 1)
             scn = ScreenShot()
@@ -1221,7 +1226,7 @@ def Factory():
                         Press(pos)
                         Sleep(1.5)
                         for _ in range(8):
-                            Press([527,920])
+                            Press(disarm)
                         break
 
             if CheckIf(scn,'chestOpening'):
@@ -1230,7 +1235,7 @@ def Factory():
                     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
                     ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
-                    [[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920],[527,920]],
+                    [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
                     1)
             
             if CheckIf(scn,'RiseAgain'):
@@ -1328,20 +1333,27 @@ def Factory():
                             logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
-                        Press([150,1300])
-                        Sleep(1)
+                        Press([100,1250])
+                        FindCoordsOrElseExecuteFallbackAndWait(
+                            ['trait','combatActive','chestFlag'],
+                            [100,1250],
+                            1
+                            )
                         if CheckIf(ScreenShot(),'trait'):
-                            for _ in range(3):
-                                Press([833,843])
-                                if CheckIf(ScreenShot(),'recover'):
-                                    Sleep(1)
-                                    Press([600,1200])
-                                    PressReturn()
-                                    Sleep(0.5)
-                                    PressReturn()
-                                    PressReturn()
-                                    shouldRecover = False
-                                    break
+                            Press([833,843])
+                            FindCoordsOrElseExecuteFallbackAndWait(
+                                ['recover','combatActive'],
+                                [833,843]
+                                )
+                            if CheckIf(ScreenShot(),'recover'):
+                                Sleep(1)
+                                Press([600,1200])
+                                PressReturn()
+                                Sleep(0.5)
+                                PressReturn()
+                                PressReturn()
+                                shouldRecover = False
+                                break
                     ########### REUSME
                     Sleep(1)
                     if shouldResume:
@@ -1527,11 +1539,8 @@ def Factory():
                             stepMark = 5
                         if stepMark == 5:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/illgo',[[1,1],'7000G/olddist'],1))
-                            stepMark = 6
-                        if stepMark == 6:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('7000G/noeasytask',[1,1],1))
-                            stepMark = 7
-                        FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
+                            FindCoordsOrElseExecuteFallbackAndWait('ruins',[1,1],1)
                     RestartableSequenceExecution(
                         lambda: stepMain()
                         )
@@ -1699,9 +1708,7 @@ def Factory():
                             if not checkCSC:
                                 FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
                                 while 1:
-                                    scn_b = ScreenShot() *np.array([0, 1, 2])
-                                    scaled_image = np.clip(scn_b, 0, 255).astype(np.uint8)
-                                    if Press(CheckIf(scaled_image,'LBC/didnottakethequest')):
+                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,1),'LBC/didnottakethequest')):
                                         continue
                                     else:
                                         break
@@ -1866,9 +1873,7 @@ def Factory():
                         while CheckIf(ScreenShot(), 'leap'):
                             FindCoordsOrElseExecuteFallbackAndWait('COS/ArnasPast','CSC',1)
                             while 1:
-                                scn_b = ScreenShot() *np.array([0, 1, 2])
-                                scaled_image = np.clip(scn_b, 0, 255).astype(np.uint8)
-                                if Press(CheckIf(scaled_image,'COS/didnottakethequest')):
+                                if Press(CheckIf(WrapImage(ScreenShot(),2,0,1),'COS/didnottakethequest')):
                                     continue
                                 else:
                                     break
