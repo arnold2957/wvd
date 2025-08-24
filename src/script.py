@@ -1343,7 +1343,8 @@ def Factory():
                             Press([833,843])
                             FindCoordsOrElseExecuteFallbackAndWait(
                                 ['recover','combatActive'],
-                                [833,843]
+                                [833,843],
+                                1
                                 )
                             if CheckIf(ScreenShot(),'recover'):
                                 Sleep(1)
