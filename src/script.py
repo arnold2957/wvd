@@ -162,9 +162,10 @@ def StartAdbServer(setting: FarmConfig):
             sock.close()
     try:
         if not check_adb_connection():
-            adb_path = setting._EMUPATH.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
-            adb_path = setting._EMUPATH.replace("MuMuPlayer.exe", "adb.exe") # mumu
-            adb_path = setting._EMUPATH.replace("MuMuNxDevice.exe", "adb.exe") # mumu
+            adb_path = setting._EMUPATH
+            adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
+            adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
+            adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
             logger.info(f"开始启动ADB服务, 路径:{adb_path}")
             # 启动adb服务（非阻塞模式）
             subprocess.Popen(
@@ -203,7 +204,7 @@ def CreateAdbDevice(setting: FarmConfig):
     client.remote_connect("127.0.0.1", int(setting._ADBPORT))
     devices = client.devices()
     if (not devices) or not (devices[0]):
-        logger.info("创建adb链接失败.尝试启动模拟器.")
+        logger.info(f"创建adb链接失败. 目前已有device:{devices}\n尝试启动模拟器.")
         if StartEmulator(setting):
             return CreateAdbDevice(setting)
         else:
