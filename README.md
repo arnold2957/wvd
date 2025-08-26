@@ -23,7 +23,7 @@ wvdas可以再检测到"再起之火"耗尽后, 立刻将任务变更为"找公�
 *蓝叠不再维护, 请不要再使用蓝叠模拟器了.*
 - 下载mumu模拟器, mumu12或者mumuX都可以.
 - 安装游戏apk.
-- 初次加载遇到黑屏, 请安装谷歌三件套.
+- 初次加载遇到黑屏, 请安装谷歌三件套. mumu桌面上就有可以直接安装.
 - 如果遇到google登录弹窗, 连续按返回即可.
 - 如果遇到"违反安全策略", 关闭root.
 - 如果遇到"unable to initialize the unity engine graphics API", 先改成DirectX启动, 然后再用vulkan启动就能正常游戏了.
