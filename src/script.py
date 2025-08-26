@@ -1350,7 +1350,7 @@ def Factory():
                         Press([1,1])
                         FindCoordsOrElseExecuteFallbackAndWait(
                             ['trait','combatActive','chestFlag'],
-                            [36,1425],
+                            [[36,1425],[1,1]],
                             1
                             )
                         if CheckIf(ScreenShot(),'trait'):
@@ -1660,7 +1660,7 @@ def Factory():
                         logger.info(f"第{i+1}轮开始.")
                         secondcombat = False
                         while 1:
-                            Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive'],['input swipe 400 400 400 100',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive','combatActive_2'],['input swipe 400 400 400 100',[1,1]],1))
                             Sleep(1)
                             if setting._AOE_ONCE:
                                 setting._ENOUGH_AOE = False
