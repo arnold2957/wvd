@@ -38,7 +38,7 @@ CONFIG_VAR_LIST = [
             #var_name,                      type,          config_name,                  default_value
             ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
             ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
-            ["randomly_open_chest_var",     tk.BooleanVar, "_RANDOMLYOPENCHEST",         False],
+            ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",         False],
             ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
             ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
             ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
@@ -162,7 +162,9 @@ def StartAdbServer(setting: FarmConfig):
             sock.close()
     try:
         if not check_adb_connection():
-            adb_path = setting._EMUPATH.replace("HD-Player.exe", "HD-Adb.exe")
+            adb_path = setting._EMUPATH.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
+            adb_path = setting._EMUPATH.replace("MuMuPlayer.exe", "adb.exe") # mumu
+            adb_path = setting._EMUPATH.replace("MuMuNxDevice.exe", "adb.exe") # mumu
             logger.info(f"开始启动ADB服务, 路径:{adb_path}")
             # 启动adb服务（非阻塞模式）
             subprocess.Popen(
@@ -584,7 +586,10 @@ def Factory():
                                 if isinstance(p, str):
                                     pressTarget(p)
                                 elif isinstance(p, (list, tuple)) and len(p) == 2:
+                                    t = time.time()
                                     Press(p)
+                                    if (waittime:=(time.time()-t)) < 0.1:
+                                        Sleep(0.1-waittime)
                                 else:
                                     logger.debug(f"错误: 非法的目标{p}.")
                                     setting._FORCESTOPING.set()
@@ -949,6 +954,7 @@ def Factory():
                     logger.info("网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!")
                     return IdentifyState()
                 PressReturn()
+                Sleep(0.5)
                 PressReturn()
             if counter>15:
                 black = LoadTemplateImage("blackScreen")
@@ -1045,11 +1051,17 @@ def Factory():
                             Sleep(1)
                     else:
                         Press([150,750])
+                        Sleep(0.1)
                         Press([300,750])
+                        Sleep(0.1)
                         Press([450,750])
+                        Sleep(0.1)
                         Press([550,750])
+                        Sleep(0.1)
                         Press([650,750])
+                        Sleep(0.1)
                         Press([750,750])
+                        Sleep(0.1)
                         Sleep(2)
                     Sleep(1)
                     castSpellSkill = True
@@ -1060,6 +1072,7 @@ def Factory():
             if not castSpellSkill:
                 Press(CheckIf(ScreenShot(),'combatClose'))
                 Press([850,1100])
+                Sleep(0.5)
                 Press([850,1100])
                 Sleep(3)
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
@@ -1110,7 +1123,7 @@ def Factory():
             _, dungState,screen = IdentifyState()
             if dungState == DungeonState.Map:
                 logger.info(f"开始移动失败. 不要停下来啊面具男!")
-                FindCoordsOrElseExecuteFallbackAndWait("dungFlag",([280,1433],[1,1]),1)
+                FindCoordsOrElseExecuteFallbackAndWait("dungFlag",[[280,1433],[1,1]],1)
                 dungState = dungState.Dungeon
                 break
             if dungState != DungeonState.Dungeon:
@@ -1178,6 +1191,7 @@ def Factory():
                         logger.info("经过对比中心区域, 判断为抵达目标地点.")
                         logger.info('开始等待...等待...')
                         PressReturn()
+                        Sleep(0.5)
                         PressReturn()
                         while 1:
                             if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
@@ -1193,7 +1207,7 @@ def Factory():
     def StateChest():
         nonlocal setting
         availableChar = [0, 1, 2, 3, 4, 5]
-        disarm = [445,1000]  # 527,920 或许有点问题
+        disarm = [445,1050]  # 527,920 或许有点问题 450 1000会按到技能
 
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
@@ -1212,21 +1226,26 @@ def Factory():
                         whowillopenit = pointSomeone # 如果指定了一个角色并且该角色可用, 使用它
                     else:
                         whowillopenit = random.choice(availableChar) # 否则从列表里随机选一个
-                    pos = [193+(whowillopenit%3)*257, 1161+((whowillopenit)//3)%2*184]
+                    pos = [258+(whowillopenit%3)*258, 1161+((whowillopenit)//3)%2*184]
                     # logger.info(f"{availableChar},{pos}")
-                    if CheckIf(scn,'chestfear',[[pos[0]-125,pos[1]-82,250,164]]):
+                    if CheckIf(scn,'chestfear',[[pos[0]-125,pos[1]-82,250,164]]) or CheckIf(scn,'chestStone',[[pos[0]-125,pos[1]-82,250,164]]):
                         if whowillopenit in availableChar:
                             availableChar.remove(whowillopenit) # 如果发现了恐惧, 删除这个角色.
                     else:
                         Press(pos)
                         Sleep(1.5)
-                        for _ in range(8):
-                            Press(disarm)
+                        if not setting._SMARTDISARMCHEST:
+                            for _ in range(8):
+                                t = time.time()
+                                Press(disarm)
+                                if time.time()-t<0.3:
+                                    Sleep(0.3-(time.time()-t))
+                                
                         break
 
             if CheckIf(scn,'chestOpening'):
                 Sleep(1)
-                if setting._RANDOMLYOPENCHEST:
+                if setting._SMARTDISARMCHEST:
                     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
                     ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
@@ -1343,10 +1362,11 @@ def Factory():
                             if CheckIf(ScreenShot(),'recover'):
                                 Sleep(1)
                                 Press([600,1200])
-                                PressReturn()
-                                Sleep(0.5)
-                                PressReturn()
-                                PressReturn()
+                                for _ in range(5):
+                                    t = time.time()
+                                    PressReturn()
+                                    if time.time()-t<0.3:
+                                        Sleep(0.3-(time.time()-t))
                                 shouldRecover = False
                     ########### OPEN MAP
                     Sleep(1)
@@ -1868,6 +1888,7 @@ def Factory():
                                 else:
                                     break
                             PressReturn()
+                            Sleep(0.5)
                             Press(CheckIf(ScreenShot(),'leap'))
                             Sleep(2)
                             Press(CheckIf(ScreenShot(),'COS/GhostsOfYore'))
