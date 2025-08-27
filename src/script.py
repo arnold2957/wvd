@@ -354,52 +354,61 @@ def Factory():
                         logger.warning("ADB重启失败，5秒后重试...")
                         time.sleep(5)
                     continue
-    def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        def cutRoI(screenshot,roi):
-            if roi is None:
-                return screenshot
-
-            img_height, img_width = screenshot.shape[:2]
-            roi_copy = roi.copy()
-            roi1_rect = roi_copy.pop(0)  # 第一个矩形 (x, y, width, height)
-
-            x1, y1, w1, h1 = roi1_rect
-
-            roi1_y_start_clipped = max(0, y1)
-            roi1_y_end_clipped = min(img_height, y1 + h1)
-            roi1_x_start_clipped = max(0, x1)
-            roi1_x_end_clipped = min(img_width, x1 + w1)
-
-            pixels_not_in_roi1_mask = np.ones((img_height, img_width), dtype=bool)
-            if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
-                pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
-
-            screenshot[pixels_not_in_roi1_mask] = 0
-
-            if (roi is not []):
-                for roi2_rect in roi_copy:
-                    x2, y2, w2, h2 = roi2_rect
-
-                    roi2_y_start_clipped = max(0, y2)
-                    roi2_y_end_clipped = min(img_height, y2 + h2)
-                    roi2_x_start_clipped = max(0, x2)
-                    roi2_x_end_clipped = min(img_width, x2 + w2)
-
-                    if roi2_x_start_clipped < roi2_x_end_clipped and roi2_y_start_clipped < roi2_y_end_clipped:
-                        pixels_in_roi2_mask_for_current_op = np.zeros((img_height, img_width), dtype=bool)
-                        pixels_in_roi2_mask_for_current_op[roi2_y_start_clipped:roi2_y_end_clipped, roi2_x_start_clipped:roi2_x_end_clipped] = True
-
-                        # 将位于 roi2 中的像素设置为0
-                        # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
-                        screenshot[pixels_in_roi2_mask_for_current_op] = 0
-
-            # cv2.imwrite(f'cutRoI_{time.time()}.png', screenshot)
+    def ScreenSave(filename, roi):    
+        screenshot = ScreenShot()
+        if roi is None:
+            target_area = screenshot
+        else:
+            target_area = cutRoI(screenshot, roi)
+       
+        file_path = os.path.join("positions", f"{filename}.png")
+        cv2.imwrite(file_path, target_area)
+        return
+        
+    def cutRoI(screenshot,roi):
+        if roi is None:
             return screenshot
 
+        img_height, img_width = screenshot.shape[:2]
+        roi_copy = roi.copy()
+        roi1_rect = roi_copy.pop(0)  # 第一个矩形 (x, y, width, height)
+
+        x1, y1, w1, h1 = roi1_rect
+
+        roi1_y_start_clipped = max(0, y1)
+        roi1_y_end_clipped = min(img_height, y1 + h1)
+        roi1_x_start_clipped = max(0, x1)
+        roi1_x_end_clipped = min(img_width, x1 + w1)
+
+        pixels_not_in_roi1_mask = np.ones((img_height, img_width), dtype=bool)
+        if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
+            pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
+
+        screenshot[pixels_not_in_roi1_mask] = 0
+
+        if (roi is not []):
+            for roi2_rect in roi_copy:
+                x2, y2, w2, h2 = roi2_rect
+
+                roi2_y_start_clipped = max(0, y2)
+                roi2_y_end_clipped = min(img_height, y2 + h2)
+                roi2_x_start_clipped = max(0, x2)
+                roi2_x_end_clipped = min(img_width, x2 + w2)
+
+                if roi2_x_start_clipped < roi2_x_end_clipped and roi2_y_start_clipped < roi2_y_end_clipped:
+                    pixels_in_roi2_mask_for_current_op = np.zeros((img_height, img_width), dtype=bool)
+                    pixels_in_roi2_mask_for_current_op[roi2_y_start_clipped:roi2_y_end_clipped, roi2_x_start_clipped:roi2_x_end_clipped] = True
+
+                    # 将位于 roi2 中的像素设置为0
+                    # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
+                    screenshot[pixels_in_roi2_mask_for_current_op] = 0
+
+        # cv2.imwrite(f'cutRoI_{time.time()}.png', screenshot)
+        return screenshot     
+    def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False, threshold=0.80):
         nonlocal setting
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
-        threshold = 0.80
         pos = None
         search_area = cutRoI(screenshot, roi)
         result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
@@ -798,7 +807,45 @@ def Factory():
         Chest = 'chest'
         Combat = 'combat'
         Quit = 'quit'
-
+    class StandPosition():
+        _POS1_ROI=[125, 1275, 80, 22]
+        _POS2_ROI=[410, 1275, 80, 22]
+        _POS3_ROI=[700, 1275, 80, 22]
+        
+        def record_pos():
+            logger.info('紀錄站位')
+            # openPartyInfo 匹配程度總是好低... 60多
+            # Press(CheckIf(ScreenShot(), 'openPartyInfo'))
+            # 先用這個測試
+            if CheckIf(ScreenShot(), 'intoWorldMap'):
+                Press([62,1525])
+            ScreenSave('pos1', [StandPosition._POS1_ROI])
+            ScreenSave('pos2', [StandPosition._POS2_ROI])
+            ScreenSave('pos3', [StandPosition._POS3_ROI])
+            Sleep(0.5)
+            Press(CheckIf(ScreenShot(), 'closePartyInfo'))
+        def return_pos():
+            logger.info('復原站位')
+            position_changes = []
+            if CheckIf(ScreenShot(), f'../../positions/pos1', [StandPosition._POS1_ROI], threshold=0.9) is None:
+                logger.info('第一行待歸位')
+                position_changes.append('input swipe 155 1325 155 1500')
+            if CheckIf(ScreenShot(), f'../../positions/pos2', [StandPosition._POS2_ROI], threshold=0.9) is None:
+                logger.info('第二行待歸位')
+                position_changes.append('input swipe 445 1325 445 1500')
+            if CheckIf(ScreenShot(), f'../../positions/pos3', [StandPosition._POS3_ROI], threshold=0.9) is None:
+                logger.info('第三行待歸位')
+                position_changes.append('input swipe 750 1325 750 1500')
+                
+            if len(position_changes) > 0:
+                logger.info('速速歸位!')
+                Press([775, 1180])
+                Sleep(0.5)
+                for command in position_changes:
+                    DeviceShell(command)
+                    Sleep(0.5)
+                Press([775, 1180])
+                
     def IdentifyState():
         counter = 0
         while 1:
@@ -874,7 +921,12 @@ def Factory():
                     logger.info("快快请起.")
                     # logger.info("REZ.")
                     Press([450,750])
-                    Sleep(10)
+                    if setting._CHECKPOSITION:
+                        FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[1,1],1)
+                        # 重製站位
+                        StandPosition.return_pos()
+                    else:
+                        Sleep(10)
                     return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
@@ -1699,6 +1751,9 @@ def Factory():
                                     extra={"summary": True})
             case 'LBC-oneGorgon':
                 checkCSC = False
+                setting._CHECKPOSITION = True # 再起歸位
+                StandPosition.record_pos()
+
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
