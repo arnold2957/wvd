@@ -1208,7 +1208,7 @@ def Factory():
     def StateChest():
         nonlocal setting
         availableChar = [0, 1, 2, 3, 4, 5]
-        disarm = [445,1050]  # 527,920 或许有点问题 450 1000会按到技能
+        disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能
 
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
@@ -1348,13 +1348,14 @@ def Factory():
                             logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
-                        FindCoordsOrElseExecuteFallbackAndWait(
-                            ['trait','combatActive','chestFlag'],
-                            [[36,1425],[1,1]],
+                        FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
+                            ['trait','combatActive','chestFlag','combatClose'],
+                            [36,1425],
                             1
                             )
                         if CheckIf(ScreenShot(),'trait'):
                             Press([833,843])
+                            Sleep(1)
                             FindCoordsOrElseExecuteFallbackAndWait(
                                 ['recover','combatActive'],
                                 [833,843],
@@ -1681,6 +1682,7 @@ def Factory():
                             else:
                                 logger.info(f"第2场战斗结束.")
                                 Press(CheckIf(ScreenShot(),'letswithdraw'))
+                                Sleep(1)
                                 break
                         logger.info(f"第{i+1}轮结束.")
                     RestartableSequenceExecution(
