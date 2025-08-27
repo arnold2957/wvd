@@ -1670,7 +1670,7 @@ def Factory():
                                     continue
                                 if CheckIf(scn,'icanstillgo'):
                                     break
-                                if CheckIf(scn,'combatActive'):
+                                if CheckIf(scn,'combatActive') or CheckIf(scn,'combatActive_2'):
                                     StateCombat()
                                 else:
                                     Press([1,1])
