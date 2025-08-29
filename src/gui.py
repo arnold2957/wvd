@@ -5,14 +5,7 @@ import logging
 from script import *
 from auto_updater import *
 from utils import *
-import shutil
 
-
-############################################
-RESTART_SCREENSHOT_FOLDER_NAME = "screenshotwhenrestart"
-if os.path.exists(RESTART_SCREENSHOT_FOLDER_NAME):
-    shutil.rmtree(RESTART_SCREENSHOT_FOLDER_NAME)
-os.makedirs(RESTART_SCREENSHOT_FOLDER_NAME, exist_ok=True)
 ############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller, version, msg_queue):
@@ -95,7 +88,10 @@ class ConfigPanelApp(tk.Toplevel):
         else:
             self.config["_SPELLSKILLCONFIG"] = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
 
-        self.farm_target_var.set(DUNGEON_TARGETS[self.farm_target_text_var.get()])
+        if self.farm_target_text_var.get() in DUNGEON_TARGETS:
+            self.farm_target_var.set(DUNGEON_TARGETS[self.farm_target_text_var.get()])
+        else:
+            self.farm_target_var.set(None)
         
         SaveConfigToFile(self.config)
 

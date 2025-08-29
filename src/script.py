@@ -564,7 +564,7 @@ def Factory():
                     if pos:
                         return pos # FindCoords
                 # OrElse
-                if Press(CheckIf(scn,'retry')):
+                if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
                     logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                     Sleep(1)
                     continue
@@ -617,7 +617,7 @@ def Factory():
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-            file_path = os.path.join("screenshotwhenrestart", f"{timestamp}.png")
+            file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
             cv2.imwrite(file_path, ScreenShot())
             logger.info(f"重启前截图已保存在{file_path}中.")
         else:
@@ -808,7 +808,7 @@ def Factory():
             if setting._FORCESTOPING.is_set():
                 return State.Quit, DungeonState.Quit, screen
 
-            if Press(CheckIf(screen,'retry')):
+            if Press(CheckIf(screen,'retry')) or Press(CheckIf(screen,'retry_blank')):
                     logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
                     # logger.info("ka le.")
                     Sleep(2)
@@ -1259,7 +1259,7 @@ def Factory():
                 return DungeonState.Dungeon
             if CheckIf(scn,'combatActive'):
                 return DungeonState.Combat
-            if Press(CheckIf(scn,'retry')):
+            if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
 
     def StateDungeon(targetInfoList : list[TargetInfo]):
@@ -1350,7 +1350,7 @@ def Factory():
                         Press([1,1])
                         FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
                             ['trait','combatActive','chestFlag','combatClose'],
-                            [36,1425],
+                            [[36,1425],[322,1425],[606,1425]],
                             1
                             )
                         if CheckIf(ScreenShot(),'trait'):
@@ -1401,8 +1401,9 @@ def Factory():
         StateInn()
         Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1))
         Press(FindCoordsOrElseExecuteFallbackAndWait('guildFeatured',['guildRequest',[1,1]],1))
-        Sleep(2)
-        DeviceShell(f"input swipe 150 1000 150 200")
+        for _ in range(3):
+            Sleep(1)
+            DeviceShell(f"input swipe 150 1000 150 200")
         Sleep(2)
         pos = FindCoordsOrElseExecuteFallbackAndWait(request,['input swipe 150 200 150 250',[1,1]],1)
         if not CheckIf(ScreenShot(),'request_accepted',[[0,pos[1]-200,900,pos[1]+200]]):
@@ -1667,7 +1668,7 @@ def Factory():
                                 setting._ENOUGH_AOE = False
                             while 1:
                                 scn=ScreenShot()
-                                if Press(CheckIf(scn,'retry')):
+                                if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
                                     continue
                                 if CheckIf(scn,'icanstillgo'):
                                     break
@@ -1721,11 +1722,12 @@ def Factory():
                             if not checkCSC:
                                 FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
                                 while 1:
-                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,1),'LBC/didnottakethequest')):
+                                    if Press(CheckIf(WrapImage(ScreenShot(),2,1,0),'LBC/didnottakethequest',None,True)):
                                         continue
                                     else:
                                         break
-                                Press(CheckIf(ScreenShot(),"LBC/EnaWasSaved"))
+                                Press(CheckIf(WrapImage(ScreenShot(),2,1,0),'LBC/EnaWasSaved'))
+                                Sleep(1)
                                 PressReturn()
                                 checkCSC = True
                             Press(CheckIf(ScreenShot(),'leap'))
@@ -1974,6 +1976,8 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",['return',[1,1]],1)
                     
                 pass
+            # case 'test':
+            #     pass
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):

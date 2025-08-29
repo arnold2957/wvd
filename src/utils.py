@@ -6,6 +6,7 @@ import logging
 import sys
 import cv2
 import time
+import shutil
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -14,7 +15,20 @@ import time
 # TOOLTIP. 鼠标悬停时的提示.
 
 ############################################
-LOG_FILE_NAME = "log.txt"
+THREE_DAYS_AGO = time.time() - 3 * 24 * 60 * 60
+LOGS_FOLDER_NAME = "logs"
+os.makedirs(LOGS_FOLDER_NAME, exist_ok=True)
+for filename in os.listdir(LOGS_FOLDER_NAME):
+    file_path = os.path.join(LOGS_FOLDER_NAME, filename)
+    
+    # 获取最后修改时间
+    creation_time = os.path.getmtime(file_path)
+    
+    # 如果文件创建时间早于3天前，则删除
+    if creation_time < THREE_DAYS_AGO:
+        os.remove(file_path)
+############################################
+LOG_FILE_PREFIX = LOGS_FOLDER_NAME + "/log"
 logger = logging.getLogger('WvDASLogger')
 
 class LoggerStream:
@@ -38,16 +52,13 @@ class LoggerStream:
             self.logger.log(self.log_level, self.buffer)
             self.buffer = ''
 
-def RegisterFileHandler(with_timestamp = False):
-    if not with_timestamp:
-        log_file_path = LOG_FILE_NAME
-    else:
-        log_file_path = f"log_{time.time()}.txt"
+def RegisterFileHandler():
+    current_time = time.strftime("%y%m%d-%H%M%S")
+    log_file_path = f"{LOG_FILE_PREFIX}_{current_time}.txt"
+
     sys.stdout = LoggerStream(logger, logging.DEBUG)
     sys.stderr = LoggerStream(logger, logging.ERROR)
 
-    if os.path.exists(log_file_path):
-        os.remove(log_file_path)
     with open(log_file_path, 'w', encoding='utf-8') as f:
         pass
     
@@ -60,6 +71,7 @@ def RegisterFileHandler(with_timestamp = False):
     )
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
+
 def RegisterConsoleHandler():
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__

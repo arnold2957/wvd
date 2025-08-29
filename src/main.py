@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -57,13 +57,13 @@ class AppController(tk.Tk):
             # --- 这是处理更新逻辑的核心部分 ---
             match command:
                 case 'start_quest':
-                    logger.info('启动任务...')
                     self.quest_setting = value                    
                     self.quest_setting._MSGQUEUE = self.msg_queue
                     self.quest_setting._FORCESTOPING = Event()
                     Farm = Factory()
                     self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
                     self.quest_threading.start()
+                    logger.info(f'启动任务\"{self.quest_setting._FARMTARGET_TEXT}\"...')
 
                 case 'stop_quest':
                     logger.info('停止任务...')
@@ -179,7 +179,7 @@ def main():
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
-    RegisterFileHandler(with_timestamp=True)
+    RegisterFileHandler()
 
     setting = FarmConfig()
     config = LoadConfigFromFile(config_path)
