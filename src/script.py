@@ -12,6 +12,7 @@ from utils import *
 import random
 from threading import Thread,Event
 from pathlib import Path
+import copy
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
@@ -79,6 +80,8 @@ class FarmConfig:
         self._COMBATSPD = False
         self._SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
         self._MAXRETRYLIMIT = 20
+        self._ACTIVESPELLSEQUENCE = None
+        self._SHOULDAPPLYSPELLSEQUENCE = True
         #### 底层接口
         self._ADBDEVICE = None
     def __getattr__(self, name):
@@ -91,16 +94,18 @@ class FarmQuest:
     _preEOTcheck = None
     _SPECIALDIALOGOPTION = None
     _SPECIALFORCESTOPINGSYMBOL = None
+    _SPELLSEQUENCE = None
     _TYPE = None
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(f"FarmQuest对象没有属性'{name}'")
 class TargetInfo:
-    def __init__(self, target: str, swipeDir: list = None, roi=None):
+    def __init__(self, target: str, swipeDir: list = None, roi=None, activeSpellSequenceOverride = False):
         self.target = target
         self.swipeDir = swipeDir
         # 注意 roi校验需要target的值. 请严格保证roi在最后.
         self.roi = roi
+        self.activeSpellSequenceOverride = activeSpellSequenceOverride
     @property
     def swipeDir(self):
         return self._swipeDir
@@ -286,8 +291,6 @@ def Factory():
     def LoadQuest(farmtarget):
         # 构建文件路径
         data = LoadJson(ResourcePath(QUEST_FILE))[setting._FARMTARGET]
-        
-
         
         # 创建 Quest 实例并填充属性
         quest = FarmQuest()
@@ -918,6 +921,7 @@ def Factory():
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     setting._SUICIDE = False # 死了 自杀成功 设置为false
+                    setting._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
                     logger.info("快快请起.")
                     # logger.info("REZ.")
                     Press([450,750])
@@ -1057,7 +1061,7 @@ def Factory():
                 Press(pos)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
-    def StateCombat(spellsequence : dict = None):
+    def StateCombat():
         def doubleConfirmCastSpell():
             is_success_aoe = False
             Sleep(1)
@@ -1101,10 +1105,12 @@ def Factory():
                 setting._COMBATSPD = True
                 Sleep(1)
 
+        spellsequence = setting._ACTIVESPELLSEQUENCE
         if spellsequence != None:
+            logger.info(f"当前施法序列:{spellsequence}")
             for k in spellsequence.keys():
-                if CheckIf(screen,k):
-                    targetSpell = spellsequence[k][0]
+                if CheckIf(screen,'spellskill/'+ k):
+                    targetSpell = 'spellskill/'+ spellsequence[k][0]
                     if not CheckIf(screen, targetSpell):
                         logger.error("错误:施法序列包含不可用的技能")
                         Press([850,1100])
@@ -1113,12 +1119,12 @@ def Factory():
                         Sleep(3)
                         return
                     
-                    logger.info(f"使用技能{skillspell}, 序列特征:{k}")
+                    logger.info(f"使用技能{targetSpell}, 施法序列特征: {k}:{spellsequence[k]}")
                     if len(spellsequence[k])!=1:
                         spellsequence[k].pop(0)
                     Press(CheckIf(screen,targetSpell))
-
-                    doubleConfirmCastSpell()
+                    if targetSpell != 'spellskill/' + 'defend':
+                        doubleConfirmCastSpell()
 
                     return
 
@@ -1130,7 +1136,7 @@ def Factory():
         if not CheckIf(screen,'flee'):
             return
         if setting._SUICIDE:
-            Press(CheckIf(screen,'defend'))
+            Press(CheckIf(screen,'spellskill/'+'defend'))
         else:
             castSpellSkill = False
             castAndPressOK = False
@@ -1333,6 +1339,8 @@ def Factory():
                     1)
             
             if CheckIf(scn,'RiseAgain'):
+                setting._SUICIDE = False
+                setting._SHOULDAPPLYSPELLSEQUENCE = True
                 return None
             if CheckIf(scn,'dungFlag'):
                 return DungeonState.Dungeon
@@ -1349,6 +1357,9 @@ def Factory():
         waitTimer = time.time()
         needRecoverBecauseCombat = False
         needRecoverBecauseChest = False
+        
+        nonlocal setting
+        setting._SHOULDAPPLYSPELLSEQUENCE = True
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
@@ -1376,10 +1387,6 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
-                    ########### RESUME
-                    shouldResume = False # 我们假定不需要resume, 但是如果检测到战斗或宝箱, 那么尝试resume.
-                    if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
-                        shouldResume = True
                     ########### COMBAT RESET
                     # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
@@ -1454,6 +1461,12 @@ def Factory():
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
+                    if setting._SHOULDAPPLYSPELLSEQUENCE: # 默认值(第一次)和重启后应当直接应用序列
+                        setting._SHOULDAPPLYSPELLSEQUENCE = False
+                        if targetInfoList[0].activeSpellSequenceOverride:
+                            logger.info("因为初始化, 复制了施法序列.")
+                            setting._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+
                     dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
                     
                     if newTargetInfoList == targetInfoList:
@@ -1468,6 +1481,15 @@ def Factory():
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
                         break
+
+                    if (newTargetInfoList != targetInfoList):
+                        if newTargetInfoList[0].activeSpellSequenceOverride:
+                            logger.info("因为目标信息变动, 重新复制了施法序列.")
+                            setting._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+                        else:
+                            logger.info("因为目标信息变动, 清空了施法序列.")
+                            setting._ACTIVESPELLSEQUENCE = None
+
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
                     dungState = StateChest()
@@ -1554,7 +1576,6 @@ def Factory():
         nonlocal setting
         match setting._FARMTARGET:
             case '7000G':
-                stepNo = 1
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
@@ -1639,7 +1660,6 @@ def Factory():
                     costtime = time.time()-starttime
                     logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
                                 extra={"summary": True})
-
             case 'fordraig':
                 quest._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
                 while 1:
@@ -2055,6 +2075,51 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",['return',[1,1]],1)
                     
                 pass
+            case 'gaintKiller':
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if setting._LAPTIME!= 0:
+                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
+                        logger.info(f"第{setting._COUNTERDUNG}次巨人完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                                    extra={"summary": True})
+                    setting._LAPTIME = time.time()
+                    setting._COUNTERDUNG+=1
+
+                    quest._EOT = [
+                        ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+                        ["press","fortressb7f",[1,1],1]]
+                    RestartableSequenceExecution(
+                        lambda: StateEoT()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([TargetInfo('position','左上',[560,928])]),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1)
+                    )
+
+                    counter_candelabra = 0
+                    for _ in range(3):
+                        scn = ScreenShot()
+                        if CheckIf(scn,"gaint_candelabra_1") or CheckIf(scn,"gaint_candelabra_2"):
+                            counter_candelabra+=1
+                        Sleep(1)
+                    if counter_candelabra != 0:
+                        logger.info("没发现巨人.")
+                        RestartableSequenceExecution(
+                            lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+                        continue
+                    
+                    logger.info("发现了巨人.")
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True)]),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                    )
+
+                    RestartableSequenceExecution(
+                        lambda: StateInn()
+                    )
             # case 'test':
             #     pass
         setting._FINISHINGCALLBACK()

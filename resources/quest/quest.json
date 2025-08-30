@@ -216,5 +216,14 @@
     "CaveOfSeperation":{
         "questName":"[任务]别离洞窟 约定之剑",
         "_TYPE":"quest"
+    },
+
+    "gaintKiller":{
+        "questName":"[刷怪]要塞7f刷巨人",
+        "_TYPE":"quest",
+        "_SPELLSEQUENCE":{
+            "LACONES":["LACONES","LACONES","LACONES","defend"],
+            "QS":["defend","QS"]
+        }
     }
 }

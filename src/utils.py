@@ -141,7 +141,7 @@ def LoadImage(path):
         # 手动抛出异常
             raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {path}(注意: 路径中不能包含中文.)")
     except Exception as e:
-        logger.Error(f"加载图片失败: {str(e)}")
+        logger.error(f"加载图片失败: {str(e)}")
         return None
     return img
 ############################################
