@@ -209,7 +209,8 @@ def CreateAdbDevice(setting: FarmConfig):
             return CreateAdbDevice(setting)
         else:
             return
-    return devices[0]
+    device = next((d for d in devices if d.serial == target_device), devices[0])
+    return device
 
 def StartEmulator(setting):
     hd_player_path = setting._EMUPATH
