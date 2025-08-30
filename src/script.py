@@ -217,6 +217,52 @@ def StartEmulator(setting):
         logger.error(f"模拟器启动程序不存在: {hd_player_path}")
         return False
     
+    emulator_name = os.path.basename(hd_player_path)
+    emulator_headless = "MuMuVMMHeadless.exe"
+
+    try:
+        logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
+        # Windows 系统使用 taskkill 命令
+        if os.name == 'nt':
+            subprocess.run(
+                f"taskkill /f /im {emulator_name}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
+            subprocess.run(
+                f"taskkill /f /im {emulator_headless}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
+        # Unix/Linux 系统使用 pkill 命令
+        else:
+            subprocess.run(
+                f"pkill -f {emulator_name}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
+            subprocess.run(
+                f"pkill -f {emulator_headless}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
+            
+        logger.info(f"已尝试终止模拟器进程: {emulator_name}")
+        
+    except Exception as e:
+        logger.error(f"终止模拟器进程时出错: {str(e)}")
+    
+    # 等待一段时间确保进程已完全关闭
+    time.sleep(2)
+
     try:
         logger.info(f"启动模拟器: {hd_player_path}")
         subprocess.Popen(
@@ -968,7 +1014,9 @@ def Factory():
                 counter = 0
 
             Press([1,1])
+            Sleep(0.25)
             Press([1,1])
+            Sleep(0.25)
             Press([1,1])
             Sleep(1)
             counter += 1
@@ -1008,7 +1056,40 @@ def Factory():
                 Press(pos)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
-    def StateCombat():
+    def StateCombat(spellsequence : dict = None):
+        def doubleConfirmCastSpell():
+            is_success_aoe = False
+            Sleep(1)
+            scn = ScreenShot()
+            if Press(CheckIf(scn,'OK')):
+                is_success_aoe = True
+                Sleep(2)
+            elif pos:=(CheckIf(scn,'next')):
+                Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
+                Sleep(1)
+                scn = ScreenShot()
+                if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
+                    Press(CheckIf(scn,'notenough_close'))
+                    Press(CheckIf(ScreenShot(),'spellskill/lv1'))
+                    Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
+                    Sleep(1)
+            else:
+                Press([150,750])
+                Sleep(0.1)
+                Press([300,750])
+                Sleep(0.1)
+                Press([450,750])
+                Sleep(0.1)
+                Press([550,750])
+                Sleep(0.1)
+                Press([650,750])
+                Sleep(0.1)
+                Press([750,750])
+                Sleep(0.1)
+                Sleep(2)
+            Sleep(1)
+            return (is_success_aoe)
+
         nonlocal setting
         if setting._TIME_COMBAT==0:
             setting._TIME_COMBAT = time.time()
@@ -1017,6 +1098,28 @@ def Factory():
         if not setting._COMBATSPD:
             if Press(CheckIf(screen,'combatSpd')):
                 setting._COMBATSPD = True
+                Sleep(1)
+
+        if spellsequence != None:
+            for k in spellsequence.keys():
+                if CheckIf(screen,k):
+                    targetSpell = spellsequence[k][0]
+                    if not CheckIf(screen, targetSpell):
+                        logger.error("错误:施法序列包含不可用的技能")
+                        Press([850,1100])
+                        Sleep(0.5)
+                        Press([850,1100])
+                        Sleep(3)
+                        return
+                    
+                    logger.info(f"使用技能{skillspell}, 序列特征:{k}")
+                    if len(spellsequence[k])!=1:
+                        spellsequence[k].pop(0)
+                    Press(CheckIf(screen,targetSpell))
+
+                    doubleConfirmCastSpell()
+
+                    return
 
         if (setting._SYSTEMAUTOCOMBAT) or (setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
             Press(CheckIf(WrapImage(screen,0,0,255/155),'combatAuto'))
@@ -1036,35 +1139,7 @@ def Factory():
                     continue
                 elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
                     logger.info(f"使用技能 {skillspell}")
-                    Sleep(1)
-                    scn = ScreenShot()
-                    if Press(CheckIf(scn,'OK')):
-                        castAndPressOK = True
-                        Sleep(2)
-                    elif pos:=(CheckIf(scn,'next')):
-                        Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
-                        Sleep(1)
-                        scn = ScreenShot()
-                        if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
-                            Press(CheckIf(scn,'notenough_close'))
-                            Press(CheckIf(ScreenShot(),'spellskill/lv1'))
-                            Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
-                            Sleep(1)
-                    else:
-                        Press([150,750])
-                        Sleep(0.1)
-                        Press([300,750])
-                        Sleep(0.1)
-                        Press([450,750])
-                        Sleep(0.1)
-                        Press([550,750])
-                        Sleep(0.1)
-                        Press([650,750])
-                        Sleep(0.1)
-                        Press([750,750])
-                        Sleep(0.1)
-                        Sleep(2)
-                    Sleep(1)
+                    castAndPressOK = doubleConfirmCastSpell()
                     castSpellSkill = True
                     if castAndPressOK and setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
                         setting._ENOUGH_AOE = True
@@ -1209,6 +1284,7 @@ def Factory():
         nonlocal setting
         availableChar = [0, 1, 2, 3, 4, 5]
         disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能
+        haveBeenTried = False
 
         if setting._TIME_CHEST==0:
             setting._TIME_CHEST = time.time()
@@ -1223,13 +1299,13 @@ def Factory():
             if CheckIf(scn,'whowillopenit'):
                 while 1:
                     pointSomeone = setting._WHOWILLOPENIT - 1
-                    if (pointSomeone != -1) and (pointSomeone in availableChar):
-                        whowillopenit = pointSomeone # 如果指定了一个角色并且该角色可用, 使用它
+                    if (pointSomeone != -1) and (pointSomeone in availableChar) and (not haveBeenTried):
+                        whowillopenit = pointSomeone # 如果指定了一个角色并且该角色可用并且没尝试过, 使用它
                     else:
                         whowillopenit = random.choice(availableChar) # 否则从列表里随机选一个
                     pos = [258+(whowillopenit%3)*258, 1161+((whowillopenit)//3)%2*184]
                     # logger.info(f"{availableChar},{pos}")
-                    if CheckIf(scn,'chestfear',[[pos[0]-125,pos[1]-82,250,164]]) or CheckIf(scn,'chestStone',[[pos[0]-125,pos[1]-82,250,164]]):
+                    if CheckIf(scn,'chestfear',[[pos[0]-125,pos[1]-82,250,164]]):
                         if whowillopenit in availableChar:
                             availableChar.remove(whowillopenit) # 如果发现了恐惧, 删除这个角色.
                     else:
@@ -1243,6 +1319,8 @@ def Factory():
                                     Sleep(0.3-(time.time()-t))
                                 
                         break
+                if not haveBeenTried:
+                    haveBeenTried = True
 
             if CheckIf(scn,'chestOpening'):
                 Sleep(1)

@@ -1,4 +1,34 @@
 {
+    "GoblinCave":{
+        "_TYPE":"dungeon",
+        "questName":"[遗物 善恶]初始深渊哥布林洞窟救圣女",
+        "_TARGETINFOLIST":[
+            ["stair_goblinsNest","右下",[875,867]],
+            ["position","左下",[134,973]],
+            ["position","右下",[286,919]],
+            ["position","右上",[713,341]],
+            ["stair_3","左下",[26,546]],
+            ["harken","右下",null]
+        ],
+        "_EOT":[
+            ["press","beginningAbyss",["EdgeOfTown",[1,1]],1],
+            ["press","caveinZone",[1,1],1]
+        ]
+    },
+
+    "Dist":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]水路一号街",
+        "_TARGETINFOLIST":[
+            ["chest"],
+            ["harken"]
+        ],
+        "_EOT":[
+            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
+            ["press","Dist","input swipe 650 250 650 900",1]
+        ]
+    },
+
     "lounge":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]水路船二lounge",
@@ -14,18 +44,18 @@
         ]
     },
 
-    "LBC":{
+    "fordraig-B3F":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]卢比肯宝箱",
+        "questName":"[宝箱]鸟洞三层fordraigB3F",
         "_TARGETINFOLIST":[
-            ["chest"],
-            ["LBC/LBC_quit"]
+            ["chest",null],
+            ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
         ],
-        "_preEOTcheck":"LBC/LBC",
-        "_EOT":
-        [
-            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","LBC/LBC","input swipe 100 100 700 1500",1]
+        "_preEOTcheck":"fordraig/B3F",
+        "_EOT":[
+            ["press","intoWorldMap",[40,1184],2],
+            ["press","labyrinthOfFordraig","input swipe 450 150 500 150",1],
+            ["press","fordraig/B3F",["labyrinthOfFordraig",[1,1]],1]
         ]
     },
 
@@ -67,33 +97,53 @@
         ]
     },
 
-    "fordraig-B3F":{
+    "LBC":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]鸟洞三层fordraigB3F",
+        "questName":"[宝箱]卢比肯宝箱",
         "_TARGETINFOLIST":[
-            ["chest",null],
-            ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
+            ["chest"],
+            ["LBC/LBC_quit"]
         ],
-        "_preEOTcheck":"fordraig/B3F",
-        "_EOT":[
-            ["press","intoWorldMap",[40,1184],2],
-            ["press","labyrinthOfFordraig","input swipe 450 150 500 150",1],
-            ["press","fordraig/B3F",["labyrinthOfFordraig",[1,1]],1]
+        "_preEOTcheck":"LBC/LBC",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
+            ["press","LBC/LBC","input swipe 100 100 700 1500",1]
         ]
     },
 
-    "Dist":{
+    "COS_chest":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]水路一号街",
+        "questName":"[宝箱]离别洞窟",
         "_TARGETINFOLIST":[
-            ["chest"],
-            ["harken"]
+            ["chest","左上",null],
+            ["chest","右上",null],
+            ["stair_3","左上",[720,822]],
+            ["chest","左上",null],
+            ["chest","左下",null],
+            ["stair_2","左下",[827,547]],
+            ["harken","左下",null]
         ],
         "_EOT":[
-            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","Dist","input swipe 650 250 650 900",1]
+            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
+            ["press","COS/COSB2F",[1,1],1]
         ]
     },
+
+    "COS_chest_short":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]离别洞窟(只刷2f)",
+        "_TARGETINFOLIST":[
+            ["chest","左上",null],
+            ["chest","右上",null],
+            ["harken","左下",null]
+        ],
+        "_EOT":[
+            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
+            ["press","COS/COSB2F",[1,1],1]
+        ]
+    },
+
 
     "DOE":{
         "_TYPE":"dungeon",
@@ -135,37 +185,6 @@
         "_EOT":[
             ["press","DOW",["EdgeOfTown",[1,1]],1],
             ["press","DOWB1F",[1,1],1]
-        ]
-    },
-
-    "COS_chest":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]离别洞窟",
-        "_TARGETINFOLIST":[
-            ["chest","左上",null],
-            ["chest","右上",null],
-            ["stair_3","左上",[720,822]],
-            ["chest","左上",null],
-            ["chest","左下",null],
-            ["stair_2","左下",[827,547]],
-            ["harken","左下",null]
-        ],
-        "_EOT":[
-            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
-            ["press","COS/COSB2F",[1,1],1]
-        ]
-    },
-    "COS_chest_short":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]离别洞窟(只刷2f)",
-        "_TARGETINFOLIST":[
-            ["chest","左上",null],
-            ["chest","右上",null],
-            ["harken","左下",null]
-        ],
-        "_EOT":[
-            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
-            ["press","COS/COSB2F",[1,1],1]
         ]
     },
     
