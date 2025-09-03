@@ -155,10 +155,7 @@ def KillAdbAndEmulator(setting : FarmConfig):
     emulator_name = os.path.basename(setting._EMUPATH)
     emulator_headless = "MuMuVMMHeadless.exe"
 
-    adb_path = setting._EMUPATH
-    adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
-    adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
-    adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
+    adb_path = GetADBPath(setting)
 
     try:
         logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
@@ -233,28 +230,41 @@ def StartEmulator(setting):
     
     logger.info("等待模拟器启动...")
     time.sleep(15)
+def GetADBPath(setting):
+    adb_path = setting._EMUPATH
+    adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
+    adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
+    adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
+    if not os.path.exists(adb_path):
+        logger.error(f"adb程序序不存在: {adb_path}")
+        return None
+    
+    return adb_path
 
 def CMDLine(cmd):
     return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10)
 
 def CheckRestartConnectADB(setting: FarmConfig):
     MAXRETRIES = 20
+
+    adb_path = GetADBPath(setting)
+
     for attempt in range(MAXRETRIES):
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
         try:
             logger.info("检查adb服务...")
-            result = CMDLine(f"adb devices")
+            result = CMDLine(f"\"{adb_path}\" devices")
             
             if "daemon not running" in result.stderr:
                 logger.info("adb服务未启动!\n启动adb服务...")
-                CMDLine("adb start-server")
+                CMDLine("\"{adb_path}\" start-server")
                 time.sleep(1)
         except Exception as e:
             logger.error(f"检查ADB服务时出错: {e}")
             return None
         
-        result = CMDLine(f"adb connect 127.0.0.1:{setting._ADBPORT}")
+        result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
         if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
             logger.info("成功连接到模拟器")
             break
@@ -263,7 +273,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
             StartEmulator(setting)
             logger.info("模拟器(应该)启动完毕.")
             logger.info("尝试连接到模拟器...")
-            result = CMDLine(f"adb connect 127.0.0.1:{setting._ADBPORT}")
+            result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
             if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
                 logger.info("成功连接到模拟器")
                 break
