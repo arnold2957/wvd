@@ -151,80 +151,14 @@ class TargetInfo:
         self._roi = value
 
 ##################################################################
-
-def StartAdbServer(setting: FarmConfig):
-    def check_adb_connection():
-        try:
-            # 创建socket检测端口连接
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)  # 设置超时时间
-            result = sock.connect_ex(("127.0.0.1", 5037))
-            return result == 0  # 返回0表示连接成功
-        except Exception as e:
-            logger.info(f"连接检测异常: {str(e)}")
-            return False
-        finally:
-            sock.close()
-    try:
-        if not check_adb_connection():
-            adb_path = setting._EMUPATH
-            adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
-            adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
-            adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
-            logger.info(f"开始启动ADB服务, 路径:{adb_path}")
-            # 启动adb服务（非阻塞模式）
-            subprocess.Popen(
-                [adb_path, "start-server"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                shell=False
-            )
-            logger.info("ADB 服务启动中...")
-
-            # 循环检测连接（最多重试5次）
-            for _ in range(5):
-                if check_adb_connection():
-                    logger.info("ADB 连接成功")
-                    return True
-                time.sleep(1)  # 每次检测间隔1秒
-
-            logger.info("ADB 连接超时")
-            return False
-        else:
-            return True
-    except Exception as e:
-        logger.info(f"启动ADB失败: {str(e)}")
-        return False
-def CreateAdbDevice(setting: FarmConfig):
-    client = AdbClient(host="127.0.0.1", port=5037)
-
-    target_device = f"127.0.0.1:{setting._ADBPORT}"
-    connected_devices = [d.serial for d in client.devices()]
-    if target_device in connected_devices:
-        # 设备已连接时才断开
-        client.remote_disconnect("127.0.0.1", int(setting._ADBPORT))
-        time.sleep(0.5)
-
-    logger.info(f"尝试创建adb连接 127.0.0.1:{setting._ADBPORT}...")
-    client.remote_connect("127.0.0.1", int(setting._ADBPORT))
-    devices = client.devices()
-    if (not devices) or not (devices[0]):
-        logger.info(f"创建adb链接失败. 目前已有device:{devices}\n尝试启动模拟器.")
-        if StartEmulator(setting):
-            return CreateAdbDevice(setting)
-        else:
-            return
-    device = next((d for d in devices if d.serial == target_device), devices[0])
-    return device
-
-def StartEmulator(setting):
-    hd_player_path = setting._EMUPATH
-    if not os.path.exists(hd_player_path):
-        logger.error(f"模拟器启动程序不存在: {hd_player_path}")
-        return False
-    
-    emulator_name = os.path.basename(hd_player_path)
+def KillAdbAndEmulator(setting : FarmConfig):
+    emulator_name = os.path.basename(setting._EMUPATH)
     emulator_headless = "MuMuVMMHeadless.exe"
+
+    adb_path = setting._EMUPATH
+    adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
+    adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
+    adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
 
     try:
         logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
@@ -237,8 +171,17 @@ def StartEmulator(setting):
                 stderr=subprocess.DEVNULL,
                 check=False  # 不检查命令是否成功（进程可能不存在）
             )
+            time.sleep(1)
             subprocess.run(
                 f"taskkill /f /im {emulator_headless}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
+            time.sleep(1)
+            subprocess.run(
+                f"taskkill /f /im adb.exe", 
                 shell=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -260,14 +203,21 @@ def StartEmulator(setting):
                 stderr=subprocess.DEVNULL,
                 check=False
             )
-            
+            subprocess.run(
+                f"pkill -f {adb_path}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
         logger.info(f"已尝试终止模拟器进程: {emulator_name}")
-        
     except Exception as e:
         logger.error(f"终止模拟器进程时出错: {str(e)}")
-    
-    # 等待一段时间确保进程已完全关闭
-    time.sleep(2)
+def StartEmulator(setting):
+    hd_player_path = setting._EMUPATH
+    if not os.path.exists(hd_player_path):
+        logger.error(f"模拟器启动程序不存在: {hd_player_path}")
+        return False
 
     try:
         logger.info(f"启动模拟器: {hd_player_path}")
@@ -283,6 +233,67 @@ def StartEmulator(setting):
     
     logger.info("等待模拟器启动...")
     time.sleep(15)
+
+def CMDLine(cmd):
+    return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10)
+
+def CheckRestartConnectADB(setting: FarmConfig):
+    MAXRETRIES = 20
+    for attempt in range(MAXRETRIES):
+        logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
+
+        try:
+            logger.info("检查adb服务...")
+            result = CMDLine(f"adb devices")
+            
+            if "daemon not running" in result.stderr:
+                logger.info("adb服务未启动!\n启动adb服务...")
+                CMDLine("adb start-server")
+                time.sleep(1)
+        except Exception as e:
+            logger.error(f"检查ADB服务时出错: {e}")
+            return None
+        
+        result = CMDLine(f"adb connect 127.0.0.1:{setting._ADBPORT}")
+        if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
+            logger.info("成功连接到模拟器")
+            break
+        if ("refused" in result.stderr) or ("cannot connect" in result.stdout):
+            logger.info("模拟器未运行，尝试启动...")
+            StartEmulator(setting)
+            logger.info("模拟器(应该)启动完毕.")
+            logger.info("尝试连接到模拟器...")
+            result = CMDLine(f"adb connect 127.0.0.1:{setting._ADBPORT}")
+            if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
+                logger.info("成功连接到模拟器")
+                break
+            logger.info("无法连接. 检查adb端口.")
+            continue
+
+        logger.info(f"连接失败: {result.stderr.strip()}")
+        time.sleep(2)
+        KillAdbAndEmulator(setting)
+        time.sleep(2)
+    else:
+        logger.info("达到最大重试次数，连接失败")
+        return None
+
+    try:
+        client = AdbClient(host="127.0.0.1", port=5037)
+        devices = client.devices()
+        
+        # 查找匹配的设备
+        target_device = f"127.0.0.1:{setting._ADBPORT}"
+        for device in devices:
+            if device.serial == target_device:
+                logger.info(f"成功获取设备对象: {device.serial}")
+                return device
+    except Exception as e:
+        logger.error(f"获取ADB设备时出错: {e}")
+    
+    return None
+
+##################################################################
 
 def Factory():
     toaster = ToastNotifier()
@@ -350,14 +361,11 @@ def Factory():
                 logger.debug(f"ADB操作失败. {exception}")
                 logger.info(f"ADB异常({type(exception).__name__})，尝试重启服务...")
                 
-                while True:
-                    if StartAdbServer(setting):
-                        if device := CreateAdbDevice(setting):
-                            setting._ADBDEVICE = device
-                            logger.info("ADB服务重启成功，设备重新连接")
-                            break
-                    logger.warning("ADB重启失败，5秒后重试...")
-                    time.sleep(5)
+                if device := CheckRestartConnectADB(setting):
+                    setting._ADBDEVICE = device
+                    logger.info("ADB服务重启成功，设备重新连接")
+                    break
+
             else:
                 raise exception  # 非预期异常直接抛出
     
@@ -395,15 +403,10 @@ def Factory():
                 logger.debug(f"{e}")
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info("adb重启中...")
-                    while True:
-                        if StartAdbServer(setting):
-                            if device := CreateAdbDevice(setting):
-                                setting._ADBDEVICE = device
-                                logger.info("ADB服务重启成功，设备重新连接")
-                                break
-                        logger.warning("ADB重启失败，5秒后重试...")
-                        time.sleep(5)
-                    continue
+                    if device := CheckRestartConnectADB(setting):
+                        setting._ADBDEVICE = device
+                        logger.info("ADB服务重启成功，设备重新连接")
+                        break
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         def cutRoI(screenshot,roi):
             if roi is None:
@@ -849,6 +852,18 @@ def Factory():
         Combat = 'combat'
         Quit = 'quit'
 
+    def RiseAgainReset(reason):
+        nonlocal setting
+        setting._SUICIDE = False # 死了 自杀成功 设置为false
+        setting._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
+        if reason == 'chest':
+            setting._COUNTERCHEST -=1
+        else:
+            setting._COUNTERCOMBAT -=1
+        logger.info("快快请起.")
+        # logger.info("REZ.")
+        Press([450,750])
+        Sleep(10)
     def IdentifyState():
         counter = 0
         while 1:
@@ -920,12 +935,7 @@ def Factory():
                         if Press(CheckIf(screen,option)):
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
-                    setting._SUICIDE = False # 死了 自杀成功 设置为false
-                    setting._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
-                    logger.info("快快请起.")
-                    # logger.info("REZ.")
-                    Press([450,750])
-                    Sleep(10)
+                    RiseAgainReset(reason = 'combat')
                     return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
@@ -1069,6 +1079,12 @@ def Factory():
             if Press(CheckIf(scn,'OK')):
                 is_success_aoe = True
                 Sleep(2)
+                scn = ScreenShot()
+                if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
+                    Press(CheckIf(scn,'notenough_close'))
+                    Press(CheckIf(ScreenShot(),'spellskill/lv1'))
+                    Press(CheckIf(scn,'OK'))
+                    Sleep(1)
             elif pos:=(CheckIf(scn,'next')):
                 Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                 Sleep(1)
@@ -1237,6 +1253,9 @@ def Factory():
         except KeyError as e:
             logger.info(f"错误: {e}") # 一般来说这里只会返回"地图不可用"
             return None,  targetInfoList
+    
+        if not CheckIf(map,'mapFlag'):
+                return None,targetInfoList # 发生了错误, 应该是进战斗了
 
         if searchResult == None:
             if target == 'chest':
@@ -1339,8 +1358,7 @@ def Factory():
                     1)
             
             if CheckIf(scn,'RiseAgain'):
-                setting._SUICIDE = False
-                setting._SHOULDAPPLYSPELLSEQUENCE = True
+                RiseAgainReset(reason = 'chest')
                 return None
             if CheckIf(scn,'dungFlag'):
                 return DungeonState.Dungeon
@@ -1376,7 +1394,7 @@ def Factory():
                     if result:
                         logger.info("由于画面卡死, 在state:None中重启.")
                         restartGame()
-                    MAXTIMEOUT = 300
+                    MAXTIMEOUT = 400
                     if (setting._TIME_CHEST != 0 ) and (time.time()-setting._TIME_CHEST > MAXTIMEOUT):
                         logger.info("由于宝箱用时过久, 在state:None中重启.")
                         restartGame()
@@ -2117,9 +2135,10 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                     )
 
-                    RestartableSequenceExecution(
-                        lambda: StateInn()
-                    )
+                    if ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                        RestartableSequenceExecution(
+                            lambda: StateInn()
+                        )
             # case 'test':
             #     pass
         setting._FINISHINGCALLBACK()
@@ -2129,10 +2148,9 @@ def Factory():
         nonlocal quest
         setting = set
 
-        if not StartAdbServer(setting):
-            setting._FINISHINGCALLBACK()
-            return
-        setting._ADBDEVICE = CreateAdbDevice(setting)
+        Sleep(1) # 没有等utils初始化完成
+        
+        setting._ADBDEVICE = CheckRestartConnectADB(setting)
 
         quest = LoadQuest(setting._FARMTARGET)
         if quest._TYPE =="dungeon":
