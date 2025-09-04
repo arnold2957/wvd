@@ -1,5 +1,4 @@
 from ppadb.client import Client as AdbClient
-import numpy as np
 from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
@@ -7,11 +6,11 @@ from enum import Enum
 from datetime import datetime
 import os
 import subprocess
-import socket
 from utils import *
 import random
 from threading import Thread,Event
 from pathlib import Path
+import numpy as np
 import copy
 
 CC_SKILLS = ["KANTIOS"]
@@ -242,7 +241,7 @@ def GetADBPath(setting):
     return adb_path
 
 def CMDLine(cmd):
-    return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10)
+    return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding='utf-8')
 
 def CheckRestartConnectADB(setting: FarmConfig):
     MAXRETRIES = 20
