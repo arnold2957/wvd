@@ -78,10 +78,12 @@ wvdas可以再检测到"再起之火"耗尽后, 立刻将任务变更为"找公�
 	- 二人队伍, 武士和面具法师. 武士站前排, 面具法师站在武士身后.
  	- 武士按照顺序释放如下技能: 防御, 居合xN.
   	- 面具法师按照顺序释放如下技能: LAMACONESx3, 防御xN.
-- 你可以自定义你的队伍技能序列!
-- 访问"wvd\_internal\resources\quest\quest.json". 从中找到'gaintKiller'-'_SPELLSEQUENCE'项目.
-- '_SPELLSEQUENCE'的每一行遵循如下规则:
+- 你可以自定义你的队伍技能序列, 访问"wvd\_internal\resources\quest\quest.json". 从中找到'gaintKiller'-'_SPELLSEQUENCE'项目.
+- 你可以删除'_SPELLSEQUENCE'以及冒号后面的内容, 来完全跳过自定义技能序列.
+- 你也可以进行自定义. '_SPELLSEQUENCE'的每一行遵循如下规则:
 	- "技能栏里有这个技能的人":\["先释放这个","再释放这个","然后复读这个"]
+	- 例如, 默认的方案里, 面具法师按照顺序释放如下技能: LAMACONESx3, 防御xN.
+		 - 因此, 我们要写"LACONES":\["LACONES","LACONES","LACONES","defend"],
  	- 更多详细关于技能序列自定义, 请访问wiki.
 
 #### 离别洞窟 / 约定之剑:
