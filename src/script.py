@@ -241,6 +241,7 @@ def GetADBPath(setting):
     return adb_path
 
 def CMDLine(cmd):
+    logger.debug(f"cmd line: {cmd}")
     return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding='utf-8')
 
 def CheckRestartConnectADB(setting: FarmConfig):
@@ -464,7 +465,18 @@ def Factory():
         threshold = 0.80
         pos = None
         search_area = cutRoI(screenshot, roi)
-        result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
+        try:
+            result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
+        except Exception as e:
+                logger.error(f"{e}")
+                logger.info(f"{e}")
+                if isinstance(e, (cv2.error)):
+                    logger.info(f"cv2异常.")
+                    # timestamp = datetime.now().strftime("cv2_%Y%m%d_%H%M%S")  # 格式：20230825_153045
+                    # file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
+                    # cv2.imwrite(file_path, ScreenShot())
+                    return None
+
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
