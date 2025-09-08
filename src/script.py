@@ -259,7 +259,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
             if "daemon not running" in result.stderr:
                 logger.info("adb服务未启动!\n启动adb服务...")
                 
-                # CMDLine("\"{adb_path}\" kill-server")
+                CMDLine("\"{adb_path}\" kill-server")
                 CMDLine("\"{adb_path}\" start-server")
                 time.sleep(1)
         except Exception as e:
