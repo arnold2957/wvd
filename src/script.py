@@ -1649,6 +1649,7 @@ def Factory():
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1724,6 +1725,7 @@ def Factory():
 
                     logger.info('第三步: 进入地下城.')
                     Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
+                    FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
                     Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
                     Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
@@ -1862,7 +1864,7 @@ def Factory():
                             if not checkCSC:
                                 FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
                                 while 1:
-                                    if Press(CheckIf(WrapImage(ScreenShot(),2,1,0),'LBC/didnottakethequest',None,True)):
+                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'LBC/didnottakethequest',None,True)):
                                         continue
                                     else:
                                         break
@@ -1885,6 +1887,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1895,6 +1898,7 @@ def Factory():
                             pass
                         else:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
+                            FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
                             Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
                                            
                     RestartableSequenceExecution(
@@ -1952,6 +1956,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 前往王城"),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1983,6 +1988,7 @@ def Factory():
                             pass
                         else:
                             Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
+                            FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
                             Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 700 100 100 100',1))
                             FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['SSC/SSC',[1,1]],1)
                     RestartableSequenceExecution(
@@ -2028,7 +2034,7 @@ def Factory():
                         while CheckIf(ScreenShot(), 'leap'):
                             FindCoordsOrElseExecuteFallbackAndWait('COS/ArnasPast','CSC',1)
                             while 1:
-                                if Press(CheckIf(WrapImage(ScreenShot(),2,0,1),'COS/didnottakethequest')):
+                                if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'COS/didnottakethequest')):
                                     continue
                                 else:
                                     break
@@ -2049,6 +2055,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
