@@ -16,7 +16,7 @@ import copy
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos"]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","mof"]
 PHYSICAL_SKILLS = ["FPS","tzalik","QS","PS","DTS","AP","AB","BCS","HA","FS","SB",]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
@@ -59,33 +59,35 @@ class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
         locals()[var_config_name] = var_default_value
     def __init__(self):
-        #### 统计信息
-        self._LAPTIME = 0
-        self._TOTALTIME = 0
-        self._COUNTERDUNG = 0
-        self._COUNTERCOMBAT = 0
-        self._COUNTERCHEST = 0
-        self._TIME_COMBAT= 0
-        self._TIME_COMBAT_TOTAL = 0
-        self._TIME_CHEST = 0
-        self._TIME_CHEST_TOTAL = 0
         #### 面板配置其他
         self._FORCESTOPING = None
         self._FINISHINGCALLBACK = None
         self._MSGQUEUE = None
-        #### 临时参数
-        self._MEET_CHEST_OR_COMBAT = False
-        self._ENOUGH_AOE = False
-        self._COMBATSPD = False
-        self._SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
-        self._MAXRETRYLIMIT = 20
-        self._ACTIVESPELLSEQUENCE = None
-        self._SHOULDAPPLYSPELLSEQUENCE = True
         #### 底层接口
         self._ADBDEVICE = None
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(f"FarmConfig对象没有属性'{name}'")
+class RuntimeContext:
+    #### 统计信息
+    _LAPTIME = 0
+    _TOTALTIME = 0
+    _COUNTERDUNG = 0
+    _COUNTERCOMBAT = 0
+    _COUNTERCHEST = 0
+    _TIME_COMBAT= 0
+    _TIME_COMBAT_TOTAL = 0
+    _TIME_CHEST = 0
+    _TIME_CHEST_TOTAL = 0
+    #### 其他临时参数
+    _MEET_CHEST_OR_COMBAT = False
+    _ENOUGH_AOE = False
+    _COMBATSPD = False
+    _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
+    _MAXRETRYLIMIT = 20
+    _ACTIVESPELLSEQUENCE = None
+    _SHOULDAPPLYSPELLSEQUENCE = True
+    _ZOOMWORLDMAP = False
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -311,6 +313,7 @@ def Factory():
     toaster = ToastNotifier()
     setting =  None
     quest = None
+    runtimeContext = None
     def LoadQuest(farmtarget):
         # 构建文件路径
         data = LoadJson(ResourcePath(QUEST_FILE))[setting._FARMTARGET]
@@ -335,6 +338,11 @@ def Factory():
                     logger.info(f"Warning: Config has no attribute '{key}' to override")
         return quest
     ##################################################################
+    def ResetADBDevice():
+        nonlocal setting # 修改device
+        if device := CheckRestartConnectADB(setting):
+            setting._ADBDEVICE = device
+            logger.info("ADB服务成功启动，设备已连接.")
     def DeviceShell(cmdStr):
         while True:
             # 使用共享变量存储结果
@@ -372,12 +380,7 @@ def Factory():
             if isinstance(exception, (RuntimeError, ConnectionResetError, TimeoutError, cv2.error)):
                 logger.debug(f"ADB操作失败. {exception}")
                 logger.info(f"ADB异常({type(exception).__name__})，尝试重启服务...")
-                
-                if device := CheckRestartConnectADB(setting):
-                    setting._ADBDEVICE = device
-                    logger.info("ADB服务重启成功，设备重新连接")
-                    break
-
+                ResetADBDevice()
             else:
                 raise exception  # 非预期异常直接抛出
     
@@ -415,10 +418,7 @@ def Factory():
                 logger.debug(f"{e}")
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info("adb重启中...")
-                    if device := CheckRestartConnectADB(setting):
-                        setting._ADBDEVICE = device
-                        logger.info("ADB服务重启成功，设备重新连接")
-                        break
+                    ResetADBDevice()
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         def cutRoI(screenshot,roi):
             if roi is None:
@@ -461,7 +461,6 @@ def Factory():
             # cv2.imwrite(f'cutRoI_{time.time()}.png', screenshot)
             return screenshot
 
-        nonlocal setting
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
         threshold = 0.80
@@ -626,7 +625,7 @@ def Factory():
     def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
         # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
         while True:
-            for _ in range(setting._MAXRETRYLIMIT):
+            for _ in range(runtimeContext._MAXRETRYLIMIT):
                 if setting._FORCESTOPING.is_set():
                     return None
                 scn = ScreenShot()
@@ -680,16 +679,16 @@ def Factory():
                             return None
                 Sleep(waitTime) # and wait
 
-            logger.info(f"{setting._MAXRETRYLIMIT}次截图依旧没有找到目标{targetPattern}, 疑似卡死. 重启游戏.")
+            logger.info(f"{runtimeContext._MAXRETRYLIMIT}次截图依旧没有找到目标{targetPattern}, 疑似卡死. 重启游戏.")
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
     def restartGame(skipScreenShot = False):
-        nonlocal setting
-        setting._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
-        setting._MAXRETRYLIMIT = min(50, setting._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
-        setting._TIME_CHEST = 0
-        setting._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
+        nonlocal runtimeContext
+        runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
+        runtimeContext._MAXRETRYLIMIT = min(50, runtimeContext._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
+        runtimeContext._TIME_CHEST = 0
+        runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -875,19 +874,33 @@ def Factory():
         Combat = 'combat'
         Quit = 'quit'
 
+    def IntoWorldMapAndZoom():
+        nonlocal runtimeContext
+        Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
+        Sleep(0.5)
+        FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
+        Sleep(0.5)
+        if not runtimeContext._ZOOMWORLDMAP:
+            for _ in range(3):
+                Press([100,1500])
+                Sleep(0.5)
+            Press([250,1500])
+            runtimeContext._ZOOMWORLDMAP = True
+        pass
     def RiseAgainReset(reason):
-        nonlocal setting
-        setting._SUICIDE = False # 死了 自杀成功 设置为false
-        setting._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
+        nonlocal runtimeContext
+        runtimeContext._SUICIDE = False # 死了 自杀成功 设置为false
+        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
         if reason == 'chest':
-            setting._COUNTERCHEST -=1
+            runtimeContext._COUNTERCHEST -=1
         else:
-            setting._COUNTERCOMBAT -=1
+            runtimeContext._COUNTERCOMBAT -=1
         logger.info("快快请起.")
         # logger.info("REZ.")
         Press([450,750])
         Sleep(10)
     def IdentifyState():
+        nonlocal setting # 修改因果
         counter = 0
         while 1:
             screen = ScreenShot()
@@ -1026,7 +1039,7 @@ def Factory():
                     # logger.info("")
                     Sleep(2)
                 if (CheckIf(screen,'multipeopledead')):
-                    setting._SUICIDE = True # 准备尝试自杀
+                    runtimeContext._SUICIDE = True # 准备尝试自杀
                     logger.info("死了好几个, 惨哦")
                     # logger.info("Corpses strew the screen")
                     Press(CheckIf(screen,'skull'))
@@ -1089,9 +1102,12 @@ def Factory():
             if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
                 pass
         for info in quest._EOT:
-            pos = FindCoordsOrElseExecuteFallbackAndWait(info[1],info[2],info[3])
-            if info[0]=="press":
-                Press(pos)
+            if info[1]=="intoWorldMap":
+                IntoWorldMapAndZoom()
+            else:
+                pos = FindCoordsOrElseExecuteFallbackAndWait(info[1],info[2],info[3])
+                if info[0]=="press":
+                    Press(pos)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
@@ -1134,17 +1150,17 @@ def Factory():
             Sleep(1)
             return (is_success_aoe)
 
-        nonlocal setting
-        if setting._TIME_COMBAT==0:
-            setting._TIME_COMBAT = time.time()
+        nonlocal runtimeContext
+        if runtimeContext._TIME_COMBAT==0:
+            runtimeContext._TIME_COMBAT = time.time()
 
         screen = ScreenShot()
-        if not setting._COMBATSPD:
+        if not runtimeContext._COMBATSPD:
             if Press(CheckIf(screen,'combatSpd')):
-                setting._COMBATSPD = True
+                runtimeContext._COMBATSPD = True
                 Sleep(1)
 
-        spellsequence = setting._ACTIVESPELLSEQUENCE
+        spellsequence = runtimeContext._ACTIVESPELLSEQUENCE
         if spellsequence != None:
             logger.info(f"当前施法序列:{spellsequence}")
             for k in spellsequence.keys():
@@ -1167,20 +1183,20 @@ def Factory():
 
                     return
 
-        if (setting._SYSTEMAUTOCOMBAT) or (setting._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
+        if (setting._SYSTEMAUTOCOMBAT) or (runtimeContext._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
             Press(CheckIf(WrapImage(screen,0,0.5,0.7),'combatAuto'))
             Sleep(5)
             return
 
         if not CheckIf(screen,'flee'):
             return
-        if setting._SUICIDE:
+        if runtimeContext._SUICIDE:
             Press(CheckIf(screen,'spellskill/'+'defend'))
         else:
             castSpellSkill = False
             castAndPressOK = False
             for skillspell in setting._SPELLSKILLCONFIG:
-                if setting._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
+                if runtimeContext._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
                     #logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
                     continue
                 elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
@@ -1188,7 +1204,7 @@ def Factory():
                     castAndPressOK = doubleConfirmCastSpell()
                     castSpellSkill = True
                     if castAndPressOK and setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                        setting._ENOUGH_AOE = True
+                        runtimeContext._ENOUGH_AOE = True
                         logger.info(f"已经释放了首次全体aoe.")
                     break
             if not castSpellSkill:
@@ -1330,13 +1346,13 @@ def Factory():
                                 return DungeonState.Combat,targetInfoList
         return DungeonState.Map,  targetInfoList
     def StateChest():
-        nonlocal setting
+        nonlocal runtimeContext
         availableChar = [0, 1, 2, 3, 4, 5]
         disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能
         haveBeenTried = False
 
-        if setting._TIME_CHEST==0:
-            setting._TIME_CHEST = time.time()
+        if runtimeContext._TIME_CHEST==0:
+            runtimeContext._TIME_CHEST = time.time()
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
@@ -1389,7 +1405,6 @@ def Factory():
                 return DungeonState.Combat
             if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
-
     def StateDungeon(targetInfoList : list[TargetInfo]):
         gameFrozen_none = []
         gameFrozen_map = 0
@@ -1399,8 +1414,8 @@ def Factory():
         needRecoverBecauseCombat = False
         needRecoverBecauseChest = False
         
-        nonlocal setting
-        setting._SHOULDAPPLYSPELLSEQUENCE = True
+        nonlocal runtimeContext
+        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = True
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
@@ -1418,10 +1433,10 @@ def Factory():
                         logger.info("由于画面卡死, 在state:None中重启.")
                         restartGame()
                     MAXTIMEOUT = 400
-                    if (setting._TIME_CHEST != 0 ) and (time.time()-setting._TIME_CHEST > MAXTIMEOUT):
+                    if (runtimeContext._TIME_CHEST != 0 ) and (time.time()-runtimeContext._TIME_CHEST > MAXTIMEOUT):
                         logger.info("由于宝箱用时过久, 在state:None中重启.")
                         restartGame()
-                    if (setting._TIME_COMBAT != 0) and (time.time()-setting._TIME_COMBAT > MAXTIMEOUT):
+                    if (runtimeContext._TIME_COMBAT != 0) and (time.time()-runtimeContext._TIME_COMBAT > MAXTIMEOUT):
                         logger.info("由于战斗用时过久, 在state:None中重启.")
                         restartGame()
                 case DungeonState.Quit:
@@ -1431,43 +1446,43 @@ def Factory():
                     ########### COMBAT RESET
                     # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
-                        setting._ENOUGH_AOE = False
+                        runtimeContext._ENOUGH_AOE = False
                     ########### TIMER
-                    if (setting._TIME_CHEST !=0) or (setting._TIME_COMBAT!=0):
+                    if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
-                        if setting._TIME_CHEST !=0:
-                            spend_on_chest = time.time()-setting._TIME_CHEST
-                            setting._TIME_CHEST = 0
+                        if runtimeContext._TIME_CHEST !=0:
+                            spend_on_chest = time.time()-runtimeContext._TIME_CHEST
+                            runtimeContext._TIME_CHEST = 0
                         spend_on_combat = 0
-                        if setting._TIME_COMBAT !=0:
-                            spend_on_combat = time.time()-setting._TIME_COMBAT
-                            setting._TIME_COMBAT = 0
+                        if runtimeContext._TIME_COMBAT !=0:
+                            spend_on_combat = time.time()-runtimeContext._TIME_COMBAT
+                            runtimeContext._TIME_COMBAT = 0
                         logger.info(f"粗略统计: 宝箱{spend_on_chest:.2f}秒, 战斗{spend_on_combat:.2f}秒.")
                         if (spend_on_chest!=0) and (spend_on_combat!=0):
                             if spend_on_combat>spend_on_chest:
-                                setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat-spend_on_chest
-                                setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest
+                                runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat-spend_on_chest
+                                runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
                             else:
-                                setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest-spend_on_combat
-                                setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat
+                                runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest-spend_on_combat
+                                runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
                         else:
-                            setting._TIME_COMBAT_TOTAL = setting._TIME_COMBAT_TOTAL + spend_on_combat
-                            setting._TIME_CHEST_TOTAL = setting._TIME_CHEST_TOTAL + spend_on_chest
+                            runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
+                            runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
                     ########### RECOVER
                     if needRecoverBecauseChest:
                         logger.info("进行开启宝箱后的恢复.")
-                        setting._COUNTERCHEST+=1
+                        runtimeContext._COUNTERCHEST+=1
                         needRecoverBecauseChest = False
-                        setting._MEET_CHEST_OR_COMBAT = True
+                        runtimeContext._MEET_CHEST_OR_COMBAT = True
                         if not setting._SKIPCHESTRECOVER:
                             logger.info("由于面板配置, 进行开启宝箱后恢复.")
                             shouldRecover = True
                         else:
                             logger.info("由于面板配置, 跳过了开启宝箱后恢复.")
                     if needRecoverBecauseCombat:
-                        setting._COUNTERCOMBAT+=1
+                        runtimeContext._COUNTERCOMBAT+=1
                         needRecoverBecauseCombat = False
-                        setting._MEET_CHEST_OR_COMBAT = True
+                        runtimeContext._MEET_CHEST_OR_COMBAT = True
                         if (not setting._SKIPCOMBATRECOVER):
                             logger.info("由于面板配置, 进行战后恢复.")
                             shouldRecover = True
@@ -1502,11 +1517,11 @@ def Factory():
                     Press([777,150])
                     dungState = DungeonState.Map
                 case DungeonState.Map:
-                    if setting._SHOULDAPPLYSPELLSEQUENCE: # 默认值(第一次)和重启后应当直接应用序列
-                        setting._SHOULDAPPLYSPELLSEQUENCE = False
+                    if runtimeContext._SHOULDAPPLYSPELLSEQUENCE: # 默认值(第一次)和重启后应当直接应用序列
+                        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = False
                         if targetInfoList[0].activeSpellSequenceOverride:
                             logger.info("因为初始化, 复制了施法序列.")
-                            setting._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
 
                     dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
                     
@@ -1526,10 +1541,10 @@ def Factory():
                     if (newTargetInfoList != targetInfoList):
                         if newTargetInfoList[0].activeSpellSequenceOverride:
                             logger.info("因为目标信息变动, 重新复制了施法序列.")
-                            setting._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
                         else:
                             logger.info("因为目标信息变动, 清空了施法序列.")
-                            setting._ACTIVESPELLSEQUENCE = None
+                            runtimeContext._ACTIVESPELLSEQUENCE = None
 
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
@@ -1556,7 +1571,7 @@ def Factory():
             FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
 
     def DungeonFarm():
-        nonlocal setting
+        nonlocal runtimeContext
         state = None
         while 1:
             logger.info("======================")
@@ -1578,25 +1593,25 @@ def Factory():
                         logger.info("即将停止脚本...")
                         break
                 case State.Inn:
-                    if setting._LAPTIME!= 0:
-                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        summary_text = f"已完成{setting._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(setting._TOTALTIME,2)}秒.上次用时:{round(time.time()-setting._LAPTIME,2)}秒.\n"
-                        if setting._COUNTERCHEST > 0:
-                            summary_text += f"箱子效率{round(setting._TOTALTIME/setting._COUNTERCHEST,2)}秒/箱.\n累计开箱{setting._COUNTERCHEST}次,开箱平均耗时{round(setting._TIME_CHEST_TOTAL/setting._COUNTERCHEST,2)}秒.\n"
-                        if setting._COUNTERCOMBAT > 0:
-                            summary_text += f"累计战斗{setting._COUNTERCOMBAT}次.战斗平均用时{round(setting._TIME_COMBAT_TOTAL/setting._COUNTERCOMBAT,2)}秒."
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        summary_text = f"已完成{runtimeContext._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(runtimeContext._TOTALTIME,2)}秒.上次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒.\n"
+                        if runtimeContext._COUNTERCHEST > 0:
+                            summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
+                        if runtimeContext._COUNTERCOMBAT > 0:
+                            summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
                         logger.info(summary_text,extra={"summary": True})
-                    setting._LAPTIME = time.time()
-                    setting._COUNTERDUNG+=1
-                    if not setting._MEET_CHEST_OR_COMBAT:
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
+                    if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info("因为没有遇到战斗或宝箱, 跳过恢复")
                     elif not setting._ACTIVE_REST:
                         logger.info("因为面板设置, 跳过恢复")
-                    elif ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) != 0):
+                    elif ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) != 0):
                         logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     else:
                         logger.info("休息时间到!")
-                        setting._MEET_CHEST_OR_COMBAT = False
+                        runtimeContext._MEET_CHEST_OR_COMBAT = False
                         RestartableSequenceExecution(
                         lambda:StateInn()
                         )
@@ -1614,7 +1629,8 @@ def Factory():
                     state = None
         setting._FINISHINGCALLBACK()
     def QuestFarm():
-        nonlocal setting
+        nonlocal setting # 强制自动战斗 等等.
+        nonlocal runtimeContext
         match setting._FARMTARGET:
             case '7000G':
                 while 1:
@@ -1622,7 +1638,7 @@ def Factory():
                         break
 
                     starttime = time.time()
-                    setting._COUNTERDUNG += 1
+                    runtimeContext._COUNTERDUNG += 1
                     def stepMain():
                         logger.info("第一步: 开始诅咒之旅...")
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
@@ -1648,8 +1664,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
+                        lambda:IntoWorldMapAndZoom(),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1700,14 +1715,14 @@ def Factory():
                         lambda: stepMain()
                         )
                     costtime = time.time()-starttime
-                    logger.info(f"第{setting._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"7000G\"完成. 该次花费时间{costtime:.2f}, 每秒收益:{7000/costtime:.2f}Gps.",
                                 extra={"summary": True})
             case 'fordraig':
                 quest._SPECIALDIALOGOPTION = ['fordraig/thedagger','fordraig/InsertTheDagger']
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    setting._COUNTERDUNG += 1
+                    runtimeContext._COUNTERDUNG += 1
                     setting._SYSTEMAUTOCOMBAT = True
                     starttime = time.time()
                     logger.info('第一步: 诅咒之旅...')
@@ -1724,10 +1739,9 @@ def Factory():
                         )
 
                     logger.info('第三步: 进入地下城.')
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2))
-                    FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('labyrinthOfFordraig','input swipe 450 150 500 150',1))
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['labyrinthOfFordraig',[1,1]],1))
+                    IntoWorldMapAndZoom()
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/labyrinthOfFordraig','input swipe 450 150 500 150',1))
+                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['fordraig/labyrinthOfFordraig',[1,1]],1))
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
 
                     logger.info('第四步: 陷阱.')
@@ -1771,7 +1785,7 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
 
                     costtime = time.time()-starttime
-                    logger.info(f"第{setting._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.",
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"鸟剑\"完成. 该次花费时间{costtime:.2f}.",
                             extra={"summary": True})
             case 'repelEnemyForces':
                 if not setting._ACTIVE_REST:
@@ -1807,7 +1821,7 @@ def Factory():
                             Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive','combatActive_2'],['input swipe 400 400 400 100',[1,1]],1))
                             Sleep(1)
                             if setting._AOE_ONCE:
-                                setting._ENOUGH_AOE = False
+                                runtimeContext._ENOUGH_AOE = False
                             while 1:
                                 scn=ScreenShot()
                                 if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
@@ -1845,12 +1859,12 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    if setting._LAPTIME!= 0:
-                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(f"第{runtimeContext._COUNTERDUNG}次三牛完成. 本次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒. 累计开箱子{runtimeContext._COUNTERCHEST}, 累计战斗{runtimeContext._COUNTERCOMBAT}, 累计用时{round(runtimeContext._TOTALTIME,2)}秒.",
                                     extra={"summary": True})
-                    setting._LAPTIME = time.time()
-                    setting._COUNTERDUNG+=1
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
                     def stepOne():
                         nonlocal checkCSC
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
@@ -1886,8 +1900,7 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
+                        lambda: IntoWorldMapAndZoom(),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1897,9 +1910,8 @@ def Factory():
                         if Press(CheckIf(scn,'LBC/LBC')) or CheckIf(scn,"dungFlag"):
                             pass
                         else:
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-                            FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 700 1500',1))
+                            IntoWorldMapAndZoom(),
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 100 200',1))
                                            
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
@@ -1940,12 +1952,12 @@ def Factory():
                     quest._SPECIALDIALOGOPTION = ['SSC/dotdotdot','SSC/shadow']
                     if setting._FORCESTOPING.is_set():
                         break
-                    if setting._LAPTIME!= 0:
-                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次忍洞完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(f"第{runtimeContext._COUNTERDUNG}次忍洞完成. 本次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒. 累计开箱子{runtimeContext._COUNTERCHEST}, 累计战斗{runtimeContext._COUNTERCOMBAT}, 累计用时{round(runtimeContext._TOTALTIME,2)}秒.",
                                     extra={"summary": True})
-                    setting._LAPTIME = time.time()
-                    setting._COUNTERDUNG+=1
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
                         lambda: logger.info('第一步: 重置因果'),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1)),
@@ -1955,8 +1967,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 前往王城"),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
+                        lambda: IntoWorldMapAndZoom(),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -1987,9 +1998,8 @@ def Factory():
                         if Press(CheckIf(scn,'SSC/SSC')) or CheckIf(scn,"dungFlag"):
                             pass
                         else:
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-                            FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 700 100 100 100',1))
+                            IntoWorldMapAndZoom()
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 200 100 100 200',1))
                             FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['SSC/SSC',[1,1]],1)
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 进入忍洞'),
@@ -2017,12 +2027,12 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    if setting._LAPTIME!= 0:
-                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次约定之剑完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(f"第{runtimeContext._COUNTERDUNG}次约定之剑完成. 本次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒. 累计开箱子{runtimeContext._COUNTERCHEST}, 累计战斗{runtimeContext._COUNTERCOMBAT}, 累计用时{round(runtimeContext._TOTALTIME,2)}秒.",
                                     extra={"summary": True})
-                    setting._LAPTIME = time.time()
-                    setting._COUNTERDUNG+=1
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
                     def stepOne():
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
@@ -2054,8 +2064,7 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1),
+                        lambda: IntoWorldMapAndZoom(),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
@@ -2127,12 +2136,12 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    if setting._LAPTIME!= 0:
-                        setting._TOTALTIME = setting._TOTALTIME + time.time() - setting._LAPTIME
-                        logger.info(f"第{setting._COUNTERDUNG}次巨人完成. 本次用时:{round(time.time()-setting._LAPTIME,2)}秒. 累计开箱子{setting._COUNTERCHEST}, 累计战斗{setting._COUNTERCOMBAT}, 累计用时{round(setting._TOTALTIME,2)}秒.",
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(f"第{runtimeContext._COUNTERDUNG}次巨人完成. 本次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒. 累计开箱子{runtimeContext._COUNTERCHEST}, 累计战斗{runtimeContext._COUNTERCOMBAT}, 累计用时{round(runtimeContext._TOTALTIME,2)}秒.",
                                     extra={"summary": True})
-                    setting._LAPTIME = time.time()
-                    setting._COUNTERDUNG+=1
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
 
                     quest._EOT = [
                         ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
@@ -2165,7 +2174,7 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                     )
 
-                    if ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                    if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
                         RestartableSequenceExecution(
                             lambda: StateInn()
                         )
@@ -2174,13 +2183,16 @@ def Factory():
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):
-        nonlocal setting
         nonlocal quest
+        nonlocal setting # 初始化
+        nonlocal runtimeContext
+        runtimeContext = RuntimeContext()
+
         setting = set
 
         Sleep(1) # 没有等utils初始化完成
         
-        setting._ADBDEVICE = CheckRestartConnectADB(setting)
+        ResetADBDevice()
 
         quest = LoadQuest(setting._FARMTARGET)
         if quest._TYPE =="dungeon":
