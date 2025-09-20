@@ -257,18 +257,23 @@ def CheckRestartConnectADB(setting: FarmConfig):
         try:
             logger.info("检查adb服务...")
             result = CMDLine(f"\"{adb_path}\" devices")
+            logger.debug(f"adb链接返回(输出信息):{result.stdout}")
+            logger.debug(f"adb链接返回(错误信息):{result.stderr}")
             
             if "daemon not running" in result.stderr:
                 logger.info("adb服务未启动!\n启动adb服务...")
                 
-                CMDLine("\"{adb_path}\" kill-server")
-                CMDLine("\"{adb_path}\" start-server")
+                CMDLine(f"\"{adb_path}\" kill-server")
+                CMDLine(f"\"{adb_path}\" start-server")
                 time.sleep(1)
         except Exception as e:
             logger.error(f"检查ADB服务时出错: {e}")
             return None
         
         result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
+        logger.debug(f"adb链接返回(输出信息):{result.stdout}")
+        logger.debug(f"adb链接返回(错误信息):{result.stderr}")
+        
         if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
             logger.info("成功连接到模拟器")
             break
