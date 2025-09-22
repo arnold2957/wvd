@@ -694,6 +694,7 @@ def Factory():
         runtimeContext._MAXRETRYLIMIT = min(50, runtimeContext._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
+        runtimeContext._ZOOMWORLDMAP = False
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -977,6 +978,8 @@ def Factory():
                             return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     RiseAgainReset(reason = 'combat')
+                    return IdentifyState()
+                if Press(CheckIf(screen, 'worldmapflag')):
                     return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
