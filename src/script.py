@@ -922,11 +922,11 @@ def Factory():
 
             identifyConfig = [
                 ('combatActive',  DungeonState.Combat),
+                ('combatActive_2',DungeonState.Combat),
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
                 ('whowillopenit', DungeonState.Chest),
                 ('mapFlag',       DungeonState.Map),
-                ('combatActive_2',DungeonState.Combat),
                 ]
             for pattern, state in identifyConfig:
                 if CheckIf(screen, pattern):
@@ -1350,7 +1350,7 @@ def Factory():
                                 Press([777,150])
                                 return None,  targetInfoList
                             logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
-                            if CheckIf(ScreenShot(),'combatActive'):
+                            if CheckIf(ScreenShot(),'combatActive') or CheckIf(ScreenShot(),'combatActive_2'):
                                 return DungeonState.Combat,targetInfoList
         return DungeonState.Map,  targetInfoList
     def StateChest():
@@ -1364,7 +1364,7 @@ def Factory():
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
-                ['dungFlag','combatActive','chestOpening','whowillopenit','RiseAgain'],
+                ['dungFlag','combatActive', 'combatActive_2','chestOpening','whowillopenit','RiseAgain'],
                 [[1,1],[1,1],'chestFlag'],
                 1)
             scn = ScreenShot()
@@ -1400,7 +1400,7 @@ def Factory():
                 if setting._SMARTDISARMCHEST:
                     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
-                    ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                    ['dungFlag','combatActive','combatActive_2','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
                     [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
                     1)
             
@@ -1409,7 +1409,7 @@ def Factory():
                 return None
             if CheckIf(scn,'dungFlag'):
                 return DungeonState.Dungeon
-            if CheckIf(scn,'combatActive'):
+            if CheckIf(scn,'combatActive') or CheckIf(scn,'combatActive_2'):
                 return DungeonState.Combat
             if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
                 logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
@@ -1499,7 +1499,7 @@ def Factory():
                     if shouldRecover:
                         Press([1,1])
                         FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
-                            ['trait','combatActive','chestFlag','combatClose'],
+                            ['trait','combatActive','combatActive_2','chestFlag','combatClose'],
                             [[36,1425],[322,1425],[606,1425]],
                             1
                             )
@@ -1507,7 +1507,7 @@ def Factory():
                             Press([833,843])
                             Sleep(1)
                             FindCoordsOrElseExecuteFallbackAndWait(
-                                ['recover','combatActive'],
+                                ['recover','combatActive','combatActive_2'],
                                 [833,843],
                                 1
                                 )
@@ -1862,6 +1862,113 @@ def Factory():
                     counter+=1
                     logger.info(f"第{counter}x{setting._RESTINTERVEL}轮\"击退敌势力\"完成, 共计{counter*setting._RESTINTERVEL*2}场战斗. 该次花费时间{(time.time()-t):.2f}秒.",
                                     extra={"summary": True})
+            case 'darkLight':
+                gameFrozen_none = []
+                gameFrozen_map = 0
+                dungState = None
+                shouldRecover = False
+                waitTimer = time.time()
+                needRecoverBecauseCombat = False
+                needRecoverBecauseChest = False
+                while 1:
+                    _, dungState,_ = IdentifyState()
+                    logger.info(dungState)
+                    match dungState:
+                        case None:
+                            s, dungState,scn = IdentifyState()
+                            if (s == State.Inn) or (dungState == DungeonState.Quit):
+                                break
+                            gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
+                            if result:
+                                logger.info("由于画面卡死, 在state:None中重启.")
+                                restartGame()
+                            MAXTIMEOUT = 400
+                            if (runtimeContext._TIME_CHEST != 0 ) and (time.time()-runtimeContext._TIME_CHEST > MAXTIMEOUT):
+                                logger.info("由于宝箱用时过久, 在state:None中重启.")
+                                restartGame()
+                            if (runtimeContext._TIME_COMBAT != 0) and (time.time()-runtimeContext._TIME_COMBAT > MAXTIMEOUT):
+                                logger.info("由于战斗用时过久, 在state:None中重启.")
+                                restartGame()
+                        case DungeonState.Dungeon:
+                            Press([1,1])
+                            ########### COMBAT RESET
+                            # 战斗结束了, 我们将一些设置复位
+                            if setting._AOE_ONCE:
+                                runtimeContext._ENOUGH_AOE = False
+                            ########### TIMER
+                            if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
+                                spend_on_chest = 0
+                                if runtimeContext._TIME_CHEST !=0:
+                                    spend_on_chest = time.time()-runtimeContext._TIME_CHEST
+                                    runtimeContext._TIME_CHEST = 0
+                                spend_on_combat = 0
+                                if runtimeContext._TIME_COMBAT !=0:
+                                    spend_on_combat = time.time()-runtimeContext._TIME_COMBAT
+                                    runtimeContext._TIME_COMBAT = 0
+                                logger.info(f"粗略统计: 宝箱{spend_on_chest:.2f}秒, 战斗{spend_on_combat:.2f}秒.")
+                                if (spend_on_chest!=0) and (spend_on_combat!=0):
+                                    if spend_on_combat>spend_on_chest:
+                                        runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat-spend_on_chest
+                                        runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
+                                    else:
+                                        runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest-spend_on_combat
+                                        runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
+                                else:
+                                    runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
+                                    runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
+                            ########### RECOVER
+                            if needRecoverBecauseChest:
+                                logger.info("进行开启宝箱后的恢复.")
+                                runtimeContext._COUNTERCHEST+=1
+                                needRecoverBecauseChest = False
+                                runtimeContext._MEET_CHEST_OR_COMBAT = True
+                                if not setting._SKIPCHESTRECOVER:
+                                    logger.info("由于面板配置, 进行开启宝箱后恢复.")
+                                    shouldRecover = True
+                                else:
+                                    logger.info("由于面板配置, 跳过了开启宝箱后恢复.")
+                            if needRecoverBecauseCombat:
+                                runtimeContext._COUNTERCOMBAT+=1
+                                needRecoverBecauseCombat = False
+                                runtimeContext._MEET_CHEST_OR_COMBAT = True
+                                if (not setting._SKIPCOMBATRECOVER):
+                                    logger.info("由于面板配置, 进行战后恢复.")
+                                    shouldRecover = True
+                                else:
+                                    logger.info("由于面板配置, 跳过了战后后恢复.")
+                            if shouldRecover:
+                                Press([1,1])
+                                FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
+                                    ['trait','combatActive','combatActive_2','chestFlag','combatClose'],
+                                    [[36,1425],[322,1425],[606,1425]],
+                                    1
+                                    )
+                                if CheckIf(ScreenShot(),'trait'):
+                                    Press([833,843])
+                                    Sleep(1)
+                                    FindCoordsOrElseExecuteFallbackAndWait(
+                                        ['recover','combatActive','combatActive_2'],
+                                        [833,843],
+                                        1
+                                        )
+                                    if CheckIf(ScreenShot(),'recover'):
+                                        Sleep(1)
+                                        Press([600,1200])
+                                        for _ in range(5):
+                                            t = time.time()
+                                            PressReturn()
+                                            if time.time()-t<0.3:
+                                                Sleep(0.3-(time.time()-t))
+                                        shouldRecover = False
+                            ########### light the dark light
+                            FindCoordsOrElseExecuteFallbackAndWait('darklight_lightIt','darkLight',1)
+                        case DungeonState.Chest:
+                            needRecoverBecauseChest = True
+                            dungState = StateChest()
+                        case DungeonState.Combat:
+                            needRecoverBecauseCombat =True
+                            StateCombat()
+                            dungState = None
             case 'LBC-oneGorgon':
                 checkCSC = False
                 while 1:
