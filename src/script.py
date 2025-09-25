@@ -979,7 +979,11 @@ def Factory():
                 if (CheckIf(screen,'RiseAgain')):
                     RiseAgainReset(reason = 'combat')
                     return IdentifyState()
-                if Press(CheckIf(screen, 'worldmapflag')):
+                if CheckIf(screen, 'worldmapflag'):
+                    for _ in range(3):
+                        Press([100,1500])
+                        Sleep(0.5)
+                    Press([250,1500])
                     return IdentifyState()
                 if Press(CheckIf(screen, 'sandman_recover')):
                     return IdentifyState()
