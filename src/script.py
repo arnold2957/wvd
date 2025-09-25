@@ -981,6 +981,8 @@ def Factory():
                     return IdentifyState()
                 if Press(CheckIf(screen, 'worldmapflag')):
                     return IdentifyState()
+                if Press(CheckIf(screen, 'sandman_recover')):
+                    return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
                     raise SystemExit
@@ -1018,6 +1020,8 @@ def Factory():
                         logger.info("积善行德!")
                         # logger.info("")
                         Sleep(2)
+                if Press(CheckIf(screen,'strange_things')):
+                    Sleep(2)
                 if Press(CheckIf(screen,'blessing')):
                     logger.info("我要选安戈拉的祝福!...好吧随便选一个吧.")
                     # logger.info("Blessing of... of course Angora! Fine, anything.")
