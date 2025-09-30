@@ -185,6 +185,14 @@ def KillAdbAndEmulator(setting : FarmConfig):
                 stderr=subprocess.DEVNULL,
                 check=False  # 不检查命令是否成功（进程可能不存在）
             )
+            time.sleep(1)
+            subprocess.run(
+                f"taskkill /f /im HD-Adb.exe", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
         # Unix/Linux 系统使用 pkill 命令
         else:
             subprocess.run(
@@ -1261,8 +1269,9 @@ def Factory():
                         logger.debug(f"宝箱热力图: 地图:{setting._FARMTARGET} 方向:{swipeDir} 位置:{targetPos}")
                     if not roi:
                         # 如果没有指定roi 我们使用二次确认
-                        logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                        DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
+                        # logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
+                        # DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
+                        # 二次确认也不拖动了 太容易触发bug
                         Sleep(2)
                         Press([1,1255])
                         targetPos = CheckIf(ScreenShot(),target,roi)
