@@ -152,12 +152,42 @@ class TargetInfo:
         self._roi = value
 
 ##################################################################
-def KillAdbAndEmulator(setting : FarmConfig):
+def KillAdb(setting : FarmConfig):
+    adb_path = GetADBPath(setting)
+    try:
+        logger.info(f"正在检查并关闭adb...")
+        # Windows 系统使用 taskkill 命令
+        if os.name == 'nt':
+            subprocess.run(
+                f"taskkill /f /im adb.exe", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
+            time.sleep(1)
+            subprocess.run(
+                f"taskkill /f /im HD-Adb.exe", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False  # 不检查命令是否成功（进程可能不存在）
+            )
+        else:
+            subprocess.run(
+                f"pkill -f {adb_path}", 
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
+        logger.info(f"已尝试终止adb")
+    except Exception as e:
+        logger.error(f"终止模拟器进程时出错: {str(e)}")
+    
+def KillEmulator(setting : FarmConfig):
     emulator_name = os.path.basename(setting._EMUPATH)
     emulator_headless = "MuMuVMMHeadless.exe"
-
-    adb_path = GetADBPath(setting)
-
     try:
         logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
         # Windows 系统使用 taskkill 命令
@@ -178,21 +208,7 @@ def KillAdbAndEmulator(setting : FarmConfig):
                 check=False  # 不检查命令是否成功（进程可能不存在）
             )
             time.sleep(1)
-            subprocess.run(
-                f"taskkill /f /im adb.exe", 
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False  # 不检查命令是否成功（进程可能不存在）
-            )
-            time.sleep(1)
-            subprocess.run(
-                f"taskkill /f /im HD-Adb.exe", 
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False  # 不检查命令是否成功（进程可能不存在）
-            )
+
         # Unix/Linux 系统使用 pkill 命令
         else:
             subprocess.run(
@@ -204,13 +220,6 @@ def KillAdbAndEmulator(setting : FarmConfig):
             )
             subprocess.run(
                 f"pkill -f {emulator_headless}", 
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
-            )
-            subprocess.run(
-                f"pkill -f {adb_path}", 
                 shell=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -259,6 +268,8 @@ def CheckRestartConnectADB(setting: FarmConfig):
 
     adb_path = GetADBPath(setting)
 
+    KillAdb(setting)
+
     for attempt in range(MAXRETRIES):
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
@@ -299,7 +310,8 @@ def CheckRestartConnectADB(setting: FarmConfig):
 
         logger.info(f"连接失败: {result.stderr.strip()}")
         time.sleep(2)
-        KillAdbAndEmulator(setting)
+        KillEmulator(setting)
+        KillAdb(setting)
         time.sleep(2)
     else:
         logger.info("达到最大重试次数，连接失败")

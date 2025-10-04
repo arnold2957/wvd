@@ -125,6 +125,28 @@
         ]
     },
 
+    "GHB":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]百花之庭固定怪",
+        "_TARGETINFOLIST":[
+            ["position","左上",[80,450]],
+            ["position","右上",[340,450]],
+            ["position","右上",[550,290]],
+            ["position","右上",[230,1030]],
+            ["position","左下",[240,860]],
+            ["chest","左下",null],
+            ["chest","左上",null],
+            ["chest","右上",null],
+            ["chest","右下",null],
+            ["GHB/GHB_quit","左下","default"]
+        ],
+        "_preEOTcheck":"GHB/GHB",
+        "_EOT":[
+            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
+            ["press","GHB/GHB","input swipe 400 500 450 550",1]
+        ]
+    },
+
     "COS_chest":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]离别洞窟",
