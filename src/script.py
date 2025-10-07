@@ -1004,7 +1004,7 @@ def Factory():
                         Press([100,1500])
                         Sleep(0.5)
                     Press([250,1500])
-                    return IdentifyState()
+                    # 这里不需要continue或者递归 直接继续进行就行
                 if Press(CheckIf(screen, 'sandman_recover')):
                     return IdentifyState()
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
@@ -2022,7 +2022,7 @@ def Factory():
                             if not checkCSC:
                                 FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
                                 while 1:
-                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'LBC/didnottakethequest',None,True)):
+                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'LBC/didnottakethequest')):
                                         continue
                                     else:
                                         break
