@@ -281,38 +281,38 @@ def CheckRestartConnectADB(setting: FarmConfig):
             
             if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
                 logger.info("adb服务未启动!\n启动adb服务...")
-                
                 CMDLine(f"\"{adb_path}\" kill-server")
                 CMDLine(f"\"{adb_path}\" start-server")
-                time.sleep(1)
-        except Exception as e:
-            logger.error(f"检查ADB服务时出错: {e}")
-            return None
-        
-        result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
-        logger.debug(f"adb链接返回(输出信息):{result.stdout}")
-        logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-        
-        if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
-            logger.info("成功连接到模拟器")
-            break
-        if ("refused" in result.stderr) or ("cannot connect" in result.stdout):
-            logger.info("模拟器未运行，尝试启动...")
-            StartEmulator(setting)
-            logger.info("模拟器(应该)启动完毕.")
-            logger.info("尝试连接到模拟器...")
+                time.sleep(2)
+
+            logger.debug(f"尝试连接到adb...")
             result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
+            logger.debug(f"adb链接返回(输出信息):{result.stdout}")
+            logger.debug(f"adb链接返回(错误信息):{result.stderr}")
+            
             if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
                 logger.info("成功连接到模拟器")
                 break
-            logger.info("无法连接. 检查adb端口.")
-            continue
+            if ("refused" in result.stderr) or ("cannot connect" in result.stdout):
+                logger.info("模拟器未运行，尝试启动...")
+                StartEmulator(setting)
+                logger.info("模拟器(应该)启动完毕.")
+                logger.info("尝试连接到模拟器...")
+                result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
+                if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
+                    logger.info("成功连接到模拟器")
+                    break
+                logger.info("无法连接. 检查adb端口.")
+                continue
 
-        logger.info(f"连接失败: {result.stderr.strip()}")
-        time.sleep(2)
-        KillEmulator(setting)
-        KillAdb(setting)
-        time.sleep(2)
+            logger.info(f"连接失败: {result.stderr.strip()}")
+            time.sleep(2)
+            KillEmulator(setting)
+            KillAdb(setting)
+            time.sleep(2)
+        except Exception as e:
+            logger.error(f"重启ADB服务时出错: {e}")
+            return None
     else:
         logger.info("达到最大重试次数，连接失败")
         return None
