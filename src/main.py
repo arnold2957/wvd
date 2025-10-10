@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '1.8.10' 
+__version__ = '1.8.11' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -179,7 +179,8 @@ def main():
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
-    RegisterFileHandler()
+    RegisterQueueHandler()
+    StartLogListener()
 
     setting = FarmConfig()
     config = LoadConfigFromFile(config_path)

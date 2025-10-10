@@ -3,10 +3,11 @@ from tkinter import ttk, scrolledtext
 import json
 import os
 import logging
+import logging.handlers
 import sys
 import cv2
 import time
-import shutil
+import multiprocessing
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -30,7 +31,28 @@ for filename in os.listdir(LOGS_FOLDER_NAME):
 ############################################
 LOG_FILE_PREFIX = LOGS_FOLDER_NAME + "/log"
 logger = logging.getLogger('WvDASLogger')
+#===========================================
+def setup_file_handler():
+    """设置文件处理器"""
+    os.makedirs(LOGS_FOLDER_NAME, exist_ok=True)
+    current_time = time.strftime("%y%m%d-%H%M%S")
+    log_file_path = f"{LOG_FILE_PREFIX}_{current_time}.txt"
+    
+    file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(file_formatter)
+    return file_handler
 
+log_queue = multiprocessing.Queue(-1)
+queue_listener = logging.handlers.QueueListener(log_queue, setup_file_handler())
+
+def StartLogListener():
+    queue_listener.start()
+#===========================================
 class LoggerStream:
     """自定义流，将输出重定向到logger"""
     def __init__(self, logger, log_level):
@@ -52,25 +74,19 @@ class LoggerStream:
             self.logger.log(self.log_level, self.buffer)
             self.buffer = ''
 
-def RegisterFileHandler():
-    current_time = time.strftime("%y%m%d-%H%M%S")
-    log_file_path = f"{LOG_FILE_PREFIX}_{current_time}.txt"
-
+def RegisterQueueHandler():
+    """配置QueueHandler，将日志发送到队列"""
+    # 保持原有的stdout/stderr重定向
     sys.stdout = LoggerStream(logger, logging.DEBUG)
     sys.stderr = LoggerStream(logger, logging.ERROR)
-
-    with open(log_file_path, 'w', encoding='utf-8') as f:
-        pass
+    
+    # 创建QueueHandler并连接到全局队列
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    queue_handler.setLevel(logging.DEBUG)
     
     logger.setLevel(logging.DEBUG)
-    file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - [%(module)s:%(funcName)s:%(lineno)d] - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
+    logger.addHandler(queue_handler)
+    logger.propagate = False
 
 def RegisterConsoleHandler():
     sys.stdout = sys.__stdout__

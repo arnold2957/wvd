@@ -13,7 +13,8 @@ class ConfigPanelApp(tk.Toplevel):
         self.TITLE = f"WvDAS 巫术daphne自动刷怪 v{version} @德德Dellyla(B站)"
         self.INTRODUCTION = f"遇到问题? 请访问:\n{self.URL} \n或加入Q群: 922497356."
 
-        RegisterFileHandler()
+        RegisterQueueHandler()
+        StartLogListener()
 
         super().__init__(master_controller)
         self.controller = master_controller

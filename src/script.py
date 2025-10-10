@@ -1990,7 +1990,7 @@ def Factory():
                                                 Sleep(0.3-(time.time()-t))
                                         shouldRecover = False
                             ########### light the dark light
-                            FindCoordsOrElseExecuteFallbackAndWait('darklight_lightIt','darkLight',1)
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('darklight_lightIt','darkLight',1))
                         case DungeonState.Chest:
                             needRecoverBecauseChest = True
                             dungState = StateChest()
