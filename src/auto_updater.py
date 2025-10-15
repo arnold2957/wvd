@@ -113,7 +113,7 @@ class AutoUpdater():
         except (URLError, ValueError, json.JSONDecodeError) as e:
             # 发生错误，同样通过队列报告。
             error_message = f"检查更新失败: {e}"
-            logger.error(error_message)
+            # logger.error(error_message) # 暂时把这个关掉 看看是否是多线程问题
             # self.msg_queue.put(('error', error_message))
 
     def download(self):
