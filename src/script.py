@@ -1532,8 +1532,11 @@ def Factory():
                             [[36,1425],[322,1425],[606,1425]],
                             1
                             )
-                        if CheckIf(ScreenShot(),'trait'):
-                            Press([833,843])
+                        if CheckIf(scn:=ScreenShot(),'trait'):
+                            if CheckIf(scn,'story', [[676,800,220,108]]):
+                                Press([725,850])
+                            else:
+                                Press([830,850])
                             Sleep(1)
                             FindCoordsOrElseExecuteFallbackAndWait(
                                 ['recover','combatActive','combatActive_2'],
