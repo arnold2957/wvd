@@ -268,11 +268,17 @@ def CheckRestartConnectADB(setting: FarmConfig):
 
     adb_path = GetADBPath(setting)
 
-    KillAdb(setting)
+    
 
     for attempt in range(MAXRETRIES):
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
+        if attempt == 3:
+            logger.info(f"失败次数过多, 尝试关闭adb.")
+            KillAdb(setting)
+
+            # 我们不起手就关, 但是如果2次链接还是尝试失败, 那就触发一次强制重启.
+        
         try:
             logger.info("检查adb服务...")
             result = CMDLine(f"\"{adb_path}\" devices")
@@ -2325,6 +2331,73 @@ def Factory():
                         RestartableSequenceExecution(
                             lambda: StateInn()
                         )
+            case 'Scorpionesses':
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    starttime = time.time()
+                    setting._COUNTERDUNG += 1
+                    def stepMain():
+                        logger.info("第一步: 开始诅咒之旅...")
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
+
+                        if not Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore')):
+                            DeviceShell(f"input swipe 450 1200 450 200")
+                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/GhostsOfYore','input swipe 50 1200 50 1300',1))
+
+                        while pos:= CheckIf(ScreenShot(), 'leap'):
+                            Press(pos)
+                            Sleep(2)
+                            Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore'))
+                    RestartableSequenceExecution(
+                        lambda: stepMain()
+                        )
+
+                    Sleep(10)
+                    logger.info("第二步: 返回要塞...")
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+
+                    logger.info("第三步: 前往王城...")
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
+                        )
+
+                    logger.info("第四步: 悬赏揭榜")
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Bounties',['guild','guildRequest','input swipe 600 1400 300 1400',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+
+                    logger.info("第五步: 击杀蝎女")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B2FTemple','GotoDung',[1,1]],1),
+                        lambda:StateDungeon([TargetInfo('position','左下',[505,760])]),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[[1,1],[1,1],'return'],1) # 关闭地图
+                        )
+                    
+                    logger.info("第六步: 提交悬赏")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',[[1,1],'returntotown','returnText','blessing','leaveDung','flee'],2),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+                    
+                    logger.info("第七步: 休息")
+                    if ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                        RestartableSequenceExecution(
+                            lambda:StateInn()
+                            )
+                        
+                    costtime = time.time()-starttime
+                    logger.info(f"第{setting._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
+                            extra={"summary": True})
             # case 'test':
             #     pass
         setting._FINISHINGCALLBACK()

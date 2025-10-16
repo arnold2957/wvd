@@ -253,6 +253,11 @@
         "_TYPE":"quest"
     },
 
+    "Scorpionesses":{
+        "questName":"[刷怪]悬赏点数: 蝎女",
+        "_TYPE":"quest"
+    },
+
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",
         "_TYPE":"quest",
@@ -261,4 +266,5 @@
             "QS":["defend","QS"]
         }
     }
+    
 }
