@@ -2337,7 +2337,7 @@ def Factory():
                         break
 
                     starttime = time.time()
-                    setting._COUNTERDUNG += 1
+                    runtimeContext._COUNTERDUNG += 1
                     def stepMain():
                         logger.info("第一步: 开始诅咒之旅...")
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
@@ -2390,13 +2390,13 @@ def Factory():
                         )
                     
                     logger.info("第七步: 休息")
-                    if ((setting._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                    if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
                         RestartableSequenceExecution(
                             lambda:StateInn()
                             )
                         
                     costtime = time.time()-starttime
-                    logger.info(f"第{setting._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
                             extra={"summary": True})
             # case 'test':
             #     pass
