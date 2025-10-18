@@ -134,9 +134,8 @@ You can also use "-config path" to specify a particular configuration file.
 - Activating the Harken on the third layer has a chance to fail and cause character death. *(Temporarily won't be fixed!)*
 
 ## How to report information?
-- Send log.txt.
-- Send the screenshots from the screenshotwhenrestart folder next to the exe.
-- Send screenshots of the in-game map and screen.
+- You can find the log and the screensnap in the 'log' folder.
+- You can send one of the log.txt, or zip all folder and send it.
 
 ## I have an idea / I want to contribute code
 Thank you for your interest in supporting this project! But first, please visit the wiki for more information.
