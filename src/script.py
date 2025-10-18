@@ -932,7 +932,7 @@ def Factory():
 
         # 调整条目以找到跳跃目标
         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
-        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight','cursedWheel',[1,1]],1))
         if not Press(CheckIf(ScreenShot(),target)):
             DeviceShell(f"input swipe 450 1200 450 200")
             Sleep(2)
