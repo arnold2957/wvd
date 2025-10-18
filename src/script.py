@@ -16,8 +16,8 @@ import copy
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","mof", "thb"]
-PHYSICAL_SKILLS = ["FPS","tzalik","QS","PS","DTS","AP","AB","BCS","HA","FS","SB",]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻", "千恋万花"]
+PHYSICAL_SKILLS = ["全力一击","tzalik","见切","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -958,7 +958,7 @@ def Factory():
                     return State.Dungeon, state, screen
 
             while CheckIf(screen,'someonedead'):
-                Press([400,800])
+                Press([500,800])
                 Sleep(1)
                 screen = ScreenShot()
 
@@ -2384,7 +2384,9 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',[[1,1],'returntotown','returnText','blessing','leaveDung','flee'],2),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
+                        )
+                    RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
                         )
                     
