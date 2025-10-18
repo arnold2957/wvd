@@ -49,8 +49,8 @@ Maximizes AFK efficiency~
 ### In-Dungeon Settings
 - The dungeon map must be **fully revealed**. For maps that use target point detection, at least the entire target area must be revealed.
 - It is best to have the Great Harken for the target dungeon already unlocked in the game.
-- Checking "Cast Full AOE only once per battle" will cause enabled LA-series spells and Secret Arts to be cast only once per battle. You still need to manually enable the Secret Art or AOE skill.
-- Checking "Enable Auto-battle after Full AOE" will switch to auto-battle after casting the AOE. You still need to manually enable the Secret Art or AOE skill.
+- Checking "Cast all AOE only once per battle" will cause enabled LA-series spells and Secret Arts to be cast only once per battle. You still need to manually enable the Secret Art or AOE skill.
+- Checking "Enable Auto-battle after all AOE" will switch to auto-battle after casting the AOE. You still need to manually enable the Secret Art or AOE skill.
 - If SP runs low, it will automatically switch to using the Lv1 version of the skill. However, subsequent battles will continue using the Lv1 skill. To avoid this, adjust the Inn Rest interval.
 - If characters get stuck and cannot move immediately upon entering a dungeon, this is caused by network issues. Please try a different game accelerator.
 
