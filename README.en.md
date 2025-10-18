@@ -107,7 +107,7 @@ You can also use "-config path" to specify a particular configuration file.
     - 1 Mage / 1 Priest, fastest speed, stack Magic Power as high as possible, **stand behind the Priest**, cast LA-series spells or Secret Arts.
     - Skill Enable: Disable system Auto-battle, check "Crowd Control", "Powerful Single-target", and "AOE".
     - Recommended to check 'Skip **Post-chest-opening** Recovery', "Enable Inn Rest".
-    - The threat of the Gorgons lies in their ability to swap front/back row positions and Petrifying Breath. High Evasion Priest counters position swaps, and a formation with only front row characters also counters swaps. As for Petrifying Breath, the high-Evasion Priest can handle it.
+    - The threat of the Gorgons lies in their ability to swap front/back row positions and Petrifying Breath. High Evasion Priest counters position swaps, and a formation with only front row characters also counters swaps. As for Petrifying Breath, the high-Evasion Priest can handle it by CC KANTIOS.
     - Reference Team: Warrior Mask front left, Priest Yeka front center, Warrior Lana front right, Sheliri back center.
     - Variant Team: Priest Mask front left, Warrior Elisa front center, Warrior Lana front right, Priest Yeka back center.
         - Use Priest Yeka's Secret Arts as the Mage's AoE. With Elisa's Aura, damage is sufficient.
