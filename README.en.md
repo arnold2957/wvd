@@ -41,7 +41,7 @@ Maximizes AFK efficiency~
 - Set Graphics Quality to **Medium (Prioritize Speed)**.
 - Set Frame Rate to **30 FPS**, and Dungeon Brightness to **Darkest -25% Brightness**.
 - In the Auto-Recovery settings, check "Use Skills to Remove Status Ailments".
-- In the Bag Refill settings, check "Place all non-refill items in storage" and "Automatically refill when staying at the inn." (If unsure, also check "Carry 1 Hook of Harken").
+- In the Bag Refill settings, check "Place all non-refill items in storage" and "Automatically refill when staying at the inn." (If 'Refill' Buttom is disable, also check "Carry 1 Hook of Harken").
 - The game map must be **unzoomed**. If you have already zoomed the map, it is recommended to reinstall the game. (An unzoomed game map should show about 17 grid squares.)
 - Skills planned for use **must be placed on the quick slot bar**, but **must NOT be placed in the top-left** quick slot.
 - **Disable automatic branch selection in dialogues**. The current Princess money begging and Horned Eagle quest implementations are based on this setting being off.
