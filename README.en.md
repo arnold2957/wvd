@@ -90,21 +90,6 @@ You can also use "-config path" to specify a particular configuration file.
 - Because the Giant is tough and the battle is complex, this quest features a **custom skill sequence function**. Meanwhile, the entire original skill configuration panel is completely ineffective for this quest.
 - **Due to skill name changes, the custom skill sequence is temporarily unavailable.**
 
-~~- The default skill sequence is for the following low-investment team:
-    - Two-person team, Samurai and Mask MC Mage. Samurai in front row, Mask Mage behind the Samurai.
-    - Samurai casts skills in this order: Defend, Quickdraw x N.
-    - Mask Mage casts skills in this order: LACONES x3, Defend x N.
-- You can customize your team's skill sequence by accessing `wvd\_internal\resources\quest\quest.json`. Find the `'gaintKiller'` - `'_SPELLSEQUENCE'` entry.
-- You can delete `'_SPELLSEQUENCE'` and the content after the colon to completely skip the custom skill sequence.
-- You can also customize it. Each line under `'_SPELLSEQUENCE'` follows these rules:
-    - `"Character who has this skill in their bar":["Cast this first","then this","finally spam this"]`
-    - For example, in the default setup, the Mask Mage casts: LACONES x3, Defend x N.
-        - So, we write `"LACONES":["LACONES","LACONES","LACONES","defend"],`
-    - Note: The skill used for identification and the skills in the sequence don't necessarily have to match. You can write something like "Character carrying DTS casts Quickdraw twice then Defend"
-        - So, you could write `"DTS":["QS","QS","defend"],`
-    - Skill names are the "full name for spells" and "first letters for physical skills".
-- A freely configurable panel will be implemented in the future.~~
-
 #### Cave of Separation / Sword of Promises:
 - The chest-opening difficulty in this cave is high. Recommended Thief MC or a specially trained chest-opening tool character.
 - Clarissa can significantly simplify the battles in this cave. By placing her in the center front row, you can effectively resist the Succubus's Charm. You can use full Auto-battle.
@@ -142,12 +127,6 @@ You can also use "-config path" to specify a particular configuration file.
 - The Earth Den currently has only one target point. Defeat it and return to town.
 - Ensure the entire first large square area of the Fire Den is lit, especially the lower left part of the large square.
 - Ensure the entire first large square area of the Light Den is lit, especially the central area of the large square.
-
-~~#### "Repel the Enemy Force" Quest:
-- Does not include Time Jump, map exploration, or the quest acceptance part.
-- The Inn Rest Interval controls how many times the "defeat the first 2 waves" operation is repeated before returning to town within one Ship Bridge run. For example, if Rest Interval = 2, then 2 rounds are repeated, totaling 2x2=4 battles and 4 AoE casts.
-- Ensure the entire 7th District map is lit.
-- Try to ensure the Mage is the fastest and can wipe all monsters in one AoE cast, otherwise the script has a low risk of getting stuck.~~
 
 #### "Horned Eagle Sword" Quest:
 - The panel **only controls the final boss fight**; the mobs on the way are **forced Auto-battle**. The process does not include returning to town, so attempt according to your strength.
