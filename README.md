@@ -131,7 +131,7 @@ wvdas可以再检测到"再起之火"耗尽后, 立刻将任务变更为"找公�
 - 该任务的休息旅店为要塞, 请确保要塞可见.
 - 不推荐在没有完成2周目的情况下使用脚本.
 - 注意该任务需要**通关2周目且获得解除陷阱的知识**. 在完成了2周目后, 从boss房间处获取知识以了解如何关闭陷阱.
-- 注意, 1f地图左右下角的隐藏区域极其容易被遗漏, 请访问gamerch以确认解锁了全部地图: [攻略](https://gamerch.com/wizardry-daphne/928695),[地图](https://cdn.gamerch.com/resize/eyJidWNrZXQiOiJnYW1lcmNoLWltZy1jb250ZW50cyIsImtleSI6Indpa2lcLzQ3MTRcL2VudHJ5XC9DVGJLWWRESy5qcGciLCJlZGl0cyI6eyJ0b0Zvcm1hdCI6IndlYnAiLCJqcGVnIjp7InF1YWxpdHkiOjg1fX19)
+- 注意, **1f地图左右下角的隐藏区域极其容易被遗漏**, 请访问gamerch以确认解锁了全部地图: [攻略](https://gamerch.com/wizardry-daphne/928695),以及 [地图](https://cdn.gamerch.com/resize/eyJidWNrZXQiOiJnYW1lcmNoLWltZy1jb250ZW50cyIsImtleSI6Indpa2lcLzQ3MTRcL2VudHJ5XC9DVGJLWWRESy5qcGciLCJlZGl0cyI6eyJ0b0Zvcm1hdCI6IndlYnAiLCJqcGVnIjp7InF1YWxpdHkiOjg1fX19)
 - 目前提供了两个版本:
    	- 1F回溯刷金箱. 流程为 回溯->双忍者->三个金箱子->其他箱子. .
    	- 刷怪. 能穿过7个怪物的路线, 平均一次副本能触发5次左右战斗.
