@@ -43,14 +43,14 @@ Maximizes AFK efficiency~
 - In the Auto-Recovery settings, check "Use Skills to Remove Status Ailments".
 - In the Bag Refill settings, check "Place all non-refill items in storage" and "Automatically refill when staying at the inn." (If 'Refill' Buttom is disable, also check "Carry 1 Hook of Harken").
 - The game map must be **unzoomed**. If you have already zoomed the map, it is recommended to reinstall the game. (An unzoomed game map should show about 17 grid squares.)
-- Skills planned for use **must be placed on the quick slot bar**, but **must NOT be placed in the top-left** quick slot.
+- Skills planned for use **must be placed on the quick slot bar**.
 - **Disable automatic branch selection in dialogues**. The current Princess money begging and Horned Eagle quest implementations are based on this setting being off.
 
 ### In-Dungeon Settings
 - The dungeon map must be **fully revealed**. For maps that use target point detection, at least the entire target area must be revealed.
 - It is best to have the Great Harken for the target dungeon already unlocked in the game.
-- Checking "Cast Full-party AOE only once per battle" will cause enabled LA-series spells and Secret Arts to be cast only once per battle. You still need to manually enable the Secret Art or AOE skill.
-- Checking "Enable Auto-battle after Full-party AOE" will switch to auto-battle after casting the AOE. You still need to manually enable the Secret Art or AOE skill.
+- Checking "Cast Full AOE only once per battle" will cause enabled LA-series spells and Secret Arts to be cast only once per battle. You still need to manually enable the Secret Art or AOE skill.
+- Checking "Enable Auto-battle after Full AOE" will switch to auto-battle after casting the AOE. You still need to manually enable the Secret Art or AOE skill.
 - If SP runs low, it will automatically switch to using the Lv1 version of the skill. However, subsequent battles will continue using the Lv1 skill. To avoid this, adjust the Inn Rest interval.
 - If characters get stuck and cannot move immediately upon entering a dungeon, this is caused by network issues. Please try a different game accelerator.
 
