@@ -41,9 +41,9 @@ Maximizes AFK efficiency~
 - Graphics quality is set to **Medium (Prioritize Speed)**.
 - Set Frame Rate to **30 FPS**, and Dungeon Brightness to **Darkest -25% Brightness**.
 - In the Auto-Recovery settings, check "Use skills to dispel abnormal statuses".
-- In the Inventory Refill settings, check "Place all non-refill items in storage" and "Automatically refill when staying at the inn.". (If unsure, check "Carry 1 Hook of Harken").
+- In the Inventory Refill settings, check "Place all non-refill items in storage" and "Automatically refill when staying at the inn.". (If 'refill' buttom is disable, check "Carry 1 Hook of Harken").
 - The game map is **not zoomed in/out**. If zoomed, it is recommended to reinstall the game. (An unzoomed game map should show about 17 grid squares.)
-- Skills planned for use **must be placed on the quick slot bar**, but **cannot be placed in the top-left** quick slot.
+- Skills planned for use **must be placed on the quick slot bar**.
 - **Disable automatic branch selection in dialogues**. Currently, the Princess money begging and Horned Eagle scripts are designed assuming automatic branch selection is off.
 
 ### In-Dungeon Settings
@@ -71,8 +71,8 @@ You can also use "-config path" to specify a particular configuration file.
 
 #### Scorpionesses Bounty
 - Level 7 Bounty Scorpionesses are the optimal balance of difficulty and efficiency. Since the difficulty before level 7 is not high, earlier bounties are not currently considered.
-- Ninjas can one-shot Scorpionesses, so try forming a team with 3 or more Ninjas.
-- The frontline needs about 180 Evasion to almost never get hit, and the backline won't get targeted consecutively, so just enable "Use Class Skills" for the Priest to AFK.
+- Ninjas can one-shot kill Scorpionesses, so try forming a team with 3 or more Ninjas.
+- The frontline needs about 180 Evasion to almost never get hit, and the backline won't get targeted consecutively, so just enable "Use Class Skills" for the Priest.
 - Reference Team - Do not cast attack skills:
   - Frontline: Stack 180 Evasion, Priest, and any character (recommend Ninja). No Attack, Divine Power, or other requirements.
   - Backline: Normal Attack-stacked Spear/Bow Warriors, or Attack-stacked Kunai Ninjas.
@@ -85,10 +85,11 @@ You can also use "-config path" to specify a particular configuration file.
 
 #### Fortress 7F Giant Farming
 - Start from the Fortress and kill the Giant at the entrance of 7F.
-- First, you need to repeatedly reset the 7F map (by jumping to Chapter 1, then Chapter 2, and jumping back) until the 7F map becomes the **special map**:
+- First, you need to repeatedly reset the 7F map (by jumping to Chapter 1 or Chapter 2, and jumping back) until the 7F map in a **specific situation**:
     - When standing behind the Giant, you should be able to see [a lamp](resources/images/gaint_candelabra_1.png).
 - Because the Giant is tough and the battle is complex, this quest features a **custom skill sequence function**. Meanwhile, the entire original skill configuration panel is completely ineffective for this quest.
 - **Due to skill name changes, the custom skill sequence is temporarily unavailable.**
+
 ~~- The default skill sequence is for the following low-investment team:
     - Two-person team, Samurai and Mask MC Mage. Samurai in front row, Mask Mage behind the Samurai.
     - Samurai casts skills in this order: Defend, Quickdraw x N.
@@ -122,15 +123,15 @@ You can also use "-config path" to specify a particular configuration file.
     - Skill Enable: Disable system Auto-battle, check "Crowd Control", "Powerful Single-target", and "AOE".
     - Recommended to check 'Skip **Post-chest-opening** Recovery', "Enable Inn Rest".
     - The threat of the Gorgons lies in their ability to swap front/back row positions and Petrifying Breath. High Evasion Priest counters position swaps, and a formation with only front row characters also counters swaps. As for Petrifying Breath, the high-Evasion Priest can handle it.
-    - Reference Team: Warrior Mask upper left, Priest Yeka upper center, Warrior Princess upper right, Sleep Mage lower center.
-    - Variant Team: Priest Mask upper left, Warrior Elisa upper center, Warrior Princess upper right, Priest Yeka lower center.
+    - Reference Team: Warrior Mask front left, Priest Yeka front center, Warrior Lana front right, Sheliri back center.
+    - Variant Team: Priest Mask front left, Warrior Elisa front center, Warrior Lana front right, Priest Yeka back center.
         - Use Priest Yeka's Secret Arts as the Mage's AoE. With Elisa's Aura, damage is sufficient.
         - Elisa stands in front of Yeka, needs Evasion. But due to double Aura, damage is sufficient.
 #### Sand Shadow Cave:
 - The inn for this quest is the Fortress. Ensure the Fortress is visible.
 - Not recommended to use the script without completing the 2nd playthrough.
 - Note: This quest requires **completing the 2nd playthrough and obtaining the Disarm Trap knowledge**. Obtain the knowledge from the boss room after the 2nd playthrough to learn how to disable traps.
-- Note: **The hidden areas in the lower left and right corners of the 1F map are very easy to miss**. Check Gamerch to confirm the map is fully explored: [Guide](https://gamerch.com/wizardry-daphne/928695), and [Map](https://cdn.gamerch.com/resize/eyJidWNrZXQiOiJnYW1lcmNoLWltZy1jb250ZW50cyIsImtleSI6Indpa2lcLzQ3MTRcL2VudHJ5XC9DVGJLWWRESy5qcGciLCJlZGl0cyI6eyJ0b0Zvcm1hdCI6IndlYnAiLCJqcGVnIjp7InF1YWxpdHkiOjg1fX19)
+- Note: **The hidden areas in the lower left and right corners of the 1F map are very very easy to miss**. Check Gamerch to confirm the map is fully explored: [Guide](https://gamerch.com/wizardry-daphne/928695), and [Map](https://cdn.gamerch.com/resize/eyJidWNrZXQiOiJnYW1lcmNoLWltZy1jb250ZW50cyIsImtleSI6Indpa2lcLzQ3MTRcL2VudHJ5XC9DVGJLWWRESy5qcGciLCJlZGl0cyI6eyJ0b0Zvcm1hdCI6IndlYnAiLCJqcGVnIjp7InF1YWxpdHkiOjg1fX19)
 - Currently, three versions are provided:
     - 1F Backtrack Gold Chest Farming. Process: Backtrack -> Two Ninjas -> Three Gold Chests -> Other Chests.
     - Monster Farming. A route that passes through 7 monsters, triggering about 5 battles per run on average.
