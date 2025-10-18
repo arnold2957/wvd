@@ -8,6 +8,7 @@ import sys
 import cv2
 import time
 import multiprocessing
+import numpy as np
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -152,10 +153,10 @@ def LoadJson(path):
 def LoadImage(path):
     try:
         # 尝试读取图片
-        img = cv2.imread(path, cv2.IMREAD_COLOR)
+        img = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
         if img is None:
         # 手动抛出异常
-            raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {path}(注意: 路径中不能包含中文.)")
+            raise ValueError(f"[OpenCV 错误] 图片加载失败，路径可能不存在或图片损坏: {path}")
     except Exception as e:
         logger.error(f"加载图片失败: {str(e)}")
         return None

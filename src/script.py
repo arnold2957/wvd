@@ -38,7 +38,7 @@ CONFIG_VAR_LIST = [
             #var_name,                      type,          config_name,                  default_value
             ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
             ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
-            ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",         False],
+            ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",          False],
             ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
             ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
             ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
@@ -46,6 +46,8 @@ CONFIG_VAR_LIST = [
             ["aoe_once_var",                tk.BooleanVar, "_AOE_ONCE",                  False],
             ["auto_after_aoe_var",          tk.BooleanVar, "_AUTO_AFTER_AOE",            False],
             ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
+            ["active_royalsuite_rest_var",  tk.BooleanVar, "_ACTIVE_ROYALSUITE_REST",    False],
+            ["active_triumph_var",          tk.BooleanVar, "_ACTIVE_TRIUMPH",            False],
             ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              0],
             ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
             ["emu_path_var",                tk.StringVar,  "_EMUPATH",                   ""],
@@ -374,6 +376,7 @@ def Factory():
             setting._ADBDEVICE = device
             logger.info("ADB服务成功启动，设备已连接.")
     def DeviceShell(cmdStr):
+        logger.debug(f"DeviceShell {cmdStr}")
         while True:
             # 使用共享变量存储结果
             exception = None
@@ -641,12 +644,10 @@ def Factory():
         return None
     def Press(pos):
         if pos!=None:
-            logger.debug(f'按了{pos[0]} {pos[1]}')
             DeviceShell(f"input tap {pos[0]} {pos[1]}")
             return True
         return False
     def PressReturn():
-        logger.debug("按了返回.")
         DeviceShell('input keyevent KEYCODE_BACK')
     def WrapImage(image,r,g,b):
         scn_b = image * np.array([b, g, r])
@@ -917,7 +918,48 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        pass
+    def CursedWheel_GhostsOfYore(CSC_symbol=None,CSC_setting = None):
+        # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
+        # CSC_setting: 默认会先选择不接所有任务. 这个列表中储存的是想要打开的因果.
+        # 其中的RGB用于缩放颜色维度, 以增加识别的可靠性.
+
+        if setting._ACTIVE_TRIUMPH:
+            target = "Triumph"
+        else:
+            target = "GhostsOfYore"
+
+        logger.info(f"开始时间跳跃, 本次跳跃目标:{target}")
+
+        # 调整条目以找到跳跃目标
+        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
+        if not Press(CheckIf(ScreenShot(),target)):
+            DeviceShell(f"input swipe 450 1200 450 200")
+            Sleep(2)
+            Press(FindCoordsOrElseExecuteFallbackAndWait(target,'input swipe 50 1200 50 1300',1))
+        Sleep(1)
+
+        # 跳跃前尝试调整因果
+        while CheckIf(ScreenShot(), 'leap'):
+            if CSC_symbol != None:
+                FindCoordsOrElseExecuteFallbackAndWait(CSC_symbol,'CSC',1)
+                # 先关闭所有因果
+                while 1:
+                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'didnottakethequest')):
+                        continue
+                    else:
+                        break
+                # 然后开启想要开启的因果
+                if CSC_setting!=None:
+                    for option, r, g, b in CSC_setting:
+                        Press(CheckIf(WrapImage(ScreenShot(),r,g,b),option))
+                        Sleep(1)
+                PressReturn()
+                Sleep(0.5)
+            Press(CheckIf(ScreenShot(),'leap'))
+            Sleep(2)
+            Press(CheckIf(ScreenShot(),target))
+
     def RiseAgainReset(reason):
         nonlocal runtimeContext
         runtimeContext._SUICIDE = False # 死了 自杀成功 设置为false
@@ -1135,7 +1177,10 @@ def Factory():
                 return queue, True
         return queue, False
     def StateInn():
-        FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
+        if not setting._ACTIVE_ROYALSUITE_REST:
+            FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
+        else:
+            FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','royalsuite',[1,1]],2)
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
     def StateEoT():
@@ -2017,33 +2062,11 @@ def Factory():
                                     extra={"summary": True})
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
-                    def stepOne():
-                        nonlocal checkCSC
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
-                        if not Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore')):
-                            DeviceShell(f"input swipe 450 1200 450 200")
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/GhostsOfYore','input swipe 50 1200 50 1300',1))
-
-                        while CheckIf(ScreenShot(), 'leap'):
-                            if not checkCSC:
-                                FindCoordsOrElseExecuteFallbackAndWait('LBC/symbolofalliance','CSC',1)
-                                while 1:
-                                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'LBC/didnottakethequest')):
-                                        continue
-                                    else:
-                                        break
-                                Press(CheckIf(WrapImage(ScreenShot(),2,1,0),'LBC/EnaWasSaved'))
-                                Sleep(1)
-                                PressReturn()
-                                checkCSC = True
-                            Press(CheckIf(ScreenShot(),'leap'))
-                            Sleep(2)
-                            Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore'))
                     RestartableSequenceExecution(
                         lambda: logger.info('第一步: 重置因果'),
-                        lambda: stepOne()
+                        lambda: CursedWheel_GhostsOfYore('LBC/symbolofalliance',[['LBC/EnaWasSaved',2,1,0]])
+                        
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
@@ -2185,29 +2208,9 @@ def Factory():
                                     extra={"summary": True})
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
-                    def stepOne():
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
-
-                        if not Press(CheckIf(ScreenShot(),'COS/GhostsOfYore')):
-                            DeviceShell(f"input swipe 450 1200 450 200")
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('COS/GhostsOfYore','input swipe 50 1200 50 1300',1))
-
-                        while CheckIf(ScreenShot(), 'leap'):
-                            FindCoordsOrElseExecuteFallbackAndWait('COS/ArnasPast','CSC',1)
-                            while 1:
-                                if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'COS/didnottakethequest')):
-                                    continue
-                                else:
-                                    break
-                            PressReturn()
-                            Sleep(0.5)
-                            Press(CheckIf(ScreenShot(),'leap'))
-                            Sleep(2)
-                            Press(CheckIf(ScreenShot(),'COS/GhostsOfYore'))
                     RestartableSequenceExecution(
                         lambda: logger.info('第一步: 重置因果'),
-                        lambda: stepOne()
+                        lambda: CursedWheel_GhostsOfYore('COS/ArnasPast')
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
@@ -2337,21 +2340,9 @@ def Factory():
 
                     starttime = time.time()
                     runtimeContext._COUNTERDUNG += 1
-                    def stepMain():
-                        logger.info("第一步: 开始诅咒之旅...")
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
-                        if not Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore')):
-                            DeviceShell(f"input swipe 450 1200 450 200")
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/GhostsOfYore','input swipe 50 1200 50 1300',1))
-
-                        while pos:= CheckIf(ScreenShot(), 'leap'):
-                            Press(pos)
-                            Sleep(2)
-                            Press(CheckIf(ScreenShot(),'LBC/GhostsOfYore'))
                     RestartableSequenceExecution(
-                        lambda: stepMain()
+                        lambda: CursedWheel_GhostsOfYore()
                         )
 
                     Sleep(10)
@@ -2362,7 +2353,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',[40, 1184],2)),
+                        lambda:IntoWorldMapAndZoom(),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
                         )
 

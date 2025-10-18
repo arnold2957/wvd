@@ -19,7 +19,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('550x608')
+        self.geometry('550x688')
         
         self.title(self.TITLE)
 
@@ -416,6 +416,37 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 分割线
         row_counter += 1
+        self.advance_sep = ttk.Separator(self.main_frame, orient='horizontal')
+        self.advance_sep.grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
+
+        # 高级选项
+        row_counter += 1
+        frame_lux_rest = ttk.Frame(self.main_frame)
+        frame_lux_rest.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        self.active_royalsuite_rest = ttk.Checkbutton(
+            frame_lux_rest,
+            variable=self.active_royalsuite_rest_var,
+            text="住豪华房",
+            command=checkcommand,
+            style="Custom.TCheckbutton"
+            )
+        self.active_royalsuite_rest.grid(row=0, column=0)
+
+        row_counter += 1
+        frame_triumph = ttk.Frame(self.main_frame)
+        frame_triumph.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        self.active_triumph = ttk.Checkbutton(
+            frame_triumph,
+            variable=self.active_triumph_var,
+            text="尽可能启用\"凯旋\"",
+            command=checkcommand,
+            style="Custom.TCheckbutton"
+            )
+        self.active_triumph.grid(row=0, column=0)
+
+
+        # 分割线
+        row_counter += 1
         self.update_sep = ttk.Separator(self.main_frame, orient='horizontal')
         self.update_sep.grid(row=row_counter, column=0, columnspan=3, sticky='ew', pady=10)
 
@@ -549,6 +580,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_rest_intervel,
             self.karma_adjust_combobox,
             self.adb_port_entry,
+            self.active_triumph,
+            self.active_royalsuite_rest,
             self.button_save_adb_port,
             ]
 
