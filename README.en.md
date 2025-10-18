@@ -72,7 +72,7 @@ You can also use `-config path` to specify a particular configuration file.
 #### Scorpionesses Bounty
 - The Level 7 Scorpionesses Bounty is the optimal balance of difficulty and efficiency. Since the difficulty before level 7 isn't high, lower level bounties are not currently considered.
 - Ninjas can instantly kill Scorpionesses, so try forming a party with 3 or more Ninjas.
-- With 180 Evasion in the front row, they will almost never get hit, and the back row won't get targeted consecutively. Therefore, simply having a Priest with "Use Class Skills" enabled is sufficient for AFK.
+- With 180 Evasion in the front row, they will almost never get hit, and the back row won't get targeted consecutively. Therefore, simply having a Priest with "Use Class Skills" enabled is sufficient for auto farming.
 - Sample Budget Team - No attack skills enabled:
     - Front Row: A Priest with 180+ Evasion and any other character (recommend Ninja). No specific Attack or Divine Power requirements.
     - Back Row: Normal Lance/Bow Warriors or Kunai Ninjas built for Attack.
