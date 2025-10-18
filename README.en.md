@@ -65,7 +65,7 @@ You can also use `-config path` to specify a particular configuration file.
 - "Smart Chest-opening" is based on image recognition and fitting a triangular wave for prediction.
     - It currently uses 20 screenshots for prediction, which is quite time-consuming. *(Will be fixed in a future version!)*
 - "Chest Opener: Random" will randomly assign a character.
-- If a fixed chest opener is specified, it will switch to another random character if the specified one is Feared or Petrified.
+- If a fixed chest opener is specified, it will switch to another random character while the specified one is Feared or Petrified.
 - "Inn Rest Interval" is the number of dungeon runs *between* each rest. 0 means rest after every run, 1 means rest every other run, and so on. Disabling "Enable Inn Rest" will permanently skip Inn Rests during farming dungeons and some quest dungeons.
 - "Post-battle Recovery" and "Post-chest-opening Recovery" refer to the auto-recovery actions performed after these events. If recovery isn't removing status ailments, check your game settings, character skills, and the character's status ailments.
 
