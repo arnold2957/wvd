@@ -222,7 +222,7 @@
             ["press","DOWB1F",[1,1],1]
         ]
     },
-    
+
     "7000G":{
         "questName":"[金币]7000G",
         "_TYPE":"quest"
@@ -258,6 +258,11 @@
         "_TYPE":"quest"
     },
 
+    "jier":{
+        "questName":"[刷怪]悬赏点数: 吉尔",
+        "_TYPE":"quest"
+    },
+
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",
         "_TYPE":"quest",
@@ -266,5 +271,5 @@
             "QS":["defend","QS"]
         }
     }
-    
+
 }

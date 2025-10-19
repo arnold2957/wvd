@@ -270,8 +270,6 @@ def CheckRestartConnectADB(setting: FarmConfig):
 
     adb_path = GetADBPath(setting)
 
-    
-
     for attempt in range(MAXRETRIES):
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
@@ -319,6 +317,10 @@ def CheckRestartConnectADB(setting: FarmConfig):
             time.sleep(2)
         except Exception as e:
             logger.error(f"重启ADB服务时出错: {e}")
+            time.sleep(2)
+            KillEmulator(setting)
+            KillAdb(setting)
+            time.sleep(2)
             return None
     else:
         logger.info("达到最大重试次数，连接失败")
@@ -1946,10 +1948,8 @@ def Factory():
                                     extra={"summary": True})
             case 'darkLight':
                 gameFrozen_none = []
-                gameFrozen_map = 0
                 dungState = None
                 shouldRecover = False
-                waitTimer = time.time()
                 needRecoverBecauseCombat = False
                 needRecoverBecauseChest = False
                 while 1:
@@ -2052,7 +2052,6 @@ def Factory():
                             StateCombat()
                             dungState = None
             case 'LBC-oneGorgon':
-                checkCSC = False
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
@@ -2373,7 +2372,7 @@ def Factory():
                     
                     logger.info("第六步: 提交悬赏")
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',[[1,1],'returntotown','returnText','blessing','leaveDung','flee'],2),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',[[1,1],'returntotown','returnText','blessing','leaveDung','flee'],2), # 这么做更快, 但其他地图不能直接点flee, 可能会卡死. 建议还是在上面stateDungeon加一个 harken.
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
                         )
@@ -2390,8 +2389,85 @@ def Factory():
                     costtime = time.time()-starttime
                     logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
                             extra={"summary": True})
-            # case 'test':
-            #     pass
+            case 'jier':
+                # logger.info("该任务可以同时刷取善恶和赏金. 在脚本开始前, 请确认已经配置了正确的善恶倾向.\n不变: 无法进行.\n 变恶: 无限次击杀.\n 变善: 对话17次后停止.")
+                # Sleep(3)
+                while 1:
+                    # if int(setting._KARMAADJUST[1:]) == 0:
+                    #     logger.info("未设置善恶. 无法进行.")
+                    #     break
+                    # elif setting._KARMAADJUST.startswith('+'):
+                    #     quest._SPECIALDIALOGOPTION = ['bounty/lethimgo']
+                    # elif setting._KARMAADJUST.startswith('-'):
+                    quest._SPECIALDIALOGOPTION = ['bounty/cuthimdown']
+
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    starttime = time.time()
+                    runtimeContext._COUNTERDUNG += 1
+
+                    RestartableSequenceExecution(
+                        lambda: CursedWheel_GhostsOfYore()
+                        )
+
+                    Sleep(10)
+                    logger.info("第二步: 返回要塞...")
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        )
+
+                    logger.info("第三步: 前往王城...")
+                    RestartableSequenceExecution(
+                        lambda:IntoWorldMapAndZoom(),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
+                        )
+
+                    logger.info("第四步: 悬赏揭榜")
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Bounties',['guild','guildRequest','input swipe 600 1400 300 1400',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+
+                    logger.info("第五步: 和吉尔说再见吧")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B4FLabyrinth','GotoDung',[1,1]],1),
+                        lambda:StateDungeon([TargetInfo('position','左下',[452,1026]),
+                                             TargetInfo('harken','左上',None)]),
+                        )
+                    
+                    # num = int(setting._KARMAADJUST)
+                    # num = num-1 if (num-1>=-17) else -17
+                    # num_str = str(num)
+                    # if not num_str.startswith('-'):
+                    #     num_str = f"+{num_str}"
+                    # setting._KARMAADJUST = num_str
+                    # SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                    
+                    logger.info("第六步: 提交悬赏")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
+                    )
+                    # if quest._SPECIALDIALOGOPTION == ['bounty/cuthimdown']:
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
+                        )
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+                    
+                    logger.info("第七步: 休息")
+                    if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                        RestartableSequenceExecution(
+                            lambda:StateInn()
+                            )
+                        
+                    costtime = time.time()-starttime
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
+                            extra={"summary": True})
+            case 'test':
+                pass
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):

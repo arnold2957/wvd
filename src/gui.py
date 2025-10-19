@@ -438,7 +438,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_triumph = ttk.Checkbutton(
             frame_triumph,
             variable=self.active_triumph_var,
-            text="尽可能启用\"凯旋\"",
+            text="跳跃到\"凯旋\"(需要解锁凯旋)",
             command=checkcommand,
             style="Custom.TCheckbutton"
             )
