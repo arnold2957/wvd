@@ -2374,7 +2374,7 @@ def Factory():
                     )
                     RestartableSequenceExecution(
                         lambda:StateDungeon([TargetInfo('position','左下',[505,760]),
-                                             TargetInfo('harken','左上',None)]),
+                                             TargetInfo('position','左上',[506,821])]),
                         )
                     
                     logger.info("第六步: 提交悬赏")
