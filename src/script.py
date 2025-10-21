@@ -920,15 +920,16 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-    def CursedWheel_GhostsOfYore(CSC_symbol=None,CSC_setting = None):
+    def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
         # CSC_setting: 默认会先选择不接所有任务. 这个列表中储存的是想要打开的因果.
         # 其中的RGB用于缩放颜色维度, 以增加识别的可靠性.
 
+        target = "GhostsOfYore"
+        if tar != None:
+            target = tar
         if setting._ACTIVE_TRIUMPH:
             target = "Triumph"
-        else:
-            target = "GhostsOfYore"
 
         logger.info(f"开始时间跳跃, 本次跳跃目标:{target}")
 
@@ -1001,10 +1002,10 @@ def Factory():
                 if CheckIf(screen, pattern):
                     return State.Dungeon, state, screen
 
-            while CheckIf(screen,'someonedead'):
-                Press([500,800])
-                Sleep(1)
-                screen = ScreenShot()
+            if CheckIf(screen,'someonedead'):
+                for _ in range(5):
+                    Press([500,800])
+                    Sleep(1)
 
             if Press(CheckIf(screen, "returnText")):
                 Sleep(2)
@@ -1579,31 +1580,35 @@ def Factory():
                             logger.info("由于面板配置, 跳过了战后后恢复.")
                     if shouldRecover:
                         Press([1,1])
-                        FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
-                            ['trait','combatActive','combatActive_2','chestFlag','combatClose'],
-                            [[36,1425],[322,1425],[606,1425]],
-                            1
-                            )
-                        if CheckIf(scn:=ScreenShot(),'trait'):
-                            if CheckIf(scn,'story', [[676,800,220,108]]):
-                                Press([725,850])
-                            else:
-                                Press([830,850])
-                            Sleep(1)
-                            FindCoordsOrElseExecuteFallbackAndWait(
-                                ['recover','combatActive','combatActive_2'],
-                                [833,843],
-                                1
-                                )
-                            if CheckIf(ScreenShot(),'recover'):
+                        counter_trychar = -1
+                        while 1:
+                            counter_trychar += 1
+                            if CheckIf(ScreenShot(),'dungflag'):
+                                Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(1)
-                                Press([600,1200])
-                                for _ in range(5):
-                                    t = time.time()
-                                    PressReturn()
-                                    if time.time()-t<0.3:
-                                        Sleep(0.3-(time.time()-t))
-                                shouldRecover = False
+                            else:
+                                break
+                            if CheckIf(scn:=ScreenShot(),'trait'):
+                                if CheckIf(scn,'story', [[676,800,220,108]]):
+                                    Press([725,850])
+                                else:
+                                    Press([830,850])
+                                Sleep(1)
+                                FindCoordsOrElseExecuteFallbackAndWait(
+                                    ['recover','combatActive','combatActive_2'],
+                                    [833,843],
+                                    1
+                                    )
+                                if CheckIf(ScreenShot(),'recover'):
+                                    Sleep(1)
+                                    Press([600,1200])
+                                    for _ in range(5):
+                                        t = time.time()
+                                        PressReturn()
+                                        if time.time()-t<0.3:
+                                            Sleep(0.3-(time.time()-t))
+                                    shouldRecover = False
+                                    break
                     ########### OPEN MAP
                     Sleep(1)
                     Press([777,150])
@@ -2064,8 +2069,7 @@ def Factory():
 
                     RestartableSequenceExecution(
                         lambda: logger.info('第一步: 重置因果'),
-                        lambda: CursedWheel_GhostsOfYore('LBC/symbolofalliance',[['LBC/EnaWasSaved',2,1,0]])
-                        
+                        lambda: CursedWheelTimeLeap(None,'LBC/symbolofalliance',[['LBC/EnaWasSaved',2,1,0]])
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
@@ -2209,7 +2213,7 @@ def Factory():
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
                         lambda: logger.info('第一步: 重置因果'),
-                        lambda: CursedWheel_GhostsOfYore('COS/ArnasPast')
+                        lambda: CursedWheelTimeLeap(None,'COS/ArnasPast')
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
@@ -2333,6 +2337,7 @@ def Factory():
                             lambda: StateInn()
                         )
             case 'Scorpionesses':
+                total_time = 0
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
@@ -2341,7 +2346,7 @@ def Factory():
                     runtimeContext._COUNTERDUNG += 1
 
                     RestartableSequenceExecution(
-                        lambda: CursedWheel_GhostsOfYore()
+                        lambda: CursedWheelTimeLeap()
                         )
 
                     Sleep(10)
@@ -2366,14 +2371,17 @@ def Factory():
                     logger.info("第五步: 击杀蝎女")
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B2FTemple','GotoDung',[1,1]],1),
-                        lambda:StateDungeon([TargetInfo('position','左下',[505,760])]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag',[[1,1],[1,1],'return'],1) # 关闭地图
+                    )
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([TargetInfo('position','左下',[505,760]),
+                                             TargetInfo('harken','左上',None)]),
                         )
                     
                     logger.info("第六步: 提交悬赏")
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('Inn',[[1,1],'returntotown','returnText','blessing','leaveDung','flee'],2), # 这么做更快, 但其他地图不能直接点flee, 可能会卡死. 建议还是在上面stateDungeon加一个 harken.
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
+                    )
+                    RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
                         )
                     RestartableSequenceExecution(
@@ -2387,18 +2395,12 @@ def Factory():
                             )
                         
                     costtime = time.time()-starttime
-                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
+                    total_time = total_time + costtime
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:蝎女\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
             case 'jier':
-                # logger.info("该任务可以同时刷取善恶和赏金. 在脚本开始前, 请确认已经配置了正确的善恶倾向.\n不变: 无法进行.\n 变恶: 无限次击杀.\n 变善: 对话17次后停止.")
-                # Sleep(3)
+                total_time = 0
                 while 1:
-                    # if int(setting._KARMAADJUST[1:]) == 0:
-                    #     logger.info("未设置善恶. 无法进行.")
-                    #     break
-                    # elif setting._KARMAADJUST.startswith('+'):
-                    #     quest._SPECIALDIALOGOPTION = ['bounty/lethimgo']
-                    # elif setting._KARMAADJUST.startswith('-'):
                     quest._SPECIALDIALOGOPTION = ['bounty/cuthimdown']
 
                     if setting._FORCESTOPING.is_set():
@@ -2408,7 +2410,7 @@ def Factory():
                     runtimeContext._COUNTERDUNG += 1
 
                     RestartableSequenceExecution(
-                        lambda: CursedWheel_GhostsOfYore()
+                        lambda: CursedWheelTimeLeap("requestToRescueTheDuke")
                         )
 
                     Sleep(10)
@@ -2432,24 +2434,17 @@ def Factory():
 
                     logger.info("第五步: 和吉尔说再见吧")
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B4FLabyrinth','GotoDung',[1,1]],1),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B4FLabyrinth','GotoDung',[1,1]],1)
+                        )
+                    RestartableSequenceExecution( 
                         lambda:StateDungeon([TargetInfo('position','左下',[452,1026]),
                                              TargetInfo('harken','左上',None)]),
                         )
-                    
-                    # num = int(setting._KARMAADJUST)
-                    # num = num-1 if (num-1>=-17) else -17
-                    # num_str = str(num)
-                    # if not num_str.startswith('-'):
-                    #     num_str = f"+{num_str}"
-                    # setting._KARMAADJUST = num_str
-                    # SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                     
                     logger.info("第六步: 提交悬赏")
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
                     )
-                    # if quest._SPECIALDIALOGOPTION == ['bounty/cuthimdown']:
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
                         )
@@ -2464,10 +2459,14 @@ def Factory():
                             )
                         
                     costtime = time.time()-starttime
-                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏\"完成. 该次花费时间{costtime:.2f}s.",
+                    total_time = total_time + costtime
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:吉尔\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
-            case 'test':
-                pass
+            # case 'test':
+            #     while 1:
+            #         quest._SPECIALDIALOGOPTION = ["bounty/Slayhim"]
+            #         # StateDungeon([TargetInfo('position','左下',[612,1132])])
+            #         StateDungeon([TargetInfo('position','右上',[553,821])])
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):
