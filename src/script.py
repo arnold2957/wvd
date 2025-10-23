@@ -963,17 +963,33 @@ def Factory():
         while CheckIf(ScreenShot(), 'leap'):
             if CSC_symbol != None:
                 FindCoordsOrElseExecuteFallbackAndWait(CSC_symbol,'CSC',1)
+                last_scn = ScreenShot()
                 # 先关闭所有因果
                 while 1:
-                    if Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'didnottakethequest')):
-                        continue
-                    else:
+                    Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'didnottakethequest'))
+                    DeviceShell(f"input swipe 150 500 150 400")
+                    Sleep(1)
+                    scn = ScreenShot()
+                    logger.debug(f"因果: 滑动后的截图误差={cv2.absdiff(scn, last_scn).mean()/255:.6f}")
+                    if cv2.absdiff(scn, last_scn).mean()/255 < 0.007:
                         break
-                # 然后开启想要开启的因果
+                    else:
+                        last_scn = scn
+                # 然后调整每个因果
                 if CSC_setting!=None:
-                    for option, r, g, b in CSC_setting:
-                        Press(CheckIf(WrapImage(ScreenShot(),r,g,b),option))
+                    last_scn = ScreenShot()
+                    while 1:
+                        for option, r, g, b in CSC_setting:
+                            Press(CheckIf(WrapImage(ScreenShot(),r,g,b),option))
+                            Sleep(1)
+                        DeviceShell(f"input swipe 150 400 150 500")
                         Sleep(1)
+                        scn = ScreenShot()
+                        logger.debug(f"因果: 滑动后的截图误差={cv2.absdiff(scn, last_scn).mean()/255:.6f}")
+                        if cv2.absdiff(scn, last_scn).mean()/255 < 0.007:
+                            break
+                        else:
+                            last_scn = scn
                 PressReturn()
                 Sleep(0.5)
             Press(CheckIf(ScreenShot(),'leap'))
