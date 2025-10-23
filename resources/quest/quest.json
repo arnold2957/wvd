@@ -1,7 +1,7 @@
 {
     "GoblinCave":{
         "_TYPE":"dungeon",
-        "questName":"[遗物 善恶]初始深渊哥布林洞窟救圣女",
+        "questName":"[酒+善恶]初始深渊哥布林洞窟救圣女",
         "_TARGETINFOLIST":[
             ["stair_goblinsNest","右下",[875,867]],
             ["position","左下",[134,973]],
@@ -66,33 +66,14 @@
         ],
         "_preEOTcheck":"fordraig/B3F",
         "_EOT":[
-            ["press","intoWorldMap",[40,1184],2],
-            ["press","fordraig/labyrinthOfFordraig","input swipe 450 150 500 150",1],
+            ["press","intoWorldMap",["fordraig/labyrinthOfFordraig","input swipe 450 150 500 150"],2],
             ["press","fordraig/B3F",["fordraig/labyrinthOfFordraig",[1,1]],1]
-        ]
-    },
-
-    "SSC":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]忍洞一层刷怪",
-        "_TARGETINFOLIST":[
-            ["position","左下",[400,974]],
-            ["position","左下",[560,438]],
-            ["position","左下",[399,654]],
-            ["position","左下",[81,226]],
-            ["position","右下",[766,1078]],
-            ["SSC/SSC_quit","右下","default"]
-        ],
-        "_preEOTcheck":"SSC/SSC",
-        "_EOT":[
-            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","SSC/SSC","input swipe 200 100 100 200",1]
         ]
     },
 
     "SSC_chest":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]忍洞一层全拿",
+        "questName":"[经验+宝箱]忍洞一层全拿",
         "_TARGETINFOLIST":[
             ["position","左下",[400,974]],
             ["position","左下",[560,438]],
@@ -105,8 +86,7 @@
         ],
         "_preEOTcheck":"SSC/SSC",
         "_EOT":[
-            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","SSC/SSC","input swipe 200 100 100 200",1]
+            ["press","intoWorldMap",["SSC/SSC","input swipe 200 100 100 200"],1]
         ]
     },
 
@@ -120,8 +100,7 @@
         "_preEOTcheck":"LBC/LBC",
         "_EOT":
         [
-            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","LBC/LBC","input swipe 100 100 100 200",1]
+            ["press","intoWorldMap",["LBC/LBC","input swipe 100 100 100 200"],1]
         ]
     },
 
@@ -142,8 +121,7 @@
         ],
         "_preEOTcheck":"GHB/GHB",
         "_EOT":[
-            ["press","intoWorldMap",["closePartyInfo","closePartyInfo_fortress",[1,1]],1],
-            ["press","GHB/GHB","input swipe 400 500 450 550",1]
+            ["press","intoWorldMap",["GHB/GHB","input swipe 400 500 450 550"],1]
         ]
     },
 
@@ -234,7 +212,7 @@
     },
 
     "darkLight":{
-        "questName":"[经验装备]暗灯",
+        "questName":"[装备]暗灯",
         "_TYPE":"quest"
     },
 
@@ -254,7 +232,7 @@
     },
 
     "Scorpionesses":{
-        "questName":"[刷怪]悬赏点数: 蝎女",
+        "questName":"[悬赏+金币]悬赏点数: 蝎女",
         "_TYPE":"quest"
     },
 
@@ -268,7 +246,7 @@
         "_TYPE":"quest",
         "_SPELLSEQUENCE":{
             "LACONES":["LACONES","LACONES","LACONES","defend"],
-            "QS":["defend","QS"]
+            "QS":["defend","居合"]
         }
     }
 

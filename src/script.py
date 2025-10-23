@@ -17,7 +17,7 @@ CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻", "千恋万花"]
-PHYSICAL_SKILLS = ["全力一击","tzalik","见切","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
+PHYSICAL_SKILLS = ["全力一击","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -908,11 +908,23 @@ def Factory():
         Combat = 'combat'
         Quit = 'quit'
 
-    def IntoWorldMapAndZoom():
+    def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
-        Press(FindCoordsOrElseExecuteFallbackAndWait('intoWorldMap',['closePartyInfo','closePartyInfo_fortress',[1,1]],1))
-        Sleep(0.5)
-        FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[1,1]],1)
+        
+        if CheckIf(scn:=ScreenShot(), 'dungflag'):
+            # 如果已经在副本里了 直接结束.
+            # 因为该函数预设了是从城市开始的.
+            return
+        elif Press(CheckIf(scn,'intoWorldMap')):
+            # 如果在城市, 尝试进入世界地图
+            Sleep(0.5)
+            FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
+        elif CheckIf(scn,'worldmapflag'):
+            # 如果在世界地图, 下一步.
+            pass
+
+        # 往下都是确保了现在能看见'worldmapflag', 并尝试看见'target'
         Sleep(0.5)
         if not runtimeContext._ZOOMWORLDMAP:
             for _ in range(3):
@@ -920,6 +932,11 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
+        Press(FindCoordsOrElseExecuteFallbackAndWait(target,swipe,1))
+        
+        # 现在已经确保了可以看见target, 那么确保可以点击成功
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],target,1)
+        
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
         # CSC_setting: 默认会先选择不接所有任务. 这个列表中储存的是想要打开的因果.
@@ -1004,7 +1021,7 @@ def Factory():
 
             if CheckIf(screen,'someonedead'):
                 for _ in range(5):
-                    Press([500,800])
+                    Press([400+random.randint(0,100),750+random.randint(0,100)])
                     Sleep(1)
 
             if Press(CheckIf(screen, "returnText")):
@@ -1112,6 +1129,10 @@ def Factory():
                     logger.info("是骨头!")
                     # logger.info("")
                     Sleep(2)
+                if Press(CheckIf(screen,'halfBone')):
+                    logger.info("半根骨头也是骨头!")
+                    # logger.info("")
+                    Sleep(2)
                 if Press(CheckIf(screen,'buyNothing')):
                     logger.info("有骨头的话我会买的.")
                     # logger.info("No Bones No Buy.")
@@ -1192,7 +1213,7 @@ def Factory():
                 pass
         for info in quest._EOT:
             if info[1]=="intoWorldMap":
-                IntoWorldMapAndZoom()
+                TeleportFromCityToWorldLocation(info[2][0],info[2][1])
             else:
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1],info[2],info[3])
                 if info[0]=="press":
@@ -1761,8 +1782,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:IntoWorldMapAndZoom(),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia', 'input swipe 450 150 500 150'),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
 
@@ -1836,8 +1856,7 @@ def Factory():
                         )
 
                     logger.info('第三步: 进入地下城.')
-                    IntoWorldMapAndZoom()
-                    Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/labyrinthOfFordraig','input swipe 450 150 500 150',1))
+                    TeleportFromCityToWorldLocation('fordraig/labyrinthOfFordraig','input swipe 450 150 500 150')
                     Press(FindCoordsOrElseExecuteFallbackAndWait('fordraig/Entrance',['fordraig/labyrinthOfFordraig',[1,1]],1))
                     FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['fordraig/Entrance','GotoDung',[1,1]],1)
 
@@ -2078,24 +2097,17 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: IntoWorldMapAndZoom(),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
-                    
-                    def stepFive():
-                        scn = ScreenShot()
-                        if Press(CheckIf(scn,'LBC/LBC')) or CheckIf(scn,"dungFlag"):
-                            pass
-                        else:
-                            IntoWorldMapAndZoom(),
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('LBC/LBC','input swipe 100 100 100 200',1))
-                                           
+               
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 领取任务'),
                         lambda: StateAcceptRequest('LBC/Request',[266,257]),
+                    )
+                    RestartableSequenceExecution(
                         lambda: logger.info('第五步: 进入牛洞'),
-                        lambda: stepFive()
+                        lambda: TeleportFromCityToWorldLocation('LBC/LBC','input swipe 100 100 100 200')
                         )
 
                     Gorgon1 = TargetInfo('position','左上',[134,342])
@@ -2145,8 +2157,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 前往王城"),
-                        lambda: IntoWorldMapAndZoom(),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
                     def stepThree():
@@ -2171,17 +2182,10 @@ def Factory():
                         lambda: logger.info('第三步: 领取任务'),
                         lambda: stepThree()
                         )
-                    def stepFour():
-                        scn = ScreenShot()
-                        if Press(CheckIf(scn,'SSC/SSC')) or CheckIf(scn,"dungFlag"):
-                            pass
-                        else:
-                            IntoWorldMapAndZoom()
-                            Press(FindCoordsOrElseExecuteFallbackAndWait('SSC/SSC','input swipe 200 100 100 200',1))
-                            FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['SSC/SSC',[1,1]],1)
+
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 进入忍洞'),
-                        lambda: stepFour()
+                        lambda: TeleportFromCityToWorldLocation('SSC/SSC','input swipe 200 100 100 200')
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info('第五步: 关闭陷阱'),
@@ -2222,8 +2226,7 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: IntoWorldMapAndZoom(),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1)),
+                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
                         )
                     
@@ -2357,8 +2360,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:IntoWorldMapAndZoom(),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
+                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
                         )
 
                     logger.info("第四步: 悬赏揭榜")
@@ -2421,8 +2423,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:IntoWorldMapAndZoom(),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('RoyalCityLuknalia','input swipe 450 150 500 150',1))
+                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
                         )
 
                     logger.info("第四步: 悬赏揭榜")
