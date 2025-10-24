@@ -89,6 +89,7 @@ class RuntimeContext:
     _MAXRETRYLIMIT = 20
     _ACTIVESPELLSEQUENCE = None
     _SHOULDAPPLYSPELLSEQUENCE = True
+    _RECOVERAFTERREZ = False
     _ZOOMWORLDMAP = False
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
@@ -340,7 +341,47 @@ def CheckRestartConnectADB(setting: FarmConfig):
         logger.error(f"获取ADB设备时出错: {e}")
     
     return None
+##################################################################
+def CutRoI(screenshot,roi):
+    if roi is None:
+        return screenshot
 
+    img_height, img_width = screenshot.shape[:2]
+    roi_copy = roi.copy()
+    roi1_rect = roi_copy.pop(0)  # 第一个矩形 (x, y, width, height)
+
+    x1, y1, w1, h1 = roi1_rect
+
+    roi1_y_start_clipped = max(0, y1)
+    roi1_y_end_clipped = min(img_height, y1 + h1)
+    roi1_x_start_clipped = max(0, x1)
+    roi1_x_end_clipped = min(img_width, x1 + w1)
+
+    pixels_not_in_roi1_mask = np.ones((img_height, img_width), dtype=bool)
+    if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
+        pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
+
+    screenshot[pixels_not_in_roi1_mask] = 0
+
+    if (roi is not []):
+        for roi2_rect in roi_copy:
+            x2, y2, w2, h2 = roi2_rect
+
+            roi2_y_start_clipped = max(0, y2)
+            roi2_y_end_clipped = min(img_height, y2 + h2)
+            roi2_x_start_clipped = max(0, x2)
+            roi2_x_end_clipped = min(img_width, x2 + w2)
+
+            if roi2_x_start_clipped < roi2_x_end_clipped and roi2_y_start_clipped < roi2_y_end_clipped:
+                pixels_in_roi2_mask_for_current_op = np.zeros((img_height, img_width), dtype=bool)
+                pixels_in_roi2_mask_for_current_op[roi2_y_start_clipped:roi2_y_end_clipped, roi2_x_start_clipped:roi2_x_end_clipped] = True
+
+                # 将位于 roi2 中的像素设置为0
+                # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
+                screenshot[pixels_in_roi2_mask_for_current_op] = 0
+
+    # cv2.imwrite(f'CutRoI_{time.time()}.png', screenshot)
+    return screenshot
 ##################################################################
 
 def Factory():
@@ -350,7 +391,13 @@ def Factory():
     runtimeContext = None
     def LoadQuest(farmtarget):
         # 构建文件路径
-        data = LoadJson(ResourcePath(QUEST_FILE))[setting._FARMTARGET]
+        jsondict = LoadJson(ResourcePath(QUEST_FILE))
+        if setting._FARMTARGET in jsondict:
+            data = jsondict[setting._FARMTARGET]
+        else:
+            logger.error("任务列表已更新.请重新手动选择地下城任务.")
+            return
+        
         
         # 创建 Quest 实例并填充属性
         quest = FarmQuest()
@@ -455,52 +502,11 @@ def Factory():
                     logger.info("adb重启中...")
                     ResetADBDevice()
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        def cutRoI(screenshot,roi):
-            if roi is None:
-                return screenshot
-
-            img_height, img_width = screenshot.shape[:2]
-            roi_copy = roi.copy()
-            roi1_rect = roi_copy.pop(0)  # 第一个矩形 (x, y, width, height)
-
-            x1, y1, w1, h1 = roi1_rect
-
-            roi1_y_start_clipped = max(0, y1)
-            roi1_y_end_clipped = min(img_height, y1 + h1)
-            roi1_x_start_clipped = max(0, x1)
-            roi1_x_end_clipped = min(img_width, x1 + w1)
-
-            pixels_not_in_roi1_mask = np.ones((img_height, img_width), dtype=bool)
-            if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
-                pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
-
-            screenshot[pixels_not_in_roi1_mask] = 0
-
-            if (roi is not []):
-                for roi2_rect in roi_copy:
-                    x2, y2, w2, h2 = roi2_rect
-
-                    roi2_y_start_clipped = max(0, y2)
-                    roi2_y_end_clipped = min(img_height, y2 + h2)
-                    roi2_x_start_clipped = max(0, x2)
-                    roi2_x_end_clipped = min(img_width, x2 + w2)
-
-                    if roi2_x_start_clipped < roi2_x_end_clipped and roi2_y_start_clipped < roi2_y_end_clipped:
-                        pixels_in_roi2_mask_for_current_op = np.zeros((img_height, img_width), dtype=bool)
-                        pixels_in_roi2_mask_for_current_op[roi2_y_start_clipped:roi2_y_end_clipped, roi2_x_start_clipped:roi2_x_end_clipped] = True
-
-                        # 将位于 roi2 中的像素设置为0
-                        # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
-                        screenshot[pixels_in_roi2_mask_for_current_op] = 0
-
-            # cv2.imwrite(f'cutRoI_{time.time()}.png', screenshot)
-            return screenshot
-
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
         threshold = 0.80
         pos = None
-        search_area = cutRoI(screenshot, roi)
+        search_area = CutRoI(screenshot, roi)
         try:
             result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
         except Exception as e:
@@ -963,30 +969,30 @@ def Factory():
         while CheckIf(ScreenShot(), 'leap'):
             if CSC_symbol != None:
                 FindCoordsOrElseExecuteFallbackAndWait(CSC_symbol,'CSC',1)
-                last_scn = ScreenShot()
+                last_scn = CutRoI(ScreenShot(), [[77,349,757,1068]])
                 # 先关闭所有因果
                 while 1:
                     Press(CheckIf(WrapImage(ScreenShot(),2,0,0),'didnottakethequest'))
                     DeviceShell(f"input swipe 150 500 150 400")
                     Sleep(1)
-                    scn = ScreenShot()
+                    scn = CutRoI(ScreenShot(), [[77,349,757,1068]])
                     logger.debug(f"因果: 滑动后的截图误差={cv2.absdiff(scn, last_scn).mean()/255:.6f}")
-                    if cv2.absdiff(scn, last_scn).mean()/255 < 0.007:
+                    if cv2.absdiff(scn, last_scn).mean()/255 < 0.006:
                         break
                     else:
                         last_scn = scn
                 # 然后调整每个因果
                 if CSC_setting!=None:
-                    last_scn = ScreenShot()
+                    last_scn = CutRoI(ScreenShot(), [[77,349,757,1068]])
                     while 1:
                         for option, r, g, b in CSC_setting:
                             Press(CheckIf(WrapImage(ScreenShot(),r,g,b),option))
                             Sleep(1)
                         DeviceShell(f"input swipe 150 400 150 500")
                         Sleep(1)
-                        scn = ScreenShot()
+                        scn = CutRoI(ScreenShot(), [[77,349,757,1068]])
                         logger.debug(f"因果: 滑动后的截图误差={cv2.absdiff(scn, last_scn).mean()/255:.6f}")
-                        if cv2.absdiff(scn, last_scn).mean()/255 < 0.007:
+                        if cv2.absdiff(scn, last_scn).mean()/255 < 0.006:
                             break
                         else:
                             last_scn = scn
@@ -1000,6 +1006,7 @@ def Factory():
         nonlocal runtimeContext
         runtimeContext._SUICIDE = False # 死了 自杀成功 设置为false
         runtimeContext._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
+        runtimeContext._RECOVERAFTERREZ = True
         if reason == 'chest':
             runtimeContext._COUNTERCHEST -=1
         else:
@@ -1615,6 +1622,9 @@ def Factory():
                             shouldRecover = True
                         else:
                             logger.info("由于面板配置, 跳过了战后后恢复.")
+                    if runtimeContext._RECOVERAFTERREZ == True:
+                        shouldRecover = True
+                        runtimeContext._RECOVERAFTERREZ = False
                     if shouldRecover:
                         Press([1,1])
                         counter_trychar = -1
@@ -2499,8 +2509,11 @@ def Factory():
         ResetADBDevice()
 
         quest = LoadQuest(setting._FARMTARGET)
-        if quest._TYPE =="dungeon":
-            DungeonFarm()
+        if quest:
+            if quest._TYPE =="dungeon":
+                DungeonFarm()
+            else:
+                QuestFarm()
         else:
-            QuestFarm()
+            setting._FINISHINGCALLBACK()
     return Farm
