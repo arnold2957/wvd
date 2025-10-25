@@ -97,7 +97,7 @@
         "_preEOTcheck":"LBC/LBC",
         "_EOT":
         [
-            ["press","intoWorldMap",["LBC/LBC","input swipe 100 100 100 200"],1]
+            ["press","intoWorldMap",["LBC/LBC","input swipe 400 400 400 500"],1]
         ]
     },
 

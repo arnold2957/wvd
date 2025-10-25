@@ -427,7 +427,7 @@ def Factory():
             logger.info("ADB服务成功启动，设备已连接.")
     def DeviceShell(cmdStr):
         logger.debug(f"DeviceShell {cmdStr}")
-        
+
         while True:
             exception = None
             result = None
@@ -2141,7 +2141,7 @@ def Factory():
                     )
                     RestartableSequenceExecution(
                         lambda: logger.info('第五步: 进入牛洞'),
-                        lambda: TeleportFromCityToWorldLocation('LBC/LBC','input swipe 100 100 100 200')
+                        lambda: TeleportFromCityToWorldLocation('LBC/LBC','input swipe 400 400 400 500')
                         )
 
                     Gorgon1 = TargetInfo('position','左上',[134,342])
