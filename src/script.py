@@ -91,6 +91,7 @@ class RuntimeContext:
     _SHOULDAPPLYSPELLSEQUENCE = True
     _RECOVERAFTERREZ = False
     _ZOOMWORLDMAP = False
+    _CRASHCOUNTER = 0
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -736,7 +737,12 @@ def Factory():
             cv2.imwrite(file_path, ScreenShot())
             logger.info(f"重启前截图已保存在{file_path}中.")
         else:
-            logger.info(f"因为外部设置, 跳过了重启前截图.")
+            runtimeContext._CRASHCOUNTER +=1
+            logger.info(f"跳过了重启前截图.\n崩溃计数器: {runtimeContext._CRASHCOUNTER}\n崩溃计数器超过5次后会重启模拟器.")
+            if runtimeContext._CRASHCOUNTER > 5:
+                runtimeContext._CRASHCOUNTER = 0
+                KillEmulator(setting)
+                CheckRestartConnectADB(setting)
 
         package_name = "jp.co.drecom.wizardry.daphne"
         mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
@@ -938,10 +944,10 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        Press(FindCoordsOrElseExecuteFallbackAndWait(target,swipe,1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[1,1]],1))
         
         # 现在已经确保了可以看见target, 那么确保可以点击成功
-        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],target,1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[1,1]],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
