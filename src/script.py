@@ -427,14 +427,14 @@ def Factory():
             logger.info("ADB服务成功启动，设备已连接.")
     def DeviceShell(cmdStr):
         logger.debug(f"DeviceShell {cmdStr}")
+        
         while True:
-            # 使用共享变量存储结果
             exception = None
             result = None
             completed = Event()
             
             def adb_command_thread():
-                nonlocal exception,result
+                nonlocal exception, result
                 try:
                     result = setting._ADBDEVICE.shell(cmdStr, timeout=5)
                 except Exception as e:
@@ -442,30 +442,32 @@ def Factory():
                 finally:
                     completed.set()
             
-            # 创建并启动线程
             thread = Thread(target=adb_command_thread)
             thread.daemon = True
             thread.start()
             
-            # 等待线程完成，设置总超时时间
-            completed.wait(timeout=7)  # 比ADB命令超时稍长
-            
-            if not completed.is_set():
-                # 线程超时未完成
-                logger.debug("外部检测: ADB命令执行超时")
-                exception = TimeoutError("外部检测: ADB命令执行超时")
-            
-            if exception is None:
+            try:
+                if not completed.wait(timeout=7):
+                    # 线程超时未完成
+                    logger.warning(f"ADB命令执行超时: {cmdStr}")
+                    raise TimeoutError(f"ADB命令在{7}秒内未完成")
+                
+                if exception is not None:
+                    raise exception
+                    
                 return result
-            
-            # 处理异常情况
-            logger.debug(f"{exception}")
-            if isinstance(exception, (RuntimeError, ConnectionResetError, TimeoutError, cv2.error)):
-                logger.debug(f"ADB操作失败. {exception}")
-                logger.info(f"ADB异常({type(exception).__name__})，尝试重启服务...")
+            except (TimeoutError, RuntimeError, ConnectionResetError, cv2.error) as e:
+                logger.warning(f"ADB操作失败 ({type(e).__name__}): {e}")
+                logger.info("尝试重启ADB服务...")
+                
                 ResetADBDevice()
-            else:
-                raise exception  # 非预期异常直接抛出
+                time.sleep(1)
+
+                continue
+            except Exception as e:
+                # 非预期异常直接抛出
+                logger.error(f"非预期的ADB异常: {type(e).__name__}: {e}")
+                raise
     
     def Sleep(t=1):
         time.sleep(t)
