@@ -2219,7 +2219,7 @@ def Factory():
 
                     RestartableSequenceExecution(
                         lambda: logger.info('第四步: 进入忍洞'),
-                        lambda: TeleportFromCityToWorldLocation('SSC/SSC','input swipe 200 100 100 200')
+                        lambda: TeleportFromCityToWorldLocation('SSC/SSC','input swipe 700 500 600 600')
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info('第五步: 关闭陷阱'),
