@@ -92,6 +92,7 @@ class RuntimeContext:
     _RECOVERAFTERREZ = False
     _ZOOMWORLDMAP = False
     _CRASHCOUNTER = 0
+    _IMPORTANTINFO = ""
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -663,6 +664,12 @@ def Factory():
     def WrapImage(image,r,g,b):
         scn_b = image * np.array([b, g, r])
         return np.clip(scn_b, 0, 255).astype(np.uint8)
+    def AddImportantInfo(str):
+        nonlocal runtimeContext
+        if runtimeContext._IMPORTANTINFO == "":
+            runtimeContext._IMPORTANTINFO = "👆向上滑动查看重要信息👆\n"
+        time_str = datetime.now().strftime("%Y%m%d-%H%M%S") 
+        runtimeContext._IMPORTANTINFO = f"{time_str} {str}\n{runtimeContext._IMPORTANTINFO}"
     ##################################################################
     def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
         # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
@@ -924,7 +931,7 @@ def Factory():
 
     def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[1,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[600,1]],1)
         
         if CheckIf(scn:=ScreenShot(), 'dungflag'):
             # 如果已经在副本里了 直接结束.
@@ -946,10 +953,10 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[600,1]],1))
         
         # 现在已经确保了可以看见target, 那么确保可以点击成功
-        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[1,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[600,1]],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
@@ -1020,6 +1027,7 @@ def Factory():
         else:
             runtimeContext._COUNTERCOMBAT -=1
         logger.info("快快请起.")
+        AddImportantInfo("面具死了但没死.")
         # logger.info("REZ.")
         Press([450,750])
         Sleep(10)
@@ -1051,6 +1059,7 @@ def Factory():
                     return State.Dungeon, state, screen
 
             if CheckIf(screen,'someonedead'):
+                AddImportantInfo("他们活了,活了!")
                 for _ in range(5):
                     Press([400+random.randint(0,100),750+random.randint(0,100)])
                     Sleep(1)
@@ -1119,6 +1128,7 @@ def Factory():
                             new_str = f"+0"
                     if new_str is not None:
                         logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
+                        AddImportantInfo("新的善恶:{new_str}")
                         setting._KARMAADJUST = new_str
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                         Press(pos)
@@ -1136,6 +1146,7 @@ def Factory():
                             new_str = f"-0"
                     if new_str is not None:
                         logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
+                        AddImportantInfo("新的善恶:{new_str}")
                         setting._KARMAADJUST = new_str
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                         Press(pos)
@@ -1158,10 +1169,12 @@ def Factory():
                     Sleep(2)
                 if Press(CheckIf(screen,'adventurersbones')):
                     logger.info("是骨头!")
+                    AddImportantInfo("购买了骨头.")
                     # logger.info("")
                     Sleep(2)
                 if Press(CheckIf(screen,'halfBone')):
                     logger.info("半根骨头也是骨头!")
+                    AddImportantInfo("购买了尸油.")
                     # logger.info("")
                     Sleep(2)
                 if Press(CheckIf(screen,'buyNothing')):
@@ -1752,7 +1765,7 @@ def Factory():
                             summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
                         if runtimeContext._COUNTERCOMBAT > 0:
                             summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
-                        logger.info(summary_text,extra={"summary": True})
+                        logger.info(f"{runtimeContext._IMPORTANTINFO}{summary_text}",extra={"summary": True})
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
@@ -2159,7 +2172,7 @@ def Factory():
                             )
                         RestartableSequenceExecution(
                             lambda: logger.info('第八步: 再入牛洞'),
-                            lambda: stepFive()
+                            lambda: TeleportFromCityToWorldLocation('LBC/LBC','input swipe 400 400 400 500')
                             )
                         RestartableSequenceExecution(
                             lambda: logger.info('第九步: 击杀二牛'),
