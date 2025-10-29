@@ -15,8 +15,8 @@ import copy
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU"]
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻", "千恋万花"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花"]
+ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻"]
 PHYSICAL_SKILLS = ["全力一击","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
@@ -931,7 +931,7 @@ def Factory():
 
     def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[600,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
         
         if CheckIf(scn:=ScreenShot(), 'dungflag'):
             # 如果已经在副本里了 直接结束.
@@ -953,10 +953,10 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[600,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1))
         
         # 现在已经确保了可以看见target, 那么确保可以点击成功
-        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[600,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
@@ -1651,10 +1651,11 @@ def Factory():
                         counter_trychar = -1
                         while 1:
                             counter_trychar += 1
-                            if CheckIf(ScreenShot(),'dungflag'):
+                            if CheckIf(ScreenShot(),'dungflag') and (counter_trychar <=20):
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(1)
                             else:
+                                logger.info("自动回复失败, 暂不进行回复.")
                                 break
                             if CheckIf(scn:=ScreenShot(),'trait'):
                                 if CheckIf(scn,'story', [[676,800,220,108]]):
