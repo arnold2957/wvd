@@ -233,6 +233,11 @@
         "_TYPE":"quest"
     },
 
+    "steeltrail":{
+        "questName":"[酒]钢试炼",
+        "_TYPE":"quest"
+    },
+
     "jier":{
         "questName":"[刷怪]悬赏点数: 吉尔",
         "_TYPE":"quest"

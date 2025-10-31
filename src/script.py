@@ -2448,6 +2448,41 @@ def Factory():
                     total_time = total_time + costtime
                     logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:蝎女\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
+            case 'steeltrail':
+                total_time = 0
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    starttime = time.time()
+                    runtimeContext._COUNTERDUNG += 1
+
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('gradeexam',['guild','guildRequest','input swipe 600 1400 300 1400',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("Steel",'gradeexam',1)
+                    )
+
+                    pos = CheckIf(ScreenShot(),'Steel')
+                    Press([pos[0]+306,pos[1]+258])
+                    
+                    quest._SPECIALDIALOGOPTION = ['ready','noneed', 'quit']
+
+                    StateDungeon([TargetInfo('position','左上',[131,769]),
+                                  TargetInfo('position','左上',[827,447]),
+                                  TargetInfo('position','左上',[131,769]),
+                                  TargetInfo('position','左下',[719,1080]),
+                                  ])
+                    
+                    if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
+                        RestartableSequenceExecution(
+                            lambda:StateInn()
+                            )
+                    costtime = time.time()-starttime
+                    total_time = total_time + costtime
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"钢试炼\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
+                            extra={"summary": True})
+
             case 'jier':
                 total_time = 0
                 while 1:
