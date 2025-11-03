@@ -1096,13 +1096,14 @@ def Factory():
                 for symbol in quest._SPECIALFORCESTOPINGSYMBOL:
                         if CheckIf(screen,symbol):
                             return State.Quit,DungeonState.Quit,screen
+                        
+            if quest._SPECIALDIALOGOPTION != None:
+                for option in quest._SPECIALDIALOGOPTION:
+                    if Press(CheckIf(screen,option)):
+                        return IdentifyState()
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
-                if quest._SPECIALDIALOGOPTION != None:
-                    for option in quest._SPECIALDIALOGOPTION:
-                        if Press(CheckIf(screen,option)):
-                            return IdentifyState()
                 if (CheckIf(screen,'RiseAgain')):
                     RiseAgainReset(reason = 'combat')
                     return IdentifyState()
@@ -1185,6 +1186,10 @@ def Factory():
                     logger.info("但是, 我拒绝.")
                     # logger.info("And what, must we give in return?")
                     Sleep(2)
+                if Press(CheckIf(screen,'ignorethequest')):
+                    logger.info("忽略任务.")
+                    # logger.info("")
+                    Sleep(2)
                 if Press(CheckIf(screen,'dontGiveAntitoxin')):
                     logger.info("但是, 我拒绝.")
                     # logger.info("")
@@ -1214,12 +1219,13 @@ def Factory():
                 logger.info("看起来遇到了一些非同寻常的情况...重启游戏.")
                 restartGame()
                 counter = 0
+            if counter>=4:
+                Press([1,1])
+                Sleep(0.25)
+                Press([1,1])
+                Sleep(0.25)
+                Press([1,1])
 
-            Press([1,1])
-            Sleep(0.25)
-            Press([1,1])
-            Sleep(0.25)
-            Press([1,1])
             Sleep(1)
             counter += 1
         return None, None, screen
@@ -2467,12 +2473,13 @@ def Factory():
                     Press([pos[0]+306,pos[1]+258])
                     
                     quest._SPECIALDIALOGOPTION = ['ready','noneed', 'quit']
-
-                    StateDungeon([TargetInfo('position','左上',[131,769]),
-                                  TargetInfo('position','左上',[827,447]),
-                                  TargetInfo('position','左上',[131,769]),
-                                  TargetInfo('position','左下',[719,1080]),
-                                  ])
+                    RestartableSequenceExecution(
+                        StateDungeon([TargetInfo('position','左上',[131,769]),
+                                    TargetInfo('position','左上',[827,447]),
+                                    TargetInfo('position','左上',[131,769]),
+                                    TargetInfo('position','左下',[719,1080]),
+                                    ])
+                                  )
                     
                     if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
                         RestartableSequenceExecution(
