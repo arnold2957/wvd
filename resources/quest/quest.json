@@ -197,6 +197,22 @@
             ["press","DOWB1F",[1,1],1]
         ]
     },
+    
+    "DOL":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]光洞(15-19)",
+        "_EOT":[
+            ["press","DOL",["EdgeOfTown",[1,1]],1],
+            ["press","DOLB1F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["chest","右下",[[419,304,481,485]]],
+            ["position", "右下", [552,599]],
+            ["position", "右下", [662,546]],
+            ["position", "右下", [819,333]]
+        ]
+    },
 
     "7000G":{
         "questName":"[金币]7000G",
@@ -248,7 +264,7 @@
         "_TYPE":"quest",
         "_SPELLSEQUENCE":{
             "LACONES":["LACONES","LACONES","LACONES","defend"],
-            "QS":["defend","居合"]
+            "居合":["defend","居合"]
         }
     }
 

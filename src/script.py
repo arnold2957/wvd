@@ -363,7 +363,7 @@ def CutRoI(screenshot,roi):
     if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
         pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
 
-    screenshot[pixels_not_in_roi1_mask] = 0
+    screenshot[pixels_not_in_roi1_mask] = 255
 
     if (roi is not []):
         for roi2_rect in roi_copy:
@@ -507,7 +507,7 @@ def Factory():
                     ResetADBDevice()
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         template = LoadTemplateImage(shortPathOfTarget)
-        screenshot = screenImage
+        screenshot = screenImage.copy()
         threshold = 0.80
         pos = None
         search_area = CutRoI(screenshot, roi)
