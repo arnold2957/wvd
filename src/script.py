@@ -192,7 +192,7 @@ def KillAdb(setting : FarmConfig):
     
 def KillEmulator(setting : FarmConfig):
     emulator_name = os.path.basename(setting._EMUPATH)
-    emulator_headless = "MuMuVMMHeadless.exe"
+    emulator_SVC = "MuMuVMMSVC.exe"
     try:
         logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
         # Windows 系统使用 taskkill 命令
@@ -206,7 +206,7 @@ def KillEmulator(setting : FarmConfig):
             )
             time.sleep(1)
             subprocess.run(
-                f"taskkill /f /im {emulator_headless}", 
+                f"taskkill /f /im {emulator_SVC}", 
                 shell=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -953,9 +953,12 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        Press(FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1))
-        
+        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1)
+
         # 现在已经确保了可以看见target, 那么确保可以点击成功
+        Sleep(1)
+        Press(pos)
+        Sleep(1)
         FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
@@ -1675,8 +1678,9 @@ def Factory():
                                     1
                                     )
                                 if CheckIf(ScreenShot(),'recover'):
-                                    Sleep(1)
+                                    Sleep(1.5)
                                     Press([600,1200])
+                                    Sleep(1)
                                     for _ in range(5):
                                         t = time.time()
                                         PressReturn()
