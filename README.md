@@ -10,10 +10,16 @@
    - 檔案：`src/script.py` StateInn() 函數
    - 新增圖片：`resources/images/box.png`, `resources/images/refill.png`
 
-2. **禁用自動版本檢查** - 修復檢測到新版本後程式卡死的問題
+2. **修復日志系統死鎖問題** - 解決程式運行一段時間後卡死不響應的問題
+   - 檔案：`src/utils.py`
+   - 修改：將 multiprocessing.Queue 改為 threading.queue.Queue
+   - 添加：StopLogListener() 函數，避免資源洩漏
+   - 說明：上游使用 multiprocessing.Queue 在多線程環境中會導致死鎖
+
+3. **禁用自動版本檢查** - 修復檢測到新版本後程式卡死的問題
    - 檔案：`src/main.py` 註解掉 schedule_periodic_update_check()
 
-3. **本地打包腳本** - 使用繁體中文編碼的打包腳本，避免簡體版本的編碼問題
+4. **本地打包腳本** - 使用繁體中文編碼的打包腳本，避免簡體版本的編碼問題
    - 檔案：`localpack.bat`
 
 **上游 v1.9.20 已包含的功能（原為本分支自訂）：**
