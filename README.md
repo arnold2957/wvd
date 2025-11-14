@@ -1,6 +1,23 @@
 # wvdas - 巫术daphne的自动挂机脚本
 [English (v1.8.20)](README.en.md)
 
+## 本分支的自定义修改（基于 v1.9.20）
+
+**版本基础：** 上游原作者 arnold2957/wvd v1.9.20
+
+**自定义修改列表：**
+1. **旅馆自动补给功能** - 进旅馆时自动检测并执行补给（支持普通房和豪华房）
+   - 文件：`src/script.py` StateInn() 函数
+   - 新增图片：`resources/images/box.png`, `resources/images/refill.png`
+
+2. **禁用自动版本检查** - 修复检测到新版本后程序卡死的问题
+   - 文件：`src/main.py` 注释掉 schedule_periodic_update_check()
+
+3. **本地打包脚本** - 使用繁体中文编码的打包脚本，避免简体版本的编码问题
+   - 文件：`localpack.bat`
+
+---
+
 一个自带gui的巫术手游的刷怪脚本.
 
 和其他流行的游戏自动脚本相比, 针对巫术手游具有的 ***复杂的网络环境*** 和 ***偶尔的性能波动*** 做了专门的特殊优化.
