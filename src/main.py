@@ -23,14 +23,15 @@ class AppController(tk.Tk):
         self.quest_threading = None
         self.quest_setting = None
 
-        self.is_checking_for_update = False 
+        self.is_checking_for_update = False
         self.updater = AutoUpdater(
             msg_queue=self.msg_queue,
             github_user=OWNER,
             github_repo=REPO,
             current_version=__version__
         )
-        self.schedule_periodic_update_check()
+        # 禁用自动更新检查以避免卡死问题
+        # self.schedule_periodic_update_check()
         self.check_queue()
 
     def run_in_thread(self, target_func, *args):
