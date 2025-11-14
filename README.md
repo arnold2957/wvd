@@ -1,20 +1,25 @@
 # wvdas - 巫术daphne的自动挂机脚本
 [English (v1.8.20)](README.en.md)
 
-## 本分支的自定义修改（基于 v1.9.20）
+## 本分支的自訂修改（基於 v1.9.20）
 
-**版本基础：** 上游原作者 arnold2957/wvd v1.9.20
+**版本基礎：** 上游原作者 arnold2957/wvd v1.9.20
 
-**自定义修改列表：**
-1. **旅馆自动补给功能** - 进旅馆时自动检测并执行补给（支持普通房和豪华房）
-   - 文件：`src/script.py` StateInn() 函数
-   - 新增图片：`resources/images/box.png`, `resources/images/refill.png`
+**自訂修改列表：**
+1. **旅館自動補給功能** - 進旅館時自動檢測並執行補給（支援普通房和豪華房）
+   - 檔案：`src/script.py` StateInn() 函數
+   - 新增圖片：`resources/images/box.png`, `resources/images/refill.png`
 
-2. **禁用自动版本检查** - 修复检测到新版本后程序卡死的问题
-   - 文件：`src/main.py` 注释掉 schedule_periodic_update_check()
+2. **禁用自動版本檢查** - 修復檢測到新版本後程式卡死的問題
+   - 檔案：`src/main.py` 註解掉 schedule_periodic_update_check()
 
-3. **本地打包脚本** - 使用繁体中文编码的打包脚本，避免简体版本的编码问题
-   - 文件：`localpack.bat`
+3. **本地打包腳本** - 使用繁體中文編碼的打包腳本，避免簡體版本的編碼問題
+   - 檔案：`localpack.bat`
+
+**上游 v1.9.20 已包含的功能（原為本分支自訂）：**
+- ✅ **不打斷自動戰鬥** - 只有在 counter>=4 時才執行畫面點擊，避免打斷戰鬥開始
+   - 檔案：`src/script.py` IdentifyState() 函數（第 1225-1233 行）
+   - 說明：原作者已在 v1.9.20 實現此功能
 
 ---
 
