@@ -26,7 +26,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.adb_active = False
 
         # 关闭时退出整个程序
-        self.protocol("WM_DELETE_WINDOW", self.controller.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.controller.on_closing)
 
         # --- 任务状态 ---
         self.quest_active = False

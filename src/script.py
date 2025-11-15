@@ -471,7 +471,17 @@ def Factory():
                 raise
     
     def Sleep(t=1):
-        time.sleep(t)
+        """可响应停止信号的 sleep 函数"""
+        # 将长时间 sleep 分割成小段，每段检查停止标志
+        interval = 0.5  # 每 0.5 秒检查一次
+        elapsed = 0
+        while elapsed < t:
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.debug(f"Sleep 中检测到停止信号，提前退出")
+                return
+            sleep_time = min(interval, t - elapsed)
+            time.sleep(sleep_time)
+            elapsed += sleep_time
     def ScreenShot():
         while True:
             try:
@@ -767,10 +777,18 @@ def Factory():
         while True:
             try:
                 for op in operations:
+                    # 在每个操作之前检查停止信号
+                    if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                        logger.info("RestartableSequenceExecution 检测到停止信号")
+                        return
                     op()
                 return
             except RestartSignal:
                 logger.info("任务进度重置中...")
+                # 重置前也检查停止信号
+                if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("重置过程中检测到停止信号")
+                    return
                 continue
     ##################################################################
     def getCursorCoordinates(input, threshold=0.8):
@@ -1255,8 +1273,10 @@ def Factory():
         return queue, False
     def StateInn():
         if not setting._ACTIVE_ROYALSUITE_REST:
+            FindCoordsOrElseExecuteFallbackAndWait('refilled', ['Inn', 'box', 'refill', 'OK', [1, 1]], 2)
             FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
         else:
+            FindCoordsOrElseExecuteFallbackAndWait('refilled', ['Inn', 'box', 'refill', 'OK', [1, 1]], 2)
             FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','royalsuite',[1,1]],2)
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()

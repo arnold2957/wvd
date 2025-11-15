@@ -1,6 +1,49 @@
 # wvdas - 巫术daphne的自动挂机脚本
 [English (v1.8.20)](README.en.md)
 
+## 本分支的自訂修改（基於 v1.9.20）
+
+**版本基礎：** 上游原作者 arnold2957/wvd v1.9.20
+
+**自訂修改列表：**
+1. **旅館自動補給功能** - 進旅館時自動檢測並執行補給（支援普通房和豪華房）
+   - 檔案：`src/script.py` StateInn() 函數
+   - 新增圖片：`resources/images/box.png`, `resources/images/refill.png`
+
+2. **修復日志系統死鎖問題** - 解決程式運行一段時間後卡死不響應的問題
+   - 檔案：`src/utils.py`
+   - 修改：將 multiprocessing.Queue 改為 threading.queue.Queue
+   - 添加：StopLogListener() 函數，避免資源洩漏
+   - 說明：上游使用 multiprocessing.Queue 在多線程環境中會導致死鎖
+
+3. **修復停止機制響應緩慢問題** - 解決點擊停止按鈕後程式無法及時停止的問題
+   - 檔案：`src/script.py`
+   - 修改：Sleep 函數改為可響應停止信號（每 0.5 秒檢查一次）
+   - 修改：RestartableSequenceExecution 在每個操作前檢查停止信號
+   - 效果：停止響應時間從最長數十秒降至最多 0.5 秒
+
+4. **禁用自動版本檢查** - 修復檢測到新版本後程式卡死的問題
+   - 檔案：`src/main.py` 註解掉 schedule_periodic_update_check()
+
+5. **隱藏控制台窗口** - 運行程式時不顯示黑色命令行窗口
+   - 檔案：`localpack.bat` 添加 --noconsole 參數
+
+6. **修復進程不退出問題** - 修復使用 --noconsole 後關閉 GUI 進程仍留在後台的問題
+   - 檔案：`src/main.py` 添加 on_closing() 方法
+   - 檔案：`src/gui.py` 修改 WM_DELETE_WINDOW 協議處理器
+   - 修改：關閉窗口時正確停止任務線程、日誌監聽器並清理資源
+   - 效果：程式關閉後進程完全終止，不再需要手動在工作管理員中結束進程
+
+7. **本地打包腳本** - 使用繁體中文編碼的打包腳本，避免簡體版本的編碼問題
+   - 檔案：`localpack.bat`
+
+**上游 v1.9.20 已包含的功能（原為本分支自訂）：**
+- ✅ **不打斷自動戰鬥** - 只有在 counter>=4 時才執行畫面點擊，避免打斷戰鬥開始
+   - 檔案：`src/script.py` IdentifyState() 函數（第 1225-1233 行）
+   - 說明：原作者已在 v1.9.20 實現此功能
+
+---
+
 一个自带gui的巫术手游的刷怪脚本.
 
 和其他流行的游戏自动脚本相比, 针对巫术手游具有的 ***复杂的网络环境*** 和 ***偶尔的性能波动*** 做了专门的特殊优化.
