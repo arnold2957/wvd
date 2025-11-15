@@ -49,6 +49,40 @@ class AppController(tk.Tk):
             None
         self.after(3600000, self.schedule_periodic_update_check)
 
+    def on_closing(self):
+        """處理窗口關閉事件，確保所有資源正確清理"""
+        try:
+            # 1. 停止正在運行的任務
+            if hasattr(self, 'quest_threading') and self.quest_threading and self.quest_threading.is_alive():
+                logger.info('正在停止任務線程...')
+                if hasattr(self.quest_setting, '_FORCESTOPING'):
+                    self.quest_setting._FORCESTOPING.set()
+
+                # 等待線程結束（最多3秒）
+                self.quest_threading.join(timeout=3.0)
+                if self.quest_threading.is_alive():
+                    logger.warning('任務線程未能在3秒內停止')
+
+            # 2. 停止日誌監聽器
+            logger.info('正在停止日誌監聽器...')
+            StopLogListener()
+
+            # 3. 清理消息隊列
+            try:
+                while not self.msg_queue.empty():
+                    self.msg_queue.get_nowait()
+            except:
+                pass
+
+            logger.info('資源清理完成，程序即將退出')
+
+        except Exception as e:
+            print(f"清理過程中發生錯誤: {e}")
+        finally:
+            # 4. 銷毀 GUI 並強制退出
+            self.destroy()
+            sys.exit(0)
+
     def check_queue(self):
         """处理来自AutoUpdater和其他服务的消息"""
         try:
