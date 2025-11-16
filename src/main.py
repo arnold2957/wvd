@@ -52,16 +52,19 @@ class AppController(tk.Tk):
     def on_closing(self):
         """處理窗口關閉事件，確保所有資源正確清理"""
         try:
+            logger.info('=== 開始關閉程序 ===')
+
             # 1. 停止正在運行的任務
             if hasattr(self, 'quest_threading') and self.quest_threading and self.quest_threading.is_alive():
                 logger.info('正在停止任務線程...')
                 if hasattr(self.quest_setting, '_FORCESTOPING'):
                     self.quest_setting._FORCESTOPING.set()
 
-                # 等待線程結束（最多3秒）
-                self.quest_threading.join(timeout=3.0)
+                # 等待線程結束（最多5秒）
+                # 注意：線程已設置為 daemon，即使不退出也不會阻止程序終止
+                self.quest_threading.join(timeout=5.0)
                 if self.quest_threading.is_alive():
-                    logger.warning('任務線程未能在3秒內停止')
+                    logger.warning('任務線程未能在5秒內停止（daemon線程會隨主程序退出）')
 
             # 2. 停止日誌監聽器
             logger.info('正在停止日誌監聽器...')
@@ -79,9 +82,17 @@ class AppController(tk.Tk):
         except Exception as e:
             print(f"清理過程中發生錯誤: {e}")
         finally:
-            # 4. 銷毀 GUI 並強制退出
-            self.destroy()
-            sys.exit(0)
+            # 4. 銷毀 GUI
+            try:
+                self.destroy()
+            except:
+                pass
+
+            # 5. 強制退出（確保進程完全終止）
+            # 使用 os._exit() 而不是 sys.exit()，因為它會立即終止進程
+            # 包括所有 daemon 線程，不會等待任何清理
+            logger.info('強制終止進程')
+            os._exit(0)
 
     def check_queue(self):
         """处理来自AutoUpdater和其他服务的消息"""
@@ -92,11 +103,11 @@ class AppController(tk.Tk):
             # --- 这是处理更新逻辑的核心部分 ---
             match command:
                 case 'start_quest':
-                    self.quest_setting = value                    
+                    self.quest_setting = value
                     self.quest_setting._MSGQUEUE = self.msg_queue
                     self.quest_setting._FORCESTOPING = Event()
                     Farm = Factory()
-                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,), daemon=True)
                     self.quest_threading.start()
                     logger.info(f'启动任务\"{self.quest_setting._FARMTARGET_TEXT}\"...')
 
@@ -113,7 +124,7 @@ class AppController(tk.Tk):
                     while 1:
                         if not self.quest_threading.is_alive():
                             Farm = Factory()
-                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,), daemon=True)
                             self.quest_threading.start()
                             break
                     if self.main_window:

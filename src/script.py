@@ -495,9 +495,35 @@ def Factory():
             try:
                 logger.debug(f'ScreenShot 開始截圖 (嘗試 {retry_count + 1}/{max_retries})')
 
-                # 關鍵點：ADB screencap 調用
+                # 關鍵點：ADB screencap 調用，使用超時機制防止無限阻塞
                 logger.debug('正在調用 ADB screencap...')
-                screenshot = setting._ADBDEVICE.screencap()
+                screenshot = None
+                exception = None
+                completed = Event()
+
+                def screencap_thread():
+                    nonlocal exception, screenshot
+                    try:
+                        screenshot = setting._ADBDEVICE.screencap()
+                    except Exception as e:
+                        exception = e
+                    finally:
+                        completed.set()
+
+                thread = Thread(target=screencap_thread, daemon=True)
+                thread.start()
+
+                # 等待最多 10 秒
+                if not completed.wait(timeout=10):
+                    logger.error('ADB screencap 超時（10秒），可能連接有問題')
+                    raise RuntimeError("screencap 超時")
+
+                if exception is not None:
+                    raise exception
+
+                if screenshot is None:
+                    raise RuntimeError("screencap 返回 None")
+
                 logger.debug(f'ADB screencap 完成，數據大小: {len(screenshot)} bytes')
 
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
