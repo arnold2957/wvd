@@ -7,7 +7,8 @@ import logging.handlers
 import sys
 import cv2
 import time
-import multiprocessing
+import threading
+import queue
 import numpy as np
 
 # 基础模块包括:
@@ -48,11 +49,29 @@ def setup_file_handler():
     file_handler.setFormatter(file_formatter)
     return file_handler
 
-log_queue = multiprocessing.Queue(-1)
-queue_listener = logging.handlers.QueueListener(log_queue, setup_file_handler())
+# 使用线程安全的 Queue 而不是 multiprocessing.Queue
+log_queue = queue.Queue(-1)
+queue_listener = None
+
 
 def StartLogListener():
-    queue_listener.start()
+    """启动日志监听器"""
+    global queue_listener
+    if queue_listener is None:
+        queue_listener = logging.handlers.QueueListener(
+            log_queue,
+            setup_file_handler(),
+            respect_handler_level=True
+        )
+        queue_listener.start()
+
+
+def StopLogListener():
+    """停止日志监听器"""
+    global queue_listener
+    if queue_listener is not None:
+        queue_listener.stop()
+        queue_listener = None
 #===========================================
 class LoggerStream:
     """自定义流，将输出重定向到logger"""

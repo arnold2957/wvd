@@ -3,6 +3,9 @@ name: Build Executable and Create Release
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'  # 當推送 v 開頭的 tag 時觸發（如 v1.9.20）
+  workflow_dispatch:  # 允許在 GitHub 網頁手動觸發
 
 jobs:
   build:
@@ -53,7 +56,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --add-data "resources;resources/" src/main.py -n wvd
+        pyinstaller --onedir --noconsole --add-data "resources;resources/" src/main.py -n wvd
         Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP

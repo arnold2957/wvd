@@ -274,6 +274,11 @@ def CheckRestartConnectADB(setting: FarmConfig):
     adb_path = GetADBPath(setting)
 
     for attempt in range(MAXRETRIES):
+        # 檢查停止信號
+        if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+            logger.info("CheckRestartConnectADB 檢測到停止信號，中斷 ADB 連接")
+            return None
+
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
         if attempt == 3:
@@ -281,24 +286,30 @@ def CheckRestartConnectADB(setting: FarmConfig):
             KillAdb(setting)
 
             # 我们不起手就关, 但是如果2次链接还是尝试失败, 那就触发一次强制重启.
-        
+
         try:
             logger.info("检查adb服务...")
             result = CMDLine(f"\"{adb_path}\" devices")
             logger.debug(f"adb链接返回(输出信息):{result.stdout}")
             logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-            
+
             if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
                 logger.info("adb服务未启动!\n启动adb服务...")
                 CMDLine(f"\"{adb_path}\" kill-server")
                 CMDLine(f"\"{adb_path}\" start-server")
-                time.sleep(2)
+
+                # 檢查停止信號的 sleep
+                for _ in range(4):  # 2秒拆成4次0.5秒
+                    if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                        logger.info("啟動 ADB 服務時檢測到停止信號")
+                        return None
+                    time.sleep(0.5)
 
             logger.debug(f"尝试连接到adb...")
             result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
             logger.debug(f"adb链接返回(输出信息):{result.stdout}")
             logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-            
+
             if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
                 logger.info("成功连接到模拟器")
                 break
@@ -314,16 +325,42 @@ def CheckRestartConnectADB(setting: FarmConfig):
                 logger.info("无法连接. 检查adb端口.")
 
             logger.info(f"连接失败: {result.stderr.strip()}")
-            time.sleep(2)
+
+            # 檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("重試等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
+
             KillEmulator(setting)
             KillAdb(setting)
-            time.sleep(2)
+
+            # 再次檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("清理後等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
         except Exception as e:
             logger.error(f"重启ADB服务时出错: {e}")
-            time.sleep(2)
+
+            # 檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("異常處理時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
+
             KillEmulator(setting)
             KillAdb(setting)
-            time.sleep(2)
+
+            # 再次檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("異常清理後等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
             return None
     else:
         logger.info("达到最大重试次数，连接失败")
@@ -332,7 +369,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
     try:
         client = AdbClient(host="127.0.0.1", port=5037)
         devices = client.devices()
-        
+
         # 查找匹配的设备
         target_device = f"127.0.0.1:{setting._ADBPORT}"
         for device in devices:
@@ -341,7 +378,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
                 return device
     except Exception as e:
         logger.error(f"获取ADB设备时出错: {e}")
-    
+
     return None
 ##################################################################
 def CutRoI(screenshot,roi):
@@ -471,23 +508,76 @@ def Factory():
                 raise
     
     def Sleep(t=1):
-        time.sleep(t)
+        """可响应停止信号的 sleep 函数"""
+        # 将长时间 sleep 分割成小段，每段检查停止标志
+        interval = 0.5  # 每 0.5 秒检查一次
+        elapsed = 0
+        while elapsed < t:
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.debug(f"Sleep 中检测到停止信号，提前退出")
+                return
+            sleep_time = min(interval, t - elapsed)
+            time.sleep(sleep_time)
+            elapsed += sleep_time
     def ScreenShot():
-        while True:
+        max_retries = 5
+        retry_count = 0
+
+        while retry_count < max_retries:
+            # 檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("ScreenShot 檢測到停止信號，停止截圖")
+                raise RuntimeError("截圖已停止")
+
             try:
-                # logger.debug('ScreenShot')
-                screenshot = setting._ADBDEVICE.screencap()
+                logger.debug(f'ScreenShot 開始截圖 (嘗試 {retry_count + 1}/{max_retries})')
+
+                # 關鍵點：ADB screencap 調用，使用超時機制防止無限阻塞
+                logger.debug('正在調用 ADB screencap...')
+                screenshot = None
+                exception = None
+                completed = Event()
+
+                def screencap_thread():
+                    nonlocal exception, screenshot
+                    try:
+                        screenshot = setting._ADBDEVICE.screencap()
+                    except Exception as e:
+                        exception = e
+                    finally:
+                        completed.set()
+
+                thread = Thread(target=screencap_thread, daemon=True)
+                thread.start()
+
+                # 等待最多 10 秒
+                if not completed.wait(timeout=10):
+                    logger.error('ADB screencap 超時（10秒），可能連接有問題')
+                    raise RuntimeError("screencap 超時")
+
+                if exception is not None:
+                    raise exception
+
+                if screenshot is None:
+                    raise RuntimeError("screencap 返回 None")
+
+                logger.debug(f'ADB screencap 完成，數據大小: {len(screenshot)} bytes')
+
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
+                logger.debug(f'轉換為 numpy 陣列，大小: {screenshot_np.size}')
 
                 if screenshot_np.size == 0:
                     logger.error("截图数据为空！")
                     raise RuntimeError("截图数据为空")
 
+                logger.debug('正在解碼圖像...')
                 image = cv2.imdecode(screenshot_np, cv2.IMREAD_COLOR)
 
                 if image is None:
                     logger.error("OpenCV解码失败：图像数据损坏")
                     raise RuntimeError("图像解码失败")
+
+                logger.debug(f'圖像解碼完成，尺寸: {image.shape}')
 
                 if image.shape != (1600, 900, 3):  # OpenCV格式为(高, 宽, 通道)
                     if image.shape == (900, 1600, 3):
@@ -499,12 +589,22 @@ def Factory():
                         raise RuntimeError("截图尺寸异常")
 
                 #cv2.imwrite('screen.png', image)
+                logger.debug('截圖成功')
                 return image
             except Exception as e:
-                logger.debug(f"{e}")
+                retry_count += 1
+                logger.warning(f"截圖失敗: {e}")
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
-                    logger.info("adb重启中...")
-                    ResetADBDevice()
+                    if retry_count < max_retries:
+                        logger.info(f"adb重启中... (重試 {retry_count}/{max_retries})")
+                        ResetADBDevice()
+                        logger.info("ADB 重置完成，準備重試")
+                    else:
+                        logger.error(f"截圖失敗，已達到最大重試次數 ({max_retries})")
+                        raise RuntimeError(f"截圖失敗: {e}")
+                else:
+                    logger.error(f"截圖遇到未預期的錯誤: {type(e).__name__}: {e}")
+                    raise
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage.copy()
@@ -767,10 +867,18 @@ def Factory():
         while True:
             try:
                 for op in operations:
+                    # 在每个操作之前检查停止信号
+                    if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                        logger.info("RestartableSequenceExecution 检测到停止信号")
+                        return
                     op()
                 return
             except RestartSignal:
                 logger.info("任务进度重置中...")
+                # 重置前也检查停止信号
+                if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("重置过程中检测到停止信号")
+                    return
                 continue
     ##################################################################
     def getCursorCoordinates(input, threshold=0.8):
@@ -1255,8 +1363,10 @@ def Factory():
         return queue, False
     def StateInn():
         if not setting._ACTIVE_ROYALSUITE_REST:
+            FindCoordsOrElseExecuteFallbackAndWait('refilled', ['Inn', 'box', 'refill', 'OK', [1, 1]], 2)
             FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
         else:
+            FindCoordsOrElseExecuteFallbackAndWait('refilled', ['Inn', 'box', 'refill', 'OK', [1, 1]], 2)
             FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','royalsuite',[1,1]],2)
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
@@ -2572,16 +2682,38 @@ def Factory():
 
         setting = set
 
-        Sleep(1) # 没有等utils初始化完成
-        
-        ResetADBDevice()
+        try:
+            Sleep(1) # 没有等utils初始化完成
 
-        quest = LoadQuest(setting._FARMTARGET)
-        if quest:
-            if quest._TYPE =="dungeon":
-                DungeonFarm()
+            # 檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("Farm 初始化時檢測到停止信號")
+                setting._FINISHINGCALLBACK()
+                return
+
+            ResetADBDevice()
+
+            # 檢查 ADB 連接是否成功
+            if not setting._ADBDEVICE:
+                logger.error("ADB 連接失敗或被中斷，無法啟動任務")
+                setting._FINISHINGCALLBACK()
+                return
+
+            # 再次檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("Farm ADB 初始化後檢測到停止信號")
+                setting._FINISHINGCALLBACK()
+                return
+
+            quest = LoadQuest(setting._FARMTARGET)
+            if quest:
+                if quest._TYPE =="dungeon":
+                    DungeonFarm()
+                else:
+                    QuestFarm()
             else:
-                QuestFarm()
-        else:
+                setting._FINISHINGCALLBACK()
+        except Exception as e:
+            logger.error(f"Farm 執行時發生錯誤: {e}")
             setting._FINISHINGCALLBACK()
     return Farm
