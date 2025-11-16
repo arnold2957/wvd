@@ -483,21 +483,38 @@ def Factory():
             time.sleep(sleep_time)
             elapsed += sleep_time
     def ScreenShot():
-        while True:
+        max_retries = 5
+        retry_count = 0
+
+        while retry_count < max_retries:
+            # 檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("ScreenShot 檢測到停止信號，停止截圖")
+                raise RuntimeError("截圖已停止")
+
             try:
-                # logger.debug('ScreenShot')
+                logger.debug(f'ScreenShot 開始截圖 (嘗試 {retry_count + 1}/{max_retries})')
+
+                # 關鍵點：ADB screencap 調用
+                logger.debug('正在調用 ADB screencap...')
                 screenshot = setting._ADBDEVICE.screencap()
+                logger.debug(f'ADB screencap 完成，數據大小: {len(screenshot)} bytes')
+
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
+                logger.debug(f'轉換為 numpy 陣列，大小: {screenshot_np.size}')
 
                 if screenshot_np.size == 0:
                     logger.error("截图数据为空！")
                     raise RuntimeError("截图数据为空")
 
+                logger.debug('正在解碼圖像...')
                 image = cv2.imdecode(screenshot_np, cv2.IMREAD_COLOR)
 
                 if image is None:
                     logger.error("OpenCV解码失败：图像数据损坏")
                     raise RuntimeError("图像解码失败")
+
+                logger.debug(f'圖像解碼完成，尺寸: {image.shape}')
 
                 if image.shape != (1600, 900, 3):  # OpenCV格式为(高, 宽, 通道)
                     if image.shape == (900, 1600, 3):
@@ -509,12 +526,22 @@ def Factory():
                         raise RuntimeError("截图尺寸异常")
 
                 #cv2.imwrite('screen.png', image)
+                logger.debug('截圖成功')
                 return image
             except Exception as e:
-                logger.debug(f"{e}")
+                retry_count += 1
+                logger.warning(f"截圖失敗: {e}")
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
-                    logger.info("adb重启中...")
-                    ResetADBDevice()
+                    if retry_count < max_retries:
+                        logger.info(f"adb重启中... (重試 {retry_count}/{max_retries})")
+                        ResetADBDevice()
+                        logger.info("ADB 重置完成，準備重試")
+                    else:
+                        logger.error(f"截圖失敗，已達到最大重試次數 ({max_retries})")
+                        raise RuntimeError(f"截圖失敗: {e}")
+                else:
+                    logger.error(f"截圖遇到未預期的錯誤: {type(e).__name__}: {e}")
+                    raise
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage.copy()
