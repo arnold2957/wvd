@@ -274,6 +274,11 @@ def CheckRestartConnectADB(setting: FarmConfig):
     adb_path = GetADBPath(setting)
 
     for attempt in range(MAXRETRIES):
+        # 檢查停止信號
+        if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+            logger.info("CheckRestartConnectADB 檢測到停止信號，中斷 ADB 連接")
+            return None
+
         logger.info(f"-----------------------\n开始尝试连接adb. 次数:{attempt + 1}/{MAXRETRIES}...")
 
         if attempt == 3:
@@ -281,24 +286,30 @@ def CheckRestartConnectADB(setting: FarmConfig):
             KillAdb(setting)
 
             # 我们不起手就关, 但是如果2次链接还是尝试失败, 那就触发一次强制重启.
-        
+
         try:
             logger.info("检查adb服务...")
             result = CMDLine(f"\"{adb_path}\" devices")
             logger.debug(f"adb链接返回(输出信息):{result.stdout}")
             logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-            
+
             if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
                 logger.info("adb服务未启动!\n启动adb服务...")
                 CMDLine(f"\"{adb_path}\" kill-server")
                 CMDLine(f"\"{adb_path}\" start-server")
-                time.sleep(2)
+
+                # 檢查停止信號的 sleep
+                for _ in range(4):  # 2秒拆成4次0.5秒
+                    if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                        logger.info("啟動 ADB 服務時檢測到停止信號")
+                        return None
+                    time.sleep(0.5)
 
             logger.debug(f"尝试连接到adb...")
             result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
             logger.debug(f"adb链接返回(输出信息):{result.stdout}")
             logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-            
+
             if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
                 logger.info("成功连接到模拟器")
                 break
@@ -314,16 +325,42 @@ def CheckRestartConnectADB(setting: FarmConfig):
                 logger.info("无法连接. 检查adb端口.")
 
             logger.info(f"连接失败: {result.stderr.strip()}")
-            time.sleep(2)
+
+            # 檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("重試等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
+
             KillEmulator(setting)
             KillAdb(setting)
-            time.sleep(2)
+
+            # 再次檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("清理後等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
         except Exception as e:
             logger.error(f"重启ADB服务时出错: {e}")
-            time.sleep(2)
+
+            # 檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("異常處理時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
+
             KillEmulator(setting)
             KillAdb(setting)
-            time.sleep(2)
+
+            # 再次檢查停止信號的 sleep（2秒拆成4次）
+            for _ in range(4):
+                if hasattr(setting, '_FORCESTOPING') and setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                    logger.info("異常清理後等待時檢測到停止信號")
+                    return None
+                time.sleep(0.5)
             return None
     else:
         logger.info("达到最大重试次数，连接失败")
@@ -332,7 +369,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
     try:
         client = AdbClient(host="127.0.0.1", port=5037)
         devices = client.devices()
-        
+
         # 查找匹配的设备
         target_device = f"127.0.0.1:{setting._ADBPORT}"
         for device in devices:
@@ -341,7 +378,7 @@ def CheckRestartConnectADB(setting: FarmConfig):
                 return device
     except Exception as e:
         logger.error(f"获取ADB设备时出错: {e}")
-    
+
     return None
 ##################################################################
 def CutRoI(screenshot,roi):
@@ -2645,16 +2682,38 @@ def Factory():
 
         setting = set
 
-        Sleep(1) # 没有等utils初始化完成
-        
-        ResetADBDevice()
+        try:
+            Sleep(1) # 没有等utils初始化完成
 
-        quest = LoadQuest(setting._FARMTARGET)
-        if quest:
-            if quest._TYPE =="dungeon":
-                DungeonFarm()
+            # 檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("Farm 初始化時檢測到停止信號")
+                setting._FINISHINGCALLBACK()
+                return
+
+            ResetADBDevice()
+
+            # 檢查 ADB 連接是否成功
+            if not setting._ADBDEVICE:
+                logger.error("ADB 連接失敗或被中斷，無法啟動任務")
+                setting._FINISHINGCALLBACK()
+                return
+
+            # 再次檢查停止信號
+            if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+                logger.info("Farm ADB 初始化後檢測到停止信號")
+                setting._FINISHINGCALLBACK()
+                return
+
+            quest = LoadQuest(setting._FARMTARGET)
+            if quest:
+                if quest._TYPE =="dungeon":
+                    DungeonFarm()
+                else:
+                    QuestFarm()
             else:
-                QuestFarm()
-        else:
+                setting._FINISHINGCALLBACK()
+        except Exception as e:
+            logger.error(f"Farm 執行時發生錯誤: {e}")
             setting._FINISHINGCALLBACK()
     return Farm
