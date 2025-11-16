@@ -59,16 +59,20 @@ class AppController(tk.Tk):
                 logger.info('正在停止任務線程...')
                 if hasattr(self.quest_setting, '_FORCESTOPING'):
                     self.quest_setting._FORCESTOPING.set()
+                    logger.info('已設置停止信號')
 
-                # 等待線程結束（最多5秒）
-                # 注意：線程已設置為 daemon，即使不退出也不會阻止程序終止
-                self.quest_threading.join(timeout=5.0)
-                if self.quest_threading.is_alive():
-                    logger.warning('任務線程未能在5秒內停止（daemon線程會隨主程序退出）')
+                # 不等待線程結束，因為：
+                # 1. 線程已設置為 daemon，主程序退出時會自動終止
+                # 2. join() 可能會阻塞導致關閉緩慢
+                # 3. 我們會立即調用 os._exit(0) 強制終止
+                logger.info('跳過等待線程，daemon 線程會隨主程序退出')
 
             # 2. 停止日誌監聽器
             logger.info('正在停止日誌監聽器...')
-            StopLogListener()
+            try:
+                StopLogListener()
+            except Exception as e:
+                print(f"停止日誌監聽器失敗: {e}")
 
             # 3. 清理消息隊列
             try:
@@ -91,7 +95,7 @@ class AppController(tk.Tk):
             # 5. 強制退出（確保進程完全終止）
             # 使用 os._exit() 而不是 sys.exit()，因為它會立即終止進程
             # 包括所有 daemon 線程，不會等待任何清理
-            logger.info('強制終止進程')
+            print('強制終止進程')  # 使用 print 因為 logger 可能已關閉
             os._exit(0)
 
     def check_queue(self):
