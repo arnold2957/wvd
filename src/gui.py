@@ -19,7 +19,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('550x688')
+        self.geometry('550x728')
         
         self.title(self.TITLE)
 
@@ -131,12 +131,12 @@ class ConfigPanelApp(tk.Toplevel):
 
         #设定adb
         row_counter = 0
-        frame_row0 = ttk.Frame(self.main_frame)
-        frame_row0.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 首行框架
-        self.adb_status_label = ttk.Label(frame_row0)
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 首行框架
+        self.adb_status_label = ttk.Label(frame_row)
         self.adb_status_label.grid(row=0, column=0,)
         # 隐藏的Entry用于存储变量
-        adb_entry = ttk.Entry(frame_row0, textvariable=self.emu_path_var)
+        adb_entry = ttk.Entry(frame_row, textvariable=self.emu_path_var)
         adb_entry.grid_remove()
         def selectADB_PATH():
             path = filedialog.askopenfilename(
@@ -148,7 +148,7 @@ class ConfigPanelApp(tk.Toplevel):
                 self.save_config()
         # 浏览按钮
         self.adb_path_change_button = ttk.Button(
-            frame_row0,
+            frame_row,
             text="修改",
             command=selectADB_PATH,
             width = 5,
@@ -163,16 +163,16 @@ class ConfigPanelApp(tk.Toplevel):
         
         self.emu_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
-        ttk.Label(frame_row0, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
-        self.adb_port_entry = ttk.Entry(frame_row0,
+        self.adb_port_entry = ttk.Entry(frame_row,
                                         textvariable=self.adb_port_var,
                                         validate="key",
                                         validatecommand=(vcmd_non_neg, '%P'),
                                         width=5)
         self.adb_port_entry.grid(row=0, column=3)
         self.button_save_adb_port = ttk.Button(
-            frame_row0,
+            frame_row,
             text="保存",
             command = self.save_config,
             width=5
@@ -185,26 +185,26 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 地下城目标
         row_counter += 1
-        frame_row2 = ttk.Frame(self.main_frame)
-        frame_row2.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
-        ttk.Label(frame_row2, text="地下城目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.farm_target_combo = ttk.Combobox(frame_row2, textvariable=self.farm_target_text_var, values=list(DUNGEON_TARGETS.keys()), state="readonly")
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
+        ttk.Label(frame_row, text="地下城目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.farm_target_combo = ttk.Combobox(frame_row, textvariable=self.farm_target_text_var, values=list(DUNGEON_TARGETS.keys()), state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
 
         # 开箱子设置
         row_counter += 1
-        frame_row3 = ttk.Frame(self.main_frame)
-        frame_row3.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
-            frame_row3,
+            frame_row,
             text="智能开箱(测试版)",
             variable=self.randomly_open_chest_var,
             command=self.save_config,
             style="Custom.TCheckbutton"
         )
         self.random_chest_check.grid(row=0, column=0,  sticky=tk.W, pady=5)
-        ttk.Label(frame_row3, text="| 开箱人选:").grid(row=0, column=1, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="| 开箱人选:").grid(row=0, column=1, sticky=tk.W, pady=5)
         self.open_chest_mapping = {
             0:"随机",
             1:"左上",
@@ -216,7 +216,7 @@ class ConfigPanelApp(tk.Toplevel):
         }
         self.who_will_open_text_var = tk.StringVar(value=self.open_chest_mapping[self.who_will_open_it_var.get()])
         self.who_will_open_combobox = ttk.Combobox(
-            frame_row3,
+            frame_row,
             textvariable=self.who_will_open_text_var,  # 绑定变量
             values=list(self.open_chest_mapping.values()),  # 使用中文选项
             state="readonly",  # 设置为只读（只能选择）
@@ -252,29 +252,29 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 休息设置
         row_counter += 1
-        frame_row5 = ttk.Frame(self.main_frame)
-        frame_row5.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
 
         def checkcommand():
             self.update_active_rest_state()
             self.save_config()
         self.active_rest_check = ttk.Checkbutton(
-            frame_row5,
+            frame_row,
             variable=self.active_rest_var,
             text="启用旅店休息",
             command=checkcommand,
             style="Custom.TCheckbutton"
             )
         self.active_rest_check.grid(row=0, column=0)
-        ttk.Label(frame_row5, text=" | 间隔:").grid(row=0, column=1, sticky=tk.W, pady=5)
-        self.rest_intervel_entry = ttk.Entry(frame_row5,
+        ttk.Label(frame_row, text=" | 间隔:").grid(row=0, column=1, sticky=tk.W, pady=5)
+        self.rest_intervel_entry = ttk.Entry(frame_row,
                                              textvariable=self.rest_intervel_var,
                                              validate="key",
                                              validatecommand=(vcmd_non_neg, '%P'),
                                              width=5)
         self.rest_intervel_entry.grid(row=0, column=2)
         self.button_save_rest_intervel = ttk.Button(
-            frame_row5,
+            frame_row,
             text="保存",
             command = self.save_config,
             width=4
@@ -283,9 +283,9 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 善恶设置
         row_counter += 1
-        frame_row6 = ttk.Frame(self.main_frame)
-        frame_row6.grid(row=row_counter, column=0, sticky="ew", pady=5)
-        ttk.Label(frame_row6, text=f"善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        ttk.Label(frame_row, text=f"善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.karma_adjust_mapping = {
             "维持现状": "+0",
             "恶→中立,中立→善": "+17",
@@ -299,7 +299,7 @@ class ConfigPanelApp(tk.Toplevel):
         elif times < 0:
             self.karma_adjust_text_var = tk.StringVar(value = "善→中立,中立→恶")
         self.karma_adjust_combobox = ttk.Combobox(
-            frame_row6,
+            frame_row,
             textvariable=self.karma_adjust_text_var,  # 绑定变量
             values=list(self.karma_adjust_mapping.keys()),  # 使用中文选项
             state="readonly",  # 设置为只读（只能选择）
@@ -314,9 +314,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.karma_adjust_var.set(self.karma_adjust_mapping[self.karma_adjust_text_var.get()])
             self.save_config()
         self.karma_adjust_combobox.bind("<<ComboboxSelected>>", handle_karma_adjust_selection)
-        ttk.Label(frame_row6, text="还需").grid(row=0, column=2, sticky=tk.W, pady=5)
-        ttk.Label(frame_row6, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
-        ttk.Label(frame_row6, text="点").grid(row=0, column=4, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="还需").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="点").grid(row=0, column=4, sticky=tk.W, pady=5)
 
         # 分割线
         row_counter += 1
@@ -433,16 +433,28 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_royalsuite_rest.grid(row=0, column=0)
 
         row_counter += 1
-        frame_triumph = ttk.Frame(self.main_frame)
-        frame_triumph.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
         self.active_triumph = ttk.Checkbutton(
-            frame_triumph,
+            frame_row,
             variable=self.active_triumph_var,
             text="跳跃到\"凯旋\"(需要解锁凯旋)",
             command=checkcommand,
             style="Custom.TCheckbutton"
             )
         self.active_triumph.grid(row=0, column=0)
+
+        row_counter += 1
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        self.active_csc = ttk.Checkbutton(
+            frame_row,
+            variable=self.active_csc_var,
+            text="尝试调整因果",
+            command=checkcommand,
+            style="Custom.TCheckbutton"
+            )
+        self.active_csc.grid(row=0, column=0)
 
 
         # 分割线
@@ -583,6 +595,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_triumph,
             self.active_royalsuite_rest,
             self.button_save_adb_port,
+            self.active_csc
             ]
 
         if state == tk.DISABLED:

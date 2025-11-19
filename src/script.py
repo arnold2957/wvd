@@ -54,7 +54,8 @@ CONFIG_VAR_LIST = [
             ["adb_port_var",                tk.StringVar,  "_ADBPORT",                   5555],
             ["last_version",                tk.StringVar,  "LAST_VERSION",               ""],
             ["latest_version",              tk.StringVar,  "LATEST_VERSION",             None],
-            ["_spell_skill_config_internal",list,          "_SPELLSKILLCONFIG",          []]
+            ["_spell_skill_config_internal",list,          "_SPELLSKILLCONFIG",          []],
+            ["active_csc_var",              tk.BooleanVar, "ACTIVE_CSC",                 True]
             ]
 
 class FarmConfig:
@@ -965,6 +966,9 @@ def Factory():
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
         # CSC_setting: 默认会先选择不接所有任务. 这个列表中储存的是想要打开的因果.
         # 其中的RGB用于缩放颜色维度, 以增加识别的可靠性.
+        if setting.ACTIVE_CSC == False:
+            logger.info(f"因为面板设置, 跳过了调整因果.")
+            CSC_symbol = None
 
         target = "GhostsOfYore"
         if tar != None:
