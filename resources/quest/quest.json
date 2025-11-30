@@ -57,6 +57,24 @@
         ]
     },
 
+    "fortress-B8F":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]要塞八层",
+        "_TARGETINFOLIST":[
+            ["stair_fortress1f","左上",[720,395]],
+            ["position","左下",[453,865]],
+            ["chest","左下",[[1,783,900,376],[1,839,423,362]]],
+            ["position","右下",[500,918]],
+            ["chest","右下",[[1,783,900,500]]],
+            ["stair_fortressGate","左下", [720,1027]],
+            ["position","左下",[720,1241]]
+        ],
+        "_EOT":[
+            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+            ["press","fortressEntrance","input swipe 650 250 650 900",1]
+        ]
+    },
+
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鸟洞三层fordraigB3F",

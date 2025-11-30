@@ -665,6 +665,15 @@ def Factory():
     def WrapImage(image,r,g,b):
         scn_b = image * np.array([b, g, r])
         return np.clip(scn_b, 0, 255).astype(np.uint8)
+    def TryPressRetry(scn):
+        if Press(CheckIf(scn,'retry')):
+            logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+            return True
+        if pos:=(CheckIf(scn,'retry_blank')):
+            Press([pos[0], pos[1]+103])
+            logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+            return True
+        return False
     def AddImportantInfo(str):
         nonlocal runtimeContext
         if runtimeContext._IMPORTANTINFO == "":
@@ -689,8 +698,7 @@ def Factory():
                     if pos:
                         return pos # FindCoords
                 # OrElse
-                if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
-                    logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+                if TryPressRetry(scn):
                     Sleep(1)
                     continue
                 if Press(CheckIf_fastForwardOff(scn)):
@@ -1048,9 +1056,7 @@ def Factory():
             if setting._FORCESTOPING.is_set():
                 return State.Quit, DungeonState.Quit, screen
 
-            if Press(CheckIf(screen,'retry')) or Press(CheckIf(screen,'retry_blank')):
-                    logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
-                    # logger.info("ka le.")
+            if TryPressRetry(screen):
                     Sleep(2)
 
             identifyConfig = [
@@ -1571,8 +1577,8 @@ def Factory():
                 return DungeonState.Dungeon
             if CheckIf(scn,'combatActive') or CheckIf(scn,'combatActive_2'):
                 return DungeonState.Combat
-            if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
-                logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
+            
+            TryPressRetry(scn)
     def StateDungeon(targetInfoList : list[TargetInfo]):
         gameFrozen_none = []
         gameFrozen_map = 0
@@ -2002,7 +2008,7 @@ def Factory():
                                 runtimeContext._ENOUGH_AOE = False
                             while 1:
                                 scn=ScreenShot()
-                                if Press(CheckIf(scn,'retry')) or Press(CheckIf(scn,'retry_blank')):
+                                if TryPressRetry(scn):
                                     continue
                                 if CheckIf(scn,'icanstillgo'):
                                     break
@@ -2386,14 +2392,15 @@ def Factory():
                     if counter_candelabra != 0:
                         logger.info("没发现巨人.")
                         RestartableSequenceExecution(
-                            lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
-                        )
+                        lambda: StateDungeon([TargetInfo('harken2','左上')]),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                    )
                         continue
                     
                     logger.info("发现了巨人.")
                     RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True)]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1),
+                        lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True),
+                                              TargetInfo('harken2','左上')]),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                     )
 
