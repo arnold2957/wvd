@@ -75,6 +75,20 @@
         ]
     },
 
+    "DH-entrance":{
+        "_TYPE":"dungeon",
+        "questName":"*新!*[宝箱]深雪入口",
+        "_TARGETINFOLIST":[
+            ["position","右下",[872,920]],
+            ["position","右下",[552,865]],
+            ["position","右下",[819,1240]]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-entrance","input swipe 650 250 650 900",1]
+        ]
+    },
+
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鸟洞三层fordraigB3F",

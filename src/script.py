@@ -1142,7 +1142,7 @@ def Factory():
                             new_str = f"+0"
                     if new_str is not None:
                         logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
-                        AddImportantInfo("新的善恶:{new_str}")
+                        AddImportantInfo(f"新的善恶:{new_str}")
                         setting._KARMAADJUST = new_str
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                         Press(pos)
