@@ -1358,6 +1358,7 @@ def Factory():
 
         if (setting._SYSTEMAUTOCOMBAT) or (runtimeContext._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
             Press(CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]]))
+            Press(CheckIf(screen,'combatAuto_2',[[700,1000,200,200]]))
             Sleep(5)
             return
 
