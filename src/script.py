@@ -1160,53 +1160,36 @@ def Factory():
                             new_str = f"-0"
                     if new_str is not None:
                         logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
-                        AddImportantInfo("新的善恶:{new_str}")
+                        AddImportantInfo(f"新的善恶:{new_str}")
                         setting._KARMAADJUST = new_str
                         SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                         Press(pos)
                         logger.info("积善行德!")
                         # logger.info("")
                         Sleep(2)
-                if Press(CheckIf(screen,'strange_things')):
-                    Sleep(2)
-                if Press(CheckIf(screen,'blessing')):
-                    logger.info("我要选安戈拉的祝福!...好吧随便选一个吧.")
-                    # logger.info("Blessing of... of course Angora! Fine, anything.")
-                    Sleep(2)
-                if Press(CheckIf(screen,'DontBuyIt')):
-                    logger.info("等我买? 你白等了, 我不买.")
-                    # logger.info("wait for paurch? Wait for someone else.")
-                    Sleep(2)
-                if Press(CheckIf(screen,'donthelp')):
-                    logger.info("不帮你了.")
-                    # logger.info("")
-                    Sleep(2)
-                if Press(CheckIf(screen,'adventurersbones')):
-                    logger.info("是骨头!")
-                    AddImportantInfo("购买了骨头.")
-                    # logger.info("")
-                    Sleep(2)
-                if Press(CheckIf(screen,'halfBone')):
-                    logger.info("半根骨头也是骨头!")
-                    AddImportantInfo("购买了尸油.")
-                    # logger.info("")
-                    Sleep(2)
-                if Press(CheckIf(screen,'buyNothing')):
-                    logger.info("有骨头的话我会买的.")
-                    # logger.info("No Bones No Buy.")
-                    Sleep(2)
-                if Press(CheckIf(screen,'Nope')):
-                    logger.info("但是, 我拒绝.")
-                    # logger.info("And what, must we give in return?")
-                    Sleep(2)
-                if Press(CheckIf(screen,'ignorethequest')):
-                    logger.info("忽略任务.")
-                    # logger.info("")
-                    Sleep(2)
-                if Press(CheckIf(screen,'dontGiveAntitoxin')):
-                    logger.info("但是, 我拒绝.")
-                    # logger.info("")
-                    Sleep(2)
+
+                dialogOption = [
+                    'adventurersbones',
+                    'halfBone',
+                    'nothanks',
+                    'strange_things',
+                    'blessing',
+                    'DontBuyIt',
+                    'donthelp',
+                    'buyNothing',
+                    'Nope',
+                    'ignorethequest',
+                    'dontGiveAntitoxin',
+                                ]
+                for op in dialogOption:
+                    if Press(CheckIf(screen, op)):
+                        Sleep(2)
+                        if op == 'adventurersbones':
+                            AddImportantInfo("购买了骨头.")
+                        if op == 'halfBone':
+                            AddImportantInfo("购买了尸油.")
+                        return IdentifyState()
+                
                 if (CheckIf(screen,'multipeopledead')):
                     runtimeContext._SUICIDE = True # 准备尝试自杀
                     logger.info("死了好几个, 惨哦")
