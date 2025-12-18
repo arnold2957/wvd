@@ -57,24 +57,6 @@
         ]
     },
 
-    "fortress-B8F":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]要塞八层",
-        "_TARGETINFOLIST":[
-            ["stair_fortress1f","左上",[720,395]],
-            ["position","左下",[453,865]],
-            ["chest","左下",[[1,783,900,376],[1,839,423,362]]],
-            ["position","右下",[500,918]],
-            ["chest","右下",[[1,783,900,500]]],
-            ["stair_fortressGate","左下", [720,1027]],
-            ["position","左下",[720,1241]]
-        ],
-        "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressEntrance","input swipe 650 250 650 900",1]
-        ]
-    },
-
     "DH-entrance":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]深雪入口",
@@ -90,7 +72,7 @@
     },
     "DH-6f":{
         "_TYPE":"dungeon",
-        "questName":"*新!*[宝箱+刷怪]深雪R6",
+        "questName":"[宝箱+刷怪]深雪R6",
         "_TARGETINFOLIST":[
             ["stair_DH_R6","右上",[286,236]],
             ["position","右下",[72,972]],
@@ -204,7 +186,7 @@
 
     "DOE":{
         "_TYPE":"dungeon",
-        "questName":"[矿石]土洞(5-9)",
+        "questName":"[矿石]土洞(中/次)",
         "_EOT":[
             ["press","DOE",["EdgeOfTown",[1,1]],1],
             ["press","DOEB1F",[1,1],1]
@@ -219,7 +201,7 @@
 
     "DOF": {
         "_TYPE":"dungeon",
-        "questName":"[矿石]火洞(10-14)",
+        "questName":"[矿石]火洞(特/中/次)",
         "_TARGETINFOLIST":[
             ["position","左下",[347,866]],
             ["position","左下",[400,1183]],
@@ -234,7 +216,7 @@
 
     "DOW":{
         "_TYPE":"dungeon",
-        "questName":"[矿石]风洞(15-19)",
+        "questName":"[矿石]风洞(特/上/中)",
         "_TARGETINFOLIST":[
         ["chest",[[700,1200,100,100]],[[0,780,900,500],[0,780,150,120]]],
         ["DOW_quit",[[700,1200,100,100]],null]
@@ -247,7 +229,7 @@
     
     "DOL":{
         "_TYPE":"dungeon",
-        "questName":"[矿石]光洞(15-19)",
+        "questName":"[矿石]光洞(特/上/中)",
         "_EOT":[
             ["press","DOL",["EdgeOfTown",[1,1]],1],
             ["press","DOLB1F",[1,1],1]
@@ -258,6 +240,22 @@
             ["position", "右下", [552,599]],
             ["position", "右下", [662,546]],
             ["position", "右下", [819,333]]
+        ]
+    },
+
+    "DOS":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]水洞(银/特/上)",
+        "_EOT":[
+            ["press","DOS",["EdgeOfTown",[1,1]],1],
+            ["press","DOSB1F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["position", "左上", [455,875]],
+            ["position", "左上", [185,1085]],
+            ["chest","左上",[[0,690,481,485]]],
+            ["DOS_quit"]
         ]
     },
 

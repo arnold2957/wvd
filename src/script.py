@@ -1131,42 +1131,26 @@ def Factory():
                 if (CheckIf(screen,'cursedWheel_timeLeap')):
                     setting._MSGQUEUE.put(('turn_to_7000G',""))
                     raise SystemExit
-                if (pos:=CheckIf(screen,'ambush')) and setting._KARMAADJUST.startswith('-'):
-                    new_str = None
-                    num_str = setting._KARMAADJUST[1:]
-                    if num_str.isdigit():
-                        num = int(num_str)
-                        if num != 0:
-                            new_str = f"-{num - 1}"
-                        else:
-                            new_str = f"+0"
-                    if new_str is not None:
-                        logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
-                        AddImportantInfo(f"新的善恶:{new_str}")
-                        setting._KARMAADJUST = new_str
-                        SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
-                        Press(pos)
-                        logger.info("伏击起手!")
-                        # logger.info("Ambush! Always starts with Ambush.")
-                        Sleep(2)
-                if (pos:=CheckIf(screen,'ignore')) and setting._KARMAADJUST.startswith('+'):
-                    new_str = None
-                    num_str = setting._KARMAADJUST[1:]
-                    if num_str.isdigit():
-                        num = int(num_str)
-                        if num != 0:
-                            new_str = f"+{num - 1}"
-                        else:
-                            new_str = f"-0"
-                    if new_str is not None:
-                        logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
-                        AddImportantInfo(f"新的善恶:{new_str}")
-                        setting._KARMAADJUST = new_str
-                        SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
-                        Press(pos)
-                        logger.info("积善行德!")
-                        # logger.info("")
-                        Sleep(2)
+                if CheckIf(screen,'ambush') or CheckIf(screen,'ignore'):
+                    if int(setting._KARMAADJUST) == 0:
+                        Press(CheckIf(screen,'ambush'))
+                        new_str = "+2"
+                    elif setting._KARMAADJUST.startswith('-'):
+                        Press(CheckIf(screen,'ambush'))
+                        num = int(setting._KARMAADJUST)
+                        num = num + 2
+                        new_str = f"{num}"
+                    else:
+                        Press(CheckIf(screen,'ignore'))
+                        num = int(setting._KARMAADJUST)
+                        num = num - 1
+                        new_str = f"+{num}"
+
+                    logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
+                    AddImportantInfo(f"新的善恶:{new_str}")
+                    setting._KARMAADJUST = new_str
+                    SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                    Sleep(2)
 
                 dialogOption = [
                     'adventurersbones',
@@ -1180,9 +1164,10 @@ def Factory():
                     'Nope',
                     'ignorethequest',
                     'dontGiveAntitoxin',
-                                ]
+                    'spareit'
+                    ]
                 for op in dialogOption:
-                    if Press(CheckIf(screen, op)):
+                    if Press(CheckIf(screen, 'dialogueChoices/'+op)):
                         Sleep(2)
                         if op == 'adventurersbones':
                             AddImportantInfo("购买了骨头.")
