@@ -183,6 +183,20 @@
         ]
     },
 
+    "TWC":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]魔女洞窟",
+        "_TARGETINFOLIST":[
+            ["position","右上",[340,287]],
+            ["position","左上",[345,929]]
+        ],
+        "_EOT":
+        [
+            ["press","TWC/TWC",["EdgeOfTown",[1,1]],1],
+            ["press","TWC/TWCB1F",[1,1],1]
+        ]
+    },
+
 
     "DOE":{
         "_TYPE":"dungeon",
