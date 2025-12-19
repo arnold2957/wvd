@@ -684,6 +684,19 @@ def Factory():
     ##################################################################
     def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
         # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
+        def pressTarget(target):
+            if target.lower() == 'return':
+                PressReturn()
+            elif target.startswith("input swipe"):
+                DeviceShell(target)
+            else:
+                Press(CheckIf(scn, target))
+        def checkPattern(scn, pattern):
+            if pattern.startswith('combatActive'):
+                return StateCombatCheck(scn)
+            else:
+                return CheckIf(scn,pattern)
+
         while True:
             for _ in range(runtimeContext._MAXRETRYLIMIT):
                 if setting._FORCESTOPING.is_set():
@@ -691,13 +704,11 @@ def Factory():
                 scn = ScreenShot()
                 if isinstance(targetPattern, (list, tuple)):
                     for pattern in targetPattern:
-                        p = CheckIf(scn,pattern)
-                        if p:
+                        if p:=checkPattern(scn, pattern):
                             return p
                 else:
-                    pos = CheckIf(scn,targetPattern)
-                    if pos:
-                        return pos # FindCoords
+                    if p:=checkPattern(scn,targetPattern):
+                        return p # FindCoords
                 # OrElse
                 if TryPressRetry(scn):
                     Sleep(1)
@@ -705,13 +716,7 @@ def Factory():
                 if Press(CheckIf_fastForwardOff(scn)):
                     Sleep(1)
                     continue
-                def pressTarget(target):
-                    if target.lower() == 'return':
-                        PressReturn()
-                    elif target.startswith("input swipe"):
-                        DeviceShell(target)
-                    else:
-                        Press(CheckIf(scn, target))
+                
                 if fallback: # Execute
                     if isinstance(fallback, (list, tuple)):
                         if (len(fallback) == 2) and all(isinstance(x, (int, float)) for x in fallback):
@@ -1062,8 +1067,6 @@ def Factory():
                     Sleep(2)
 
             identifyConfig = [
-                ('combatActive',  DungeonState.Combat),
-                ('combatActive_2',DungeonState.Combat),
                 ('dungFlag',      DungeonState.Dungeon),
                 ('chestFlag',     DungeonState.Chest),
                 ('whowillopenit', DungeonState.Chest),
@@ -1072,6 +1075,9 @@ def Factory():
             for pattern, state in identifyConfig:
                 if CheckIf(screen, pattern):
                     return State.Dungeon, state, screen
+                
+            if StateCombatCheck(screen):
+                return State.Dungeon, DungeonState.Combat, screen
 
             if CheckIf(screen,'someonedead'):
                 AddImportantInfo("他们活了,活了!")
@@ -1233,6 +1239,17 @@ def Factory():
             if totalDiff<=0.15:
                 return queue, True
         return queue, False
+    def StateCombatCheck(screen):
+        combatActiveFlag = [
+            'combatActive',
+            'combatActive_2',
+            'combatActive_3',
+            'combatActive_4',
+            ]
+        for combat in combatActiveFlag:
+            if pos:=CheckIf(screen,combat, [[0,0,150,80]]):
+                return pos
+        return None
     def StateInn():
         if not setting._ACTIVE_ROYALSUITE_REST:
             FindCoordsOrElseExecuteFallbackAndWait('OK',['Inn','Stay','Economy',[1,1]],2)
@@ -1487,7 +1504,7 @@ def Factory():
                                 Press([777,150])
                                 return None,  targetInfoList
                             logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
-                            if CheckIf(ScreenShot(),'combatActive') or CheckIf(ScreenShot(),'combatActive_2'):
+                            if StateCombatCheck(ScreenShot()):
                                 return DungeonState.Combat,targetInfoList
         return DungeonState.Map,  targetInfoList
     def StateChest():
@@ -1501,7 +1518,7 @@ def Factory():
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
-                ['dungFlag','combatActive', 'combatActive_2','chestOpening','whowillopenit','RiseAgain'],
+                ['dungFlag','combatActive','chestOpening','whowillopenit','RiseAgain'],
                 [[1,1],[1,1],'chestFlag'],
                 1)
             scn = ScreenShot()
@@ -1537,7 +1554,7 @@ def Factory():
                 if setting._SMARTDISARMCHEST:
                     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
-                    ['dungFlag','combatActive','combatActive_2','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                    ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
                     [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
                     1)
             
@@ -1546,7 +1563,7 @@ def Factory():
                 return None
             if CheckIf(scn,'dungFlag'):
                 return DungeonState.Dungeon
-            if CheckIf(scn,'combatActive') or CheckIf(scn,'combatActive_2'):
+            if StateCombatCheck(scn):
                 return DungeonState.Combat
             
             TryPressRetry(scn)
@@ -1654,7 +1671,7 @@ def Factory():
                                     Press([830,850])
                                 Sleep(1)
                                 FindCoordsOrElseExecuteFallbackAndWait(
-                                    ['recover','combatActive','combatActive_2'],
+                                    ['recover','combatActive',],
                                     [833,843],
                                     1
                                     )
@@ -1980,7 +1997,7 @@ def Factory():
                         logger.info(f"第{i+1}轮开始.")
                         secondcombat = False
                         while 1:
-                            Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive','combatActive_2'],['input swipe 400 400 400 100',[1,1]],1))
+                            Press(FindCoordsOrElseExecuteFallbackAndWait(['icanstillgo','combatActive'],['input swipe 400 400 400 100',[1,1]],1))
                             Sleep(1)
                             if setting._AOE_ONCE:
                                 runtimeContext._ENOUGH_AOE = False
@@ -1990,7 +2007,7 @@ def Factory():
                                     continue
                                 if CheckIf(scn,'icanstillgo'):
                                     break
-                                if CheckIf(scn,'combatActive') or CheckIf(scn,'combatActive_2'):
+                                if StateCombatCheck(scn):
                                     StateCombat()
                                 else:
                                     Press([1,1])
@@ -2091,7 +2108,7 @@ def Factory():
                             if shouldRecover:
                                 Press([1,1])
                                 FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
-                                    ['trait','combatActive','combatActive_2','chestFlag','combatClose'],
+                                    ['trait','combatActive','chestFlag','combatClose'],
                                     [[36,1425],[322,1425],[606,1425]],
                                     1
                                     )
@@ -2099,7 +2116,7 @@ def Factory():
                                     Press([833,843])
                                     Sleep(1)
                                     FindCoordsOrElseExecuteFallbackAndWait(
-                                        ['recover','combatActive','combatActive_2'],
+                                        ['recover','combatActive'],
                                         [833,843],
                                         1
                                         )
