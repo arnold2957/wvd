@@ -94,6 +94,7 @@ class RuntimeContext:
     _ZOOMWORLDMAP = False
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
+    _STEPAFTERRESTART = True
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -748,6 +749,7 @@ def Factory():
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
+        runtimeContext._STEPAFTERRESTART = False
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -1667,6 +1669,13 @@ def Factory():
                                             Sleep(0.3-(time.time()-t))
                                     shouldRecover = False
                                     break
+                    ########### 防止转圈
+                    if not runtimeContext._STEPAFTERRESTART:
+                        Press([27,950])
+                        Sleep(1)
+                        Press([853,950])
+
+                        runtimeContext._STEPAFTERRESTART = True
                     ########### OPEN MAP
                     Sleep(1)
                     Press([777,150])
