@@ -85,6 +85,59 @@
             ["press","DH-R5","input swipe 650 250 650 900",1]
         ]
     },
+    "DH-7f-left":{
+            "_TYPE":"dungeon",
+            "questName":"[宝箱+刷怪]深雪R7矿洞左",
+            "_TARGETINFOLIST":[
+                ["stair_DH_R7","右上",[870,1040]],
+                ["position","左下",[80,440]],
+                ["position","左下",[240,440]],
+                ["position","左下",[560,545]],
+                ["position","左下",[400,705]],
+                ["chest","左下",[[0,305,745,800],[425,785,320,320]]],
+                ["stair_DH_R6", "左下",[30,920]],
+                ["harken2", "右上",null]
+            ],
+            "_EOT":[
+                ["press","DH",["EdgeOfTown",[1,1]],1],
+                ["press","DH-R6","input swipe 650 900 650 250",1]
+            ]
+    },
+
+    "DH-7f-right":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱+刷怪]深雪R7矿洞右",
+        "_TARGETINFOLIST":[
+            ["position","右下",[770,600]],
+            ["position","右下",[770,1190]],
+            ["position","右下",[500,1025]],
+            ["chest","右下",[[420,305,480,1295]]],
+            ["position","右下",[450,545]],
+            ["position","左上",[610,1090]],
+            ["position","右上",[450,925]],
+            ["chest","右上",null],
+            ["harken", "右上",null]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-R7","input swipe 650 900 650 250",1]
+        ]
+    },
+
+    "DH-Church":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]深雪教会区",
+        "_TARGETINFOLIST":[
+            ["position","左下",[240,810]],
+            ["position","左下",[130,400]],
+            ["position","右上",[500,930]],
+            ["Bharken", "右上",null]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","stair_DH_Church","input swipe 650 900 650 250",1]
+        ]
+    },
 
     "fordraig-B3F":{
         "_TYPE":"dungeon",

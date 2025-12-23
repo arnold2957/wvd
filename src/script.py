@@ -1160,21 +1160,7 @@ def Factory():
                     SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
                     Sleep(2)
 
-                dialogOption = [
-                    'adventurersbones',
-                    'halfBone',
-                    'nothanks',
-                    'strange_things',
-                    'blessing',
-                    'DontBuyIt',
-                    'donthelp',
-                    'buyNothing',
-                    'Nope',
-                    'ignorethequest',
-                    'dontGiveAntitoxin',
-                    'spareit'
-                    ]
-                for op in dialogOption:
+                for op in DIALOG_OPTION_IMAGE_LIST:
                     if Press(CheckIf(screen, 'dialogueChoices/'+op)):
                         Sleep(2)
                         if op == 'adventurersbones':

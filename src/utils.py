@@ -9,6 +9,7 @@ import cv2
 import time
 import multiprocessing
 import numpy as np
+import glob
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -263,6 +264,20 @@ def LoadTemplateImage(shortPathOfTarget):
     logger.debug(f"加载{shortPathOfTarget}")
     pathOfTarget = ResourcePath(os.path.join(IMAGE_FOLDER + f"{shortPathOfTarget}.png"))
     return LoadImage(pathOfTarget)
+def reflectDialogOptionImage():
+    # 构建dialogueChoices文件夹的模式匹配路径
+    pattern = os.path.join(IMAGE_FOLDER, 'dialogueChoices', '*.png')
+    full_pattern = ResourcePath(pattern)
+    
+    # 使用glob获取所有匹配的文件
+    png_files = glob.glob(full_pattern)
+    
+    # 提取不带扩展名的文件名
+    options = [os.path.splitext(os.path.basename(f))[0] for f in png_files]
+    
+    return options
+
+DIALOG_OPTION_IMAGE_LIST = reflectDialogOptionImage()
 ###########################################
 class Tooltip:
     def __init__(self, widget, text):
