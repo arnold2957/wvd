@@ -44,6 +44,7 @@ CONFIG_VAR_LIST = [
             ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
             ["system_auto_combat_var",      tk.BooleanVar, "_SYSTEMAUTOCOMBAT",          False],
             ["aoe_once_var",                tk.BooleanVar, "_AOE_ONCE",                  False],
+            ["custom_aoe_time_var",         tk.IntVar,     "_AOE_TIME",                  1],
             ["auto_after_aoe_var",          tk.BooleanVar, "_AUTO_AFTER_AOE",            False],
             ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
             ["active_royalsuite_rest_var",  tk.BooleanVar, "_ACTIVE_ROYALSUITE_REST",    False],
@@ -85,6 +86,7 @@ class RuntimeContext:
     #### 其他临时参数
     _MEET_CHEST_OR_COMBAT = False
     _ENOUGH_AOE = False
+    _AOE_CAST_TIME = 0
     _COMBATSPD = False
     _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
     _MAXRETRYLIMIT = 20
@@ -95,6 +97,7 @@ class RuntimeContext:
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
     _STEPAFTERRESTART = True
+    _RESUMEAVAILABLE = False
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -1351,7 +1354,10 @@ def Factory():
                     castAndPressOK = doubleConfirmCastSpell()
                     castSpellSkill = True
                     if castAndPressOK and setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                        runtimeContext._ENOUGH_AOE = True
+                        runtimeContext._AOE_CAST_TIME += 1
+                        if runtimeContext._AOE_CAST_TIME >= setting._AOE_TIME:
+                            runtimeContext._ENOUGH_AOE = True
+                            runtimeContext._AOE_CAST_TIME = 0
                         logger.info(f"已经释放了首次全体aoe.")
                     break
             if not castSpellSkill:
@@ -1401,6 +1407,7 @@ def Factory():
                     break
         return targetPos
     def StateMoving_CheckFrozen():
+        runtimeContext._RESUMEAVAILABLE = True
         lastscreen = None
         dungState = None
         logger.info("面具男, 移动.")
@@ -1422,7 +1429,7 @@ def Factory():
                 logger.debug(f"移动停止检查:{mean_diff:.2f}")
                 if mean_diff < 0.1:
                     dungState = None
-                    logger.info("已退出移动状态.进行状态检查...")
+                    logger.info("已退出移动状态. 进行状态检查...")
                     break
             lastscreen = screen
         return dungState
@@ -1595,6 +1602,7 @@ def Factory():
                     # 战斗结束了, 我们将一些设置复位
                     if setting._AOE_ONCE:
                         runtimeContext._ENOUGH_AOE = False
+                        runtimeContext._AOE_CAST_TIME = 0
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -1679,10 +1687,31 @@ def Factory():
                         Press([853,950])
 
                         runtimeContext._STEPAFTERRESTART = True
-                    ########### OPEN MAP
-                    Sleep(1)
-                    Press([777,150])
-                    dungState = DungeonState.Map
+                    ########### 尝试resume
+                    if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),'resume')):
+                        logger.info("resume可用. 使用resume.")
+                        lastscreen = ScreenShot()
+                        while 1:
+                            Sleep(3)
+                            _, dungState,screen = IdentifyState()
+                            if dungState != DungeonState.Dungeon:
+                                logger.info(f"已退出移动状态. 当前状态为{dungState}.")
+                                break
+                            elif lastscreen is not None:
+                                gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                                gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                                mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                                logger.debug(f"移动停止检查:{mean_diff:.2f}")
+                                if mean_diff < 0.1:
+                                    runtimeContext._RESUMEAVAILABLE = False
+                                    logger.info(f"已退出移动状态. 当前状态为{dungState}.")
+                                    break
+                                lastscreen = screen
+                    ########### 如果resume失败且为地下城
+                    if dungState == DungeonState.Dungeon:
+                        Sleep(1)
+                        Press([777,150])
+                        dungState = DungeonState.Map
                 case DungeonState.Map:
                     if runtimeContext._SHOULDAPPLYSPELLSEQUENCE: # 默认值(第一次)和重启后应当直接应用序列
                         runtimeContext._SHOULDAPPLYSPELLSEQUENCE = False
@@ -1826,7 +1855,7 @@ def Factory():
                     Sleep(10)
                     logger.info("第二步: 返回要塞...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                         )
 
                     logger.info("第三步: 前往王城...")
@@ -1987,6 +2016,7 @@ def Factory():
                             Sleep(1)
                             if setting._AOE_ONCE:
                                 runtimeContext._ENOUGH_AOE = False
+                                runtimeContext._AOE_CAST_TIME = 0
                             while 1:
                                 scn=ScreenShot()
                                 if TryPressRetry(scn):
@@ -2050,6 +2080,7 @@ def Factory():
                             # 战斗结束了, 我们将一些设置复位
                             if setting._AOE_ONCE:
                                 runtimeContext._ENOUGH_AOE = False
+                                runtimeContext._AOE_CAST_TIME = 0
                             ########### TIMER
                             if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                                 spend_on_chest = 0
@@ -2142,7 +2173,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 返回要塞"),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
@@ -2271,7 +2302,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 返回要塞"),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
@@ -2374,7 +2405,7 @@ def Factory():
                         logger.info("没发现巨人.")
                         RestartableSequenceExecution(
                         lambda: StateDungeon([TargetInfo('harken2','左上')]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                     )
                         continue
                     
@@ -2382,7 +2413,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True),
                                               TargetInfo('harken2','左上')]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                     )
 
                     if ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) == 0):
@@ -2405,7 +2436,7 @@ def Factory():
                     Sleep(10)
                     logger.info("第二步: 返回要塞...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                         )
 
                     logger.info("第三步: 前往王城...")
@@ -2504,7 +2535,7 @@ def Factory():
                     Sleep(10)
                     logger.info("第二步: 返回要塞...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
                         )
 
                     logger.info("第三步: 前往王城...")

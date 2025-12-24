@@ -343,14 +343,31 @@ class ConfigPanelApp(tk.Toplevel):
             self.update_change_aoe_once_check()
             self.save_config()
         row_counter += 1
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
         self.aoe_once_check = ttk.Checkbutton(
-            self.main_frame,
-            text="一场战斗中仅释放一次全体AOE",
+            frame_row,
+            text="一场战斗中仅释放",
             variable=self.aoe_once_var,
             command= aoe_once_command,
             style="BoldFont.TCheckbutton"
         )
-        self.aoe_once_check.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=5)
+        self.aoe_once_check.grid(row=0, column=0)
+        self.aoe_custom_time_entry = ttk.Entry(frame_row,
+                                               textvariable=self.custom_aoe_time_var,
+                                               validate="key",
+                                               validatecommand=(vcmd_non_neg,'%P'),
+                                               width=1)
+        self.aoe_custom_time_entry.grid(row=0,column=1)
+        self.aoe_custom_time_label = ttk.Label(frame_row, text="次AOE.",font=("微软雅黑", 9, "bold"))
+        self.aoe_custom_time_label.grid(row=0,column=2)
+        self.button_save_custom_aoe = ttk.Button(
+            frame_row,
+            text="保存",
+            command = self.save_config,
+            width=4
+            )
+        self.button_save_custom_aoe.grid(row=0, column=3)
 
         #任何aoe后自动战斗
         row_counter += 1
@@ -514,8 +531,14 @@ class ConfigPanelApp(tk.Toplevel):
         if self.aoe_once_var.get()==False:
             self.auto_after_aoe_var.set(False)
             self.auto_after_aoe_check.config(state="disabled")
+            self.button_save_custom_aoe.config(state="disable")
+            self.aoe_custom_time_entry.config(state="disable")
+            self.aoe_custom_time_label.config(state="disable")
         if self.aoe_once_var.get():
             self.auto_after_aoe_check.config(state="normal")
+            self.button_save_custom_aoe.config(state="normal")
+            self.aoe_custom_time_entry.config(state="normal")
+            self.aoe_custom_time_label.config(state="normal")
 
     def update_system_auto_combat(self):
         is_system_auto = self.system_auto_combat_var.get()
@@ -535,6 +558,9 @@ class ConfigPanelApp(tk.Toplevel):
         for buttonName,_,_, _, _ in SPELLSEKILL_TABLE:
             getattr(self,buttonName).config(state=button_state)
         self.aoe_once_check.config(state = button_state)
+        self.button_save_custom_aoe.config(state=button_state)
+        self.aoe_custom_time_entry.config(state=button_state)
+        self.aoe_custom_time_label.config(state=button_state)
         if is_system_auto:
             self.auto_after_aoe_check.config(state = button_state)
         else:
@@ -584,6 +610,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.who_will_open_combobox,
             self.system_auto_check,
             self.aoe_once_check,
+            self.button_save_custom_aoe,
+            self.aoe_custom_time_entry,
+            self.aoe_custom_time_label,
             self.auto_after_aoe_check,
             self.skip_recover_check,
             self.skip_chest_recover_check,
