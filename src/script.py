@@ -17,7 +17,7 @@ CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻"]
-PHYSICAL_SKILLS = ["全力一击","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
+PHYSICAL_SKILLS = ["动静一击","全力一击","死死连葬","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -956,11 +956,13 @@ def Factory():
             # 如果已经在副本里了 直接结束.
             # 因为该函数预设了是从城市开始的.
             return
-        elif CheckIf(scn, 'openworldmap'):
+        
+        if CheckIf(scn, 'openworldmap'):
             # 如果已经进入了洞窟, 直接结束.
             # 因为这是无战斗无宝箱然后重新尝试的情况.
             return
-        elif Press(CheckIf(scn,'intoWorldMap')):
+        
+        if Press(CheckIf(scn,'intoWorldMap')):
             # 如果在城市, 尝试进入世界地图
             Sleep(0.5)
             FindCoordsOrElseExecuteFallbackAndWait('worldmapflag','intoWorldMap',1)
@@ -1112,8 +1114,8 @@ def Factory():
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
                     return State.EoT,DungeonState.Quit,screen
 
-            if CheckIf(screen,"RoyalCityLuknalia"):
-                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['RoyalCityLuknalia',[1,1]],1)
+            if CheckIf(screen,"RoyalCityLuknalia") or CheckIf(screen,"DHI"):
+                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['RoyalCityLuknalia','DHI',[1,1]],1)
                 if CheckIf(scn:=ScreenShot(),'Inn'):
                     return State.Inn,DungeonState.Quit, screen
                 elif CheckIf(scn,'dungFlag'):
@@ -1260,6 +1262,7 @@ def Factory():
         FindCoordsOrElseExecuteFallbackAndWait('Stay',['OK',[299,1464]],2)
         PressReturn()
     def StateEoT():
+        runtimeContext._RESUMEAVAILABLE = False
         if quest._preEOTcheck:
             if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
                 pass
