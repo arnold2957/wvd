@@ -950,11 +950,15 @@ def Factory():
 
     def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
         
         if CheckIf(scn:=ScreenShot(), 'dungflag'):
             # 如果已经在副本里了 直接结束.
             # 因为该函数预设了是从城市开始的.
+            return
+        elif CheckIf(scn, 'openworldmap'):
+            # 如果已经进入了洞窟, 直接结束.
+            # 因为这是无战斗无宝箱然后重新尝试的情况.
             return
         elif Press(CheckIf(scn,'intoWorldMap')):
             # 如果在城市, 尝试进入世界地图
@@ -1093,11 +1097,20 @@ def Factory():
                 return IdentifyState()
 
             if CheckIf(screen,"returntoTown"):
-                FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
-                return State.Inn,DungeonState.Quit, screen
+                if runtimeContext._MEET_CHEST_OR_COMBAT:
+                    FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
+                    return State.Inn,DungeonState.Quit, screen
+                else:
+                    logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    return State.EoT,DungeonState.Quit,screen
 
-            if Press(CheckIf(screen,"openworldmap")):
-                return IdentifyState()
+            if pos:=(CheckIf(screen,"openworldmap")):
+                if runtimeContext._MEET_CHEST_OR_COMBAT:
+                    Press(pos)
+                    return IdentifyState()
+                else:
+                    logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    return State.EoT,DungeonState.Quit,screen
 
             if CheckIf(screen,"RoyalCityLuknalia"):
                 FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['RoyalCityLuknalia',[1,1]],1)
@@ -1446,7 +1459,7 @@ def Factory():
             searchResult = StateMap_FindSwipeClick(targetInfo)
         except KeyError as e:
             logger.info(f"错误: {e}") # 一般来说这里只会返回"地图不可用"
-            return None,  targetInfoList
+            return None, targetInfoList
     
         if not CheckIf(map,'mapFlag'):
                 return None,targetInfoList # 发生了错误, 应该是进战斗了
@@ -1469,13 +1482,13 @@ def Factory():
         else:
             if target in normalPlace or target.endswith("_quit") or target.startswith('stair'):
                 Press(searchResult)
-                Press([280,1433]) # automove
+                Press([136,1431]) # automove
                 return StateMoving_CheckFrozen(),targetInfoList
             else:
                 if (CheckIf_FocusCursor(ScreenShot(),target)): #注意 这里通过二次确认 我们可以看到目标地点 而且是未选中的状态
                     logger.info("经过对比中心区域, 确认没有抵达.")
                     Press(searchResult)
-                    Press([280,1433]) # automove
+                    Press([136,1431]) # automove
                     return StateMoving_CheckFrozen(),targetInfoList
                 else:
                     if setting._DUNGWAITTIMEOUT == 0:
@@ -1709,38 +1722,70 @@ def Factory():
                                 lastscreen = screen
                     ########### 如果resume失败且为地下城
                     if dungState == DungeonState.Dungeon:
-                        Sleep(1)
-                        Press([777,150])
                         dungState = DungeonState.Map
                 case DungeonState.Map:
-                    if runtimeContext._SHOULDAPPLYSPELLSEQUENCE: # 默认值(第一次)和重启后应当直接应用序列
+                    ########### 重置施法序列 - 默认值(第一次)和重启后应当直接应用序列
+                    if runtimeContext._SHOULDAPPLYSPELLSEQUENCE: 
                         runtimeContext._SHOULDAPPLYSPELLSEQUENCE = False
                         if targetInfoList[0].activeSpellSequenceOverride:
                             logger.info("因为初始化, 复制了施法序列.")
                             runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
 
-                    dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
-                    
-                    if newTargetInfoList == targetInfoList:
-                        gameFrozen_map +=1
-                        logger.info(f"地图卡死检测:{gameFrozen_map}")
-                    else:
-                        gameFrozen_map = 0
-                    if gameFrozen_map > 50:
-                        gameFrozen_map = 0
-                        restartGame()
+                    ########### 不打开地图, 执行自动宝箱
+                    if targetInfoList[0] and (targetInfoList[0].target == "chest_auto"):
+                        lastscreen = ScreenShot()
+                        if not Press(CheckIf(lastscreen,"chest_auto",[[710,250,180,180]])):
+                            Press(CheckIf(lastscreen,"mapflag"))
+                            Press([664,329])
+                            Sleep(1)
+                            lastscreen = ScreenShot()
+                            if not Press(CheckIf(lastscreen,"chest_auto",[[710,250,180,180]])):
+                                dungState = None
+                                continue
+                        Sleep(0.5)
+                        while 1:
+                            Sleep(3)
+                            _, dungState,screen = IdentifyState()
+                            if dungState != DungeonState.Dungeon:
+                                logger.info(f"已退出移动状态. 当前状态为{dungState}.")
+                                break
+                            elif lastscreen is not None:
+                                gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                                gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                                mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                                logger.debug(f"移动停止检查:{mean_diff:.2f}")
+                                if mean_diff < 0.05:
+                                    logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                                    if dungState == DungeonState.Dungeon:
+                                        targetInfoList.pop(0)
+                                    break
+                                lastscreen = screen
+                    else: 
+                        Sleep(1)
+                        Press([777,150])
 
-                    if (targetInfoList==None) or (targetInfoList == []):
-                        logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
-                        break
-
-                    if (newTargetInfoList != targetInfoList):
-                        if newTargetInfoList[0].activeSpellSequenceOverride:
-                            logger.info("因为目标信息变动, 重新复制了施法序列.")
-                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+                        dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
+                        
+                        if newTargetInfoList == targetInfoList:
+                            gameFrozen_map +=1
+                            logger.info(f"地图卡死检测:{gameFrozen_map}")
                         else:
-                            logger.info("因为目标信息变动, 清空了施法序列.")
-                            runtimeContext._ACTIVESPELLSEQUENCE = None
+                            gameFrozen_map = 0
+                        if gameFrozen_map > 50:
+                            gameFrozen_map = 0
+                            restartGame()
+
+                        if (targetInfoList==None) or (targetInfoList == []):
+                            logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
+                            break
+
+                        if (newTargetInfoList != targetInfoList):
+                            if newTargetInfoList[0].activeSpellSequenceOverride:
+                                logger.info("因为目标信息变动, 重新复制了施法序列.")
+                                runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
+                            else:
+                                logger.info("因为目标信息变动, 清空了施法序列.")
+                                runtimeContext._ACTIVESPELLSEQUENCE = None
 
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
