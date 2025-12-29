@@ -199,16 +199,16 @@
     },
     "AWD-noGorgon":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]狼洞2f宝箱(无牛)",
+        "questName":"[宝箱]狼洞1f宝箱",
         "_TARGETINFOLIST":[
-            ["chest","右上",[[0,254,867,1020],[0,254,395,701]]],
-            ["position","右下",[766,974]]
+            ["chest_auto"],
+            ["position","右上",[766,930]]
         ],
         "_preEOTcheck":"AWD/AWD",
         "_EOT":
         [
             ["press","intoWorldMap",["AWD/AWD","input swipe 400 400 500 500"],1],
-            ["press","AWD/AWD2F",[1,1],1]
+            ["press","AWD/AWD1F",[1,1],1]
         ]
     },
 

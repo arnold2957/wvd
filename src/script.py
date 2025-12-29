@@ -1707,7 +1707,7 @@ def Factory():
                     if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),'resume')):
                         logger.info("resume可用. 使用resume.")
                         lastscreen = ScreenShot()
-                        while 1:
+                        for counter in range(30):
                             Sleep(3)
                             _, dungState,screen = IdentifyState()
                             if dungState != DungeonState.Dungeon:
@@ -1723,6 +1723,9 @@ def Factory():
                                     logger.info(f"已退出移动状态. 当前状态为{dungState}.")
                                     break
                                 lastscreen = screen
+                            if counter == 29:
+                                # 转圈可能 重启.
+                                restartGame()
                     ########### 如果resume失败且为地下城
                     if dungState == DungeonState.Dungeon:
                         dungState = DungeonState.Map
