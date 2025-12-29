@@ -17,7 +17,7 @@ CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
 FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻"]
-PHYSICAL_SKILLS = ["动静一击","全力一击","死死连葬","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
+PHYSICAL_SKILLS = ["动静一击","裂地一击","全力一击","死死连葬","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
@@ -1099,7 +1099,7 @@ def Factory():
                 return IdentifyState()
 
             if CheckIf(screen,"returntoTown"):
-                if runtimeContext._MEET_CHEST_OR_COMBAT:
+                if setting._ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT:
                     FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     return State.Inn,DungeonState.Quit, screen
                 else:
@@ -1107,7 +1107,7 @@ def Factory():
                     return State.EoT,DungeonState.Quit,screen
 
             if pos:=(CheckIf(screen,"openworldmap")):
-                if runtimeContext._MEET_CHEST_OR_COMBAT:
+                if setting._ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT:
                     Press(pos)
                     return IdentifyState()
                 else:
@@ -1851,9 +1851,9 @@ def Factory():
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
-                        logger.info("因为没有遇到战斗或宝箱, 跳过恢复")
+                        logger.info("因为没有遇到战斗或宝箱, 跳过住宿.")
                     elif not setting._ACTIVE_REST:
-                        logger.info("因为面板设置, 跳过恢复")
+                        logger.info("因为面板设置, 跳过住宿.")
                     elif ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) != 0):
                         logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     else:
@@ -2446,21 +2446,22 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1)
                     )
 
-                    counter_candelabra = 0
-                    for _ in range(3):
-                        scn = ScreenShot()
-                        if CheckIf(scn,"gaint_candelabra_1") or CheckIf(scn,"gaint_candelabra_2"):
-                            counter_candelabra+=1
-                        Sleep(1)
-                    if counter_candelabra != 0:
-                        logger.info("没发现巨人.")
-                        RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo('harken2','左上')]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
-                    )
-                        continue
+                    # counter_candelabra = 0
+                    # for _ in range(3):
+                    #     scn = ScreenShot()
+                    #     if CheckIf(scn,"gaint_candelabra_1") or CheckIf(scn,"gaint_candelabra_2"):
+                    #         counter_candelabra+=1
+                    #     Sleep(1)
+                    # if counter_candelabra != 0:
+                    #     logger.info("没发现巨人.")
+                    #     RestartableSequenceExecution(
+                    #     lambda: StateDungeon([TargetInfo('harken2','左上')]),
+                    #     lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                    # )
+                    #     continue
                     
-                    logger.info("发现了巨人.")
+                    # logger.info("发现了巨人.")
+                    logger.info("跳过了巨人检测环节. 现在默认总是击杀灯怪.")
                     RestartableSequenceExecution(
                         lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True),
                                               TargetInfo('harken2','左上')]),
