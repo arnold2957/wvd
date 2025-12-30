@@ -2441,10 +2441,11 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: StateEoT()
                         )
-                    RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo('position','左上',[560,928])]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1)
-                    )
+                    
+                    # RestartableSequenceExecution(
+                    #     lambda: StateDungeon([TargetInfo('position','左上',[560,928])]),
+                    #     lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1)
+                    # )
 
                     # counter_candelabra = 0
                     # for _ in range(3):
