@@ -1669,23 +1669,17 @@ def Factory():
                         while 1:
                             counter_trychar += 1
                             scn=ScreenShot()
-                            if (CheckIf(scn,'dungflag') and not CheckIf(scn,'mapFlag')) and (counter_trychar <=20):
+                            if (CheckIf(scn,'dungflag') and not CheckIf(scn,'mapFlag')) and (counter_trychar <=30):
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(1)
-                            else:
-                                logger.info("自动回复失败, 暂不进行回复.")
-                                break
-                            if CheckIf(scn:=ScreenShot(),'trait'):
+                                continue
+                            elif CheckIf(scn,'trait'):
                                 if CheckIf(scn,'story', [[676,800,220,108]]):
                                     Press([725,850])
                                 else:
                                     Press([830,850])
                                 Sleep(1)
-                                FindCoordsOrElseExecuteFallbackAndWait(
-                                    ['recover','combatActive',],
-                                    [833,843],
-                                    1
-                                    )
+                                FindCoordsOrElseExecuteFallbackAndWait(['recover','combatActive',],[833,843],1)
                                 if CheckIf(ScreenShot(),'recover'):
                                     Sleep(1.5)
                                     Press([600,1200])
@@ -1697,6 +1691,9 @@ def Factory():
                                             Sleep(0.3-(time.time()-t))
                                     shouldRecover = False
                                     break
+                            else:
+                                logger.info("自动回复异常, 中止本次回复.")
+                                break
                     ########### 防止转圈
                     if not runtimeContext._STEPAFTERRESTART:
                         Press([27,950])
