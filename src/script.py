@@ -1668,7 +1668,8 @@ def Factory():
                         counter_trychar = -1
                         while 1:
                             counter_trychar += 1
-                            if CheckIf(ScreenShot(),'dungflag') and (counter_trychar <=20):
+                            scn=ScreenShot()
+                            if (CheckIf(scn,'dungflag') and not CheckIf(scn,'mapFlag')) and (counter_trychar <=20):
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(1)
                             else:

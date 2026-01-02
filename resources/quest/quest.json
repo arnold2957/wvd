@@ -256,8 +256,7 @@
         "_TYPE":"dungeon",
         "questName":"[宝箱]离别洞窟(只刷2f)",
         "_TARGETINFOLIST":[
-            ["chest","左上",null],
-            ["chest","右上",null],
+            ["chest_auto"],
             ["harken","左下",null]
         ],
         "_EOT":[
