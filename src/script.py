@@ -479,9 +479,31 @@ def Factory():
         time.sleep(t)
     def ScreenShot():
         while True:
+            exception = None
+            result = None
+            completed = Event()
+
+            def adb_screencap_thread():
+                nonlocal exception, result
+                try:
+                    result = setting._ADBDEVICE.screencap()
+                except Exception as e:
+                    exception = e
+                finally:
+                    completed.set()
+            
+            thread = Thread(target= adb_screencap_thread)
+            thread.daemon = True
+            thread.start()
+
             try:
-                # logger.debug('ScreenShot')
-                screenshot = setting._ADBDEVICE.screencap()
+                if not completed.wait(timeout=5):
+                    logger.warning(f"截图超时")
+                    raise TimeoutError(f"截图超时")
+                if exception is not None:
+                    raise exception
+                
+                screenshot = result
                 screenshot_np = np.frombuffer(screenshot, dtype=np.uint8)
 
                 if screenshot_np.size == 0:
