@@ -970,6 +970,19 @@ def Factory():
         Combat = 'combat'
         Quit = 'quit'
 
+    def DungeonCompletionCounter():
+        nonlocal runtimeContext
+        if runtimeContext._LAPTIME!= 0:
+            runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+            summary_text = f"已完成{runtimeContext._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(runtimeContext._TOTALTIME,2)}秒.上次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒.\n"
+            if runtimeContext._COUNTERCHEST > 0:
+                summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
+            if runtimeContext._COUNTERCOMBAT > 0:
+                summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
+            logger.info(f"{runtimeContext._IMPORTANTINFO}{summary_text}",extra={"summary": True})
+        runtimeContext._LAPTIME = time.time()
+        runtimeContext._COUNTERDUNG+=1
+
     def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
         FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
@@ -1126,6 +1139,7 @@ def Factory():
                     return State.Inn,DungeonState.Quit, screen
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    DungeonCompletionCounter()
                     return State.EoT,DungeonState.Quit,screen
 
             if pos:=(CheckIf(screen,"openworldmap")):
@@ -1134,6 +1148,7 @@ def Factory():
                     return IdentifyState()
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    DungeonCompletionCounter()
                     return State.EoT,DungeonState.Quit,screen
 
             if CheckIf(screen,"RoyalCityLuknalia") or CheckIf(screen,"DHI"):
@@ -1768,24 +1783,33 @@ def Factory():
                             if not Press(CheckIf(lastscreen,"chest_auto",[[710,250,180,180]])):
                                 dungState = None
                                 continue
-                        Sleep(0.5)
-                        while 1:
-                            Sleep(3)
-                            _, dungState,screen = IdentifyState()
-                            if dungState != DungeonState.Dungeon:
-                                logger.info(f"已退出移动状态. 当前状态为{dungState}.")
-                                break
-                            elif lastscreen is not None:
-                                gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                                gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
-                                mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                                logger.debug(f"移动停止检查:{mean_diff:.2f}")
-                                if mean_diff < 0.05:
-                                    logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
-                                    if dungState == DungeonState.Dungeon:
-                                        targetInfoList.pop(0)
+                        Sleep(1.5)
+                        _, dungState,screen = IdentifyState()
+                        gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                        gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                        mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                        if mean_diff < 0.05:
+                            logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                            if dungState == DungeonState.Dungeon:
+                                targetInfoList.pop(0)
+                                logger.info(f"退出宝箱搜索.")
+                        else:
+                            lastscreen = screen
+                            while 1:
+                                Sleep(3)
+                                _, dungState,screen = IdentifyState()
+                                if dungState != DungeonState.Dungeon:
+                                    logger.info(f"已退出移动状态. 当前状态为{dungState}.")
                                     break
-                                lastscreen = screen
+                                elif lastscreen is not None:
+                                    gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                                    gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                                    mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                                    logger.debug(f"移动停止检查:{mean_diff:.2f}")
+                                    if mean_diff < 0.05:
+                                        logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                                        break
+                                    lastscreen = screen
                     else: 
                         Sleep(1)
                         Press([777,150])
@@ -1860,16 +1884,7 @@ def Factory():
                         logger.info("即将停止脚本...")
                         break
                 case State.Inn:
-                    if runtimeContext._LAPTIME!= 0:
-                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        summary_text = f"已完成{runtimeContext._COUNTERDUNG}次\"{setting._FARMTARGET_TEXT}\"地下城.\n总计{round(runtimeContext._TOTALTIME,2)}秒.上次用时:{round(time.time()-runtimeContext._LAPTIME,2)}秒.\n"
-                        if runtimeContext._COUNTERCHEST > 0:
-                            summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
-                        if runtimeContext._COUNTERCOMBAT > 0:
-                            summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
-                        logger.info(f"{runtimeContext._IMPORTANTINFO}{summary_text}",extra={"summary": True})
-                    runtimeContext._LAPTIME = time.time()
-                    runtimeContext._COUNTERDUNG+=1
+                    DungeonCompletionCounter()
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info("因为没有遇到战斗或宝箱, 跳过住宿.")
                     elif not setting._ACTIVE_REST:
