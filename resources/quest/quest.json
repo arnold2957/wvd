@@ -211,8 +211,20 @@
             ["press","AWD/AWD2F",[1,1],1]
         ]
     },
-
-
+    "AWD-1F":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]狼洞1f宝箱",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","右上",[760,930]]
+        ],
+        "_preEOTcheck":"AWD/AWD",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["AWD/AWD","input swipe 400 400 500 500"],1],
+            ["press","AWD/AWD1F",[1,1],1]
+        ]
+    },
     "GHB":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]百花之庭固定怪",
