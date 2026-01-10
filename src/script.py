@@ -12,6 +12,7 @@ from threading import Thread,Event
 from pathlib import Path
 import numpy as np
 import copy
+from ocr_onnx_engine import OnnxPaddleOCR
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
@@ -396,6 +397,7 @@ def Factory():
     setting =  None
     quest = None
     runtimeContext = None
+    ocr_engine = None
     def LoadQuest(farmtarget):
         # 构建文件路径
         jsondict = LoadJson(ResourcePath(QUEST_FILE))
@@ -532,6 +534,70 @@ def Factory():
                 if isinstance(e, (AttributeError,RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info("adb重启中...")
                     ResetADBDevice()
+
+    def InitOCR():
+        """
+        初始化 OCR 引擎：只做一次。
+        建议把 det.onnx/rec.onnx/keys.txt 放在固定路径，避免工作目录变化导致找不到文件。
+        """
+        nonlocal ocr_engine
+
+        det_path  = 'resources/model/det.onnx'
+        rec_path  = 'resources/model/rec.onnx'
+        keys_path = 'resources/model/keys.txt'
+
+
+
+        ocr_engine = OnnxPaddleOCR(ResourcePath(det_path), ResourcePath(rec_path), ResourcePath(keys_path))
+        logger.info("OCR 引擎初始化完成。")
+
+    def OCR_AllText(screen_bgr, rois=None, min_conf=0.6):
+        """
+        对截图进行 OCR，返回所有文本框的识别结果列表。
+        - screen_bgr: 你的 ScreenShot() 返回的图像
+        - rois: 可选，[[x,y,w,h], ...]，强烈建议指定 ROI 以提升速度
+        - min_conf: 识别置信度过滤阈值，避免误触
+        """
+        if ocr_engine is None:
+            return []
+        return ocr_engine.ocr(
+            screen_bgr,
+            rois=rois,
+            min_rec_conf=min_conf
+        )
+
+    def OCR_FindTextCenter(screen_bgr: np.ndarray, target_text: str, rois=None, min_conf=0.7):
+        """
+        在截图中查找目标文本，找到后返回 (pos, conf, box)：
+        - pos: [x, y]，文本框中心点，可直接用于 Press([x,y])
+        - conf: 该文本块的识别置信度（REC）
+        - box: 该文本块的四点框坐标，np.ndarray shape=(4,2)，整图坐标
+
+        匹配策略（严格模式）：
+        - 忽略大小写
+        - 去掉所有空白字符（空格/换行/tab）
+        - 必须完全相等
+        """
+        def _norm(s: str):
+            if s is None:
+                return ""
+            return "".join(str(s).split()).lower()
+
+        t = _norm(target_text)
+
+        best = None
+        for r in OCR_AllText(screen_bgr, rois=rois, min_conf=min_conf):
+            if _norm(r.text) == t:
+                if (best is None) or (r.conf > best.conf):
+                    best = r
+
+        if best is None:
+            return (None, 0.0, None)
+
+        x, y = best.center()
+        return ([x, y], float(best.conf), best.box.astype(np.int32))
+
+    
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage.copy()
@@ -566,6 +632,256 @@ def Factory():
 
         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
         return pos
+    def CheckIf_OCR(screenImage, textOfTarget, roi=None, outputMatchResult=False):
+        """
+        OCR 版 CheckIf：用 OCR 文本匹配替代模板匹配，返回目标文本所在框中心点 [x,y]。
+
+        约束满足：
+        1) 不引入任何新依赖项
+        2) 第二个参数为 textOfTarget，仅接受文本
+        3) roi 固定为 [x, y, w, h]
+
+        行为尽量对齐原 CheckIf：
+        - 找到并达到阈值：返回 [x,y]
+        - 找不到/不达阈值/异常：返回 None
+        - outputMatchResult=True：输出 origin.png / matched.png 调试图
+        """
+
+        if screenImage is None:
+            logger.debug("CheckIf_OCR: screenImage 为空")
+            return None
+        if textOfTarget is None:
+            logger.debug("CheckIf_OCR: textOfTarget 为空")
+            return None
+
+        screenshot = screenImage.copy()
+
+        # roi 参数要求为 [x,y,w,h]，转换成 OCR_FindTextCenter / OCR_AllText 所用的 rois 形态
+        rois = roi if roi is not None else None
+
+        # ---------- 1) 先走“严格匹配”快路径：直接复用你已有的 OCR_FindTextCenter ----------
+        # 注意：这里把 min_conf 降到 0.0，避免因为置信度波动而漏检（阈值在后面统一判定）
+        try:
+            pos, conf, box = OCR_FindTextCenter(screenshot, textOfTarget, rois=rois, min_conf=0.0)
+            if pos is not None:
+                # 严格匹配到了，仍然建议按“匹配度阈值”思路做一次置信度判断：
+                # 但 OCR_FindTextCenter 目前不返回 conf，所以这里无法判断，只能直接通过。
+                # 若你愿意，我可以把 OCR_FindTextCenter 改成同时返回 (pos, conf, box)。
+                if outputMatchResult:
+                    # 1) 保存原图
+                    cv2.imwrite("origin_ocr.png", screenImage)
+
+                    # 2) 可视化：所有 OCR 框 + 命中框信息
+                    vis = screenImage.copy()
+
+                    # 2.1 画出所有 OCR 框（绿色）
+                    allr = OCR_AllText(screenImage, rois=rois, min_conf=0.0)
+                    for r in allr:
+                        cv2.polylines(vis, [r.box.astype(np.int32)], True, (0, 255, 0), 2)
+
+                    # 2.2 若命中，画红色框并写标签
+                    if box is not None and pos is not None:
+                        cv2.polylines(vis, [box.astype(np.int32)], True, (0, 0, 255), 3)
+
+                        # 标签位置：取 box 的左上角附近
+                        # 计算文本放置位置：放在框的下方
+                        tlx = int(np.min(box[:, 0]))
+                        tly = int(np.min(box[:, 1]))
+                        brx = int(np.max(box[:, 0]))
+                        bry = int(np.max(box[:, 1]))
+
+                        # 第一行放在框下方 22px，第二行再往下 22px
+                        text_y1 = min(vis.shape[0] - 10, bry + 22)
+                        text_y2 = min(vis.shape[0] - 10, bry + 44)
+                        px, py = pos
+
+                        label1 = f"target: {str(textOfTarget)}"
+                        label2 = f"conf: {conf:.3f}  pos: ({px},{py})"
+
+                        # OpenCV putText 对中文支持较差，这里标签用英文/数字更稳
+                        cv2.putText(vis, label1, (tlx, text_y1),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                        cv2.putText(vis, label2, (tlx, text_y2),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    else:
+                        # 未命中时给个提示
+                        cv2.putText(vis, "target not found", (20, 40),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+
+                    cv2.imwrite("matched_ocr.png", vis)
+
+                logger.debug(f"搜索到疑似{textOfTarget}, 匹配程度:100.00% (严格匹配)")
+                return pos
+        except Exception as e:
+            logger.error(f"CheckIf_OCR: strict path 异常: {e}")
+            logger.info(f"CheckIf_OCR: strict path 异常: {e}")
+            # strict path 失败不直接返回，继续走 fallback
+
+        # ---------- 2) fallback：做一次“评分匹配”，更贴近原 CheckIf 的阈值逻辑 ----------
+        # 阈值与原模板匹配对齐：0.80
+        threshold = 0.80
+
+        # 文本规范化：降低空格/标点差异的影响（不引入 regex）
+        def _norm_text(s: str) -> str:
+            s = str(s).strip().lower()
+            s = "".join(s.split())  # 去空白
+            kept = []
+            for ch in s:
+                if ch.isalnum() or ("\u4e00" <= ch <= "\u9fff"):
+                    kept.append(ch)
+            return "".join(kept)
+
+        # 轻量相似度：包含关系优先，否则用字符集合 Jaccard（不引入 difflib）
+        def _text_similarity(a: str, b: str) -> float:
+            if not a or not b:
+                return 0.0
+            if a in b or b in a:
+                return 1.0
+            sa, sb = set(a), set(b)
+            inter = len(sa & sb)
+            union = len(sa | sb)
+            return inter / union if union else 0.0
+
+        target_norm = _norm_text(textOfTarget)
+        if not target_norm:
+            logger.debug("CheckIf_OCR: 目标文本规范化后为空")
+            return None
+
+        try:
+            results = OCR_AllText(screenshot, rois=rois, min_conf=0.0)
+        except Exception as e:
+            logger.error(f"CheckIf_OCR: OCR_AllText 异常: {e}")
+            logger.info(f"CheckIf_OCR: OCR_AllText 异常: {e}")
+            return None
+
+        if not results:
+            logger.debug(f"搜索到疑似{textOfTarget}, 匹配程度:0.00%")
+            logger.debug("匹配程度不足阈值.")
+            return None
+
+        best_r = None
+        best_score = -1.0
+        best_sim = 0.0
+        best_conf = 0.0
+
+        for r in results:
+            rec_text = getattr(r, "text", "")
+            conf = float(getattr(r, "conf", 0.0))
+            rec_norm = _norm_text(rec_text)
+            if not rec_norm:
+                continue
+
+            sim = _text_similarity(rec_norm, target_norm)
+            score = sim * conf  # 综合得分：既像又“确信”
+
+            if score > best_score:
+                best_score = score
+                best_sim = sim
+                best_conf = conf
+                best_r = r
+
+        logger.debug(
+            f"搜索到疑似{textOfTarget}, 匹配程度:{max(best_score,0)*100:.2f}% "
+            f"(文本相似度:{best_sim*100:.2f}%, OCR置信度:{best_conf*100:.2f}%)"
+        )
+
+        if best_r is None or best_score < threshold:
+            logger.debug("匹配程度不足阈值.")
+            return None
+
+        if best_score <= 0.9:
+            logger.debug(f"警告: {textOfTarget}的匹配程度超过了{threshold*100:.0f}%但不足90%")
+
+        # 返回中心点（你的 OCRResult 如果实现了 center()，直接用）
+        try:
+            x, y = best_r.center()
+            pos = [int(x), int(y)]
+        except Exception:
+            # 万一 center() 不存在，就从 box 均值计算
+            box = np.array(getattr(best_r, "box", None), dtype=np.float32)
+            if box is None or box.shape != (4, 2):
+                return None
+            pos = [int(round(float(box[:, 0].mean()))), int(round(float(box[:, 1].mean())))]
+
+        if outputMatchResult:
+            try:
+                cv2.imwrite("origin.png", screenshot)
+                vis = screenshot.copy()
+
+                # 画所有 OCR 框（绿色）
+                for rr in results:
+                    bb = np.array(getattr(rr, "box", None), dtype=np.int32)
+                    if bb is None or bb.shape != (4, 2):
+                        continue
+                    cv2.polylines(vis, [bb], True, (0, 255, 0), 2)
+
+                # 高亮 best 框（红色）
+                bb = np.array(getattr(best_r, "box", None), dtype=np.int32)
+                if bb is not None and bb.shape == (4, 2):
+                    cv2.polylines(vis, [bb], True, (0, 0, 255), 3)
+                    x0 = int(bb[:, 0].min())
+                    y0 = int(bb[:, 1].min())
+                    label = f"{getattr(best_r,'text','')} | score={best_score:.2f}"
+                    cv2.putText(vis, label, (x0, max(0, y0 - 6)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+                cv2.imwrite("matched.png", vis)
+            except Exception as e:
+                logger.debug(f"CheckIf_OCR: 调试图输出失败: {e}")
+
+        return pos
+    def CheckIf_OCR2(screenImage, textOfTarget, roi=None, outputMatchResult=False):
+        """
+        功能与 CheckIf 对齐，但用 OCR 文本匹配替代模板匹配。
+        为了兼容旧逻辑：函数返回值仍然只返回 pos（或 None）。
+        """
+        try:
+            pos, conf, box = OCR_FindTextCenter(screenImage, textOfTarget, roi=roi, min_conf=0.7)
+
+            if outputMatchResult:
+                # 1) 保存原图
+                cv2.imwrite("origin_ocr.png", screenImage)
+
+                # 2) 可视化：所有 OCR 框 + 命中框信息
+                vis = screenImage.copy()
+
+                # 2.1 画出所有 OCR 框（绿色）
+                allr = OCR_AllText(screenImage, roi=roi, min_conf=0.0)
+                for r in allr:
+                    cv2.polylines(vis, [r.box.astype(np.int32)], True, (0, 255, 0), 2)
+
+                # 2.2 若命中，画红色框并写标签
+                if box is not None and pos is not None:
+                    cv2.polylines(vis, [box.astype(np.int32)], True, (0, 0, 255), 3)
+
+                    # 标签位置：取 box 的左上角附近
+                    tlx = int(np.min(box[:, 0]))
+                    tly = int(np.min(box[:, 1]))
+                    px, py = pos
+
+                    label1 = f"target: {str(textOfTarget)}"
+                    label2 = f"conf: {conf:.3f}  pos: ({px},{py})"
+
+                    # OpenCV putText 对中文支持较差，这里标签用英文/数字更稳
+                    cv2.putText(vis, label1, (tlx, max(0, tly - 28)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    cv2.putText(vis, label2, (tlx, max(0, tly - 6)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                else:
+                    # 未命中时给个提示
+                    cv2.putText(vis, "target not found", (20, 40),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+
+                cv2.imwrite("matched_ocr.png", vis)
+
+            # 为保持旧版调用兼容：只返回 pos
+            return pos
+
+        except Exception as e:
+            print(f"CheckIf_OCR 异常: {e}")
+            return None
+
+
     def CheckIf_MultiRect(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
@@ -1287,9 +1603,12 @@ def Factory():
             'combatActive_3',
             'combatActive_4',
             ]
-        for combat in combatActiveFlag:
-            if pos:=CheckIf(screen,combat, [[0,0,150,80]]):
-                return pos
+        #for combat in combatActiveFlag:
+        #    if pos:=CheckIf(screen,combat, [[0,0,150,80]]):
+        #       return pos
+        if pos:=CheckIf_OCR(screen,"Active", [[0,0,150,80]],outputMatchResult=True):
+            logger.info("检测到战斗状态")
+            return pos
         return None
     def StateInn():
         if not setting._ACTIVE_ROYALSUITE_REST:
@@ -1386,7 +1705,8 @@ def Factory():
                     return
 
         if (setting._SYSTEMAUTOCOMBAT) or (runtimeContext._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
-            Press(CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]]))
+            logger.info("开始了自动战斗")
+            #Press(CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]]))
             Press(CheckIf(screen,'combatAuto_2',[[700,1000,200,200]]))
             Sleep(5)
             return
@@ -1414,6 +1734,7 @@ def Factory():
                         logger.info(f"已经释放了首次全体aoe.")
                     break
             if not castSpellSkill:
+                logger.info("没有要用的技能，进行普通攻击")
                 Press(CheckIf(ScreenShot(),'combatClose'))
                 Press([850,1100])
                 Sleep(0.5)
@@ -2686,6 +3007,9 @@ def Factory():
         Sleep(1) # 没有等utils初始化完成
         
         ResetADBDevice()
+
+        # 初始化 OCR（务必在 ADB 截图可用后）
+        InitOCR()
 
         quest = LoadQuest(setting._FARMTARGET)
         if quest:
