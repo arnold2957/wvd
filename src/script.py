@@ -985,7 +985,7 @@ def Factory():
 
     def TeleportFromCityToWorldLocation(target, swipe):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap','startdownload'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
         
         if CheckIf(scn:=ScreenShot(), 'dungflag'):
             # 如果已经在副本里了 直接结束.
@@ -1386,8 +1386,9 @@ def Factory():
                     return
 
         if (setting._SYSTEMAUTOCOMBAT) or (runtimeContext._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
-            Press(CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]]))
-            Press(CheckIf(screen,'combatAuto_2',[[700,1000,200,200]]))
+            pos1 = CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]])
+            pos2 = CheckIf(screen,'combatAuto_2',[[700,1000,200,200]])
+            Press(pos1 if pos1 is not None else pos2)
             Sleep(5)
             return
 
@@ -1772,45 +1773,50 @@ def Factory():
                             logger.info("因为初始化, 复制了施法序列.")
                             runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
 
-                    ########### 不打开地图, 执行自动宝箱
-                    if targetInfoList[0] and (targetInfoList[0].target == "chest_auto"):
-                        lastscreen = ScreenShot()
-                        if not Press(CheckIf(lastscreen,"chest_auto",[[710,250,180,180]])):
-                            Press(CheckIf(lastscreen,"mapflag"))
-                            Press([664,329])
-                            Sleep(1)
+                    ########### 不打开地图, 执行自动任务
+                    is_auto_quest = False
+                    for tar in ["chest_auto","mark_auto"]:
+                        if targetInfoList[0] and (targetInfoList[0].target == tar):
+                            is_auto_quest = True
                             lastscreen = ScreenShot()
-                            if not Press(CheckIf(lastscreen,"chest_auto",[[710,250,180,180]])):
-                                dungState = None
-                                continue
-                        Sleep(1.5)
-                        _, dungState,screen = IdentifyState()
-                        gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                        gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
-                        mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                        if mean_diff < 0.05:
-                            logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
-                            if dungState == DungeonState.Dungeon:
-                                targetInfoList.pop(0)
-                                logger.info(f"退出宝箱搜索.")
-                        else:
-                            lastscreen = screen
-                            while 1:
-                                Sleep(3)
-                                _, dungState,screen = IdentifyState()
-                                if dungState != DungeonState.Dungeon:
-                                    logger.info(f"已退出移动状态. 当前状态为{dungState}.")
-                                    break
-                                elif lastscreen is not None:
-                                    gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                                    gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
-                                    mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                                    logger.debug(f"移动停止检查:{mean_diff:.2f}")
-                                    if mean_diff < 0.05:
-                                        logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                            if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
+                                Press(CheckIf(lastscreen,"mapflag"))
+                                Press([664,329])
+                                Sleep(1)
+                                lastscreen = ScreenShot()
+                                if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
+                                    dungState = None
+                                    continue
+                            Sleep(1.5)
+                            _, dungState,screen = IdentifyState()
+                            gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                            gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                            mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                            if mean_diff < 0.05:
+                                logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                                if dungState == DungeonState.Dungeon:
+                                    targetInfoList.pop(0)
+                                    logger.info(f"退出宝箱搜索.")
+                            else:
+                                lastscreen = screen
+                                while 1:
+                                    Sleep(3)
+                                    _, dungState,screen = IdentifyState()
+                                    if dungState != DungeonState.Dungeon:
+                                        logger.info(f"已退出移动状态. 当前状态为{dungState}.")
                                         break
-                                    lastscreen = screen
-                    else: 
+                                    elif lastscreen is not None:
+                                        gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+                                        gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                                        mean_diff = cv2.absdiff(gray1, gray2).mean()/255
+                                        logger.debug(f"移动停止检查:{mean_diff:.2f}")
+                                        if mean_diff < 0.05:
+                                            logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
+                                            break
+                                        lastscreen = screen
+                                        
+                    ########### 不是自动任务, 开始搜索
+                    if not is_auto_quest:
                         Sleep(1)
                         Press([777,150])
 
