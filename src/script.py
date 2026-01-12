@@ -56,8 +56,11 @@ CONFIG_VAR_LIST = [
             ["last_version",                tk.StringVar,  "LAST_VERSION",               ""],
             ["latest_version",              tk.StringVar,  "LATEST_VERSION",             None],
             ["_spell_skill_config_internal",list,          "_SPELLSKILLCONFIG",          []],
-            ["active_csc_var",              tk.BooleanVar, "ACTIVE_CSC",                 True]
+            ["active_csc_var",              tk.BooleanVar, "ACTIVE_CSC",                 True],
+            ["emu_index_var",               tk.StringVar,  "_EMUIDX",                    "0"],
             ]
+
+running_emu_pid = None # 全局变量
 
 class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
@@ -200,24 +203,36 @@ def KillEmulator(setting : FarmConfig):
     emulator_SVC = "MuMuVMMSVC.exe"
     try:
         logger.info(f"正在检查并关闭已运行的模拟器实例{emulator_name}...")
+        global running_emu_pid
         # Windows 系统使用 taskkill 命令
         if os.name == 'nt':
-            subprocess.run(
-                f"taskkill /f /im {emulator_name}", 
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False  # 不检查命令是否成功（进程可能不存在）
-            )
-            time.sleep(1)
-            subprocess.run(
-                f"taskkill /f /im {emulator_SVC}", 
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False  # 不检查命令是否成功（进程可能不存在）
-            )
-            time.sleep(1)
+            if running_emu_pid:
+                logger.info(f"使用已知进程号{running_emu_pid}关闭模拟器...")
+                subprocess.run(
+                    f"taskkill /f /pid {running_emu_pid}", 
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False  # 不检查命令是否成功（进程可能不存在）
+                )
+                time.sleep(1)
+            else:
+                subprocess.run(
+                    f"taskkill /f /im {emulator_name}", 
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False  # 不检查命令是否成功（进程可能不存在）
+                )
+                time.sleep(1)
+                subprocess.run(
+                    f"taskkill /f /im {emulator_SVC}", 
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False  # 不检查命令是否成功（进程可能不存在）
+                )
+                time.sleep(1)
 
         # Unix/Linux 系统使用 pkill 命令
         else:
@@ -238,20 +253,52 @@ def KillEmulator(setting : FarmConfig):
         logger.info(f"已尝试终止模拟器进程: {emulator_name}")
     except Exception as e:
         logger.error(f"终止模拟器进程时出错: {str(e)}")
+    finally:
+        # 重置进程号
+        running_emu_pid = None
 def StartEmulator(setting):
     hd_player_path = setting._EMUPATH
     if not os.path.exists(hd_player_path):
         logger.error(f"模拟器启动程序不存在: {hd_player_path}")
         return False
-
+    
+    # TODO 仅适配了填写MuMuNxDevice.exe的时候
+    mumu_manager_path = (Path(hd_player_path).parent / r"..\..\..\nx_main\MuMuManager.exe").resolve()
+    cmd = f'"{mumu_manager_path}" control -v {setting._EMUIDX} launch jp.co.drecom.wizardry.daphne'
     try:
-        logger.info(f"启动模拟器: {hd_player_path}")
+        logger.info(f"启动模拟器: {cmd}")
+        # 启动前后检查tasklist以获取MuMuNxDevice.exe对应进程
+        result = subprocess.run([
+            'tasklist',
+            '/FI', 'IMAGENAME eq MuMuNxDevice.exe',
+            '/FO', 'CSV',
+            '/NH'
+        ], capture_output=True, text=True)
+        result_str = result.stdout.strip()
+        pre_result_list = result_str.split('\n')
         subprocess.Popen(
-            hd_player_path, 
+            cmd, 
             shell=True,
             stdout=subprocess.DEVNULL, 
             stderr=subprocess.DEVNULL,
             cwd=os.path.dirname(hd_player_path))
+        # 延时可以考虑拉长或者多次检测
+        time.sleep(5)
+        result = subprocess.run([
+            'tasklist',
+            '/FI', 'IMAGENAME eq MuMuNxDevice.exe',
+            '/FO', 'CSV',
+            '/NH'
+        ], capture_output=True, text=True)
+        result_str = result.stdout.strip()
+        aft_results_list = result_str.split('\n')
+        new_tasks = [task for task in aft_results_list if task not in pre_result_list]
+        if new_tasks:
+            # 模拟器启动成功，pid捕获成功
+            global running_emu_pid
+            running_emu_pid = int(new_tasks[0].split('","')[1])
+            logger.info(f"模拟器启动开始，进程号为{running_emu_pid}")
+
     except Exception as e:
         logger.error(f"启动模拟器失败: {str(e)}")
         return False
@@ -303,11 +350,9 @@ def CheckRestartConnectADB(setting: FarmConfig):
             result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
             logger.debug(f"adb链接返回(输出信息):{result.stdout}")
             logger.debug(f"adb链接返回(错误信息):{result.stderr}")
-            
-            if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
-                logger.info("成功连接到模拟器")
-                break
-            if ("refused" in result.stderr) or ("cannot connect" in result.stdout):
+
+            global running_emu_pid
+            if not running_emu_pid:
                 logger.info("模拟器未运行，尝试启动...")
                 StartEmulator(setting)
                 logger.info("模拟器(应该)启动完毕.")
@@ -317,6 +362,23 @@ def CheckRestartConnectADB(setting: FarmConfig):
                     logger.info("成功连接到模拟器")
                     break
                 logger.info("无法连接. 检查adb端口.")
+            else:
+                    logger.info("成功连接到模拟器")
+                    break
+            
+            # if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
+            #     logger.info("成功连接到模拟器")
+            #     break
+            # if ("refused" in result.stderr) or ("cannot connect" in result.stdout):
+            #     logger.info("模拟器未运行，尝试启动...")
+            #     StartEmulator(setting)
+            #     logger.info("模拟器(应该)启动完毕.")
+            #     logger.info("尝试连接到模拟器...")
+            #     result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
+            #     if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
+            #         logger.info("成功连接到模拟器")
+            #         break
+            #     logger.info("无法连接. 检查adb端口.")
 
             logger.info(f"连接失败: {result.stderr.strip()}")
             time.sleep(2)
