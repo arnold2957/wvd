@@ -163,21 +163,30 @@ class ConfigPanelApp(tk.Toplevel):
         
         self.emu_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
-        ttk.Label(frame_row, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="端口:").grid(row=1, column=0, sticky=tk.W, pady=5)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
         self.adb_port_entry = ttk.Entry(frame_row,
                                         textvariable=self.adb_port_var,
                                         validate="key",
                                         validatecommand=(vcmd_non_neg, '%P'),
                                         width=5)
-        self.adb_port_entry.grid(row=0, column=3)
+        self.adb_port_entry.grid(row=1, column=1)
+        ttk.Label(frame_row, text="模拟器编号:").grid(row=1, column=2, sticky=tk.W, pady=5)
+        self.emu_index_entry = ttk.Entry(frame_row,
+                                textvariable=self.emu_index_var,
+                                validate="key",
+                                validatecommand=(vcmd_non_neg, '%P'),
+                                width=5)
+        self.emu_index_entry.grid(row=1, column=3)
         self.button_save_adb_port = ttk.Button(
             frame_row,
             text="保存",
             command = self.save_config,
             width=5
             )
-        self.button_save_adb_port.grid(row=0, column=4)
+        self.button_save_adb_port.grid(row=1, column=4)
+
+        #ttk.Label(frame_row, text="模拟器编号:").grid(row=1, column=0, sticky=tk.W, pady=5)
 
         # 分割线.
         row_counter += 1
