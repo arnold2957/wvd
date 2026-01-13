@@ -830,58 +830,6 @@ def Factory():
                 logger.debug(f"CheckIf_OCR: 调试图输出失败: {e}")
 
         return pos
-    def CheckIf_OCR2(screenImage, textOfTarget, roi=None, outputMatchResult=False):
-        """
-        功能与 CheckIf 对齐，但用 OCR 文本匹配替代模板匹配。
-        为了兼容旧逻辑：函数返回值仍然只返回 pos（或 None）。
-        """
-        try:
-            pos, conf, box = OCR_FindTextCenter(screenImage, textOfTarget, roi=roi, min_conf=0.7)
-
-            if outputMatchResult:
-                # 1) 保存原图
-                cv2.imwrite("origin_ocr.png", screenImage)
-
-                # 2) 可视化：所有 OCR 框 + 命中框信息
-                vis = screenImage.copy()
-
-                # 2.1 画出所有 OCR 框（绿色）
-                allr = OCR_AllText(screenImage, roi=roi, min_conf=0.0)
-                for r in allr:
-                    cv2.polylines(vis, [r.box.astype(np.int32)], True, (0, 255, 0), 2)
-
-                # 2.2 若命中，画红色框并写标签
-                if box is not None and pos is not None:
-                    cv2.polylines(vis, [box.astype(np.int32)], True, (0, 0, 255), 3)
-
-                    # 标签位置：取 box 的左上角附近
-                    tlx = int(np.min(box[:, 0]))
-                    tly = int(np.min(box[:, 1]))
-                    px, py = pos
-
-                    label1 = f"target: {str(textOfTarget)}"
-                    label2 = f"conf: {conf:.3f}  pos: ({px},{py})"
-
-                    # OpenCV putText 对中文支持较差，这里标签用英文/数字更稳
-                    cv2.putText(vis, label1, (tlx, max(0, tly - 28)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-                    cv2.putText(vis, label2, (tlx, max(0, tly - 6)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-                else:
-                    # 未命中时给个提示
-                    cv2.putText(vis, "target not found", (20, 40),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
-
-                cv2.imwrite("matched_ocr.png", vis)
-
-            # 为保持旧版调用兼容：只返回 pos
-            return pos
-
-        except Exception as e:
-            print(f"CheckIf_OCR 异常: {e}")
-            return None
-
-
     def CheckIf_MultiRect(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
@@ -1603,12 +1551,12 @@ def Factory():
             'combatActive_3',
             'combatActive_4',
             ]
-        #for combat in combatActiveFlag:
-        #    if pos:=CheckIf(screen,combat, [[0,0,150,80]]):
-        #       return pos
-        if pos:=CheckIf_OCR(screen,"Active", [[0,0,150,80]],outputMatchResult=True):
-            logger.info("检测到战斗状态")
-            return pos
+        for combat in combatActiveFlag:
+            if pos:=CheckIf(screen,combat, [[0,0,150,80]]):
+                return pos
+        #if pos:=CheckIf_OCR(screen,"Active", [[0,0,150,80]],outputMatchResult=True):
+        #    logger.info("检测到战斗状态")
+        #    return pos
         return None
     def StateInn():
         if not setting._ACTIVE_ROYALSUITE_REST:
@@ -1877,7 +1825,7 @@ def Factory():
     def StateChest():
         nonlocal runtimeContext
         availableChar = [0, 1, 2, 3, 4, 5]
-        disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能
+        disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能  可以考虑改成文字识别
         haveBeenTried = False
 
         if runtimeContext._TIME_CHEST==0:
@@ -1908,7 +1856,7 @@ def Factory():
                         if not setting._SMARTDISARMCHEST:
                             for _ in range(8):
                                 t = time.time()
-                                Press(disarm)
+                                Press(disarm)#可以考虑改成OCR文字识别
                                 if time.time()-t<0.3:
                                     Sleep(0.3-(time.time()-t))
                                 
