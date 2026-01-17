@@ -163,21 +163,33 @@ class ConfigPanelApp(tk.Toplevel):
         
         self.emu_path_var.trace_add("write", lambda *args: update_adb_status())
         update_adb_status()  # 初始调用
+
+        # 模拟器端口和编号
+        row_counter += 1
+        frame_row = ttk.Frame(self.main_frame)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)
         ttk.Label(frame_row, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
         self.adb_port_entry = ttk.Entry(frame_row,
                                         textvariable=self.adb_port_var,
                                         validate="key",
                                         validatecommand=(vcmd_non_neg, '%P'),
-                                        width=5)
+                                        width=7)
         self.adb_port_entry.grid(row=0, column=3)
+        ttk.Label(frame_row, text="  编号:").grid(row=0, column=4, sticky=tk.W, pady=5)
+        self.emu_index_entry = ttk.Entry(frame_row,
+                                textvariable=self.emu_index_var,
+                                validate="key",
+                                validatecommand=(vcmd_non_neg, '%P'),
+                                width=5)
+        self.emu_index_entry.grid(row=0, column=5)
         self.button_save_adb_port = ttk.Button(
             frame_row,
             text="保存",
             command = self.save_config,
             width=5
             )
-        self.button_save_adb_port.grid(row=0, column=4)
+        self.button_save_adb_port.grid(row=0, column=6)
 
         # 分割线.
         row_counter += 1
@@ -621,6 +633,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_rest_intervel,
             self.karma_adjust_combobox,
             self.adb_port_entry,
+            self.emu_index_entry,
             self.active_triumph,
             self.active_royalsuite_rest,
             self.button_save_adb_port,
