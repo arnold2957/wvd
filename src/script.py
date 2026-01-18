@@ -38,7 +38,8 @@ CONFIG_VAR_LIST = [
             #var_name,                      type,          config_name,                  default_value
             ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
             ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
-            ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",          False],
+            # ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",          False],
+            ["randomly_open_chest_var",     tk.BooleanVar, "_QUICKDISARMCHEST",          False],
             ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
             ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
             ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
@@ -1144,7 +1145,7 @@ def Factory():
         else:
             runtimeContext._COUNTERCOMBAT -=1
         logger.info("快快请起.")
-        AddImportantInfo("面具死了但没死.")
+        AddImportantInfo("面具死了, 但是再起.")
         # logger.info("REZ.")
         Press([450,750])
         Sleep(10)
@@ -1175,7 +1176,8 @@ def Factory():
                 return State.Dungeon, DungeonState.Combat, screen
 
             if CheckIf(screen,'someonedead'):
-                AddImportantInfo("他们活了,活了!")
+                AddImportantInfo("尝试复活队友...")
+                Sleep(1)
                 for _ in range(5):
                     Press([400+random.randint(0,100),750+random.randint(0,100)])
                     Sleep(1)
@@ -1613,6 +1615,19 @@ def Factory():
 
         if runtimeContext._TIME_CHEST==0:
             runtimeContext._TIME_CHEST = time.time()
+        
+        if setting._QUICKDISARMCHEST:
+            if Press(CheckIf(ScreenShot(),'chestFlag')):
+                whowillopenit = setting._WHOWILLOPENIT - 1
+                pos = [258+(whowillopenit%3)*258, 1161+((whowillopenit)//3)%2*184]
+                Press(pos)
+                Press(pos)
+                Press(pos)
+                for _ in range(20):
+                    Press(disarm)
+                for _ in range(3):
+                    Press([1,1])
+                    Press(disarm)
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
@@ -1636,12 +1651,12 @@ def Factory():
                     else:
                         Press(pos)
                         Sleep(1.5)
-                        if not setting._SMARTDISARMCHEST:
-                            for _ in range(8):
-                                t = time.time()
-                                Press(disarm)
-                                if time.time()-t<0.3:
-                                    Sleep(0.3-(time.time()-t))
+                        # if not setting._SMARTDISARMCHEST:
+                        for _ in range(8):
+                            t = time.time()
+                            Press(disarm)
+                            if time.time()-t<0.3:
+                                Sleep(0.3-(time.time()-t))
                                 
                         break
                 if not haveBeenTried:
@@ -1649,8 +1664,8 @@ def Factory():
 
             if CheckIf(scn,'chestOpening'):
                 Sleep(1)
-                if setting._SMARTDISARMCHEST:
-                    ChestOpen()
+                # if setting._SMARTDISARMCHEST:
+                #     ChestOpen()
                 FindCoordsOrElseExecuteFallbackAndWait(
                     ['dungFlag','combatActive','chestFlag','RiseAgain'], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
                     [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
@@ -1836,9 +1851,11 @@ def Factory():
                                 Sleep(1)
                                 lastscreen = ScreenShot()
                                 if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
-                                    dungState = None
-                                    continue
-                            Sleep(1.5)
+                                    dungState = None # 如果我们两次检测失败, 认为发生了异常
+                                    break
+                            Sleep(1)
+                            Press(CheckIf(lastscreen,'resume')) # 立刻按一次resume 以兼容暴风雪场景.
+                            Sleep(1)
                             _, dungState,screen = IdentifyState()
                             gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
                             gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
@@ -1865,7 +1882,9 @@ def Factory():
                                             logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
                                             break
                                         lastscreen = screen
-                                        
+                    if dungState == None: # 发生异常的时候会设置为None, 我们continue来重新定位.
+                        continue
+
                     ########### 不是自动任务, 开始搜索
                     if not is_auto_quest:
                         Sleep(1)

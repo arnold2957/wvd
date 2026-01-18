@@ -19,7 +19,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('550x728')
+        self.geometry('550x761')
         
         self.title(self.TITLE)
 
@@ -210,7 +210,7 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=5)  # 第二行框架
         self.random_chest_check = ttk.Checkbutton(
             frame_row,
-            text="智能开箱(测试版)",
+            text="快速开箱",
             variable=self.randomly_open_chest_var,
             command=self.save_config,
             style="Custom.TCheckbutton"
