@@ -19,7 +19,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('550x761')
+        self.geometry('550x793')
         
         self.title(self.TITLE)
 
@@ -452,6 +452,18 @@ class ConfigPanelApp(tk.Toplevel):
         row_counter += 1
         frame_lux_rest = ttk.Frame(self.main_frame)
         frame_lux_rest.grid(row=row_counter, column=0, sticky="ew", pady=5)
+        self.active_beg_money = ttk.Checkbutton(
+            frame_lux_rest,
+            variable=self.active_beg_money_var,
+            text="没有火的时候自动找王女要钱",
+            command=checkcommand,
+            style="Custom.TCheckbutton"
+            )
+        self.active_beg_money.grid(row=0, column=0)
+
+        row_counter += 1
+        frame_lux_rest = ttk.Frame(self.main_frame)
+        frame_lux_rest.grid(row=row_counter, column=0, sticky="ew", pady=5)
         self.active_royalsuite_rest = ttk.Checkbutton(
             frame_lux_rest,
             variable=self.active_royalsuite_rest_var,
@@ -484,7 +496,6 @@ class ConfigPanelApp(tk.Toplevel):
             style="Custom.TCheckbutton"
             )
         self.active_csc.grid(row=0, column=0)
-
 
         # 分割线
         row_counter += 1
@@ -636,6 +647,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.emu_index_entry,
             self.active_triumph,
             self.active_royalsuite_rest,
+            self.active_beg_money,
             self.button_save_adb_port,
             self.active_csc
             ]
