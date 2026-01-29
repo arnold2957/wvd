@@ -360,6 +360,31 @@
             ["press","DOWB1F",[1,1],1]
         ]
     },
+    "DOF_Plus": {
+        "_TYPE":"dungeon",
+        "questName":"[矿石]火洞plus-地图全开",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","左上",[719,713]]
+        ],
+        "_EOT":[
+            ["press","DOF",["EdgeOfTown",[1,1]],1],
+            ["press","DOFB1F",[1,1],1]
+        ]
+    },
+
+    "DOW_Plus":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]风洞plus-地图全开",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","左上",[25,822]]
+        ],
+        "_EOT":[
+            ["press","DOW",["EdgeOfTown",[1,1]],1],
+            ["press","DOWB1F",[1,1],1]
+        ]
+    },
     
     "DOL":{
         "_TYPE":"dungeon",
