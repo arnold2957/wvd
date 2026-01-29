@@ -179,7 +179,24 @@
         ]
     },
 
-
+    "IWO":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]鬼洞1f",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","左下", [186,1028]]
+        ],
+        "_preEOTcheck":"IWO/IWO",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["IWO/IWO","input swipe 500 500 400 400"],1],
+            ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["fortressworldmap","input swipe 400 400 500 500"],1]
+        ]
+    },
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鸟洞三层fordraigB3F",

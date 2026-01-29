@@ -112,6 +112,7 @@ class FarmQuest:
     _SPECIALFORCESTOPINGSYMBOL = None
     _SPELLSEQUENCE = None
     _TYPE = None
+    _RTT = None
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(f"FarmQuest对象没有属性'{name}'")
@@ -1073,6 +1074,33 @@ def Factory():
         Press(pos)
         Sleep(1)
         FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
+    
+    def TeleportFromDungeonToCity(target, swipe):
+        nonlocal runtimeContext
+        FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','worldmapflag','openworldmap','startdownload'],'openworldmap',1)
+        scn = ScreenShot()
+
+        if Press(CheckIf(scn, 'openworldmap')):
+            pass
+        elif CheckIf(scn,'worldmapflag'):
+            # 如果在世界地图, 下一步.
+            pass
+
+        # 往下都是确保了现在能看见'worldmapflag', 并尝试看见'target'
+        Sleep(0.5)
+        if not runtimeContext._ZOOMWORLDMAP:
+            for _ in range(3):
+                Press([100,1500])
+                Sleep(0.5)
+            Press([250,1500])
+            runtimeContext._ZOOMWORLDMAP = True
+        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1)
+
+        # 现在已经确保了可以看见target, 那么确保可以点击成功
+        Sleep(1)
+        Press(pos)
+        Sleep(1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
@@ -1199,6 +1227,9 @@ def Factory():
             if pos:=(CheckIf(screen,"openworldmap")):
                 if setting._ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT:
                     Press(pos)
+                    if quest._RTT:
+                        for info in quest._RTT:
+                            TeleportFromDungeonToCity(info[2][0],info[2][1])
                     return IdentifyState()
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
