@@ -1085,7 +1085,7 @@ def Factory():
         Sleep(1)
         FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,press_any_key],1)
     
-    def TeleportFromDungeonToCity(target, swipe):
+    def TeleportFromDungeonToCity(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
         FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','worldmapflag','openworldmap','startdownload'],'openworldmap',1)
         scn = ScreenShot()
@@ -1104,13 +1104,13 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1)
+        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,press_any_key],1)
 
         # 现在已经确保了可以看见target, 那么确保可以点击成功
         Sleep(1)
         Press(pos)
         Sleep(1)
-        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,press_any_key],1)
         
     def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
