@@ -169,8 +169,10 @@ class TargetInfo:
 
 ##################################################################
 def CMDLine(cmd):
-    logger.debug(f"cmd line: {cmd}")
-    return subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding='utf-8')
+    logger.debug(f"执行cmd命令: {cmd}")
+    result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding='utf-8')
+    logger.debug(f"cmd命令返回:{result.stdout}\n cmd命令错误:{result.stderr}")
+    return result
 
 def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, FORCERESTART = False):
     def CheckEmulator():
@@ -348,17 +350,28 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         try:
             logger.info("检查adb服务...")
             result = CMDLine(f"\"{adb_path}\" devices")
-            logger.info(f"adb链接返回(输出信息):{result.stdout}\n adb链接返回(错误信息):{result.stderr}")
-            
             if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
-                logger.info("adb服务未启动!\n启动adb服务...")
-                CMDLine(f"\"{adb_path}\" kill-server")
-                CMDLine(f"\"{adb_path}\" start-server")
                 time.sleep(2)
+                result = CMDLine(f"\"{adb_path}\" devices")
+                if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
+                    logger.info("adb服务未启动!\n启动adb服务...")
+                    CMDLine(f"\"{adb_path}\" kill-server")
+                    CMDLine(f"\"{adb_path}\" start-server")
+                    time.sleep(2)
 
             logger.debug(f"尝试连接到adb...")
             result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting._ADBPORT}")
-            logger.debug(f"adb链接返回(输出信息):{result.stdout}\n adb链接返回(错误信息):{result.stderr}")
+
+            result = CMDLine(f"\"{adb_path}\" devices")
+            if f"127.0.0.1:{setting._ADBPORT}" in result.stdout:
+                logger.info("成功连接到模拟器!")
+                results_list = CheckEmulator()
+                if len(results_list)==1:
+                    runtimeContext._RUNNING_EMU_PID = int(results_list[0])
+                    logger.info(f"模拟器进程号为{runtimeContext._RUNNING_EMU_PID}.")
+                else:
+                    logger.info(f"\n\n***********\n有多个模拟器已经启动, 无法识别进程号. 当需要重启模拟器的时候, 会重启所有模拟器.\n为了避免本问题, 请关闭目标模拟器, 并使用本脚本自动启动模拟器.\n\n")
+                break
 
             if (not runtimeContext._RUNNING_EMU_PID) or (runtimeContext._RUNNING_EMU_PID not in CheckEmulator()):
                 logger.info("模拟器未运行，尝试启动...")
@@ -369,9 +382,6 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                     logger.info("成功连接到模拟器")
                     break
                 logger.info("无法连接. 检查adb端口.")
-            else:
-                logger.info("成功连接到模拟器")
-                break
 
             logger.info(f"连接失败: {result.stderr.strip()}")
             time.sleep(2)
@@ -397,10 +407,10 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         target_device = f"127.0.0.1:{setting._ADBPORT}"
         for device in devices:
             if device.serial == target_device:
-                logger.info(f"成功获取设备对象: {device.serial}")
+                logger.info(f"成功创建设备对象: {device.serial}")
                 return device
     except Exception as e:
-        logger.error(f"获取ADB设备时出错: {e}")
+        logger.error(f"创建ADB设备时出错: {e}")
     
     return None
 ##################################################################
