@@ -1047,7 +1047,7 @@ def Factory():
         runtimeContext._LAPTIME = time.time()
         runtimeContext._COUNTERDUNG+=1
 
-    def TeleportFromCityToWorldLocation(target, swipe):
+    def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
         FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap','startdownload'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
         
@@ -1077,13 +1077,13 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,[550,1]],1)
+        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,press_any_key],1)
 
         # 现在已经确保了可以看见target, 那么确保可以点击成功
         Sleep(1)
         Press(pos)
         Sleep(1)
-        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,[550,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,press_any_key],1)
     
     def TeleportFromDungeonToCity(target, swipe):
         nonlocal runtimeContext
@@ -1405,9 +1405,9 @@ def Factory():
                 pass
         for info in quest._EOT:
             if info[1]=="intoWorldMap":
-                TeleportFromCityToWorldLocation(info[2][0],info[2][1])
+                TeleportFromCityToWorldLocation(*info[2])
             else:
-                pos = FindCoordsOrElseExecuteFallbackAndWait(info[1],info[2],info[3])
+                pos = FindCoordsOrElseExecuteFallbackAndWait(*info[1:4])
                 if info[0]=="press":
                     Press(pos)
         Sleep(1)
@@ -2712,7 +2712,7 @@ def Factory():
                     
                     quest._SPECIALDIALOGOPTION = ['ready','noneed', 'quit']
                     RestartableSequenceExecution(
-                        StateDungeon([TargetInfo('position','左上',[131,769]),
+                        lambda:StateDungeon([TargetInfo('position','左上',[131,769]),
                                     TargetInfo('position','左上',[827,447]),
                                     TargetInfo('position','左上',[131,769]),
                                     TargetInfo('position','左下',[719,1080]),
