@@ -1670,7 +1670,8 @@ def Factory():
                 Press(pos)
                 Press(pos)
                 Press(pos)
-                for _ in range(20):
+                Sleep(1)
+                for _ in range(40):
                     Press(disarm)
                 for _ in range(3):
                     Press([1,1])
