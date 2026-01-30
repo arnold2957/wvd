@@ -1239,7 +1239,7 @@ def Factory():
                     Press(pos)
                     if quest._RTT:
                         for info in quest._RTT:
-                            TeleportFromDungeonToCity(info[2][0],info[2][1])
+                            TeleportFromDungeonToCity(*info[2])
                     return IdentifyState()
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
@@ -1665,6 +1665,7 @@ def Factory():
         
         if setting._QUICKDISARMCHEST:
             if Press(CheckIf(ScreenShot(),'chestFlag')):
+                Sleep(1)
                 whowillopenit = setting._WHOWILLOPENIT - 1
                 pos = [258+(whowillopenit%3)*258, 1161+((whowillopenit)//3)%2*184]
                 Press(pos)
