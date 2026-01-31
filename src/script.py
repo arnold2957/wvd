@@ -1670,11 +1670,14 @@ def Factory():
                 whowillopenit = setting._WHOWILLOPENIT - 1
                 pos = [258+(whowillopenit%3)*258, 1161+((whowillopenit)//3)%2*184]
                 Press(pos)
+                Sleep(0.2)
                 Press(pos)
+                Sleep(0.2)
                 Press(pos)
                 Sleep(1)
-                for _ in range(40):
+                for _ in range(30):
                     Press(disarm)
+                    Sleep(0.2)
                 for _ in range(3):
                     Press([1,1])
                     Press(disarm)
@@ -1890,78 +1893,68 @@ def Factory():
                             runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
 
                     ########### 不打开地图, 执行自动任务
-                    is_auto_quest = False
-                    for tar in ["chest_auto","mark_auto"]:
-                        if targetInfoList[0] and (targetInfoList[0].target == tar):
-                            is_auto_quest = True
-                            lastscreen = ScreenShot()
-                            if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
-                                Press(CheckIf(lastscreen,"mapflag"))
-                                Press([664,329])
-                                Sleep(1)
+                    def startAuto():
+                        for tar in ["chest_auto","mark_auto"]:
+                            if targetInfoList[0] and (targetInfoList[0].target == tar):
+                                
                                 lastscreen = ScreenShot()
                                 if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
-                                    dungState = None # 如果我们两次检测失败, 认为发生了异常
-                                    break
-                            Sleep(1)
-                            Press(CheckIf(lastscreen,'resume')) # 立刻按一次resume 以兼容暴风雪场景.
-                            Sleep(1)
-                            _, dungState,screen = IdentifyState()
-                            gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                            gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
-                            mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                            if mean_diff < 0.05:
-                                logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
-                                if dungState == DungeonState.Dungeon:
-                                    targetInfoList.pop(0)
-                                    logger.info(f"退出宝箱搜索.")
-                            else:
-                                lastscreen = screen
-                                while 1:
-                                    Sleep(3)
-                                    _, dungState,screen = IdentifyState()
-                                    if dungState != DungeonState.Dungeon:
-                                        logger.info(f"已退出移动状态. 当前状态为{dungState}.")
-                                        break
-                                    elif lastscreen is not None:
-                                        gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                                        gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
-                                        mean_diff = cv2.absdiff(gray1, gray2).mean()/255
-                                        logger.debug(f"移动停止检查:{mean_diff:.2f}")
-                                        if mean_diff < 0.05:
-                                            logger.info(f"停止移动. 误差:{mean_diff}. 当前状态为{dungState}.")
-                                            break
-                                        lastscreen = screen
-                    if dungState == None: # 发生异常的时候会设置为None, 我们continue来重新定位.
+                                    Press(CheckIf(lastscreen,"mapflag"))
+                                    Press([664,329])
+                                    Sleep(1)
+                                    lastscreen = ScreenShot()
+                                    if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
+                                        return None # 如果我们两次检测失败, 认为发生了异常
+                                
+                                if tar == "chest_auto":
+                                    lastscreen = ScreenShot()
+                                    if CheckIf(lastscreen,"NoChestCanBeFound"):
+                                        targetInfoList.pop(0)
+                                        logger.info(f"退出宝箱搜索.")
+                                        return DungeonState.Dungeon
+                                    lastscreen = ScreenShot()
+                                    if CheckIf(lastscreen,"NoChestCanBeFound"):
+                                        targetInfoList.pop(0)
+                                        logger.info(f"退出宝箱搜索.")
+                                        return DungeonState.Dungeon
+
+                                Sleep(1)
+                                Press(CheckIf(lastscreen,'resume')) # 立刻按一次resume 以兼容暴风雪场景.
+                                return StateMoving_CheckFrozen()
+                            
+                        return DungeonState.Dungeon
+
+                    dungState = startAuto()
+                    if dungState == None:
+                        # 如果状态无效, 直接进入下一轮.
                         continue
-
                     ########### 不是自动任务, 开始搜索
-                    if not is_auto_quest:
-                        Sleep(1)
-                        Press([777,150])
 
-                        dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
-                        
-                        if newTargetInfoList == targetInfoList:
-                            gameFrozen_map +=1
-                            logger.info(f"地图卡死检测:{gameFrozen_map}")
+                    Sleep(1)
+                    Press([777,150])
+
+                    dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
+                    
+                    if newTargetInfoList == targetInfoList:
+                        gameFrozen_map +=1
+                        logger.info(f"地图卡死检测:{gameFrozen_map}")
+                    else:
+                        gameFrozen_map = 0
+                    if gameFrozen_map > 50:
+                        gameFrozen_map = 0
+                        restartGame()
+
+                    if (targetInfoList==None) or (targetInfoList == []):
+                        logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
+                        break
+
+                    if (newTargetInfoList != targetInfoList):
+                        if newTargetInfoList[0].activeSpellSequenceOverride:
+                            logger.info("因为目标信息变动, 重新复制了施法序列.")
+                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
                         else:
-                            gameFrozen_map = 0
-                        if gameFrozen_map > 50:
-                            gameFrozen_map = 0
-                            restartGame()
-
-                        if (targetInfoList==None) or (targetInfoList == []):
-                            logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
-                            break
-
-                        if (newTargetInfoList != targetInfoList):
-                            if newTargetInfoList[0].activeSpellSequenceOverride:
-                                logger.info("因为目标信息变动, 重新复制了施法序列.")
-                                runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
-                            else:
-                                logger.info("因为目标信息变动, 清空了施法序列.")
-                                runtimeContext._ACTIVESPELLSEQUENCE = None
+                            logger.info("因为目标信息变动, 清空了施法序列.")
+                            runtimeContext._ACTIVESPELLSEQUENCE = None
 
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True

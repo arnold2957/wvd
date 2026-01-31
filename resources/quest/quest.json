@@ -395,7 +395,7 @@
         "questName":"[矿石]风洞plus-地图全开",
         "_TARGETINFOLIST":[
             ["chest_auto"],
-            ["position","左上",[25,822]]
+            ["position","左上",[34,822]]
         ],
         "_EOT":[
             ["press","DOW",["EdgeOfTown",[1,1]],1],
