@@ -15,7 +15,7 @@ import copy
 
 CC_SKILLS = ["KANTIOS"]
 SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花"]
+FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花","乱射"]
 ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻"]
 PHYSICAL_SKILLS = ["动静一击","裂地一击","全力一击","死死连葬","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
 
@@ -1246,19 +1246,13 @@ def Factory():
                     DungeonCompletionCounter()
                     return State.EoT,DungeonState.Quit,screen
 
-            if CheckIf(screen,"RoyalCityLuknalia") or CheckIf(screen,"DHI"):
-                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['RoyalCityLuknalia','DHI',[1,1]],1)
-                if CheckIf(scn:=ScreenShot(),'Inn'):
-                    return State.Inn,DungeonState.Quit, screen
-                elif CheckIf(scn,'dungFlag'):
-                    return State.Dungeon,None, screen
-
-            if CheckIf(screen,"fortressworldmap"):
-                FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],['fortressworldmap',[1,1]],1)
-                if CheckIf(scn:=ScreenShot(),'Inn'):
-                    return State.Inn,DungeonState.Quit, screen
-                elif CheckIf(scn,'dungFlag'):
-                    return State.Dungeon,None, screen
+            for city in ["City_RoyalCityLuknalia","City_fortress", "City_DHI","City_portTownGrandLegion"]:
+                if CheckIf(screen,city):
+                    FindCoordsOrElseExecuteFallbackAndWait(['Inn','dungFlag'],[city,[1,1]],1)
+                    if CheckIf(scn:=ScreenShot(),'Inn'):
+                        return State.Inn,DungeonState.Quit, screen
+                    elif CheckIf(scn,'dungFlag'):
+                        return State.Dungeon,None, screen
 
             if (CheckIf(screen,'Inn')):
                 return State.Inn, None, screen
@@ -1407,7 +1401,14 @@ def Factory():
             if info[1]=="intoWorldMap":
                 TeleportFromCityToWorldLocation(*info[2])
             else:
-                pos = FindCoordsOrElseExecuteFallbackAndWait(*info[1:4])
+                # 为了解决卡在副本门口的问题, 我们在info[1]里追加一个
+                targetPattern = info[1]
+                if isinstance(targetPattern, (list, tuple)):
+                    targetPattern = targetPattern + ['dungFlag']
+                else:
+                    targetPattern = [targetPattern] + ['dungFlag']
+
+                pos = FindCoordsOrElseExecuteFallbackAndWait(targetPattern, info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
         Sleep(1)
@@ -2071,8 +2072,8 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia', 'input swipe 450 150 500 150'),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia', 'input swipe 450 150 500 150'),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('guild',['City_RoyalCityLuknalia',[1,1]],1),
                         )
 
                     logger.info("第四步: 给我!(伸手)")
@@ -2186,7 +2187,7 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait("dungFlag","return",1)
                     Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",["leaveDung",[455,1200]],3.75)) # 回城
                     # 3.75什么意思 正常循环是3秒 有4次尝试机会 因此3.75秒按一次刚刚好.
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("RoyalCityLuknalia",['return',[1,1]],1)) # 回城
+                    Press(FindCoordsOrElseExecuteFallbackAndWait("City_RoyalCityLuknalia",['return',[1,1]],1)) # 回城
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
 
                     costtime = time.time()-starttime
@@ -2388,8 +2389,8 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        lambda: TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['City_RoyalCityLuknalia',[1,1]],1),
                         )
                
                     RestartableSequenceExecution(
@@ -2448,8 +2449,8 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 前往王城"),
-                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        lambda: TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['City_RoyalCityLuknalia',[1,1]],1),
                         )
                     def stepThree():
                         FindCoordsOrElseExecuteFallbackAndWait('Inn',[1,1],1)
@@ -2517,8 +2518,8 @@ def Factory():
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
-                        lambda: TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['RoyalCityLuknalia',[1,1]],1),
+                        lambda: TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('guild',['City_RoyalCityLuknalia',[1,1]],1),
                         )
                     
                     RestartableSequenceExecution(
@@ -2654,7 +2655,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
+                        lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
                         )
 
                     logger.info("第四步: 悬赏揭榜")
@@ -2753,7 +2754,7 @@ def Factory():
 
                     logger.info("第三步: 前往王城...")
                     RestartableSequenceExecution(
-                        lambda:TeleportFromCityToWorldLocation('RoyalCityLuknalia','input swipe 450 150 500 150'),
+                        lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
                         )
 
                     logger.info("第四步: 悬赏揭榜")

@@ -34,7 +34,7 @@
         "questName":"[宝箱]水路船二lounge",
         "_TARGETINFOLIST":[
             ["stair_lounge","左上",[292,394]],
-            ["chest","左上",[[0,0,900,739],[0,529,212,106]]],
+            ["chest_auto"],
             ["stair_shiphold","左上",[292,394]],
             ["harken",null,null]
         ],
@@ -181,7 +181,7 @@
 
     "IWO":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]鬼洞1f",
+        "questName":"[宝箱]鬼洞1f 水路出发",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","左下", [186,1028]]
@@ -189,12 +189,12 @@
         "_preEOTcheck":"IWO/IWO",
         "_EOT":
         [
-            ["press","intoWorldMap",["IWO/IWO","input swipe 840 595 720 475",[720,475]],1],
+            ["press","intoWorldMap",["IWO/IWO","input swipe 700 1200 500 1200",[500,1200]],1],
             ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["fortressworldmap","input swipe 720 475 840 595",[720,475]],1]
+            ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1300 700 900",[500,1200]],1]
         ]
     },
     "fordraig-B3F":{
