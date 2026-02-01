@@ -600,7 +600,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         if buttonName == "btn_enable_all":
             if getattr(self,f"{buttonName}_var").get():
-                self._spell_skill_config_internal = list(skills_to_process_set)
+                self._spell_skill_config_internal = sorted(list(skills_to_process_set))
                 logger.info(f"已启用所有技能: {self._spell_skill_config_internal}")
                 for btn,_,_,_,_ in SPELLSEKILL_TABLE:
                     if btn!=buttonName:

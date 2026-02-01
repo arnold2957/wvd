@@ -189,12 +189,12 @@
         "_preEOTcheck":"IWO/IWO",
         "_EOT":
         [
-            ["press","intoWorldMap",["IWO/IWO","input swipe 700 1200 500 1200",[500,1200]],1],
+            ["press","intoWorldMap",["IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],1],
             ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1300 700 900",[500,1200]],1]
+            ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],1]
         ]
     },
     "fordraig-B3F":{

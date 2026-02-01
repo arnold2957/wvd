@@ -264,20 +264,26 @@ def LoadTemplateImage(shortPathOfTarget):
     logger.debug(f"加载{shortPathOfTarget}")
     pathOfTarget = ResourcePath(os.path.join(IMAGE_FOLDER + f"{shortPathOfTarget}.png"))
     return LoadImage(pathOfTarget)
-def reflectDialogOptionImage():
+def reflectImage(folder):
     # 构建dialogueChoices文件夹的模式匹配路径
-    pattern = os.path.join(IMAGE_FOLDER, 'dialogueChoices', '*.png')
+    pattern = os.path.join(IMAGE_FOLDER, folder, '*.png')
     full_pattern = ResourcePath(pattern)
     
     # 使用glob获取所有匹配的文件
     png_files = glob.glob(full_pattern)
     
     # 提取不带扩展名的文件名
-    options = [os.path.splitext(os.path.basename(f))[0] for f in png_files]
+    img = sorted([os.path.splitext(os.path.basename(f))[0] for f in png_files])
     
-    return options
+    return img
 
-DIALOG_OPTION_IMAGE_LIST = reflectDialogOptionImage()
+DIALOG_OPTION_IMAGE_LIST = reflectImage('dialogueChoices')
+
+CC_SKILLS = reflectImage(os.path.join('spellskill','CC'))
+SECRET_AOE_SKILLS = reflectImage(os.path.join('spellskill','SECRET_AOE'))
+FULL_AOE_SKILLS = reflectImage(os.path.join('spellskill','FULL_AOE'))
+ROW_AOE_SKILLS = reflectImage(os.path.join('spellskill','ROW_AOE'))
+PHYSICAL_SKILLS = reflectImage(os.path.join('spellskill','SINGLE'))
 ###########################################
 class Tooltip:
     def __init__(self, widget, text):

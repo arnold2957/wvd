@@ -13,14 +13,9 @@ from pathlib import Path
 import numpy as np
 import copy
 
-CC_SKILLS = ["KANTIOS"]
-SECRET_AOE_SKILLS = ["SAoLABADIOS","SAoLAERLIK","SAoLAFOROS"]
-FULL_AOE_SKILLS = ["LAERLIK", "LAMIGAL","LAZELOS", "LACONES", "LAFOROS","LAHALITO", "LAFERU", "千恋万花","乱射"]
-ROW_AOE_SKILLS = ["maerlik", "mahalito", "mamigal","mazelos","maferu", "macones","maforos","终焉之刻"]
-PHYSICAL_SKILLS = ["动静一击","裂地一击","全力一击","死死连葬","tzalik","居合","精密攻击","锁腹刺","破甲","星光裂","迟钝连携击","强袭","重装一击","眩晕打击","幻影狩猎"]
-
 ALL_SKILLS = CC_SKILLS + SECRET_AOE_SKILLS + FULL_AOE_SKILLS + ROW_AOE_SKILLS +  PHYSICAL_SKILLS
 ALL_SKILLS = [s for s in ALL_SKILLS if s in list(set(ALL_SKILLS))]
+ALL_SKILLS = sorted(ALL_SKILLS)
 
 SPELLSEKILL_TABLE = [
             ["btn_enable_all","所有技能",ALL_SKILLS,0,0],
@@ -1465,7 +1460,7 @@ def Factory():
 
         screen = ScreenShot()
         if not runtimeContext._COMBATSPD:
-            if Press(CheckIf(screen,'combatSpd')):
+            if Press(CheckIf(screen,'combatSpd')) or Press(CheckIf(screen,'combatSpd_DHI')):
                 runtimeContext._COMBATSPD = True
                 Sleep(1)
 
