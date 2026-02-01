@@ -1317,6 +1317,12 @@ def Factory():
                         if op == 'halfBone':
                             AddImportantInfo("购买了尸油.")
                         return IdentifyState()
+                    
+                if pos_b:=CheckIf(screen,'blessing'):
+                    if pos:=CheckIf(screen, 'combatClose'): # 如果因为某些原因点到了切换哈肯祝福, 进入了二次确认界面
+                        Press(pos) # 我们把二次确认的界面关了, 无事发生
+                    else:
+                        Press(pos_b)
                 
                 if (CheckIf(screen,'multipeopledead')):
                     runtimeContext._SUICIDE = True # 准备尝试自杀
@@ -1557,7 +1563,7 @@ def Factory():
                         # DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
                         # 二次确认也不拖动了 太容易触发bug
                         Sleep(2)
-                        Press([1,1255])
+                        Press([1,210]) # 点击地图左上角来清除选中状态
                         targetPos = CheckIf(ScreenShot(),target,roi)
                     break
         return targetPos
