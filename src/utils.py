@@ -279,11 +279,11 @@ def reflectImage(folder):
 
 DIALOG_OPTION_IMAGE_LIST = reflectImage('dialogueChoices')
 
-CC_SKILLS = reflectImage(os.path.join('spellskill','CC'))
-SECRET_AOE_SKILLS = reflectImage(os.path.join('spellskill','SECRET_AOE'))
-FULL_AOE_SKILLS = reflectImage(os.path.join('spellskill','FULL_AOE'))
-ROW_AOE_SKILLS = reflectImage(os.path.join('spellskill','ROW_AOE'))
-PHYSICAL_SKILLS = reflectImage(os.path.join('spellskill','SINGLE'))
+CC_SKILLS = ['CC/'+img for img in reflectImage(os.path.join('spellskill','CC'))]
+SECRET_AOE_SKILLS = ['SECRET_AOE/'+img for img in reflectImage(os.path.join('spellskill','SECRET_AOE'))]
+FULL_AOE_SKILLS = ['FULL_AOE/'+img for img in reflectImage(os.path.join('spellskill','FULL_AOE'))]
+ROW_AOE_SKILLS = ['ROW_AOE/'+img for img in reflectImage(os.path.join('spellskill','ROW_AOE'))]
+PHYSICAL_SKILLS = ['SINGLE/'+img for img in reflectImage(os.path.join('spellskill','SINGLE'))]
 ###########################################
 class Tooltip:
     def __init__(self, widget, text):
