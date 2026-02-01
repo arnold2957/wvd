@@ -1,7 +1,7 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/1.11.13",
-  "release_date": "2026-02-01 13:15:41",
-  "md5": "e8c9a2036bafeb6ae4c8b71e7ff49710",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/1.11.13/wvd.zip",
-  "version": "1.11.13"
+  "version": "1.11.14",
+  "release_date": "2026-02-01 15:19:05",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/1.11.14/wvd.zip",
+  "md5": "82864b83eb52eeaa58d750761c7cb1ae",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/1.11.14"
 }
