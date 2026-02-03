@@ -45,6 +45,7 @@ CONFIG_VAR_LIST = [
             ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
             ["active_royalsuite_rest_var",  tk.BooleanVar, "_ACTIVE_ROYALSUITE_REST",    False],
             ["active_triumph_var",          tk.BooleanVar, "_ACTIVE_TRIUMPH",            False],
+            ["active_beautiful_ore_var",    tk.BooleanVar, "_ACTIVE_BEAUTIFUL_ORE",      False],
             ["active_beg_money_var",        tk.BooleanVar, "_ACTIVE_BEG_MONEY",          True],
             ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              0],
             ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
@@ -1107,7 +1108,7 @@ def Factory():
         Sleep(1)
         FindCoordsOrElseExecuteFallbackAndWait(['Inn','openworldmap','dungFlag'],[target,press_any_key],1)
         
-    def CursedWheelTimeLeap(tar=None, CSC_symbol=None,CSC_setting = None):
+    def CursedWheelTimeLeap(target="GhostsOfYore", CSC_symbol=None,CSC_setting = None, chapter = 'cursedwheel_impregnableFortress'):
         # CSC_symbol: 是否开启因果? 如果开启因果, 将用这个作为是否点开ui的检查标识
         # CSC_setting: 默认会先选择不接所有任务. 这个列表中储存的是想要打开的因果.
         # 其中的RGB用于缩放颜色维度, 以增加识别的可靠性.
@@ -1115,17 +1116,11 @@ def Factory():
             logger.info(f"因为面板设置, 跳过了调整因果.")
             CSC_symbol = None
 
-        target = "GhostsOfYore"
-        if tar != None:
-            target = tar
-        if setting._ACTIVE_TRIUMPH:
-            target = "Triumph"
-
         logger.info(f"开始时间跳跃, 本次跳跃目标:{target}")
 
         # 调整条目以找到跳跃目标
         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
-        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight','cursedWheel',[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait(chapter,['cursedWheelTapRight','cursedWheel',[1,1]],1))
         if not Press(CheckIf(ScreenShot(),target)):
             DeviceShell(f"input swipe 450 1200 450 200")
             Sleep(2)
@@ -2637,20 +2632,42 @@ def Factory():
                     starttime = time.time()
                     runtimeContext._COUNTERDUNG += 1
 
-                    RestartableSequenceExecution(
-                        lambda: CursedWheelTimeLeap()
-                        )
+                    if not setting._ACTIVE_BEAUTIFUL_ORE:
+                        if not setting._ACTIVE_TRIUMPH:                            
+                            logger.info("第一步: 时空跳跃...")
+                            RestartableSequenceExecution(
+                                lambda: CursedWheelTimeLeap()
+                            )
+                            Sleep(10)
+                            logger.info("第二步: 返回要塞...")
+                            RestartableSequenceExecution(
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                                )
+                                
+                            logger.info("第三步: 前往王城...")
+                            RestartableSequenceExecution(
+                                lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                                )
+                        else:
+                            logger.info("第一步: 时空跳跃...")
+                            RestartableSequenceExecution(
+                                lambda: CursedWheelTimeLeap(chapter='cursedwheel_impregnableFortress', target="Triumph")
+                            )
+                            Sleep(10)
+                                
+                            logger.info("第三步: 前往王城...")
+                            RestartableSequenceExecution(
+                                lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                                )
 
-                    Sleep(10)
-                    logger.info("第二步: 返回要塞...")
-                    RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                    elif setting._ACTIVE_BEAUTIFUL_ORE:
+                        logger.info("第一步: 时空跳跃...")
+                        RestartableSequenceExecution(
+                            lambda: CursedWheelTimeLeap(chapter='cursedwheel_dhi', target="BeautifulOre")
                         )
+                        Sleep(10)
 
-                    logger.info("第三步: 前往王城...")
-                    RestartableSequenceExecution(
-                        lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
-                        )
+
 
                     logger.info("第四步: 悬赏揭榜")
                     RestartableSequenceExecution(
