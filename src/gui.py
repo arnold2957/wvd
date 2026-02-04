@@ -366,6 +366,8 @@ class ConfigPanelApp(tk.Toplevel):
         self.button_save_rest_intervel = ttk.Button(frame_row, text="保存", command=self.save_config, width=4)
         self.button_save_rest_intervel.grid(row=0, column=3)
 
+        # 善恶设置
+        row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         ttk.Label(frame_row, text=f"善恶:").grid(row=0, column=0, sticky=tk.W, pady=5)
