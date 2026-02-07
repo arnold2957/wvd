@@ -1931,12 +1931,12 @@ def Factory():
                                 
                                 if tar == "chest_auto":
                                     lastscreen = ScreenShot()
-                                    if CheckIf(lastscreen,"NoChestCanBeFound"):
+                                    if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
                                         targetInfoList.pop(0)
                                         logger.info(f"退出宝箱搜索.")
                                         return DungeonState.Dungeon
                                     lastscreen = ScreenShot()
-                                    if CheckIf(lastscreen,"NoChestCanBeFound"):
+                                    if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
                                         targetInfoList.pop(0)
                                         logger.info(f"退出宝箱搜索.")
                                         return DungeonState.Dungeon
