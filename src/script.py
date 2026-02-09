@@ -346,7 +346,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
 
         if attempt == 3:
             logger.info(f"失败次数过多, 尝试关闭adb.")
-            KillAdb(setting)
+            KillAdb()
 
             # 我们不起手就关, 但是如果2次链接还是尝试失败, 那就触发一次强制重启.
         
