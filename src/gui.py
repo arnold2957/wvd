@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext, filedialog, messagebox
+from tkinter import ttk, scrolledtext, filedialog, messagebox,simpledialog
 import os
 import logging
 from script import *
@@ -50,28 +50,31 @@ class ScrollableFrame(ttk.Frame):
         if content_height > canvas_height:
             self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
-class CollapsibleSection(ttk.Frame):
-    def __init__(self, parent, title="", expanded=False, *args, **kwargs):
+class CollapsibleSection(tk.Frame):
+    def __init__(self, parent, title="", expanded=False,bg_color=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.columnconfigure(0, weight=1)
         
-        # 1. 接收外部传入的状态
         self.is_expanded = expanded
+        self.bg_color = bg_color
+        self.close_emoji = "➖"
+        self.showmore_emoji = "➕"
+        self.config(bg=self.bg_color)
         
         # 顶部标题栏
-        self.header_frame = ttk.Frame(self, style="Header.TFrame")
+        self.header_frame = tk.Frame(self, bg=self.bg_color)
         self.header_frame.pack(fill="x", pady=2)
         
-        self.label = ttk.Label(self.header_frame, text=title, font=("微软雅黑", 11, "bold"))
+        self.label = tk.Label(self.header_frame, text=title, font=("微软雅黑", 11, "bold"),bg=self.bg_color)
         self.label.pack(side="left", padx=5)
         
         # 2. 根据初始状态决定图标
-        icon_text = "❌" if self.is_expanded else "➕"
+        icon_text = self.close_emoji if self.is_expanded else self.showmore_emoji
         self.toggle_btn = ttk.Button(self.header_frame, text=icon_text, width=3, command=self.toggle)
         self.toggle_btn.pack(side="right", padx=5)
         
-        self.content_frame = ttk.Frame(self)
-        self.spacer = ttk.Frame(self, height=5)
+        self.content_frame = tk.Frame(self, bg=self.bg_color)
+        self.spacer = tk.Frame(self, height=5, bg = self.bg_color)
         self.spacer.pack(fill='x')
 
         # 3. 如果初始是展开的，立即显示内容
@@ -81,26 +84,273 @@ class CollapsibleSection(ttk.Frame):
     def toggle(self):
         if self.is_expanded:
             self.content_frame.pack_forget()
-            self.toggle_btn.configure(text="➕")
+            self.toggle_btn.configure(text=self.showmore_emoji)
             self.is_expanded = False
         else:
             self.content_frame.pack(fill="x", expand=True, padx=5, pady=2, before=self.spacer)
-            self.toggle_btn.configure(text="❌")
+            self.toggle_btn.configure(text=self.close_emoji)
             self.is_expanded = True
 
     def toggle(self):
         if self.is_expanded:
             # 当前是展开的 -> 执行折叠
             self.content_frame.pack_forget()     # 隐藏内容
-            self.toggle_btn.configure(text="➕")  # 按钮变回"折叠态"图标
+            self.toggle_btn.configure(text=self.showmore_emoji)  # 按钮变回"折叠态"图标
             self.is_expanded = False
         else:
             # 当前是折叠的 -> 执行展开
             # 注意: before=self.spacer 保证内容在底部分隔线之上
             self.content_frame.pack(fill="x", expand=True, padx=5, pady=2, before=self.spacer)
-            self.toggle_btn.configure(text="❌")  # 按钮变为"展开态"图标
+            self.toggle_btn.configure(text=self.close_emoji)  # 按钮变为"展开态"图标
             self.is_expanded = True
 
+class SkillConfigPanel(CollapsibleSection):
+    def __init__(self,
+                 parent,
+                 title="技能配置组",
+                 on_delete=None,
+                 init_config=None,
+                 on_name_change=None,
+                 **kwargs):
+        self.bg_color = "#FFFFFF"
+        super().__init__(parent, title=title, expanded=True, bg_color=self.bg_color, **kwargs)
+        self.configure(
+            relief=tk.GROOVE,
+            borderwidth=2,
+        )
+
+        self.on_delete = on_delete
+        self.on_name_change = on_name_change  # 存储回调函数
+
+        self.custom_rows_data = []
+        self.default_row_data = {}
+        
+        # 常量
+        self.ROLE_LIST = ['alice', 'bob', 'camila']
+        self.SKILL_OPTIONS = ["左上技能", "右上技能", "左下技能", "右下技能", "防御", "双击自动"]
+        self.TARGET_OPTIONS = ["左上", "中上", "右上", "左下", "右下", "中下", "低生命值", "不可用"]
+        self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
+        self.FREQ_OPTIONS = ["每场战斗仅一次", "每次启动仅一次", "重复"]
+
+        # 直接构建正文 UI
+        self._setup_body_ui()
+        
+        # 如果有初始化配置，应用它
+        if init_config:
+            self._apply_init_config(init_config)
+
+    def _setup_body_ui(self):
+        action_bar = tk.Frame(self.content_frame, background=self.bg_color)
+        action_bar.pack(fill=tk.X, pady=(0, 5))
+
+        btn_add = ttk.Button(action_bar, text="➕新增角色", command=self.add_custom_row, width=9.5)
+        btn_add.pack(side=tk.LEFT)
+        
+        btn_del = ttk.Button(action_bar, text="🗑删除此组", command=self.delete_panel, width=9.5)
+        btn_del.pack(side=tk.RIGHT)
+
+        btn_edit = ttk.Button(action_bar, text="✎重命名", command=self.edit_title, width=7)
+        btn_edit.pack(side=tk.RIGHT, padx=(5, 0))
+
+        ttk.Separator(self.content_frame, orient='horizontal').pack(fill='x', pady=2)
+
+        # --- 2. 卡片容器 ---
+        self.cards_container = tk.Frame(self.content_frame, background=self.bg_color)
+        self.cards_container.pack(fill=tk.BOTH, expand=True)
+
+        # 默认行
+        self.default_row_frame = tk.Frame(self.cards_container)
+        self.default_row_frame.pack(fill=tk.X)
+        self.default_row_data = self._create_card_widget(self.default_row_frame, is_default=True)
+
+    def _apply_init_config(self, init_config):
+        """根据外部JSON配置初始化面板"""
+        # 1. 设置组名
+        if 'group_name' in init_config:
+            self.label.config(text=init_config['group_name'])
+        
+        # 2. 清空已有的自定义行（如果有的话）
+        for row in self.custom_rows_data:
+            row['frame'].destroy()
+        self.custom_rows_data.clear()
+        
+        # 3. 创建新的自定义行
+        if 'skill_settings' in init_config:
+            skill_settings = init_config['skill_settings']
+            
+            for setting in skill_settings:
+                # 创建新的自定义行
+                wrapper_frame = tk.Frame(self.cards_container)
+                wrapper_frame.pack(fill=tk.X, pady=3, before=self.default_row_frame)
+                row_data = self._create_card_widget(wrapper_frame, is_default=False)
+                self.custom_rows_data.append(row_data)
+                
+                # 设置配置值
+                role = setting.get('role_var', '')
+                if role in self.ROLE_LIST:
+                    row_data['role_var'].set(role)
+                else:
+                    row_data['role_var'].set(self.ROLE_LIST[0])
+                    
+                row_data['skill_var'].set(setting.get('skill_var', '左上技能'))
+                row_data['target_var'].set(setting.get('target_var', '低生命值'))
+                row_data['freq_var'].set(setting.get('freq_var', '重复'))
+                row_data['lvl_var'].set(setting.get('skill_lvl', 1))
+                
+                # 触发技能变更检查（如果需要禁用目标选择）
+                self._on_skill_change(row_data)
+
+    # --- 功能实现 ---
+
+    def edit_title(self):
+        """修改标题"""
+        current_title = self.label.cget("text")
+        new_title = simpledialog.askstring("重命名", "修改配置组名称:", initialvalue=current_title, parent=self)
+        
+        if new_title and new_title != current_title:
+            # 如果有回调函数，先调用它
+            if self.on_name_change:
+                result = self.on_name_change(self, new_title)
+                if result is False:  # 如果回调返回False，认为修改失败
+                    return
+            
+            # 修改成功，更新标签
+            self.label.config(text=new_title)
+
+    def delete_panel(self):
+        """删除整个面板"""
+        if messagebox.askyesno("确认删除", f"确定要删除【{self.label.cget('text')}】吗？"):
+            if self.on_delete:
+                self.on_delete(self)
+            self.destroy()
+
+    def add_custom_row(self):
+        wrapper_frame = tk.Frame(self.cards_container)
+        wrapper_frame.pack(fill=tk.X, pady=3, before=self.default_row_frame)
+        row_data = self._create_card_widget(wrapper_frame, is_default=False)
+        self.custom_rows_data.append(row_data)
+
+    def _create_card_widget(self, parent, is_default=False):
+        # (保持原有的卡片创建逻辑，无变化)
+        card_bg = "#F8F8F8"
+        card = tk.Frame(parent, relief=tk.GROOVE, borderwidth=2, padx=5, pady=5, bg=card_bg)
+        card.pack(fill=tk.X, expand=True)
+
+        role_var = tk.StringVar()
+        skill_var = tk.StringVar()
+        target_var = tk.StringVar()
+        lvl_var = tk.IntVar()
+        freq_var = tk.StringVar()
+
+        card.columnconfigure(0, weight=1)
+        row_counter = 0
+        row_frame = tk.Frame(card)
+        row_frame.grid(row=row_counter, sticky=tk.EW)
+
+        if is_default:
+            role_var.set("默认")
+            role_cb = ttk.Combobox(row_frame, textvariable=role_var, width=8, state="disabled")
+        else:
+            role_var.set(self.ROLE_LIST[0])
+            role_cb = ttk.Combobox(row_frame, textvariable=role_var, values=self.ROLE_LIST, width=8, state="readonly")
+        role_cb.grid(row=0, column=0, padx=(0, 5), sticky=tk.W)
+
+        skill_cb = ttk.Combobox(row_frame, textvariable=skill_var, values=self.SKILL_OPTIONS, width=7, state="readonly")
+        skill_cb.grid(row=0, column=1, padx=(0, 5), sticky=tk.W)
+        
+        if is_default:
+            skill_var.set("双击自动")
+            skill_cb.config(state="disabled")
+        else:
+            skill_cb.current(0)
+
+        freq_cb = ttk.Combobox(row_frame, textvariable=freq_var, values=self.FREQ_OPTIONS, width=10, state="readonly")
+        freq_cb.grid(row=0, column=2, sticky=tk.W)
+        
+        if is_default:
+            freq_var.set("重复")
+            freq_cb.config(state="disabled")
+        else:
+            freq_cb.current(2)
+
+        row_counter = 1
+        row_frame = tk.Frame(card)
+        row_frame.grid(row=row_counter, sticky=tk.EW)
+
+        tk.Label(row_frame, text="治疗:", font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=0, sticky=tk.E, pady=(5, 0))
+        target_cb = ttk.Combobox(row_frame, textvariable=target_var, values=self.TARGET_OPTIONS, width=7, state="readonly")
+        target_cb.grid(row=0, column=1, sticky=tk.W, padx=(0, 5), pady=(5, 0))
+
+        tk.Label(row_frame, text="等级:", font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=2, sticky=tk.E, pady=(5, 0))
+        skill_lvl = ttk.Combobox(row_frame, textvariable=lvl_var, values=self.SKILL_LVL, width=5, state="readonly")
+        skill_lvl.grid(row=0, column=3, sticky=tk.W, padx=(0, 5), pady=(5, 0))
+        
+        if is_default:
+            target_var.set("不可用")
+            lvl_var.set(1)
+            target_cb.config(state="disabled")
+            skill_lvl.config(state="disabled")
+            tk.Label(row_frame, text="[默认]", font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=4, sticky=tk.E, pady=(5, 0))
+        else:
+            target_cb.current(6)
+            skill_lvl.current(0)  # 默认选择第1级
+            del_btn = ttk.Button(row_frame, text="取消", width=6, command=lambda: self._remove_row(parent))
+            del_btn.grid(row=0, column=4, sticky=tk.E, pady=(5, 0))
+
+        row_data = {
+            'frame': parent, 
+            'role_var': role_var,
+            'skill_var': skill_var, 'skill_widget': skill_cb,
+            'target_var': target_var, 'target_widget': target_cb,
+            'lvl_var': lvl_var, 'skill_lvl': skill_lvl,  # 添加lvl_var和skill_lvl
+            'freq_var': freq_var, 'freq_widget': freq_cb
+        }
+
+        if not is_default:
+            skill_cb.bind("<<ComboboxSelected>>", lambda e: self._on_skill_change(row_data))
+            self._on_skill_change(row_data)
+
+        return row_data
+
+    def _remove_row(self, frame_obj):
+        frame_obj.destroy()
+        self.custom_rows_data = [r for r in self.custom_rows_data if r['frame'] != frame_obj]
+
+    def _on_skill_change(self, row_data):
+        current_skill = row_data['skill_var'].get()
+        LOCK_TRIGGERS = ["防御", "双击自动"]
+        if current_skill in LOCK_TRIGGERS:
+            row_data['target_var'].set("不可用")
+            row_data['target_widget'].config(state="disabled")
+            # 对于锁定技能，也禁用技能等级选择
+            row_data['skill_lvl'].config(state="disabled")
+        else:
+            if row_data['target_var'].get() == "不可用":
+                row_data['target_var'].set("低生命值")
+            row_data['target_widget'].config(state="readonly")
+            # 对于非锁定技能，启用技能等级选择
+            row_data['skill_lvl'].config(state="readonly")
+
+    def get_config_list(self):
+        """获取当前配置，返回指定格式的字典（只包含自定义行）"""
+        skill_settings = []
+        
+        # 只添加自定义行，不包含默认行
+        for row in self.custom_rows_data:
+            item = {
+                'role_var': row['role_var'].get(),
+                'skill_var': row['skill_var'].get(),
+                'target_var': row['target_var'].get(),
+                'freq_var': row['freq_var'].get(),
+                'skill_lvl': row['lvl_var'].get()  # 添加技能等级
+            }
+            skill_settings.append(item)
+        
+        # 返回指定格式，不包含默认行
+        return {
+            'group_name': self.label.cget("text"),
+            'skill_settings': skill_settings
+        }
 ############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller, version, msg_queue):
@@ -114,7 +364,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('560x750')
+        self.geometry('610x750')
         
         self.title(self.TITLE)
 
@@ -452,6 +702,81 @@ class ConfigPanelApp(tk.Toplevel):
                 style="Custom.TCheckbutton"
             ))
             getattr(self, buttonName).grid(row=s_row, column=s_col, padx=2, pady=2)
+
+        # # ==========================================
+        # # 分组 4: 战斗
+        # # ==========================================
+        # self.section_combat_adv = CollapsibleSection(content_root, title="高级战斗")
+        # self.section_combat_adv.pack(fill="x")
+        # container = self.section_combat_adv.content_frame
+        # row_counter = 0
+
+        # self.skill_configs = {}
+
+        # def on_delete_panel(p):
+        #     """删除面板的回调函数"""
+        #     # 从字典中删除该panel
+        #     if p in self.skill_configs:
+        #         del self.skill_configs[p]
+            
+        #     # 销毁面板
+        #     p.destroy()
+            
+        #     # 如果没有面板了，隐藏容器
+        #     if len(self.skill_configs) == 0:
+        #         self.panels_container.grid_forget()
+
+        # def on_panel_name_changed(panel, new_name):
+        #     """面板名称改变时的回调"""
+        #     # 检查新名称是否已经存在
+        #     if new_name in self.skill_configs.values() and new_name != self.skill_configs.get(panel):
+        #         messagebox.showerror("错误", f"名称 '{new_name}' 已存在，请使用其他名称")
+        #         return False
+            
+        #     # 更新映射
+        #     self.skill_configs[panel] = new_name
+        #     return True
+        
+        # def get_all_configs():
+        #     """获取所有面板的配置"""
+        #     all_configs = []
+        #     for panel, _ in self.skill_configs.items():
+        #         config = panel.get_config_list()
+        #         all_configs.append(config)
+        #     return all_configs
+                
+        # def add_new_panel():
+        #     self.panels_container.grid()
+
+        #     idx = 1
+        #     while True:
+        #         title = f"队伍配置 {idx}"
+        #         # 检查名称是否已存在
+        #         if title not in self.skill_configs.values():
+        #             break
+        #         idx += 1
+
+        #     panel = SkillConfigPanel(
+        #         self.panels_container,
+        #         title=title,
+        #         on_delete=on_delete_panel,
+        #         on_name_change=on_panel_name_changed,
+        #         init_config=None,
+        #     )
+        #     panel.pack(fill=tk.X, pady=2)
+            
+        #     # 将panel和名称添加到映射中
+        #     self.skill_configs[panel] = title
+
+        # ttk.Button(container, text="➕ 添加新技能配置", command=add_new_panel).grid(row=row_counter, column=0, sticky=tk.W)
+
+        # row_counter += 1
+        # container.columnconfigure(0, weight=1)
+        # self.panels_container = tk.Frame(container)
+        # self.panels_container.grid(row=row_counter, column=0, sticky="ew")
+
+        # # 初始添加一个面板
+        # add_new_panel()
 
         # ==========================================
         # 分组 5: 高级

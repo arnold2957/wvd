@@ -1146,7 +1146,7 @@ def Factory():
         logger.info(f"开始时间跳跃, 本次跳跃目标:{target}")
 
         # 调整条目以找到跳跃目标
-        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins',[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel',['ruins','startdownload',[1,1]],1))
         Press(FindCoordsOrElseExecuteFallbackAndWait(chapter,['cursedWheelTapRight','cursedWheel',[1,1]],1))
         if not Press(CheckIf(ScreenShot(),target)):
             DeviceShell(f"input swipe 450 1200 450 200")
@@ -1217,6 +1217,10 @@ def Factory():
 
             if TryPressRetry(screen):
                     Sleep(2)
+
+            if Press(CheckIf(screen,'startdownload',[[222,901,465,84]])):
+                logger.info("确认, 下载, 确认.")
+                Sleep(2)
 
             identifyConfig = [
                 ('dungFlag',      DungeonState.Dungeon),
@@ -1347,10 +1351,7 @@ def Factory():
                     # logger.info("Corpses strew the screen")
                     Press(CheckIf(screen,'skull'))
                     Sleep(2)
-                if Press(CheckIf(screen,'startdownload')):
-                    logger.info("确认, 下载, 确认.")
-                    # logger.info("")
-                    Sleep(2)
+
                 if Press(CheckIf(screen,'totitle')):
                     logger.info("网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!")
                     return IdentifyState()
