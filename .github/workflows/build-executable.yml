@@ -59,21 +59,24 @@ jobs:
     - name: Compress build artifact to ZIP
       shell: pwsh
       run: |
+        $version = "${{ steps.extract-version.outputs.version }}"
         # Copy changelog into the build directory before zipping
         Copy-Item -Path './CHANGES_LOG.md' -Destination './dist/wvd/' -Force
-        Compress-Archive -Path ./dist/wvd/* -DestinationPath ./dist/wvd.zip -Force
-        Get-ChildItem dist/wvd.zip
+        Compress-Archive -Path ./dist/wvd/* -DestinationPath "./dist/wvd_$version.zip" -Force
+        Get-ChildItem "dist/wvd_$version.zip"
 
     - name: Prepare Release Notes and Metadata
       id: prepare-release-meta
       shell: pwsh
       run: |
-        $md5 = (Get-FileHash -Path dist/wvd.zip -Algorithm MD5).Hash.ToLower()
+        $version = "${{ steps.extract-version.outputs.version }}"
+        $zipFileName = "wvd_$version.zip"
+        $zipPath = "dist/$zipFileName"
+        $md5 = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
         echo "md5=$md5" >> $env:GITHUB_OUTPUT
         echo "MD5: $md5"
         
         $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss" -AsUTC
-        $version = "${{ steps.extract-version.outputs.version }}"
 
         # 生成 release_notes.md (用于 GitHub Release)
         $releaseContent = "**Version**: {0}`n**MD5**: ``{1}```n**Build Date**: {2}" -f $version, $md5, $date
@@ -84,7 +87,7 @@ jobs:
           version = $version
           md5 = $md5
           release_date = $date
-          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/wvd.zip"
+          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/$zipFileName"
           release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
         } | ConvertTo-Json
 
@@ -98,7 +101,7 @@ jobs:
         tag_name: ${{ steps.extract-version.outputs.version }}
         name: Release ${{ steps.extract-version.outputs.version }}
         body_path: dist/release_notes.md
-        files: dist/wvd.zip
+        files: dist/wvd_${{ steps.extract-version.outputs.version }}.zip
 
     - name: Force set as prerelease
       if: ${{ steps.extract-version.outputs.is_prerelease == 'true' }}
