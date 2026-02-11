@@ -612,7 +612,7 @@ def Factory():
             except subprocess.TimeoutExpired:
                 logger.warning("截图超时 (Subprocess)")
                 logger.info("ADB操作失败, 尝试重启ADB或模拟器程序...")
-                ResetDevice()
+                ResetDevice(force_restart_adb=True)
                 
             except Exception as e:
                 logger.debug(f"截图发生异常: {e}")
