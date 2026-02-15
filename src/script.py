@@ -1252,7 +1252,6 @@ def Factory():
                     return State.Inn,DungeonState.Quit, screen
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
-                    DungeonCompletionCounter()
                     return State.EoT,DungeonState.Quit,screen
 
             if pos:=(CheckIf(screen,"openworldmap")):
@@ -1264,7 +1263,6 @@ def Factory():
                     return IdentifyState()
                 else:
                     logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
-                    DungeonCompletionCounter()
                     return State.EoT,DungeonState.Quit,screen
 
             for city in ["City_RoyalCityLuknalia","City_fortress", "City_DHI","City_portTownGrandLegion"]:
@@ -1908,8 +1906,9 @@ def Factory():
                                 restartGame()
                             if not_moving:
                                 break
-                        if not_moving:
-                            break
+                    ########### 如果resume失败且为退出:
+                    if dungState == DungeonState.Quit:
+                        break
                     ########### 如果resume失败且为地下城
                     if dungState == DungeonState.Dungeon:
                         dungState = DungeonState.Map
@@ -2032,7 +2031,6 @@ def Factory():
                         logger.info("即将停止脚本...")
                         break
                 case State.Inn:
-                    DungeonCompletionCounter()
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info("因为没有遇到战斗或宝箱, 跳过住宿.")
                     elif not setting._ACTIVE_REST:
@@ -2047,6 +2045,7 @@ def Factory():
                         )
                     state = State.EoT
                 case State.EoT:
+                    DungeonCompletionCounter()
                     RestartableSequenceExecution(
                         lambda:StateEoT()
                         )
