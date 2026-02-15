@@ -1883,6 +1883,7 @@ def Factory():
 
                         runtimeContext._STEPAFTERRESTART = True
                     ########### 尝试resume
+                    not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),'resume')):
                         logger.info("resume可用. 使用resume.")
                         lastscreen = ScreenShot()
@@ -1891,7 +1892,7 @@ def Factory():
                             _, dungState,screen = IdentifyState()
                             if dungState != DungeonState.Dungeon:
                                 logger.info(f"已退出移动状态. 当前状态为{dungState}.")
-                                break
+                                not_moving = True
                             elif lastscreen is not None:
                                 gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
                                 gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
@@ -1900,11 +1901,15 @@ def Factory():
                                 if mean_diff < 0.1:
                                     runtimeContext._RESUMEAVAILABLE = False
                                     logger.info(f"已退出移动状态. 当前状态为{dungState}.")
-                                    break
+                                    not_moving = True
                                 lastscreen = screen
                             if counter == 29:
                                 # 转圈可能 重启.
                                 restartGame()
+                            if not_moving:
+                                break
+                        if not_moving:
+                            break
                     ########### 如果resume失败且为地下城
                     if dungState == DungeonState.Dungeon:
                         dungState = DungeonState.Map
