@@ -179,9 +179,22 @@
         ]
     },
 
-    "SC":{
+    "SC-B1F":{
         "_TYPE":"dungeon",
-        "questName":"[代币]联动-火龙洞",
+        "questName":"[宝箱]人鱼洞B1F byXX",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","左下",[138,652]]
+        ],
+        "_EOT":[
+            ["press","SC/SC",["EdgeOfTown",[1,1]],1],
+            ["press","SC/SCB1F",[1,1],1]
+        ]
+    },
+
+    "SC-B2F":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]人鱼洞B2F",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上", [660,660]]
