@@ -179,6 +179,19 @@
         ]
     },
 
+    "SC":{
+        "_TYPE":"dungeon",
+        "questName":"[代币]联动-火龙洞",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["position","右上", [660,660]]
+        ],
+        "_EOT":[
+            ["press","SC/SC",["EdgeOfTown",[1,1]],1],
+            ["press","SC/SCB2F","input swipe 650 900 650 250",1]
+        ]
+    },
+
     "IWO":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鬼洞1f 水路出发",
