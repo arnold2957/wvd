@@ -571,22 +571,25 @@ class ConfigPanelApp(tk.Toplevel):
         row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.random_chest_check = ttk.Checkbutton(frame_row, text="快速开箱", variable=self.randomly_open_chest_var,
-                                                  command=self.save_config, style="Custom.TCheckbutton")
-        self.random_chest_check.grid(row=0, column=0, sticky=tk.W, pady=5)
-        ttk.Label(frame_row, text="| 开箱人选:").grid(row=0, column=1, sticky=tk.W, pady=5)
         
+        ttk.Label(frame_row, text="开箱人选:").grid(row=0, column=0, sticky=tk.W, pady=5)
+
         self.open_chest_mapping = {0:"随机", 1:"左上", 2:"中上", 3:"右上", 4:"左下", 5:"中下", 6:"右下"}
         self.who_will_open_text_var = tk.StringVar(value=self.open_chest_mapping.get(self.who_will_open_it_var.get(), "随机"))
         self.who_will_open_combobox = ttk.Combobox(frame_row, textvariable=self.who_will_open_text_var, 
                                                    values=list(self.open_chest_mapping.values()), state="readonly", width=4)
-        self.who_will_open_combobox.grid(row=0, column=2, sticky=tk.W, pady=5)
-        
+        self.who_will_open_combobox.grid(row=0, column=1, sticky=tk.W, pady=5)
         def handle_open_chest_selection(event=None):
             open_chest_reverse_mapping = {v: k for k, v in self.open_chest_mapping.items()}
             self.who_will_open_it_var.set(open_chest_reverse_mapping[self.who_will_open_text_var.get()])
             self.save_config()
         self.who_will_open_combobox.bind("<<ComboboxSelected>>", handle_open_chest_selection)
+
+        ttk.Label(frame_row, text=" | ").grid(row=0, column=2, sticky=tk.W, pady=5)
+
+        self.random_chest_check = ttk.Checkbutton(frame_row, text="快速开箱", variable=self.randomly_open_chest_var,
+                                                  command=self.save_config, style="Custom.TCheckbutton")
+        self.random_chest_check.grid(row=0, column=3, sticky=tk.W, pady=5)
 
         # 跳过恢复
         row_counter += 1
@@ -609,12 +612,13 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_rest_check = ttk.Checkbutton(frame_row, variable=self.active_rest_var, text="启用旅店休息",
                                                  command=checkcommand, style="Custom.TCheckbutton")
         self.active_rest_check.grid(row=0, column=0)
-        ttk.Label(frame_row, text=" | 间隔:").grid(row=0, column=1, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text=" | 完成").grid(row=0, column=1, sticky=tk.W, pady=5)
         self.rest_intervel_entry = ttk.Entry(frame_row, textvariable=self.rest_intervel_var, validate="key",
-                                             validatecommand=(vcmd_non_neg, '%P'), width=5)
+                                             validatecommand=(vcmd_non_neg, '%P'), width=2)
         self.rest_intervel_entry.grid(row=0, column=2)
+        ttk.Label(frame_row, text="次后休息.").grid(row=0, column=3, sticky=tk.W, pady=5)
         self.button_save_rest_intervel = ttk.Button(frame_row, text="保存", command=self.save_config, width=4)
-        self.button_save_rest_intervel.grid(row=0, column=3)
+        self.button_save_rest_intervel.grid(row=0, column=4)
 
         # 善恶设置
         row_counter += 1

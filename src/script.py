@@ -48,7 +48,7 @@ CONFIG_VAR_LIST = [
             ["active_triumph_var",          tk.BooleanVar, "_ACTIVE_TRIUMPH",            False],
             ["active_beautiful_ore_var",    tk.BooleanVar, "_ACTIVE_BEAUTIFUL_ORE",      False],
             ["active_beg_money_var",        tk.BooleanVar, "_ACTIVE_BEG_MONEY",          True],
-            ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              0],
+            ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              1],
             ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
             ["emu_path_var",                tk.StringVar,  "_EMUPATH",                   ""],
             ["emu_index_var",               tk.IntVar,     "_EMUIDX",                    0],
@@ -2035,7 +2035,7 @@ def Factory():
                         logger.info("因为没有遇到战斗或宝箱, 跳过住宿.")
                     elif not setting._ACTIVE_REST:
                         logger.info("因为面板设置, 跳过住宿.")
-                    elif ((runtimeContext._COUNTERDUNG-1) % (setting._RESTINTERVEL+1) != 0):
+                    elif ((runtimeContext._COUNTERDUNG-1) % (max(setting._RESTINTERVEL,1)) != 0):
                         logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     else:
                         logger.info("休息时间到!")
