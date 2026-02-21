@@ -404,7 +404,7 @@
             ["DOF_quit"]
         ],
         "_EOT":[
-            ["press","DOF",["EdgeOfTown",[1,1]],1],
+            ["press","DOF",["EdgeOfTown","input swipe 650 250 650 900"],1],
             ["press","DOFB1F",[1,1],1]
         ]
     },
