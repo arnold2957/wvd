@@ -1,5 +1,5 @@
 from ppadb.client import Client as AdbClient
-from win10toast import ToastNotifier
+# from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from enum import Enum
@@ -7,7 +7,11 @@ from datetime import datetime
 import os
 import subprocess
 from utils import *
+from config_manager import config_manager
+from config_vars import CONFIG_VAR_LIST
+from quest_manager import QuestManager
 import random
+
 from threading import Thread,Event
 from pathlib import Path
 import numpy as np
@@ -25,38 +29,6 @@ SPELLSEKILL_TABLE = [
             ["btn_enable_secret_aoe","秘术AOE",SECRET_AOE_SKILLS,1,1],
             ["btn_enable_physical","强力单体",PHYSICAL_SKILLS,2,0],
             ["btn_enable_cc","群体控制",CC_SKILLS,2,1]
-            ]
-
-DUNGEON_TARGETS = BuildQuestReflection()
-
-####################################
-CONFIG_VAR_LIST = [
-            #var_name,                      type,          config_name,                  default_value
-            ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
-            ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
-            # ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",          False],
-            ["randomly_open_chest_var",     tk.BooleanVar, "_QUICKDISARMCHEST",          False],
-            ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
-            ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
-            ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
-            ["system_auto_combat_var",      tk.BooleanVar, "_SYSTEMAUTOCOMBAT",          False],
-            ["aoe_once_var",                tk.BooleanVar, "_AOE_ONCE",                  False],
-            ["custom_aoe_time_var",         tk.IntVar,     "_AOE_TIME",                  1],
-            ["auto_after_aoe_var",          tk.BooleanVar, "_AUTO_AFTER_AOE",            False],
-            ["active_rest_var",             tk.BooleanVar, "_ACTIVE_REST",               True],
-            ["active_royalsuite_rest_var",  tk.BooleanVar, "_ACTIVE_ROYALSUITE_REST",    False],
-            ["active_triumph_var",          tk.BooleanVar, "_ACTIVE_TRIUMPH",            False],
-            ["active_beautiful_ore_var",    tk.BooleanVar, "_ACTIVE_BEAUTIFUL_ORE",      False],
-            ["active_beg_money_var",        tk.BooleanVar, "_ACTIVE_BEG_MONEY",          True],
-            ["rest_intervel_var",           tk.IntVar,     "_RESTINTERVEL",              1],
-            ["karma_adjust_var",            tk.StringVar,  "_KARMAADJUST",               "+0"],
-            ["emu_path_var",                tk.StringVar,  "_EMUPATH",                   ""],
-            ["emu_index_var",               tk.IntVar,     "_EMUIDX",                    0],
-            ["adb_port_var",                tk.StringVar,  "_ADBPORT",                   5555],
-            ["last_version",                tk.StringVar,  "LAST_VERSION",               ""],
-            ["latest_version",              tk.StringVar,  "LATEST_VERSION",             None],
-            ["_spell_skill_config_internal",list,          "_SPELLSKILLCONFIG",          []],
-            ["active_csc_var",              tk.BooleanVar, "ACTIVE_CSC",                 True],
             ]
 
 class FarmConfig:
@@ -461,19 +433,17 @@ def CutRoI(screenshot,roi):
 ##################################################################
 
 def Factory():
-    toaster = ToastNotifier()
+    # toaster = ToastNotifier()
     setting =  None
     quest = None
     runtimeContext = None
     def LoadQuest():
         # 构建文件路径
-        jsondict = LoadJson(ResourcePath(QUEST_FILE))
-        if setting._FARMTARGET in jsondict:
-            data = jsondict[setting._FARMTARGET]
-        else:
+        questManager = QuestManager()
+        data = questManager.get_quest_by_code(setting._FARMTARGET)
+        if data is None:
             logger.error("任务列表已更新.请重新手动选择地下城任务.")
             return
-        
         
         # 创建 Quest 实例并填充属性
         quest = FarmQuest()
@@ -1325,7 +1295,8 @@ def Factory():
                     logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
                     AddImportantInfo(f"新的善恶:{new_str}")
                     setting._KARMAADJUST = new_str
-                    SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                    # 使用config_manager保存配置
+                    config_manager.save_single_config("_KARMAADJUST", setting._KARMAADJUST)
                     Sleep(2)
 
                 for op in DIALOG_OPTION_IMAGE_LIST:

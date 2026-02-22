@@ -5,6 +5,8 @@ import logging
 from script import *
 from auto_updater import *
 from utils import *
+from config_manager import config_manager, GLOBAL_CONFIG_KEYS
+from quest_manager import quest_manager
 
 ############################################
 class ScrollableFrame(ttk.Frame):
@@ -386,12 +388,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
 
         # --- UI 变量 ---
-        self.config = LoadConfigFromFile()
-        for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
-            if issubclass(var_type, tk.Variable):
-                setattr(self, attr_name, var_type(value = self.config.get(var_config_name,var_default_value)))
-            else:
-                setattr(self, attr_name, var_type(self.config.get(var_config_name,var_default_value)))
+        self.load_config(is_init=True)
         
         for btn,_,spellskillList,_,_ in SPELLSEKILL_TABLE:
             for item in spellskillList:
@@ -403,7 +400,12 @@ class ConfigPanelApp(tk.Toplevel):
         self.create_widgets()
         self.update_system_auto_combat()
         self.update_active_rest_state() # 初始化时更新旅店住宿entry.
-        
+
+        # --- 读取下任务数据初始化的错误日志打印出来 ---
+        if quest_manager.get_error_logs():
+            logger.info("**********************************")
+            for error_msg in quest_manager.get_error_logs():
+                logger.error(error_msg)
 
         logger.info("**********************************")
         logger.info(f"当前版本: {version}")
@@ -414,6 +416,42 @@ class ConfigPanelApp(tk.Toplevel):
             ShowChangesLogWindow()
             self.last_version.set(version)
             self.save_config()
+
+    def load_config(self, is_init=False):
+        if is_init:
+            self.config = config_manager.get_combined_config()
+            for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+                if issubclass(var_type, tk.Variable):
+                    setattr(self, attr_name, var_type(value = self.config.get(var_config_name,var_default_value)))
+                else:
+                    setattr(self, attr_name, var_type(self.config.get(var_config_name,var_default_value)))
+        else:
+            self.config = config_manager.get_combined_config()
+            for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+                if var_config_name in GLOBAL_CONFIG_KEYS:
+                    continue
+                # 不创建新对象，直接更新值
+                if issubclass(var_type, tk.Variable):
+                    getattr(self, attr_name).set(self.config.get(var_config_name,var_default_value))
+                else:
+                    setattr(self, attr_name, var_type(self.config.get(var_config_name,var_default_value)))
+            self.update_widgets_values()
+    
+    def update_widgets_values(self):
+        """更新无法自动更新值的控件"""
+        # 更新配置选择器，这个主要是防止刷新目录后有选项消失
+        if hasattr(self, 'config_combo'):
+            self.config_combo.config(values=config_manager.refresh_config_files())
+            self.config_combo.set(config_manager.get_last_config_name())
+
+        # 开箱设置
+        if hasattr(self, 'who_will_open_text_var') and hasattr(self, 'open_chest_mapping'):
+            self.who_will_open_text_var.set(self.open_chest_mapping.get(self.who_will_open_it_var.get(), "随机"))
+            if hasattr(self, 'who_will_open_combobox'):
+                self.who_will_open_combobox.config(textvariable=self.who_will_open_text_var)
+
+        # 重新检查各控件状态
+        self.set_controls_state(tk.NORMAL)
 
     def save_config(self):
         def standardize_karma_input():
@@ -434,15 +472,21 @@ class ConfigPanelApp(tk.Toplevel):
         else:
             self.config["_SPELLSKILLCONFIG"] = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
 
-        if self.farm_target_text_var.get() in DUNGEON_TARGETS:
-            self.farm_target_var.set(DUNGEON_TARGETS[self.farm_target_text_var.get()])
+        if self.farm_target_text_var.get() in quest_manager.get_quest_map():
+            self.farm_target_var.set(quest_manager.get_quest_map()[self.farm_target_text_var.get()])
+            self.config["_FARMTARGET"] = self.farm_target_var.get()
         else:
             self.farm_target_var.set(None)
+            self.config["_FARMTARGET"] = ""
         
-        SaveConfigToFile(self.config)
+        self.config["LAST_CONFIG_NAME"] = config_manager.get_last_config_name()
+
+        # 使用config_manager保存配置
+        config_manager.save_config_dict(self.config)
 
     def updata_config(self):
-        config = LoadConfigFromFile()
+        # 从config_manager获取组合配置
+        config = config_manager.get_combined_config()
         if '_KARMAADJUST' in config:
             self.karma_adjust_var.set(config['_KARMAADJUST'])
 
@@ -549,12 +593,64 @@ class ConfigPanelApp(tk.Toplevel):
         container = self.section_farm.content_frame
         row_counter = 0
 
+        # 配置选择
+        config_files = config_manager.get_config_files()
+        
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        ttk.Label(frame_row, text="配置:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.config_combo = ttk.Combobox(frame_row, values=config_files, state="readonly")
+        self.config_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+        # 设置默认选择的配置为最后使用的配置
+        self.config_combo.set(config_manager.get_last_config_name())
+
+        # 共用函数：处理配置切换和加载
+        def handle_config_change(config_name):
+            if config_name:
+                # 使用config_manager切换配置
+                if config_manager.switch_config(config_name):
+                    # 重新加载配置到UI
+                    self.load_config()
+        
+        # 当选择配置时，加载对应的配置文件
+        def on_config_selected(event):
+            selected_config_name = self.config_combo.get()
+            handle_config_change(selected_config_name)
+        
+        self.config_combo.bind("<<ComboboxSelected>>", on_config_selected)
+
+        # 刷新按钮
+        def refresh_configs():
+            # 调用config_manager刷新配置文件列表
+            refreshed_config_files = config_manager.refresh_config_files()
+            # 更新combobox的值
+            self.config_combo['values'] = refreshed_config_files
+            # 设置默认选择的配置为最后使用的配置
+            last_config_name = config_manager.get_last_config_name()
+            handle_config_change(last_config_name)
+        
+        self.refresh_button = ttk.Button(frame_row, text="刷新", command=refresh_configs, width=5)
+        self.refresh_button.grid(row=0, column=2, sticky=tk.W, pady=5, padx=5)
+        
+        # 打开文件夹按钮
+        def open_config_folder():
+            import os
+            config_dir = os.path.join(os.getcwd(), "config")
+            if not os.path.exists(config_dir):
+                os.makedirs(config_dir)
+            os.startfile(config_dir)
+        
+        self.open_folder_button = ttk.Button(frame_row, text="文件夹", command=open_config_folder, width=6)
+        self.open_folder_button.grid(row=0, column=3, sticky=tk.W, pady=5, padx=5)
+                
+        row_counter += 1
+
         # 地下城目标
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         ttk.Label(frame_row, text="任务目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.farm_target_combo = ttk.Combobox(frame_row, textvariable=self.farm_target_text_var, 
-                                              values=list(DUNGEON_TARGETS.keys()), state="readonly")
+                                              values=quest_manager.get_all_quest_names(), state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
 
@@ -971,7 +1067,15 @@ class ConfigPanelApp(tk.Toplevel):
                     if getattr(self,f"{buttonName}_var").get():
                         self._spell_skill_config_internal += buttonSpell
         
-        # 更新其他按钮信息
+        # 更新按钮颜色
+        self.update_system_auto_combat_state()
+    
+        # 保存
+        self.save_config()
+
+    def update_system_auto_combat_state(self):
+        is_system_auto = self.system_auto_combat_var.get()
+
         button_state = tk.DISABLED if is_system_auto else tk.NORMAL
         for buttonName,_,_, _, _ in SPELLSEKILL_TABLE:
             getattr(self,buttonName).config(state=button_state)
@@ -983,9 +1087,6 @@ class ConfigPanelApp(tk.Toplevel):
             self.auto_after_aoe_check.config(state = button_state)
         else:
             self.update_change_aoe_once_check()
-        
-        # 更新按钮颜色并保存
-        self.save_config()
 
     def update_spell_config(self, skills_to_process, buttonName, buttonText):
         if self.system_auto_combat_var.get():
@@ -1058,6 +1159,7 @@ class ConfigPanelApp(tk.Toplevel):
                 widget.configure(state="normal")
             self.update_active_rest_state()
             self.update_change_aoe_once_check()
+            self.update_system_auto_combat_state()
 
         if not self.system_auto_combat_var.get():
             widgets = [
@@ -1072,7 +1174,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
             setting = FarmConfig()
-            config = LoadConfigFromFile()
+            # 从config_manager获取组合配置
+            config = config_manager.get_combined_config()
             for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
                 setattr(setting, var_config_name, config[var_config_name])
             setting._FINISHINGCALLBACK = self.finishingcallback
