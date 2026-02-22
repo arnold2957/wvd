@@ -51,7 +51,7 @@ class ScrollableFrame(ttk.Frame):
             self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
 class CollapsibleSection(tk.Frame):
-    def __init__(self, parent, title="", expanded=False,bg_color=None, *args, **kwargs):
+    def __init__(self, parent, title="", expanded=True,bg_color=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.columnconfigure(0, weight=1)
         
@@ -65,7 +65,7 @@ class CollapsibleSection(tk.Frame):
         self.header_frame = tk.Frame(self, bg=self.bg_color)
         self.header_frame.pack(fill="x", pady=2)
         
-        self.label = tk.Label(self.header_frame, text=title, font=("微软雅黑", 11, "bold"),bg=self.bg_color)
+        self.label = tk.Label(self.header_frame, text=title, font=("微软雅黑", 13, "bold"),bg=self.bg_color)
         self.label.pack(side="left", padx=5)
         
         # 2. 根据初始状态决定图标
@@ -386,12 +386,13 @@ class ConfigPanelApp(tk.Toplevel):
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
 
         # --- UI 变量 ---
-        self.config = LoadConfigFromFile()
+        config_dict = self.load_config()
+        logger.info(config_dict)
         for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
             if issubclass(var_type, tk.Variable):
-                setattr(self, attr_name, var_type(value = self.config.get(var_config_name,var_default_value)))
+                setattr(self, attr_name, var_type(value = (config_dict[var_config_name] if var_config_name in config_dict else var_default_value)))
             else:
-                setattr(self, attr_name, var_type(self.config.get(var_config_name,var_default_value)))
+                setattr(self, attr_name, var_type(config_dict[var_config_name] if var_config_name in config_dict else var_default_value))
         
         for btn,_,spellskillList,_,_ in SPELLSEKILL_TABLE:
             for item in spellskillList:
@@ -415,36 +416,102 @@ class ConfigPanelApp(tk.Toplevel):
             self.last_version.set(version)
             self.save_config()
 
-    def save_config(self):
-        def standardize_karma_input():
-          if self.karma_adjust_var.get().isdigit():
-              valuestr = self.karma_adjust_var.get()
-              self.karma_adjust_var.set('+' + valuestr)
-        standardize_karma_input()
+    def load_config(self, specific = 'ALL'):
+        raw_config = LoadRawConfigFromFile() or {}
+        general_config = raw_config.get("GENERAL", {})
 
-        emu_path = self.emu_path_var.get()
-        emu_path = emu_path.replace("HD-Adb.exe", "HD-Player.exe")
-        self.emu_path_var.set(emu_path)
+        task_specific = general_config.get("TASK_SPECIFIC_CONFIG", False)
+        farm_target = general_config.get("_FARMTARGET")
 
-        for attr_name, var_type, var_config_name, _ in CONFIG_VAR_LIST:
-            if issubclass(var_type, tk.Variable):
-                self.config[var_config_name] = getattr(self, attr_name).get()
-        if self.system_auto_combat_var.get():
-            self.config["_SPELLSKILLCONFIG"] = []
+        if task_specific and farm_target and farm_target in raw_config:
+            # 任务特定模式：从对应任务字典加载
+            task_config = raw_config.get(farm_target, {})
         else:
-            self.config["_SPELLSKILLCONFIG"] = [s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))]
+            # 非任务特定模式或目标无效：从 DEFAULT 加载
+            task_config = raw_config.get("DEFAULT", {})
+
+        if specific == "ALL":
+            result_config = {}
+            result_config.update(general_config)   # 先添加通用配置
+            result_config.update(task_config)
+        elif specific == "general":
+            result_config = general_config
+        elif specific == "specific":
+            result_config = raw_config.get(farm_target, {})
+        elif specific == "default":
+            result_config = raw_config.get("DEFAULT", {})
+
+        return result_config
+    
+    def load_setting_from_dict(self, input_dict):
+        setting = FarmConfig()
+
+        for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+            if var_config_name not in input_dict:
+                setattr(setting, var_config_name, var_default_value)
+            else:
+                setattr(setting, var_config_name, input_dict[var_config_name])
+
+        return setting
+
+
+    def save_config(self):
+        def standardize_value():
+            # karma
+            if self.karma_adjust_var.get().isdigit():
+                valuestr = self.karma_adjust_var.get()
+                self.karma_adjust_var.set('+' + valuestr)
+
+            # emu path
+            emu_path = self.emu_path_var.get()
+            emu_path = emu_path.replace("HD-Adb.exe", "HD-Player.exe")
+            self.emu_path_var.set(emu_path)
+
+        standardize_value()
 
         if self.farm_target_text_var.get() in DUNGEON_TARGETS:
             self.farm_target_var.set(DUNGEON_TARGETS[self.farm_target_text_var.get()])
         else:
             self.farm_target_var.set(None)
-        
-        SaveConfigToFile(self.config)
 
-    def updata_config(self):
-        config = LoadConfigFromFile()
-        if '_KARMAADJUST' in config:
-            self.karma_adjust_var.set(config['_KARMAADJUST'])
+        GENERAL_KEYS = {
+            '_EMUPATH', '_ADBPORT', '_EMUIDX', 'LAST_VERSION', 'LATEST_VERSION', '_FARMTARGET_TEXT', '_FARMTARGET', 'TASK_SPECIFIC_CONFIG', '_KARMAADJUST'}
+        
+        existing_config = LoadRawConfigFromFile() or {}
+        other_task_spec_config = {k: v for k, v in existing_config.items()
+                      if (k not in ["GENERAL"]) and (type(v) == dict)}
+
+        new_general = {}
+        other_items = {}
+
+        for attr_name, var_type, var_config_name, _ in CONFIG_VAR_LIST:
+            if issubclass(var_type, tk.Variable):
+                value = getattr(self, attr_name).get()
+                if var_config_name in GENERAL_KEYS:
+                    new_general[var_config_name] = value
+                else:
+                    other_items[var_config_name] = value
+
+        if self.system_auto_combat_var.get():
+            other_items['_SPELLSKILLCONFIG'] = []
+        else:
+            other_items['_SPELLSKILLCONFIG'] = [
+                s for s in ALL_SKILLS if s in list(set(self._spell_skill_config_internal))
+            ]
+
+        new_config = {}
+        new_config["GENERAL"] = new_general
+        for key, value in other_task_spec_config.items():
+            new_config[key] = value
+        
+        task_specific = new_general.get('TASK_SPECIFIC_CONFIG', False)
+        farm_target = new_general.get('_FARMTARGET')
+        if task_specific and farm_target:
+            new_config[farm_target] = other_items
+        else:
+            new_config["DEFAULT"] = other_items
+
+        SaveConfigToFile(new_config)
 
     def create_widgets(self):
         scrolled_text_formatter = logging.Formatter('%(message)s')
@@ -552,12 +619,74 @@ class ConfigPanelApp(tk.Toplevel):
         # 地下城目标
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        ttk.Label(frame_row, text="任务目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.farm_target_combo = ttk.Combobox(frame_row, textvariable=self.farm_target_text_var, 
-                                              values=list(DUNGEON_TARGETS.keys()), state="readonly")
-        self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
-        self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())
+            
+        def switch_task_specific_config():
+            new_state = self.task_specific_config_var.get()
+            if new_state:
+                task_config = self.load_config("specific")
+            else:
+                task_config = self.load_config("default")
 
+            for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
+                if var_config_name in task_config:
+                    value = task_config[var_config_name]
+                    if issubclass(var_type, tk.Variable):
+                        # 获取或创建变量，然后设置值
+                        if not hasattr(self, attr_name):
+                            # 如果属性不存在，创建默认实例
+                            setattr(self, attr_name, var_type())
+                        getattr(self, attr_name).set(value)
+                    else:
+                        # 非 Variable 类型，直接赋值（假设属性已存在，否则创建）
+                        setattr(self, attr_name, var_type(value))
+            
+            self.update_system_auto_combat()
+
+            color = "#196FBF" if new_state else "black"
+            for section in [self.section_karma, self.section_combat,self.section_combat_adv,self.section_advanced]:
+                section.label.config(fg=color)
+
+            return
+        
+        def close_task_specific_config():
+            self.task_specific_config_var.set(False)
+            switch_task_specific_config()
+            return
+        
+        def delete_task_specific_config():
+            close_task_specific_config()
+            raw_config = LoadRawConfigFromFile() or {}
+    
+            general_config = raw_config.get("GENERAL", {})
+            farm_target = general_config.get("_FARMTARGET")
+            if farm_target and farm_target in raw_config:
+                logger.info(f"删除任务定制的配置文件, 任务为{farm_target}.")
+                del raw_config[farm_target]
+            
+            SaveConfigToFile(raw_config)
+            return
+
+        ttk.Label(frame_row, text="任务目标:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.farm_target_combo = ttk.Combobox(frame_row,
+                                              textvariable=self.farm_target_text_var, 
+                                              values=list(DUNGEON_TARGETS.keys()),
+                                              state="readonly")
+        self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+        self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config())
+
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.task_specific_config_check = ttk.Checkbutton(
+            frame_row, text="用任务定制的配置文件覆盖默认配置.",
+            variable=self.task_specific_config_var,
+            command=switch_task_specific_config,
+            style="BoldFont.TCheckbutton",
+            )
+        self.task_specific_config_check.grid(row=0, column=0, sticky=tk.W, pady=5)
+
+        self.delete_task_specific_config_button = ttk.Button(frame_row, text="清除", command=delete_task_specific_config, width=4)
+        self.delete_task_specific_config_button.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         # ==========================================
         # 分组 3: 探索
@@ -650,7 +779,6 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, textvariable=self.karma_adjust_var).grid(row=0, column=3, sticky=tk.W, pady=5)
         ttk.Label(frame_row, text="点").grid(row=0, column=4, sticky=tk.W, pady=5)
 
-
         # ==========================================
         # 分组 4: 战斗
         # ==========================================
@@ -707,80 +835,80 @@ class ConfigPanelApp(tk.Toplevel):
             ))
             getattr(self, buttonName).grid(row=s_row, column=s_col, padx=2, pady=2)
 
-        # # ==========================================
-        # # 分组 4: 战斗
-        # # ==========================================
-        # self.section_combat_adv = CollapsibleSection(content_root, title="高级战斗")
-        # self.section_combat_adv.pack(fill="x")
-        # container = self.section_combat_adv.content_frame
-        # row_counter = 0
+        # ==========================================
+        # 分组 4: 战斗
+        # ==========================================
+        self.section_combat_adv = CollapsibleSection(content_root, title="高级战斗")
+        self.section_combat_adv.pack(fill="x")
+        container = self.section_combat_adv.content_frame
+        row_counter = 0
 
-        # self.skill_configs = {}
+        self.skill_configs = {}
 
-        # def on_delete_panel(p):
-        #     """删除面板的回调函数"""
-        #     # 从字典中删除该panel
-        #     if p in self.skill_configs:
-        #         del self.skill_configs[p]
+        def on_delete_panel(p):
+            """删除面板的回调函数"""
+            # 从字典中删除该panel
+            if p in self.skill_configs:
+                del self.skill_configs[p]
             
-        #     # 销毁面板
-        #     p.destroy()
+            # 销毁面板
+            p.destroy()
             
-        #     # 如果没有面板了，隐藏容器
-        #     if len(self.skill_configs) == 0:
-        #         self.panels_container.grid_forget()
+            # 如果没有面板了，隐藏容器
+            if len(self.skill_configs) == 0:
+                self.panels_container.grid_forget()
 
-        # def on_panel_name_changed(panel, new_name):
-        #     """面板名称改变时的回调"""
-        #     # 检查新名称是否已经存在
-        #     if new_name in self.skill_configs.values() and new_name != self.skill_configs.get(panel):
-        #         messagebox.showerror("错误", f"名称 '{new_name}' 已存在，请使用其他名称")
-        #         return False
+        def on_panel_name_changed(panel, new_name):
+            """面板名称改变时的回调"""
+            # 检查新名称是否已经存在
+            if new_name in self.skill_configs.values() and new_name != self.skill_configs.get(panel):
+                messagebox.showerror("错误", f"名称 '{new_name}' 已存在，请使用其他名称")
+                return False
             
-        #     # 更新映射
-        #     self.skill_configs[panel] = new_name
-        #     return True
+            # 更新映射
+            self.skill_configs[panel] = new_name
+            return True
         
-        # def get_all_configs():
-        #     """获取所有面板的配置"""
-        #     all_configs = []
-        #     for panel, _ in self.skill_configs.items():
-        #         config = panel.get_config_list()
-        #         all_configs.append(config)
-        #     return all_configs
+        def get_all_configs():
+            """获取所有面板的配置"""
+            all_configs = []
+            for panel, _ in self.skill_configs.items():
+                config = panel.get_config_list()
+                all_configs.append(config)
+            return all_configs
                 
-        # def add_new_panel():
-        #     self.panels_container.grid()
+        def add_new_panel():
+            self.panels_container.grid()
 
-        #     idx = 1
-        #     while True:
-        #         title = f"队伍配置 {idx}"
-        #         # 检查名称是否已存在
-        #         if title not in self.skill_configs.values():
-        #             break
-        #         idx += 1
+            idx = 1
+            while True:
+                title = f"策略配置 {idx}"
+                # 检查名称是否已存在
+                if title not in self.skill_configs.values():
+                    break
+                idx += 1
 
-        #     panel = SkillConfigPanel(
-        #         self.panels_container,
-        #         title=title,
-        #         on_delete=on_delete_panel,
-        #         on_name_change=on_panel_name_changed,
-        #         init_config=None,
-        #     )
-        #     panel.pack(fill=tk.X, pady=2)
+            panel = SkillConfigPanel(
+                self.panels_container,
+                title=title,
+                on_delete=on_delete_panel,
+                on_name_change=on_panel_name_changed,
+                init_config=None,
+            )
+            panel.pack(fill=tk.X, pady=2)
             
-        #     # 将panel和名称添加到映射中
-        #     self.skill_configs[panel] = title
+            # 将panel和名称添加到映射中
+            self.skill_configs[panel] = title
 
-        # ttk.Button(container, text="➕ 添加新技能配置", command=add_new_panel).grid(row=row_counter, column=0, sticky=tk.W)
+        ttk.Button(container, text="➕ 添加新技能配置", command=add_new_panel).grid(row=row_counter, column=0, sticky=tk.W)
 
-        # row_counter += 1
-        # container.columnconfigure(0, weight=1)
-        # self.panels_container = tk.Frame(container)
-        # self.panels_container.grid(row=row_counter, column=0, sticky="ew")
+        row_counter += 1
+        container.columnconfigure(0, weight=1)
+        self.panels_container = tk.Frame(container)
+        self.panels_container.grid(row=row_counter, column=0, sticky="ew")
 
-        # # 初始添加一个面板
-        # add_new_panel()
+        # 初始添加一个面板
+        add_new_panel()
 
         # ==========================================
         # 分组 5: 高级
@@ -1044,7 +1172,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_beautiful_ore,
             self.active_royalsuite_rest,
             self.active_beg_money,
+            self.task_specific_config_check,
             self.button_save_adb_port,
+            self.delete_task_specific_config_button,
             self.active_csc
             ]
 
@@ -1071,10 +1201,7 @@ class ConfigPanelApp(tk.Toplevel):
         if not self.quest_active:
             self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
-            setting = FarmConfig()
-            config = LoadConfigFromFile()
-            for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
-                setattr(setting, var_config_name, config[var_config_name])
+            setting = self.load_setting_from_dict(self.load_config())
             setting._FINISHINGCALLBACK = self.finishingcallback
             self.msg_queue.put(('start_quest', setting))
             self.quest_active = True
@@ -1085,7 +1212,11 @@ class ConfigPanelApp(tk.Toplevel):
         logger.info("已停止.")
         self.start_stop_btn.config(text="脚本, 启动!")
         self.set_controls_state(tk.NORMAL)
-        self.updata_config()
+        
+        config = self.load_config()
+        if '_KARMAADJUST' in config:
+            self.karma_adjust_var.set(config['_KARMAADJUST'])
+
         self.quest_active = False
 
     def turn_to_7000G(self):

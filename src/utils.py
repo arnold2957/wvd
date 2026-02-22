@@ -173,13 +173,13 @@ def SaveConfigToFile(config_data):
     except Exception as e:
         logger.error(f"保存配置时发生错误: {e}")
         return False
-def LoadConfigFromFile(config_file_path = CONFIG_FILE):
+def LoadRawConfigFromFile(config_file_path = CONFIG_FILE):
     if config_file_path == None:
         config_file_path = CONFIG_FILE
     return LoadJson((config_file_path))
-def SetOneVarInConfig(var, value):
-    data = LoadConfigFromFile()
-    data[var] = value
+def SetOneVarInGeneralConfig(var, value):
+    data = LoadRawConfigFromFile()
+    data['GENERAL'][var] = value
     SaveConfigToFile(data)
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"

@@ -34,9 +34,9 @@ CONFIG_VAR_LIST = [
             #var_name,                      type,          config_name,                  default_value
             ["farm_target_text_var",        tk.StringVar,  "_FARMTARGET_TEXT",           list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
             ["farm_target_var",             tk.StringVar,  "_FARMTARGET",                ""],
-            # ["randomly_open_chest_var",     tk.BooleanVar, "_SMARTDISARMCHEST",          False],
             ["randomly_open_chest_var",     tk.BooleanVar, "_QUICKDISARMCHEST",          False],
             ["who_will_open_it_var",        tk.IntVar,     "_WHOWILLOPENIT",             0],
+            ["task_specific_config_var",    tk.BooleanVar, "TASK_SPECIFIC_CONFIG",       False],
             ["skip_recover_var",            tk.BooleanVar, "_SKIPCOMBATRECOVER",         False],
             ["skip_chest_recover_var",      tk.BooleanVar, "_SKIPCHESTRECOVER",          False],
             ["system_auto_combat_var",      tk.BooleanVar, "_SYSTEMAUTOCOMBAT",          False],
@@ -69,6 +69,8 @@ class FarmConfig:
         self._MSGQUEUE = None
         #### 底层接口
         self._ADBDEVICE = None
+    def __getitem__(self, key):
+        return getattr(self, key)
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(f"FarmConfig对象没有属性'{name}'")
@@ -1325,7 +1327,7 @@ def Factory():
                     logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
                     AddImportantInfo(f"新的善恶:{new_str}")
                     setting._KARMAADJUST = new_str
-                    SetOneVarInConfig("_KARMAADJUST",setting._KARMAADJUST)
+                    SetOneVarInGeneralConfig("_KARMAADJUST",setting._KARMAADJUST)
                     Sleep(2)
 
                 for op in DIALOG_OPTION_IMAGE_LIST:
