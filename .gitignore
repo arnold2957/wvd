@@ -16,6 +16,11 @@ src/test.py
 src/chest.py
 虚拟环境创建.bat
 screenshotwhenrestart/
+venv/
+config/
+quest/
+.vscode/
+.idea/
 
 /src/ssc - 副本.png
 /src/ssc.png
