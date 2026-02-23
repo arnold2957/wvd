@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '1.12.12-beta.1' 
+__version__ = '1.12.12-beta.2' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -63,7 +63,7 @@ class AppController(tk.Tk):
                     Farm = Factory()
                     self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
                     self.quest_threading.start()
-                    logger.info(f'启动任务\"{self.quest_setting._FARMTARGET_TEXT}\"...')
+                    logger.info(f'启动任务\"{self.quest_setting.FARM_TARGET_TEXT}\"...')
 
                 case 'stop_quest':
                     logger.info('停止任务...')
@@ -73,7 +73,7 @@ class AppController(tk.Tk):
                 
                 case 'turn_to_7000G':
                     logger.info('开始要钱...')
-                    self.quest_setting._FARMTARGET = "7000G"
+                    self.quest_setting.FARM_TARGET = "7000G"
                     self.quest_setting._COUNTERDUNG = 0
                     while 1:
                         if not self.quest_threading.is_alive():
@@ -91,7 +91,7 @@ class AppController(tk.Tk):
                     if self.main_window:
                         self.main_window.find_update.grid()
                         self.main_window.update_text.grid()
-                        self.main_window.latest_version.set(version)
+                        self.main_window.LATEST_VERSION.set(version)
                         self.main_window.button_auto_download.grid()
                         self.main_window.button_manual_download.grid()
                         self.main_window.update_sep.grid()
