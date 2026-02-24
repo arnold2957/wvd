@@ -134,27 +134,25 @@ class SkillConfigPanel(CollapsibleSection):
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
         self.FREQ_OPTIONS = ["每场战斗仅一次", "每次启动仅一次", "重复"]
 
-        # 直接构建正文 UI
-        self._setup_body_ui()
+        # 用初始化内容构建
+        self._setup_body_ui(init_config)
         
-        # 如果有初始化配置，应用它
-        if init_config:
-            self._apply_init_config(init_config)
+    def _setup_body_ui(self,init_config=None):
+        # --- 1. 功能按钮 ---
+        if init_config!=None and ('group_name' in init_config) and (init_config['group_name']!='全自动战斗'):
+            action_bar = tk.Frame(self.content_frame, background=self.bg_color)
+            action_bar.pack(fill=tk.X, pady=(0, 5))
 
-    def _setup_body_ui(self):
-        action_bar = tk.Frame(self.content_frame, background=self.bg_color)
-        action_bar.pack(fill=tk.X, pady=(0, 5))
+            btn_add = ttk.Button(action_bar, text="➕新增角色", command=self.add_custom_row, width=9.5)
+            btn_add.pack(side=tk.LEFT)
+            
+            btn_del = ttk.Button(action_bar, text="🗑删除此组", command=self.delete_panel, width=9.5)
+            btn_del.pack(side=tk.RIGHT)
 
-        btn_add = ttk.Button(action_bar, text="➕新增角色", command=self.add_custom_row, width=9.5)
-        btn_add.pack(side=tk.LEFT)
-        
-        btn_del = ttk.Button(action_bar, text="🗑删除此组", command=self.delete_panel, width=9.5)
-        btn_del.pack(side=tk.RIGHT)
+            btn_edit = ttk.Button(action_bar, text="✎重命名", command=self.edit_title, width=7)
+            btn_edit.pack(side=tk.RIGHT, padx=(5, 0))
 
-        btn_edit = ttk.Button(action_bar, text="✎重命名", command=self.edit_title, width=7)
-        btn_edit.pack(side=tk.RIGHT, padx=(5, 0))
-
-        ttk.Separator(self.content_frame, orient='horizontal').pack(fill='x', pady=2)
+            ttk.Separator(self.content_frame, orient='horizontal').pack(fill='x', pady=2)
 
         # --- 2. 卡片容器 ---
         self.cards_container = tk.Frame(self.content_frame, background=self.bg_color)
@@ -165,45 +163,45 @@ class SkillConfigPanel(CollapsibleSection):
         self.default_row_frame.pack(fill=tk.X)
         self.default_row_data = self._create_card_widget(self.default_row_frame, is_default=True)
 
-    def _apply_init_config(self, init_config):
-        """根据外部JSON配置初始化面板"""
-        # 1. 设置组名
-        if 'group_name' in init_config:
-            self.label.config(text=init_config['group_name'])
-        
-        # 2. 清空已有的自定义行（如果有的话）
-        for row in self.custom_rows_data:
-            row['frame'].destroy()
-        self.custom_rows_data.clear()
-        
-        # 3. 创建新的自定义行
-        if 'skill_settings' in init_config:
-            skill_settings = init_config['skill_settings']
+        # 初始化内容
+        if init_config:
+            # 1. 清空已有的自定义行
+            for row in self.custom_rows_data:
+                row['frame'].destroy()
+            self.custom_rows_data.clear()
+
+            # 2. 设置组名
+            if 'group_name' in init_config:
+                self.label.config(text=init_config['group_name'])
             
-            for setting in skill_settings:
-                # 创建新的自定义行
-                wrapper_frame = tk.Frame(self.cards_container)
-                wrapper_frame.pack(fill=tk.X, pady=3, before=self.default_row_frame)
-                row_data = self._create_card_widget(wrapper_frame, is_default=False)
-                self.custom_rows_data.append(row_data)
+            # 3. 创建新的自定义行
+            if 'skill_settings' in init_config:
+                skill_settings = init_config['skill_settings']
                 
-                # 设置配置值
-                role = setting.get('role_var', '')
-                if role in self.ROLE_LIST:
-                    row_data['role_var'].set(role)
-                else:
-                    row_data['role_var'].set(self.ROLE_LIST[0])
+                for setting in skill_settings:
+                    # 创建新的自定义行
+                    wrapper_frame = tk.Frame(self.cards_container)
+                    wrapper_frame.pack(fill=tk.X, pady=3, before=self.default_row_frame)
+                    row_data = self._create_card_widget(wrapper_frame, is_default=False)
+                    self.custom_rows_data.append(row_data)
                     
-                row_data['skill_var'].set(setting.get('skill_var', '左上技能'))
-                row_data['target_var'].set(setting.get('target_var', '低生命值'))
-                row_data['freq_var'].set(setting.get('freq_var', '重复'))
-                row_data['lvl_var'].set(setting.get('skill_lvl', 1))
-                
-                # 触发技能变更检查（如果需要禁用目标选择）
-                self._on_skill_change(row_data)
+                    # 设置配置值
+                    role = setting.get('role_var', '')
+                    if role in self.ROLE_LIST:
+                        row_data['role_var'].set(role)
+                    else:
+                        row_data['role_var'].set(self.ROLE_LIST[0])
+                        
+                    row_data['skill_var'].set(setting.get('skill_var', '左上技能'))
+                    row_data['target_var'].set(setting.get('target_var', '低生命值'))
+                    row_data['freq_var'].set(setting.get('freq_var', '重复'))
+                    row_data['lvl_var'].set(setting.get('skill_lvl', 1))
+                    
+                    # 触发技能变更检查
+                    self._on_skill_change(row_data)
+        return
 
     # --- 功能实现 ---
-
     def edit_title(self):
         """修改标题"""
         current_title = self.label.cget("text")
@@ -218,6 +216,9 @@ class SkillConfigPanel(CollapsibleSection):
             
             # 修改成功，更新标签
             self.label.config(text=new_title)
+            
+        if self.on_config_change:
+            self.on_config_change()
 
     def delete_panel(self):
         """删除整个面板"""
@@ -409,7 +410,7 @@ class ConfigPanelApp(tk.Toplevel):
             if issubclass(var_type, tk.Variable):
                 setattr(self, attr_name, var_type(value = (config_dict[attr_name] if attr_name in config_dict else default_value)))
             else:
-                setattr(self, attr_name, var_type(config_dict[attr_name] if attr_name in config_dict else default_value))          
+                setattr(self, attr_name, var_type(config_dict[attr_name] if (attr_name in config_dict)and(config_dict[attr_name] is not None) else default_value))  
 
         self.create_widgets()
         self.updateACTIVE_REST_state() # 初始化时更新旅店住宿entry.
@@ -463,26 +464,24 @@ class ConfigPanelApp(tk.Toplevel):
 
         return setting
 
-
     def save_config(self):
-        def standardize_value():
-            # karma
-            if self.KARMA_ADJUST.get().isdigit():
-                valuestr = self.KARMA_ADJUST.get()
-                self.KARMA_ADJUST.set('+' + valuestr)
+        # karma
+        if self.KARMA_ADJUST.get().isdigit():
+            valuestr = self.KARMA_ADJUST.get()
+            self.KARMA_ADJUST.set('+' + valuestr)
 
-            # emu path
-            emu_path = self.EMU_PATH.get()
-            emu_path = emu_path.replace("HD-Adb.exe", "HD-Player.exe")
-            self.EMU_PATH.set(emu_path)
+        # emu path
+        emu_path = self.EMU_PATH.get()
+        emu_path = emu_path.replace("HD-Adb.exe", "HD-Player.exe")
+        self.EMU_PATH.set(emu_path)
 
-        standardize_value()
-
+        # farm target
         if self.FARM_TARGET_TEXT.get() in DUNGEON_TARGETS:
             self.FARM_TARGET.set(DUNGEON_TARGETS[self.FARM_TARGET_TEXT.get()])
         else:
             self.FARM_TARGET.set(None)
         
+        ##################
         existing_config = LoadRawConfigFromFile() or {}
         other_task_spec_config = {k: v for k, v in existing_config.items()
                       if (k not in ["GENERAL"]) and (type(v) == dict)}
@@ -493,10 +492,12 @@ class ConfigPanelApp(tk.Toplevel):
         for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
             if issubclass(var_type, tk.Variable):
                 value = getattr(self, attr_name).get()
-                if category=='GENERAL':
-                    new_general[attr_name] = value
-                else:
-                    other_items[attr_name] = value
+            else:
+                value = getattr(self, attr_name)
+            if category=='GENERAL':
+                new_general[attr_name] = value
+            else:
+                other_items[attr_name] = value
 
         new_config = {}
         new_config["GENERAL"] = new_general
@@ -556,7 +557,6 @@ class ConfigPanelApp(tk.Toplevel):
         # 获取折叠板的内容容器
         container = self.section_emu.content_frame 
 
-        # --- 原有逻辑 (微调父容器为 container) ---
         row_counter = 0 
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
@@ -620,8 +620,7 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
             
         def switch_task_specific_config():
-            new_state = self.TASK_SPECIFIC_CONFIG.get()
-            if new_state:
+            if self.TASK_SPECIFIC_CONFIG.get():
                 task_config = self.load_config("specific")
             else:
                 task_config = self.load_config("default")
@@ -637,7 +636,7 @@ class ConfigPanelApp(tk.Toplevel):
                         getattr(self, attr_name).set(value)
                     else:
                         # 非 Variable 类型，直接赋值（假设属性已存在，否则创建）
-                        setattr(self, attr_name, var_type(value))
+                        setattr(self, attr_name, var_type(value if (value is not None) else default_value))
             
             # 更新开箱人选的文本
             open_value = self.WHO_WILL_OPEN_IT.get()
@@ -646,9 +645,16 @@ class ConfigPanelApp(tk.Toplevel):
             # 更新善恶
             # TODO 暂时不写了 太麻烦了.
 
+            # 任务点, 这里无论如何都要拿specific的设置.
+            specific_config = self.load_config("specific")
+            if ("TASK_POINT_STRATEGY" in specific_config)and(specific_config["TASK_POINT_STRATEGY"]!=None):
+                self.TASK_POINT_STRATEGY = specific_config["TASK_POINT_STRATEGY"]
+            else:
+                self.TASK_POINT_STRATEGY = None
+
             self.save_config()
 
-            color = "#196FBF" if new_state else "black"
+            color = "#196FBF" if self.TASK_SPECIFIC_CONFIG.get() else "black"
             for section in [self.section_karma, self.section_combat,self.section_advanced]:
                 section.label.config(fg=color)
 
@@ -795,6 +801,29 @@ class ConfigPanelApp(tk.Toplevel):
 
         ttk.Label(self.combat_container, text="请先选择任务目标").pack()
 
+        def save_task_point_strategy_config(event=None):
+            """获取任务点策略配置，格式为：
+            {"overall_strategy": strategy_name, "task_point": {0: strategy_name, 1: strategy_name, ...}}
+            """
+            config = {"overall_strategy": "", "task_point": {}}
+            
+            # 如果还没有创建任务点UI，直接返回空配置
+            if not hasattr(self, 'task_point_vars') or not self.task_point_vars:
+                return config
+            
+            # 获取全程策略
+            if "全程" in self.task_point_vars:
+                config["overall_strategy"] = self.task_point_vars["全程"].get()
+            
+            # 获取每个任务点的策略（按索引顺序）
+            for idx, point in enumerate(self.current_task_points):
+                if point in self.task_point_vars:
+                    config["task_point"][idx] = self.task_point_vars[point].get()
+            
+            self.TASK_POINT_STRATEGY = config
+
+            self.save_config()
+            return 
         def _update_task_points_visibility(show):
             """控制任务点容器的显示/隐藏，并调整全程标签颜色"""
             if show:
@@ -804,7 +833,7 @@ class ConfigPanelApp(tk.Toplevel):
                 self.task_points_frame.pack_forget()
                 self.overall_label.config(foreground="black")   # 灰色
             return
-        def on_overall_combo_selected(event):
+        def on_switch_overall_update_ui(event=None):
             new_selection = self.overall_combo.get()
             is_custom = (new_selection == "自定义任务点策略")
 
@@ -832,9 +861,9 @@ class ConfigPanelApp(tk.Toplevel):
                 # 选择普通策略，隐藏任务点行
                 _update_task_points_visibility(False)
                 self.last_overall_selection = new_selection
-            self.save_config()
+            save_task_point_strategy_config()
             return
-        def refresh_task_point_ui():
+        def create_task_point_ui():
             task_name = self.FARM_TARGET.get()
             if not task_name:
                 return
@@ -845,13 +874,13 @@ class ConfigPanelApp(tk.Toplevel):
 
             # 获取任务点列表
             try:
-                points = LoadQuest(task_name)._TARGETINFOLIST
+                self.current_task_points = LoadQuest(task_name)._TARGETINFOLIST
             except NameError:
                 logger.error('不可用的任务名.')
-                points = []
+                self.current_task_points = []
 
             # 获取所有策略面板名称
-            panel_names = list(self.skill_configs.values())
+            strategy_names = list(self.strategy_panels.values())
 
             # 重新创建每一行
             self.task_point_vars = {}
@@ -861,23 +890,31 @@ class ConfigPanelApp(tk.Toplevel):
             overall_frame = ttk.Frame(self.combat_container)
             overall_frame.pack(fill=tk.X, pady=(0, 10))  # 增加底部间距
 
-            # 全程标签（加粗）
+            # 全程标签
             self.overall_label = ttk.Label(overall_frame, text="全程", font=('微软雅黑', 12, 'bold'))
             self.overall_label.pack(side=tk.LEFT, padx=5)
 
-            # 全程下拉框（包含策略 + 特殊选项）
+            # 全程下拉框
             overall_var = tk.StringVar()
-            overall_values = panel_names + ["自定义任务点策略"] if panel_names else ["自定义任务点策略"]
-            # 设置默认值：优先取第一个策略，否则取“自定义任务点策略”
-            if panel_names:
-                overall_var.set(panel_names[0])
+            overall_values = strategy_names + ["自定义任务点策略"] if strategy_names else ["自定义任务点策略"]
+            # 设置默认值
+            saved_overall = None
+            task_point_strategy = getattr(self, 'TASK_POINT_STRATEGY', None)
+            if task_point_strategy and isinstance(task_point_strategy, dict):
+                saved_overall = task_point_strategy.get('overall_strategy')
+                if saved_overall and saved_overall in overall_values:
+                    overall_var.set(saved_overall)
+                    # 如果全程策略是“自定义任务点策略”，则后续要显示任务点
+                    initial_show_task_points = (saved_overall == "自定义任务点策略")
+                else:
+                    # 保存的策略无效，回退
+                    saved_overall = None
+            if saved_overall is None:
+                # 没有保存或无效，使用默认策略 "全自动战斗"
+                overall_var.set("全自动战斗")
                 initial_show_task_points = False
-            else:
-                overall_var.set("自定义任务点策略")
-                initial_show_task_points = True
-            # 初始化全程策略
-            self.last_overall_selection = overall_var.get() 
 
+            # 初始化全程策略
             self.overall_combo = ttk.Combobox(overall_frame, textvariable=overall_var,
                                         values=overall_values, state="readonly", width=25)
             self.overall_combo.pack(side=tk.LEFT, padx=5)
@@ -886,49 +923,63 @@ class ConfigPanelApp(tk.Toplevel):
             self.task_point_vars["全程"] = overall_var
             self.task_point_comboboxes["全程"] = self.overall_combo
 
-            # ---- 2. 创建任务点容器（放在全程行下方） ----
+            # ---- 2. 创建任务点容器 ----
             self.task_points_frame = ttk.Frame(self.combat_container)
             self.task_points_frame.pack(fill=tk.X, pady=5)
 
             # 填充任务点行
-            for point in points:
+            for idx, point in enumerate(self.current_task_points):
                 row_frame = ttk.Frame(self.task_points_frame)
                 row_frame.pack(fill=tk.X, pady=2)
 
-                var = tk.StringVar()
-                if panel_names:
-                    var.set(panel_names[0])  # 默认第一个策略
+                task_point_var = tk.StringVar()
+                # 尝试从保存的配置获取该任务点的策略
+                saved_point_strategy = None
+                if task_point_strategy and isinstance(task_point_strategy, dict):
+                    task_point_dict = task_point_strategy.get('task_point', {})
+                    if isinstance(task_point_dict, dict):
+                        saved_point_strategy = task_point_dict.get(str(idx))  # 注意索引可能是字符串或整数
+                        if saved_point_strategy is None:
+                            saved_point_strategy = task_point_dict.get(idx)  # 尝试整数键
+                        if saved_point_strategy and saved_point_strategy in strategy_names:
+                            task_point_var.set(saved_point_strategy)
+                        else:
+                            saved_point_strategy = None
 
-                combo = ttk.Combobox(row_frame, textvariable=var, values=panel_names,
+                if saved_point_strategy is None:
+                    # 没有保存或无效，使用默认策略 "全自动战斗"
+                    task_point_var.set("全自动战斗")
+
+                combo = ttk.Combobox(row_frame, textvariable=task_point_var, values=strategy_names,
                                     state="readonly", width=15)
-                combo.bind("<<ComboboxSelected>>", lambda e: self.save_config())    
+                combo.bind("<<ComboboxSelected>>", save_task_point_strategy_config)    
                 combo.pack(side=tk.LEFT, padx=5)
 
                 point_name = point.target + ((' '+str(point.roi)) if point.target=='position' else '')
                 ttk.Label(row_frame, text=point_name, width=20, anchor=tk.W).pack(side=tk.LEFT, padx=5)
 
-                self.task_point_vars[point] = var
+                self.task_point_vars[point] = task_point_var
                 self.task_point_comboboxes[point] = combo
 
             # ---- 3. 根据全程行初始选择控制任务点容器显示状态 ----
             _update_task_points_visibility(initial_show_task_points)
 
             # ---- 4. 绑定全程行选择事件 ----
-            self.overall_combo.bind("<<ComboboxSelected>>", on_overall_combo_selected)
+            self.overall_combo.bind("<<ComboboxSelected>>", on_switch_overall_update_ui)
 
-            logger.info(f"已刷新任务点界面，任务点数量: {len(points)}")
+            logger.info(f"已刷新任务点界面，任务点数量: {len(self.current_task_points)}")
             return
         def update_combat_strategy_combobox_values():
             if not hasattr(self, 'task_point_comboboxes') or not self.task_point_comboboxes:
                 return
 
-            panel_names = list(self.skill_configs.values())
+            strategy_names = list(self.strategy_panels.values())
 
             for key, combo in self.task_point_comboboxes.items():
                 if key == "全程":
-                    new_values = panel_names + ["自定义任务点策略"] if panel_names else ["自定义任务点策略"]
+                    new_values = strategy_names + ["自定义任务点策略"] if strategy_names else ["自定义任务点策略"]
                 else:
-                    new_values = panel_names
+                    new_values = strategy_names
 
                 current = combo.get()
                 combo['values'] = new_values
@@ -946,10 +997,10 @@ class ConfigPanelApp(tk.Toplevel):
             return
         def on_farm_target_selected(event):
             close_task_specific_config()
-            refresh_task_point_ui()
+            create_task_point_ui()
         self.farm_target_combo.bind("<<ComboboxSelected>>", on_farm_target_selected)
 
-        self.after(200, refresh_task_point_ui)
+        self.after(200, create_task_point_ui)
 
         # ==========================================
         # 分组 4: 高级
@@ -1033,87 +1084,115 @@ class ConfigPanelApp(tk.Toplevel):
         container = self.section_combat_adv.content_frame
         row_counter = 0
 
-        self.skill_configs = {}
+        self.strategy_panels = {}  # 改为字典 {panel: name}
+
+        def save_strategy():
+            """将当前设置打包并保存"""
+            all_configs = []
+            for panel in self.strategy_panels:  # 遍历字典的键（面板对象）
+                config = panel.get_config_list()
+                all_configs.append(config)
+
+            self.STRATEGY = all_configs
+            self.save_config()
+            # 不需要 return
 
         def on_delete_panel(p):
             """删除面板的回调函数"""
             # 从字典中删除该panel
-            if p in self.skill_configs:
-                del self.skill_configs[p]
-            
+            if p in self.strategy_panels:
+                del self.strategy_panels[p]
+
             # 销毁面板
             p.destroy()
-            
+
             # 更新列表
             update_combat_strategy_combobox_values()
 
             # 如果没有面板了，隐藏容器
-            if len(self.skill_configs) == 0:
-                self.panels_container.grid_forget()
+            if len(self.strategy_panels) == 0:
+                self.strategy_panels_container.grid_forget()
+
+            save_strategy()
 
         def on_panel_name_changed(panel, new_name):
             """面板名称改变时的回调"""
-            # 检查新名称是否已经存在
-            if new_name in self.skill_configs.values() and new_name != self.skill_configs.get(panel):
+            # 检查新名称是否已经存在（排除自身）
+            existing_names = [name for p, name in self.strategy_panels.items() if p != panel]
+            if new_name in existing_names:
                 messagebox.showerror("错误", f"名称 '{new_name}' 已存在，请使用其他名称")
                 return False
-            
+
             # 更新映射
-            self.skill_configs[panel] = new_name
+            self.strategy_panels[panel] = new_name
 
             # 更新列表
             update_combat_strategy_combobox_values()
 
             # 保存
-            self.save_config()
+            save_strategy()
             return True
-        
-        def get_all_configs():
-            """获取所有面板的配置"""
-            all_configs = []
-            for panel, _ in self.skill_configs.items():
-                config = panel.get_config_list()
-                all_configs.append(config)
-            return all_configs
-                
-        def add_new_panel():
-            self.panels_container.grid()
 
-            idx = 1
-            while True:
+        def add_new_panel(init_config=None):
+            self.strategy_panels_container.grid()
+
+            # 确定标题
+            if init_config and 'group_name' in init_config:
+                title = init_config['group_name']
+                # 检查是否重复（与现有面板名称比较）
+                existing_names = list(self.strategy_panels.values())
+                if title in existing_names:
+                    # 如果名称重复，则添加序号
+                    base_title = title
+                    idx = 1
+                    while f"{base_title} ({idx})" in existing_names:
+                        idx += 1
+                    title = f"{base_title} ({idx})"
+            else:
+                # 生成默认标题
+                idx = 1
+                existing_names = list(self.strategy_panels.values())
+                while f"策略配置 {idx}" in existing_names:
+                    idx += 1
                 title = f"策略配置 {idx}"
-                # 检查名称是否已存在
-                if title not in self.skill_configs.values():
-                    break
-                idx += 1
 
             panel = SkillConfigPanel(
-                self.panels_container,
+                self.strategy_panels_container,
                 title=title,
                 on_delete=on_delete_panel,
                 on_name_change=on_panel_name_changed,
-                on_config_change=lambda: self.save_config(),  # 新增
-                init_config=None,
+                on_config_change=save_strategy,
+                init_config=init_config,
             )
             panel.pack(fill=tk.X, pady=2)
-            
-            # 将panel和名称添加到映射中
-            self.skill_configs[panel] = title
 
+            # 将新面板加入字典
+            self.strategy_panels[panel] = title
+
+            # 更新下拉框
             update_combat_strategy_combobox_values()
-            logger.info(get_all_configs())
 
-            self.save_config()
+            # 保存配置
+            if init_config==None:
+                save_strategy()
+
+            return panel
 
         ttk.Button(container, text="➕ 添加新技能配置", command=add_new_panel).grid(row=row_counter, column=0, sticky=tk.W)
 
         row_counter += 1
         container.columnconfigure(0, weight=1)
-        self.panels_container = tk.Frame(container)
-        self.panels_container.grid(row=row_counter, column=0, sticky="ew")
+        self.strategy_panels_container = tk.Frame(container)
+        self.strategy_panels_container.grid(row=row_counter, column=0, sticky="ew")
 
-        # 初始添加一个面板
-        add_new_panel()
+        # 初始化
+        if self.STRATEGY and isinstance(self.STRATEGY, list):
+            # 有保存的策略，逐个创建
+            for config in self.STRATEGY:
+                add_new_panel(init_config=config)
+        else:
+            # 无策略，创建一个默认面板
+            add_new_panel()
 
         ###################################################################
         # 分割线

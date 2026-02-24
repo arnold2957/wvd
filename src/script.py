@@ -29,7 +29,24 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "FARM_TARGET",             tk.StringVar,  None],
             ["GENERAL",   "KARMA_ADJUST",            tk.StringVar,  "+0"],
             ["GENERAL",   "TASK_SPECIFIC_CONFIG",    tk.BooleanVar, False],
+            ["GENERAL",   "STRATEGY",                list         , [{
+                                                                        "group_name": "柚子",
+                                                                        "skill_settings": [
+                                                                            {
+                                                                                "role_var": "alice",
+                                                                                "skill_var": "左上技能",
+                                                                                "target_var": "不可用",
+                                                                                "freq_var": "每次启动仅一次",
+                                                                                "skill_lvl": 1
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "group_name": "全自动战斗",
+                                                                        "skill_settings": []
+                                                                    },]],
 
+            ["TEMPLATE",   "TASK_POINT_STRATEGY",    dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",     tk.BooleanVar, False],
             ["TEMPLATE",   "WHO_WILL_OPEN_IT",       tk.IntVar,     0],
             ["TEMPLATE",   "SKIP_COMBAT_RECOVER",    tk.BooleanVar, False],
@@ -2057,6 +2074,7 @@ def Factory():
                             Press(pos)
                             Sleep(2)
                             Press(CheckIf(ScreenShot(),'FortressArrival'))
+                            Sleep(1)
                     RestartableSequenceExecution(
                         lambda: stepMain()
                         )
