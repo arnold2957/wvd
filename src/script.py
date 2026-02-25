@@ -20,16 +20,16 @@ DUNGEON_TARGETS = BuildQuestReflection()
         
 CONFIG_VAR_LIST = [
             #categor      var_name,                  type,          default_value
-            ["GENERAL",   "EMU_PATH",                tk.StringVar,  None],
-            ["GENERAL",   "EMU_INDEX",               tk.IntVar,     0],
-            ["GENERAL",   "ADB_PORT",                tk.StringVar,  16384],
-            ["GENERAL",   "LAST_VERSION",            tk.StringVar,  None],
-            ["GENERAL",   "LATEST_VERSION",          tk.StringVar,  None],
-            ["GENERAL",   "FARM_TARGET_TEXT",        tk.StringVar,  list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
-            ["GENERAL",   "FARM_TARGET",             tk.StringVar,  None],
-            ["GENERAL",   "KARMA_ADJUST",            tk.StringVar,  "+0"],
-            ["GENERAL",   "TASK_SPECIFIC_CONFIG",    tk.BooleanVar, False],
-            ["GENERAL",   "STRATEGY",                list         , [{
+            ["GENERAL",   "EMU_PATH",                 tk.StringVar,  None],
+            ["GENERAL",   "EMU_INDEX",                tk.IntVar,     0],
+            ["GENERAL",   "ADB_PORT",                 tk.StringVar,  16384],
+            ["GENERAL",   "LAST_VERSION",             tk.StringVar,  None],
+            ["GENERAL",   "LATEST_VERSION",           tk.StringVar,  None],
+            ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
+            ["GENERAL",   "FARM_TARGET",              tk.StringVar,  None],
+            ["GENERAL",   "KARMA_ADJUST",             tk.StringVar,  "+0"],
+            ["GENERAL",   "TASK_SPECIFIC_CONFIG",     tk.BooleanVar, False],
+            ["GENERAL",   "STRATEGY",                 list         , [{
                                                                         "group_name": "柚子",
                                                                         "skill_settings": [
                                                                             {
@@ -45,19 +45,20 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": "全自动战斗",
                                                                         "skill_settings": []
                                                                     },]],
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, "全自动战斗"],         
 
-            ["TEMPLATE",   "TASK_POINT_STRATEGY",    dict,          {}],
-            ["TEMPLATE",   "QUICK_DISARM_CHEST",     tk.BooleanVar, False],
-            ["TEMPLATE",   "WHO_WILL_OPEN_IT",       tk.IntVar,     0],
-            ["TEMPLATE",   "SKIP_COMBAT_RECOVER",    tk.BooleanVar, False],
-            ["TEMPLATE",   "SKIP_CHEST_RECOVER",     tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_REST",            tk.BooleanVar, True],
-            ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST", tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_TRIUMPH",         tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",   tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_BEG_MONEY",       tk.BooleanVar, True],
-            ["TEMPLATE",   "REST_INTERVEL",          tk.IntVar,     1],
-            ["TEMPLATE",   "ACTIVE_CSC",             tk.BooleanVar, True],
+            ["TEMPLATE",   "TASK_POINT_STRATEGY",     dict,          {}],
+            ["TEMPLATE",   "QUICK_DISARM_CHEST",      tk.BooleanVar, False],
+            ["TEMPLATE",   "WHO_WILL_OPEN_IT",        tk.IntVar,     0],
+            ["TEMPLATE",   "SKIP_COMBAT_RECOVER",     tk.BooleanVar, False],
+            ["TEMPLATE",   "SKIP_CHEST_RECOVER",      tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_REST",             tk.BooleanVar, True],
+            ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",  tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_TRIUMPH",          tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",    tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_BEG_MONEY",        tk.BooleanVar, True],
+            ["TEMPLATE",   "REST_INTERVEL",           tk.IntVar,     1],
+            ["TEMPLATE",   "ACTIVE_CSC",              tk.BooleanVar, True],
             ]
 class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:

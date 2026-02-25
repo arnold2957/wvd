@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '1.12.12-beta.3' 
+__version__ = '1.12.12-beta.4' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -183,9 +183,7 @@ def HeadlessActive(config_path,msg_queue):
     StartLogListener()
 
     setting = FarmConfig()
-    config = LoadConfigFromFile(config_path)
-    for _, _, var_config_name, _ in CONFIG_VAR_LIST:
-        setattr(setting, var_config_name, config[var_config_name])
+    setting = LoadSettingFromDict(LoadConfig())
     msg_queue.put(('start_quest', setting))
 
 

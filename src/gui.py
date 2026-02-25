@@ -367,6 +367,43 @@ class SkillConfigPanel(CollapsibleSection):
             'skill_settings': skill_settings
         }
 ############################################
+def LoadSettingFromDict(self, input_dict):
+    setting = FarmConfig()
+
+    for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
+        if attr_name not in input_dict:
+            setattr(setting, attr_name, default_value)
+        else:
+            setattr(setting, attr_name, input_dict[attr_name])
+
+    return setting
+def LoadConfig(specific = 'ALL'):
+    raw_config = LoadRawConfigFromFile() or {}
+    general_config = raw_config.get("GENERAL", {})
+
+    task_specific = general_config.get("TASK_SPECIFIC_CONFIG", False)
+    farm_target = general_config.get("FARM_TARGET")
+
+    if task_specific and farm_target and farm_target in raw_config:
+        # 任务特定模式：从对应任务字典加载
+        task_config = raw_config.get(farm_target, {})
+    else:
+        # 非任务特定模式或目标无效：从 DEFAULT 加载
+        task_config = raw_config.get("DEFAULT", {})
+
+    if specific == "ALL":
+        result_config = {}
+        result_config.update(general_config)   # 先添加通用配置
+        result_config.update(task_config)
+    elif specific == "general":
+        result_config = general_config
+    elif specific == "specific":
+        result_config = raw_config.get(farm_target, {})
+    elif specific == "default":
+        result_config = raw_config.get("DEFAULT", {})
+
+    return result_config
+############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller, version, msg_queue):
         self.URL = "https://github.com/arnold2957/wvd"
@@ -405,10 +442,9 @@ class ConfigPanelApp(tk.Toplevel):
 
         # --- UI 变量 ---
         config_dict = self.load_config()
-        logger.info(config_dict)
         for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
             if issubclass(var_type, tk.Variable):
-                setattr(self, attr_name, var_type(value = (config_dict[attr_name] if attr_name in config_dict else default_value)))
+                setattr(self, attr_name, var_type(value = (config_dict[attr_name] if (attr_name in config_dict)and(config_dict[attr_name] is not None) else default_value)))
             else:
                 setattr(self, attr_name, var_type(config_dict[attr_name] if (attr_name in config_dict)and(config_dict[attr_name] is not None) else default_value))  
 
@@ -425,45 +461,7 @@ class ConfigPanelApp(tk.Toplevel):
             ShowChangesLogWindow()
             self.LAST_VERSION.set(version)
             self.save_config()
-
-    def load_config(self, specific = 'ALL'):
-        raw_config = LoadRawConfigFromFile() or {}
-        general_config = raw_config.get("GENERAL", {})
-
-        task_specific = general_config.get("TASK_SPECIFIC_CONFIG", False)
-        farm_target = general_config.get("FARM_TARGET")
-
-        if task_specific and farm_target and farm_target in raw_config:
-            # 任务特定模式：从对应任务字典加载
-            task_config = raw_config.get(farm_target, {})
-        else:
-            # 非任务特定模式或目标无效：从 DEFAULT 加载
-            task_config = raw_config.get("DEFAULT", {})
-
-        if specific == "ALL":
-            result_config = {}
-            result_config.update(general_config)   # 先添加通用配置
-            result_config.update(task_config)
-        elif specific == "general":
-            result_config = general_config
-        elif specific == "specific":
-            result_config = raw_config.get(farm_target, {})
-        elif specific == "default":
-            result_config = raw_config.get("DEFAULT", {})
-
-        return result_config
     
-    def load_setting_from_dict(self, input_dict):
-        setting = FarmConfig()
-
-        for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
-            if attr_name not in input_dict:
-                setattr(setting, attr_name, default_value)
-            else:
-                setattr(setting, attr_name, input_dict[attr_name])
-
-        return setting
-
     def save_config(self):
         # karma
         if self.KARMA_ADJUST.get().isdigit():
@@ -510,7 +508,7 @@ class ConfigPanelApp(tk.Toplevel):
             new_config[farm_target] = other_items
         else:
             new_config["DEFAULT"] = other_items
-
+                
         SaveConfigToFile(new_config)
 
     def create_widgets(self):
@@ -651,6 +649,13 @@ class ConfigPanelApp(tk.Toplevel):
                 self.TASK_POINT_STRATEGY = specific_config["TASK_POINT_STRATEGY"]
             else:
                 self.TASK_POINT_STRATEGY = None
+
+            if not self.TASK_SPECIFIC_CONFIG.get():
+                self.overall_combo.set(self.DEFAULT_OVERALL_STRATEGY.get())
+                on_switch_overall_update_ui()
+            else:
+                self.overall_combo.set(self.TASK_POINT_STRATEGY['overall_strategy'])
+                on_switch_overall_update_ui()
 
             self.save_config()
 
@@ -815,6 +820,10 @@ class ConfigPanelApp(tk.Toplevel):
             if "全程" in self.task_point_vars:
                 config["overall_strategy"] = self.task_point_vars["全程"].get()
             
+            # 当前为默认模式
+            if not self.TASK_SPECIFIC_CONFIG.get():
+                self.DEFAULT_OVERALL_STRATEGY.set(value = self.task_point_vars["全程"].get())
+            
             # 获取每个任务点的策略（按索引顺序）
             for idx, point in enumerate(self.current_task_points):
                 if point in self.task_point_vars:
@@ -895,25 +904,23 @@ class ConfigPanelApp(tk.Toplevel):
             self.overall_label.pack(side=tk.LEFT, padx=5)
 
             # 全程下拉框
-            overall_var = tk.StringVar()
+            overall_var = tk.StringVar(value = "全自动战斗")
             overall_values = strategy_names + ["自定义任务点策略"] if strategy_names else ["自定义任务点策略"]
             # 设置默认值
-            saved_overall = None
-            task_point_strategy = getattr(self, 'TASK_POINT_STRATEGY', None)
-            if task_point_strategy and isinstance(task_point_strategy, dict):
-                saved_overall = task_point_strategy.get('overall_strategy')
-                if saved_overall and saved_overall in overall_values:
-                    overall_var.set(saved_overall)
-                    # 如果全程策略是“自定义任务点策略”，则后续要显示任务点
-                    initial_show_task_points = (saved_overall == "自定义任务点策略")
-                else:
-                    # 保存的策略无效，回退
-                    saved_overall = None
-            if saved_overall is None:
-                # 没有保存或无效，使用默认策略 "全自动战斗"
-                overall_var.set("全自动战斗")
-                initial_show_task_points = False
 
+            task_point_strategy = getattr(self, 'TASK_POINT_STRATEGY', None)
+            if not self.TASK_SPECIFIC_CONFIG.get(): # 未开启任务定制配置
+                if self.DEFAULT_OVERALL_STRATEGY: # 默认全局配置可用
+                    overall_var.set(self.DEFAULT_OVERALL_STRATEGY.get())
+            else: # 开启任务定制配置
+                if task_point_strategy and isinstance(task_point_strategy, dict):
+                    saved_overall = task_point_strategy.get('overall_strategy')
+                    if saved_overall and saved_overall in overall_values:
+                        overall_var.set(saved_overall)
+                    else:
+                        # 保存的策略无效，使用默认值
+                        pass
+                        
             # 初始化全程策略
             self.overall_combo = ttk.Combobox(overall_frame, textvariable=overall_var,
                                         values=overall_values, state="readonly", width=25)
@@ -962,7 +969,7 @@ class ConfigPanelApp(tk.Toplevel):
                 self.task_point_comboboxes[point] = combo
 
             # ---- 3. 根据全程行初始选择控制任务点容器显示状态 ----
-            _update_task_points_visibility(initial_show_task_points)
+            _update_task_points_visibility(overall_var.get() == "自定义任务点策略")
 
             # ---- 4. 绑定全程行选择事件 ----
             self.overall_combo.bind("<<ComboboxSelected>>", on_switch_overall_update_ui)
@@ -1321,7 +1328,7 @@ class ConfigPanelApp(tk.Toplevel):
         if not self.quest_active:
             self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
-            setting = self.load_setting_from_dict(self.load_config())
+            setting = LoadSettingFromDict(self.load_config())
             setting._FINISHINGCALLBACK = self.finishingcallback
             self.msg_queue.put(('start_quest', setting))
             self.quest_active = True
