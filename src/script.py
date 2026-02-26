@@ -22,7 +22,7 @@ CONFIG_VAR_LIST = [
             #categor      var_name,                  type,          default_value
             ["GENERAL",   "EMU_PATH",                 tk.StringVar,  None],
             ["GENERAL",   "EMU_INDEX",                tk.IntVar,     0],
-            ["GENERAL",   "ADB_PORT",                 tk.StringVar,  16384],
+            ["GENERAL",   "ADB_ADRESS",               tk.StringVar,  "127.0.0.1:16384"],
             ["GENERAL",   "LAST_VERSION",             tk.StringVar,  None],
             ["GENERAL",   "LATEST_VERSION",           tk.StringVar,  None],
             ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
@@ -387,10 +387,10 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                     time.sleep(2)
 
             logger.debug(f"尝试连接到adb...")
-            result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting.ADB_PORT}")
+            result = CMDLine(f"\"{adb_path}\" connect {setting.ADB_ADRESS}")
 
             result = CMDLine(f"\"{adb_path}\" devices")
-            if f"127.0.0.1:{setting.ADB_PORT}" in result.stdout:
+            if f"{setting.ADB_ADRESS}" in result.stdout:
                 logger.info("成功连接到模拟器!")
                 results_list = CheckEmulator()
                 logger.debug(f"{results_list}")
@@ -405,7 +405,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                 logger.info("模拟器未运行，尝试启动...")
                 StartEmulator()
                 logger.info("模拟器(应该)启动完毕.\n 尝试连接到模拟器...")
-                result = CMDLine(f"\"{adb_path}\" connect 127.0.0.1:{setting.ADB_PORT}")
+                result = CMDLine(f"\"{adb_path}\" connect {setting.ADB_ADRESS}")
                 if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
                     logger.info("成功连接到模拟器")
                     break
@@ -432,7 +432,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         devices = client.devices()
         
         # 查找匹配的设备
-        target_device = f"127.0.0.1:{setting.ADB_PORT}"
+        target_device = f"{setting.ADB_ADRESS}"
         for device in devices:
             if device.serial == target_device:
                 logger.info(f"成功创建设备对象: {device.serial}")
@@ -614,7 +614,7 @@ def Factory():
                     logger.info("ADB操作失败/数据错误, 尝试重启ADB或模拟器程序...")
                     ResetDevice()
                 time.sleep(1)
-    def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
+    def _check(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage.copy()
         threshold = 0.80
@@ -639,15 +639,22 @@ def Factory():
             cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
             cv2.imwrite("matched.png", screenshot)
 
-        logger.debug(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
-        if max_val < threshold:
-            logger.debug("匹配程度不足阈值.")
-            return None
-        if max_val<=0.9:
-            logger.debug(f"警告: {shortPathOfTarget}的匹配程度超过了{threshold*100:.0f}%但不足90%")
-
         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
-        return pos
+        return pos,max_val
+    def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
+        pos, max_val = _check(screenImage, shortPathOfTarget, roi, outputMatchResult)
+
+        if max_val < 0.8:
+            logger.debug(f"匹配失败: {shortPathOfTarget}的匹配程度为{max_val*100:.2f}%, 不足阈值.")
+            return None
+        else:
+            logger.debug(f"匹配成功: {shortPathOfTarget}的匹配程度为{max_val*100:.2f}%, 位于{pos}.")
+            return pos
+    def CheckHow(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
+        pos, max_val = _check(screenImage, shortPathOfTarget, roi, outputMatchResult)
+
+        logger.debug(f"匹配检测: {shortPathOfTarget}的匹配程度为{max_val*100:.2f}%, 位于{pos}.")
+        return max_val
     def CheckIf_MultiRect(screenImage, shortPathOfTarget):
         template = LoadTemplateImage(shortPathOfTarget)
         screenshot = screenImage
@@ -1062,11 +1069,13 @@ def Factory():
                 summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
             logger.info(f"{runtimeContext._IMPORTANTINFO}{summary_text}",extra={"summary": True})
         runtimeContext._LAPTIME = time.time()
-        runtimeContext._COUNTERDUNG+=1
+        if runtimeContext._MEET_CHEST_OR_COMBAT:
+            runtimeContext._MEET_CHEST_OR_COMBAT = False
+            runtimeContext._COUNTERDUNG+=1
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap','startdownload'],['closePartyInfo','closePartyInfo_fortress',[550,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(['intoWorldMap','dungFlag','worldmapflag','openworldmap','startdownload'],['closePartyInfo','closePartyInfo_fortress',press_any_key],1)
         
         if CheckIf(scn:=ScreenShot(), 'dungflag'):
             # 如果已经在副本里了 直接结束.
@@ -1241,22 +1250,23 @@ def Factory():
                 return IdentifyState()
 
             if CheckIf(screen,"returntoTown"):
-                if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT:
+                if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                     FindCoordsOrElseExecuteFallbackAndWait('Inn',['return',[1,1]],1)
                     return State.Inn,DungeonState.Quit, screen
                 else:
-                    logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    
+                    logger.info("不满足回城条件, 跳过回城.")
                     return State.EoT,DungeonState.Quit,screen
 
             if pos:=(CheckIf(screen,"openworldmap")):
-                if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT:
+                if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                     Press(pos)
                     if quest._RTT:
                         for info in quest._RTT:
                             TeleportFromDungeonToCity(*info[2])
                     return IdentifyState()
                 else:
-                    logger.info("由于没有遇到任何宝箱或发生任何战斗, 跳过回城.")
+                    logger.info("不满足回城条件, 跳过回城.")
                     return State.EoT,DungeonState.Quit,screen
 
             for city in ["City_RoyalCityLuknalia","City_fortress", "City_DHI","City_portTownGrandLegion"]:
@@ -1417,126 +1427,167 @@ def Factory():
             if info[1]=="intoWorldMap":
                 TeleportFromCityToWorldLocation(*info[2])
             else:
-                # 为了解决卡在副本门口的问题, 我们在info[1]里追加一个
-                targetPattern = info[1]
-                if isinstance(targetPattern, (list, tuple)):
-                    targetPattern = targetPattern + ['dungFlag']
-                else:
-                    targetPattern = [targetPattern] + ['dungFlag']
-
-                pos = FindCoordsOrElseExecuteFallbackAndWait(targetPattern, info[2], info[3])
+                pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
+        FindCoordsOrElseExecuteFallbackAndWait('dungFlag', quest._EOT[-1][1], 1)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
-        def doubleConfirmCastSpell():
-            is_success_aoe = False
+        # 内部函数：复制策略到 runtime.CURRENT_STRATEGY
+        def CopyStrategy():
+            if not setting.TASK_SPECIFIC_CONFIG:
+                strategy_key = setting.DEFAULT_OVERALL_STRATEGY
+            else:
+                overall = setting.TASK_POINT_STRATEGY["overall_strategy"]
+                if overall == "自定义任务点策略":
+                    # 使用当前任务步骤索引获取具体策略
+                    task_step_idx = runtimeContext.taskStepIdx
+                    strategy_key = setting.TASK_POINT_STRATEGY["task_point"][task_step_idx]
+                else:
+                    strategy_key = overall
+
+            # 在 STRATEGY_change_by_Restart 列表中查找 group_name 匹配的字典
+            target_dict = None
+            for d in runtimeContext.STRATEGY_change_by_Restart:
+                if d.get("group_name") == strategy_key:
+                    target_dict = d
+                    break
+
+            if target_dict is not None:
+                # 拷贝该字典到 CURRENT_STRATEGY（假设为浅拷贝，可根据需要改为深拷贝）
+                runtimeContext.CURRENT_STRATEGY = target_dict.deepcopy()
+            else:
+                # 如果未找到，可考虑默认策略或报错，这里简单置空
+                runtimeContext.CURRENT_STRATEGY = {}
+            return
+        def CombatAuto():
+            Press([850,1100])
+            Sleep(0.5)
+            Press([850,1100])
+            Sleep(2)
+            return
+        def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
+            def rollback():
+                for _ in range(3):
+                    PressReturn()
+                    Sleep(0.2)
+                if skilllvl>=2:
+                    SkillLvlSelectAndDoubleCheck(skillPos,1)
+                else:
+                    CombatAuto()
+                return
+            skillPosDict = { '左上':[266,1015],'右上':[640,1015],'左下':[266,1104],'右下':[640,1104]}
+            into_detail = False
+            for _ in range(3):
+                Press(skillPosDict[skillPos])
+                Sleep(1)
+                if CheckIf(ScreenShot(),"spellskill/skillDetail"):
+                    into_detail = True
+                    break
+            if not into_detail:
+                rollback()
+                return
+
             Sleep(1)
             scn = ScreenShot()
+            if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
+                if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
+                    logger.info("技能等级匹配失败. 使用1级技能.")
+                    rollback()
+                    return
+
+            scn = ScreenShot()
             if Press(CheckIf(scn,'OK')):
-                is_success_aoe = True
                 Sleep(2)
-                scn = ScreenShot()
-                if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
-                    Press(CheckIf(scn,'notenough_close'))
-                    Press(CheckIf(ScreenShot(),'spellskill/lv1'))
-                    Press(CheckIf(scn,'OK'))
-                    Sleep(1)
             elif pos:=(CheckIf(scn,'next')):
                 Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
-                Sleep(1)
-                scn = ScreenShot()
-                if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
-                    Press(CheckIf(scn,'notenough_close'))
-                    Press(CheckIf(ScreenShot(),'spellskill/lv1'))
-                    Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
-                    Sleep(1)
             else:
-                Press([150,750])
-                Sleep(0.1)
-                Press([300,750])
-                Sleep(0.1)
-                Press([450,750])
-                Sleep(0.1)
-                Press([550,750])
-                Sleep(0.1)
-                Press([650,750])
-                Sleep(0.1)
-                Press([750,750])
-                Sleep(0.1)
+                for i in range(6):
+                    Press([150*i-150,750])
+                    Sleep(0.1)
                 Sleep(2)
+
             Sleep(1)
-            return (is_success_aoe)
+            scn = ScreenShot()
+            if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
+                rollback()
+                return
 
-        nonlocal runtimeContext
-        if runtimeContext._TIME_COMBAT==0:
-            runtimeContext._TIME_COMBAT = time.time()
-
+        # 主逻辑开始
+        # 0. 开启二倍速
         screen = ScreenShot()
         if not runtimeContext._COMBATSPD:
             if Press(CheckIf(screen,'combatSpd')) or Press(CheckIf(screen,'combatSpd_DHI')):
                 runtimeContext._COMBATSPD = True
                 Sleep(1)
+        # 1. 检查重置标识
+        if runtimeContext.CombatReset: # TODO
+            CopyStrategy()
+            runtimeContext.CombatReset = False
 
-        spellsequence = runtimeContext._ACTIVESPELLSEQUENCE
-        if spellsequence != None:
-            logger.info(f"当前施法序列:{spellsequence}")
-            for k in spellsequence.keys():
-                if CheckIf(screen,'spellskill/'+ k):
-                    targetSpell = 'spellskill/'+ spellsequence[k][0]
-                    if not CheckIf(screen, targetSpell):
-                        logger.error("错误:施法序列包含不可用的技能")
-                        Press([850,1100])
-                        Sleep(0.5)
-                        Press([850,1100])
-                        Sleep(3)
-                        return
-                    
-                    logger.info(f"使用技能{targetSpell}, 施法序列特征: {k}:{spellsequence[k]}")
-                    if len(spellsequence[k])!=1:
-                        spellsequence[k].pop(0)
-                    Press(CheckIf(screen,targetSpell))
-                    if targetSpell != 'spellskill/' + 'defend':
-                        doubleConfirmCastSpell()
-
-                    return
-
-        if (setting._SYSTEMAUTOCOMBAT) or (runtimeContext._ENOUGH_AOE and setting._AUTO_AFTER_AOE):
-            pos1 = CheckIf(WrapImage(screen,0.1,0.3,1),'combatAuto',[[700,1000,200,200]])
-            pos2 = CheckIf(screen,'combatAuto_2',[[700,1000,200,200]])
-            Press(pos1 if pos1 is not None else pos2)
-            Sleep(5)
+        # 2. 获取当前策略中的技能设置列表
+        skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
+        if not skill_settings:
+            CombatAuto()
             return
 
-        if not CheckIf(screen,'flee'):
+        # 检查是否所有技能都是“重复”且“双击自动”
+        all_repeat_and_auto = all(
+            item.get("freq_var") == "重复" and item.get("skill_var") == "双击自动"
+            for item in skill_settings
+        )
+
+        if all_repeat_and_auto:
+            CombatAuto()
             return
-        if runtimeContext._SUICIDE:
-            Press(CheckIf(screen,'spellskill/'+'defend'))
-        else:
-            castSpellSkill = False
-            castAndPressOK = False
-            for skillspell in setting._SPELLSKILLCONFIG:
-                if runtimeContext._ENOUGH_AOE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                    #logger.info(f"本次战斗已经释放全体aoe, 由于面板配置, 不进行更多的技能释放.")
-                    continue
-                elif Press((CheckIf(screen, 'spellskill/'+skillspell))):
-                    logger.info(f"使用技能 {skillspell}")
-                    castAndPressOK = doubleConfirmCastSpell()
-                    castSpellSkill = True
-                    if castAndPressOK and setting._AOE_ONCE and ((skillspell in SECRET_AOE_SKILLS) or (skillspell in FULL_AOE_SKILLS)):
-                        runtimeContext._AOE_CAST_TIME += 1
-                        if runtimeContext._AOE_CAST_TIME >= setting._AOE_TIME:
-                            runtimeContext._ENOUGH_AOE = True
-                            runtimeContext._AOE_CAST_TIME = 0
-                        logger.info(f"已经释放了首次全体aoe.")
-                    break
-            if not castSpellSkill:
-                Press(CheckIf(ScreenShot(),'combatClose'))
-                Press([850,1100])
-                Sleep(0.5)
-                Press([850,1100])
-                Sleep(3)
+
+        # 3. 非全自动模式：点击任意键直到出现“flee”图片
+        FindCoordsOrElseExecuteFallbackAndWait("flee",[1,1],1)
+
+        # 4. 检查左上角角色头像，匹配30张图片
+        highest_match_rate = 0
+        best_image_name = None
+        for i in range(1, 31):  # 假设图片命名为 char_1.png 到 char_30.png
+            image_path = f"char/char_{i}.png"  # 实际路径可能不同
+            match_rate = CheckHow(ScreenShot(), image_path)
+            if match_rate > highest_match_rate:
+                highest_match_rate = match_rate
+                best_image_name = f"char_{i}"  # 保存不带路径的名称，用于后续匹配
+
+        # 5. 判断匹配率是否达标
+        if highest_match_rate < 80:
+            # 匹配失败，自动战斗
+            CombatAuto()
+            return
+
+        # 6. 匹配成功，在 skill_settings 中查找 role_var 等于图片名称的字典
+        target_skill = None
+        for skill in skill_settings:
+            if skill.get("role_var") == best_image_name:
+                target_skill = skill
+                break
+
+        SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"))
+
+        # 9. 根据频次设置删除对应字典
+        freq = target_skill.get("freq_var")
+        if freq == "每场战斗仅一次":
+            # 从 CURRENT_STRATEGY 的 skill_settings 中删除该字典
+            runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
+        elif freq == "每次启动仅一次":
+            # 从 CURRENT_STRATEGY 中删除
+            runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
+            # 从 STRATEGY_change_by_Restart 中对应 group_name 的字典中删除
+            group = runtimeContext.CURRENT_STRATEGY.get("group_name")
+            if group:
+                for d in runtimeContext.STRATEGY_change_by_Restart:
+                    if d.get("group_name") == group:
+                        # 在对应的 skill_settings 中删除相同内容的字典
+                        d["skill_settings"].remove(target_skill)
+                        break
+
+        return
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
         ### return = None: 视为没找到, 大约等于目标点结束.
         ### return = [x,y]: 视为找到, [x,y]是坐标.
@@ -2033,7 +2084,6 @@ def Factory():
                         logger.info("还有许多地下城要刷. 面具男, 现在还不能休息哦.")
                     else:
                         logger.info("休息时间到!")
-                        runtimeContext._MEET_CHEST_OR_COMBAT = False
                         RestartableSequenceExecution(
                         lambda:StateInn()
                         )
@@ -2619,26 +2669,6 @@ def Factory():
                         lambda: StateEoT()
                         )
                     
-                    # RestartableSequenceExecution(
-                    #     lambda: StateDungeon([TargetInfo('position','左上',[560,928])]),
-                    #     lambda: FindCoordsOrElseExecuteFallbackAndWait('dungFlag','return',1)
-                    # )
-
-                    # counter_candelabra = 0
-                    # for _ in range(3):
-                    #     scn = ScreenShot()
-                    #     if CheckIf(scn,"gaint_candelabra_1") or CheckIf(scn,"gaint_candelabra_2"):
-                    #         counter_candelabra+=1
-                    #     Sleep(1)
-                    # if counter_candelabra != 0:
-                    #     logger.info("没发现巨人.")
-                    #     RestartableSequenceExecution(
-                    #     lambda: StateDungeon([TargetInfo('harken2','左上')]),
-                    #     lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
-                    # )
-                    #     continue
-                    
-                    # logger.info("发现了巨人.")
                     logger.info("跳过了巨人检测环节. 现在默认总是击杀灯怪.")
                     RestartableSequenceExecution(
                         lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True),
@@ -2832,11 +2862,58 @@ def Factory():
                     total_time = total_time + costtime
                     logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:吉尔\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
-            # case 'test':
-            #     while 1:
-            #         quest._SPECIALDIALOGOPTION = ["bounty/Slayhim"]
-            #         # StateDungeon([TargetInfo('position','左下',[612,1132])])
-            #         StateDungeon([TargetInfo('position','右上',[553,821])])
+            case 'test':
+                def CombatAuto():
+                    Press([850,1100])
+                    Sleep(0.5)
+                    Press([850,1100])
+                def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
+                    def rollback():
+                        for _ in range(3):
+                            PressReturn()
+                            Sleep(0.2)
+                        if skilllvl>=2:
+                            SkillLvlSelectAndDoubleCheck(skillPos,1)
+                        else:
+                            CombatAuto()
+                    skillPosDict = { '左上':[266,1015],'右上':[640,1015],'左下':[266,1104],'右下':[640,1104]}
+                    into_detail = False
+                    for _ in range(3):
+                        Press(skillPosDict[skillPos])
+                        Sleep(1)
+                        if CheckIf(ScreenShot(),"spellskill/skillDetail"):
+                            into_detail = True
+                            break
+                    if not into_detail:
+                        rollback()
+                        return
+
+                    Sleep(1)
+                    scn = ScreenShot()
+                    if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
+                        if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
+                            logger.info("技能等级匹配失败. 使用1级技能.")
+                            rollback()
+                            return
+
+                    scn = ScreenShot()
+                    if Press(CheckIf(scn,'OK')):
+                        Sleep(2)
+                    elif pos:=(CheckIf(scn,'next')):
+                        Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
+                    else:
+                        for i in range(6):
+                            Press([150*i-150,750])
+                            Sleep(0.1)
+                        Sleep(2)
+
+                    Sleep(1)
+                    scn = ScreenShot()
+                    if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
+                        rollback()
+                        return
+                    
+                SkillLvlSelectAndDoubleCheck('左上',7)
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):

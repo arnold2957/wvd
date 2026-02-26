@@ -531,6 +531,11 @@
             "LACONES":["LACONES","LACONES","LACONES","defend"],
             "居合":["defend","居合"]
         }
+    },
+
+    "test":{
+        "questName":"测试",
+        "_TYPE":"quest"
     }
 
 }

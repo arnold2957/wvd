@@ -367,7 +367,7 @@ class SkillConfigPanel(CollapsibleSection):
             'skill_settings': skill_settings
         }
 ############################################
-def LoadSettingFromDict(self, input_dict):
+def LoadSettingFromDict(input_dict):
     setting = FarmConfig()
 
     for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
@@ -441,7 +441,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
 
         # --- UI 变量 ---
-        config_dict = self.load_config()
+        config_dict = LoadConfig()
         for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
             if issubclass(var_type, tk.Variable):
                 setattr(self, attr_name, var_type(value = (config_dict[attr_name] if (attr_name in config_dict)and(config_dict[attr_name] is not None) else default_value)))
@@ -592,17 +592,22 @@ class ConfigPanelApp(tk.Toplevel):
         row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        ttk.Label(frame_row, text="端口:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(frame_row, text="ADB地址:").grid(row=0, column=2, sticky=tk.W, pady=5)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
-        self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_PORT, validate="key",
-                                        validatecommand=(vcmd_non_neg, '%P'), width=7)
+        self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_ADRESS, validate="key",
+                                        validatecommand=(vcmd_non_neg, '%P'), width=15)
         self.adb_port_entry.grid(row=0, column=3)
-        ttk.Label(frame_row, text=" 编号:").grid(row=0, column=4, sticky=tk.W, pady=5)
+        self.button_save_adb_port = ttk.Button(frame_row, text="保存", command=self.save_config, width=5)
+        self.button_save_adb_port.grid(row=0, column=4)
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        ttk.Label(frame_row, text="模拟器编号:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.emu_index_entry = ttk.Entry(frame_row, textvariable=self.EMU_INDEX, validate="key",
                                          validatecommand=(vcmd_non_neg, '%P'), width=5)
-        self.emu_index_entry.grid(row=0, column=5)
-        self.button_save_adb_port = ttk.Button(frame_row, text="保存", command=self.save_config, width=5)
-        self.button_save_adb_port.grid(row=0, column=6)
+        self.emu_index_entry.grid(row=0, column=1)
+        self.button_save_emu_index = ttk.Button(frame_row, text="保存", command=self.save_config, width=5)
+        self.button_save_emu_index.grid(row=0, column=2)
 
 
         # ==========================================
@@ -619,9 +624,9 @@ class ConfigPanelApp(tk.Toplevel):
             
         def switch_task_specific_config():
             if self.TASK_SPECIFIC_CONFIG.get():
-                task_config = self.load_config("specific")
+                task_config = LoadConfig("specific")
             else:
-                task_config = self.load_config("default")
+                task_config = LoadConfig("default")
 
             for category, attr_name, var_type, default_value in CONFIG_VAR_LIST:
                 if attr_name in task_config:
@@ -644,7 +649,7 @@ class ConfigPanelApp(tk.Toplevel):
             # TODO 暂时不写了 太麻烦了.
 
             # 任务点, 这里无论如何都要拿specific的设置.
-            specific_config = self.load_config("specific")
+            specific_config = LoadConfig("specific")
             if ("TASK_POINT_STRATEGY" in specific_config)and(specific_config["TASK_POINT_STRATEGY"]!=None):
                 self.TASK_POINT_STRATEGY = specific_config["TASK_POINT_STRATEGY"]
             else:
@@ -1310,6 +1315,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_beg_money,
             self.task_specific_config_check,
             self.button_save_adb_port,
+            self.button_save_emu_index,
             self.delete_task_specific_config_button,
             self.active_csc
             ]
@@ -1328,7 +1334,7 @@ class ConfigPanelApp(tk.Toplevel):
         if not self.quest_active:
             self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
-            setting = LoadSettingFromDict(self.load_config())
+            setting = LoadSettingFromDict(LoadConfig())
             setting._FINISHINGCALLBACK = self.finishingcallback
             self.msg_queue.put(('start_quest', setting))
             self.quest_active = True
@@ -1340,7 +1346,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.start_stop_btn.config(text="脚本, 启动!")
         self.set_controls_state(tk.NORMAL)
         
-        config = self.load_config()
+        config = LoadConfig()
         if 'KARMA_ADJUST' in config:
             self.KARMA_ADJUST.set(config['KARMA_ADJUST'])
 
