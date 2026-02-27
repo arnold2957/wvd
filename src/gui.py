@@ -5,9 +5,41 @@ import logging
 from script import *
 from auto_updater import *
 from utils import *
-
+############################################
+def BLOCK_WHEEL(event):
+    # 向上查找第一个 Canvas 类型的控件
+    widget = event.widget
+    while widget is not None and not isinstance(widget, tk.Canvas):
+        widget = widget.master
+    if widget is None:
+        return  # 找不到 Canvas，忽略
+    # 滚动找到的 Canvas
+    if event.num == 4:
+        widget.yview_scroll(-1, 'units')
+    elif event.num == 5:
+        widget.yview_scroll(1, 'units')
+    else:
+        widget.yview_scroll(-1 * (event.delta // 120), 'units')
+    return 'break'
 ############################################
 class ScrollableFrame(ttk.Frame):
+    def _is_on_combobox(self, widget):
+        """递归判断给定控件或其父级是否为 Combobox"""
+        try:
+            # 如果 widget 是字符串，尝试转换为控件对象
+            if isinstance(widget, str):
+                widget = self.nametowidget(widget)
+        except:
+            return False  # 无法获取控件，假设不是 Combobox
+
+        while widget:
+            try:
+                if widget.winfo_class() == 'TCombobox':
+                    return True
+                widget = widget.master
+            except:
+                break
+        return False
     def __init__(self, container, height=None, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
         
@@ -25,9 +57,9 @@ class ScrollableFrame(ttk.Frame):
         
         self.scrollable_frame.bind("<Configure>", self._on_frame_configure)
         self.canvas.bind("<Configure>", self._on_canvas_configure)
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        for class_name in ["Frame","TFrame","Button", "TButton", "Label","TLabel","Checkbutton","TCheckbutton","CollapsibleSection", "Entry","TEntry"]:
+            self.canvas.bind_class(class_name, "<MouseWheel>", self._on_mousewheel)
 
-    # ... (其余方法 _on_frame_configure, _on_canvas_configure, _check_scroll_necessity, _on_mousewheel 保持不变) ...
     def _on_frame_configure(self, event=None):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         self._check_scroll_necessity()
@@ -45,6 +77,18 @@ class ScrollableFrame(ttk.Frame):
             self.scrollbar.pack(side="right", fill="y")
 
     def _on_mousewheel(self, event):
+        # 检查事件是否发生在当前顶层窗口内
+        try:
+            toplevel = event.widget.winfo_toplevel()
+        except AttributeError:
+            # 如果无法获取顶层窗口，可能事件来自外部，忽略
+            return
+        if toplevel != self.winfo_toplevel():
+            return
+        # 检查是否在 Combobox 上
+        if self._is_on_combobox(event.widget):
+            return
+        # 执行滚动
         canvas_height = self.canvas.winfo_height()
         content_height = self.scrollable_frame.winfo_reqheight()
         if content_height > canvas_height:
@@ -52,7 +96,7 @@ class ScrollableFrame(ttk.Frame):
 
 class CollapsibleSection(tk.Frame):
     def __init__(self, parent, title="", expanded=True,bg_color=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent, class_='CollapsibleSection',*args, **kwargs)
         self.columnconfigure(0, weight=1)
         
         self.is_expanded = expanded
@@ -128,7 +172,7 @@ class SkillConfigPanel(CollapsibleSection):
         self.default_row_data = {}
         
         # 常量
-        self.ROLE_LIST = ['alice', 'bob', 'camila']
+        self.ROLE_LIST = CHAR_LIST
         self.SKILL_OPTIONS = ["左上技能", "右上技能", "左下技能", "右下技能", "防御", "双击自动"]
         self.TARGET_OPTIONS = ["左上", "中上", "右上", "左下", "右下", "中下", "低生命值", "不可用"]
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
@@ -420,6 +464,10 @@ class ConfigPanelApp(tk.Toplevel):
         
         self.title(self.TITLE)
 
+        self.bind_class('TCombobox', '<MouseWheel>', BLOCK_WHEEL)
+        self.bind_class('TCombobox', '<Button-4>', BLOCK_WHEEL)
+        self.bind_class('TCombobox', '<Button-5>', BLOCK_WHEEL)
+
         self.adb_active = False
 
         # 关闭时退出整个程序
@@ -595,7 +643,7 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, text="ADB地址:").grid(row=0, column=2, sticky=tk.W, pady=5)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
         self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_ADRESS, validate="key",
-                                        validatecommand=(vcmd_non_neg, '%P'), width=15)
+                                        width=15)
         self.adb_port_entry.grid(row=0, column=3)
         self.button_save_adb_port = ttk.Button(frame_row, text="保存", command=self.save_config, width=5)
         self.button_save_adb_port.grid(row=0, column=4)
@@ -653,7 +701,7 @@ class ConfigPanelApp(tk.Toplevel):
             if ("TASK_POINT_STRATEGY" in specific_config)and(specific_config["TASK_POINT_STRATEGY"]!=None):
                 self.TASK_POINT_STRATEGY = specific_config["TASK_POINT_STRATEGY"]
             else:
-                self.TASK_POINT_STRATEGY = None
+                self.TASK_POINT_STRATEGY = {"overall_strategy": "全自动战斗"}
 
             if not self.TASK_SPECIFIC_CONFIG.get():
                 self.overall_combo.set(self.DEFAULT_OVERALL_STRATEGY.get())
@@ -813,7 +861,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         def save_task_point_strategy_config(event=None):
             """获取任务点策略配置，格式为：
-            {"overall_strategy": strategy_name, "task_point": {0: strategy_name, 1: strategy_name, ...}}
+            TASK_POINT_STRATEGY = {"overall_strategy": strategy_name, "task_point": {0: strategy_name, 1: strategy_name, ...}}
             """
             config = {"overall_strategy": "", "task_point": {}}
             
@@ -830,9 +878,10 @@ class ConfigPanelApp(tk.Toplevel):
                 self.DEFAULT_OVERALL_STRATEGY.set(value = self.task_point_vars["全程"].get())
             
             # 获取每个任务点的策略（按索引顺序）
-            for idx, point in enumerate(self.current_task_points):
-                if point in self.task_point_vars:
-                    config["task_point"][idx] = self.task_point_vars[point].get()
+            if self.is_current_task_dungeon:
+                for idx, point in enumerate(self.current_task_points):
+                    if point in self.task_point_vars:
+                        config["task_point"][idx] = self.task_point_vars[point].get()
             
             self.TASK_POINT_STRATEGY = config
 
@@ -840,11 +889,15 @@ class ConfigPanelApp(tk.Toplevel):
             return 
         def _update_task_points_visibility(show):
             """控制任务点容器的显示/隐藏，并调整全程标签颜色"""
+            if self.is_current_task_dungeon:
+                if show:
+                    self.task_points_frame.pack(fill=tk.X, pady=5)
+                else:
+                    self.task_points_frame.pack_forget()
+
             if show:
-                self.task_points_frame.pack(fill=tk.X, pady=5)
                 self.overall_label.config(foreground="gray")  # 正常颜色
             else:
-                self.task_points_frame.pack_forget()
                 self.overall_label.config(foreground="black")   # 灰色
             return
         def on_switch_overall_update_ui(event=None):
@@ -889,6 +942,7 @@ class ConfigPanelApp(tk.Toplevel):
             # 获取任务点列表
             try:
                 self.current_task_points = LoadQuest(task_name)._TARGETINFOLIST
+                self.is_current_task_dungeon = (LoadQuest(task_name)._TYPE == 'dungeon')
             except NameError:
                 logger.error('不可用的任务名.')
                 self.current_task_points = []
@@ -910,7 +964,11 @@ class ConfigPanelApp(tk.Toplevel):
 
             # 全程下拉框
             overall_var = tk.StringVar(value = "全自动战斗")
-            overall_values = strategy_names + ["自定义任务点策略"] if strategy_names else ["自定义任务点策略"]
+            if self.is_current_task_dungeon:
+                overall_values = strategy_names + ["自定义任务点策略"] if strategy_names else ["自定义任务点策略"]
+            else:
+                overall_values = strategy_names  if strategy_names else ["全自动战斗"]
+
             # 设置默认值
 
             task_point_strategy = getattr(self, 'TASK_POINT_STRATEGY', None)
@@ -923,8 +981,8 @@ class ConfigPanelApp(tk.Toplevel):
                     if saved_overall and saved_overall in overall_values:
                         overall_var.set(saved_overall)
                     else:
-                        # 保存的策略无效，使用默认值
-                        pass
+                        logger.info("当前保存的战斗策略无效, 使用默认策略\"全自动战斗\".")
+                        overall_var.set("全自动战斗.")
                         
             # 初始化全程策略
             self.overall_combo = ttk.Combobox(overall_frame, textvariable=overall_var,
@@ -936,42 +994,46 @@ class ConfigPanelApp(tk.Toplevel):
             self.task_point_comboboxes["全程"] = self.overall_combo
 
             # ---- 2. 创建任务点容器 ----
-            self.task_points_frame = ttk.Frame(self.combat_container)
-            self.task_points_frame.pack(fill=tk.X, pady=5)
 
-            # 填充任务点行
-            for idx, point in enumerate(self.current_task_points):
-                row_frame = ttk.Frame(self.task_points_frame)
-                row_frame.pack(fill=tk.X, pady=2)
+            if self.is_current_task_dungeon:
+                # 填充任务点行
+                self.task_points_frame = ttk.Frame(self.combat_container)
+                self.task_points_frame.pack(fill=tk.X, pady=5)
 
-                task_point_var = tk.StringVar()
-                # 尝试从保存的配置获取该任务点的策略
-                saved_point_strategy = None
-                if task_point_strategy and isinstance(task_point_strategy, dict):
-                    task_point_dict = task_point_strategy.get('task_point', {})
-                    if isinstance(task_point_dict, dict):
-                        saved_point_strategy = task_point_dict.get(str(idx))  # 注意索引可能是字符串或整数
-                        if saved_point_strategy is None:
-                            saved_point_strategy = task_point_dict.get(idx)  # 尝试整数键
-                        if saved_point_strategy and saved_point_strategy in strategy_names:
-                            task_point_var.set(saved_point_strategy)
-                        else:
-                            saved_point_strategy = None
+                for idx, point in enumerate(self.current_task_points):
+                    row_frame = ttk.Frame(self.task_points_frame)
+                    row_frame.pack(fill=tk.X, pady=2)
 
-                if saved_point_strategy is None:
-                    # 没有保存或无效，使用默认策略 "全自动战斗"
-                    task_point_var.set("全自动战斗")
+                    task_point_var = tk.StringVar()
+                    # 尝试从保存的配置获取该任务点的策略
+                    saved_point_strategy = None
+                    if task_point_strategy and isinstance(task_point_strategy, dict):
+                        task_point_dict = task_point_strategy.get('task_point', {})
+                        if isinstance(task_point_dict, dict):
+                            saved_point_strategy = task_point_dict.get(str(idx))  # 注意索引可能是字符串或整数
+                            if saved_point_strategy is None:
+                                saved_point_strategy = task_point_dict.get(idx)  # 尝试整数键
+                            if saved_point_strategy and saved_point_strategy in strategy_names:
+                                task_point_var.set(saved_point_strategy)
+                            else:
+                                saved_point_strategy = None
 
-                combo = ttk.Combobox(row_frame, textvariable=task_point_var, values=strategy_names,
-                                    state="readonly", width=15)
-                combo.bind("<<ComboboxSelected>>", save_task_point_strategy_config)    
-                combo.pack(side=tk.LEFT, padx=5)
+                    if saved_point_strategy is None:
+                        # 没有保存或无效，使用默认策略 "全自动战斗"
+                        task_point_var.set("全自动战斗")
 
-                point_name = point.target + ((' '+str(point.roi)) if point.target=='position' else '')
-                ttk.Label(row_frame, text=point_name, width=20, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+                    combo = ttk.Combobox(row_frame, textvariable=task_point_var, values=strategy_names,
+                                        state="readonly", width=15)
+                    combo.bind("<<ComboboxSelected>>", save_task_point_strategy_config)    
+                    combo.pack(side=tk.LEFT, padx=5)
 
-                self.task_point_vars[point] = task_point_var
-                self.task_point_comboboxes[point] = combo
+                    point_name = point.target + ((' '+str(point.roi)) if point.target=='position' else '')
+                    ttk.Label(row_frame, text=point_name, width=20, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+
+                    self.task_point_vars[point] = task_point_var
+                    self.task_point_comboboxes[point] = combo
+                
+                logger.info(f"已刷新任务点界面，任务点数量: {len(self.current_task_points)}")
 
             # ---- 3. 根据全程行初始选择控制任务点容器显示状态 ----
             _update_task_points_visibility(overall_var.get() == "自定义任务点策略")
@@ -979,7 +1041,6 @@ class ConfigPanelApp(tk.Toplevel):
             # ---- 4. 绑定全程行选择事件 ----
             self.overall_combo.bind("<<ComboboxSelected>>", on_switch_overall_update_ui)
 
-            logger.info(f"已刷新任务点界面，任务点数量: {len(self.current_task_points)}")
             return
         def update_combat_strategy_combobox_values():
             if not hasattr(self, 'task_point_comboboxes') or not self.task_point_comboboxes:
@@ -1056,7 +1117,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_triumph = ttk.Checkbutton(
             frame_row,
             variable=self.ACTIVE_TRIUMPH,
-            text="跳跃到\"凯旋\"",
+            text="跳跃到第三章结局\"凯旋\"",
             command=self.save_config,
             style="Custom.TCheckbutton"
         )
@@ -1069,7 +1130,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_beautiful_ore = ttk.Checkbutton(
             frame_row,
             variable=self.ACTIVE_BEAUTIFUL_ORE,
-            text="跳跃到\"美丽矿石的真相\"",
+            text="跳跃到第四章结局\"美丽矿石的真相\"",
             command=self.save_config,
             style="Custom.TCheckbutton"
         )

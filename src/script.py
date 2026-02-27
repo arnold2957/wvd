@@ -33,7 +33,7 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": "柚子",
                                                                         "skill_settings": [
                                                                             {
-                                                                                "role_var": "alice",
+                                                                                "role_var": "F 柚奈壬姬",
                                                                                 "skill_var": "左上技能",
                                                                                 "target_var": "不可用",
                                                                                 "freq_var": "每次启动仅一次",
@@ -90,8 +90,6 @@ class RuntimeContext:
     _TIME_CHEST_TOTAL = 0
     #### 其他临时参数
     _MEET_CHEST_OR_COMBAT = False
-    _ENOUGH_AOE = False
-    _AOE_CAST_TIME = 0
     _COMBATSPD = False
     _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
     _MAXRETRYLIMIT = 20
@@ -103,6 +101,9 @@ class RuntimeContext:
     _IMPORTANTINFO = ""
     _STEPAFTERRESTART = True
     _RESUMEAVAILABLE = False
+    STRATEGY_change_by_Restart = {}
+    CombatReset = True
+    CURRENT_STRATEGY = {}
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -869,6 +870,7 @@ def Factory():
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
         runtimeContext._STEPAFTERRESTART = False
+        runtimeContext.STRATEGY_change_by_Restart = copy.deepcopy(setting.STRATEGY)
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -1455,8 +1457,8 @@ def Factory():
                     break
 
             if target_dict is not None:
-                # 拷贝该字典到 CURRENT_STRATEGY（假设为浅拷贝，可根据需要改为深拷贝）
-                runtimeContext.CURRENT_STRATEGY = target_dict.deepcopy()
+                # 拷贝该字典到 CURRENT_STRATEGY
+                runtimeContext.CURRENT_STRATEGY = copy.deepcopy(target_dict)
             else:
                 # 如果未找到，可考虑默认策略或报错，这里简单置空
                 runtimeContext.CURRENT_STRATEGY = {}
@@ -1477,7 +1479,7 @@ def Factory():
                 else:
                     CombatAuto()
                 return
-            skillPosDict = { '左上':[266,1015],'右上':[640,1015],'左下':[266,1104],'右下':[640,1104]}
+            skillPosDict = { '左上技能':[266,1015],'右上技能':[640,1015],'左下技能':[266,1104],'右下技能':[640,1104]}
             into_detail = False
             for _ in range(3):
                 Press(skillPosDict[skillPos])
@@ -1545,29 +1547,33 @@ def Factory():
         # 3. 非全自动模式：点击任意键直到出现“flee”图片
         FindCoordsOrElseExecuteFallbackAndWait("flee",[1,1],1)
 
-        # 4. 检查左上角角色头像，匹配30张图片
+        # 4. 进行匹配
         highest_match_rate = 0
-        best_image_name = None
-        for i in range(1, 31):  # 假设图片命名为 char_1.png 到 char_30.png
-            image_path = f"char/char_{i}.png"  # 实际路径可能不同
-            match_rate = CheckHow(ScreenShot(), image_path)
-            if match_rate > highest_match_rate:
-                highest_match_rate = match_rate
-                best_image_name = f"char_{i}"  # 保存不带路径的名称，用于后续匹配
+        target_skill = None
+        t = time.time()
+        for skill in skill_settings:
+            role_var = skill.get("role_var")
+            if not role_var:  # 如果 role_var 为空则跳过
+                continue
+            for candidate in [role_var, role_var + '_sp', role_var + '_alt']:
+                # 构造图片完整路径并检查是否存在
+                img_path = os.path.join(IMAGE_FOLDER, 'spellskill', 'char', f"{candidate}.png")
+                full_path = ResourcePath(img_path)
+                if os.path.exists(full_path):
+                    match_rate = CheckHow(ScreenShot(), f"spellskill/char/{candidate}", [[85, 57, 115, 54]])
+                    if match_rate > highest_match_rate:
+                        highest_match_rate = match_rate
+                        target_skill = skill
+                        logger.info(f"最佳 {candidate}, {highest_match_rate}")
+        logger.info(time.time() - t)
 
         # 5. 判断匹配率是否达标
-        if highest_match_rate < 80:
+        if highest_match_rate < 0.80:
             # 匹配失败，自动战斗
             CombatAuto()
             return
 
-        # 6. 匹配成功，在 skill_settings 中查找 role_var 等于图片名称的字典
-        target_skill = None
-        for skill in skill_settings:
-            if skill.get("role_var") == best_image_name:
-                target_skill = skill
-                break
-
+        # 6. 按照技能等级释放技能
         SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"))
 
         # 9. 根据频次设置删除对应字典
@@ -1840,9 +1846,7 @@ def Factory():
                     Press([1,1])
                     ########### COMBAT RESET
                     # 战斗结束了, 我们将一些设置复位
-                    if setting._AOE_ONCE:
-                        runtimeContext._ENOUGH_AOE = False
-                        runtimeContext._AOE_CAST_TIME = 0
+                    runtimeContext.CombatReset = True
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -2920,9 +2924,12 @@ def Factory():
         nonlocal quest
         nonlocal setting # 初始化
         nonlocal runtimeContext
-        runtimeContext = RuntimeContext()
+        
 
         setting = set
+        runtimeContext = RuntimeContext()
+
+        runtimeContext.STRATEGY_change_by_Restart = copy.deepcopy(setting.STRATEGY)
 
         Sleep(1) # 没有等utils初始化完成
         
