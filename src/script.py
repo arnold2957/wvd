@@ -1478,16 +1478,9 @@ def Factory():
             Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
-            def rollback():
-                for _ in range(3):
-                    PressReturn()
-                    Sleep(0.2)
-                if skilllvl>=2:
-                    SkillLvlSelectAndDoubleCheck(skillPos,1)
-                else:
-                    AutoThisChar()
-                return
             skillPosDict = { '左上技能':[266,1015],'右上技能':[640,1015],'左下技能':[266,1104],'右下技能':[640,1104]}
+            
+            # 打开详情界面
             into_detail = False
             for _ in range(3):
                 Press(skillPosDict[skillPos])
@@ -1496,17 +1489,35 @@ def Factory():
                     into_detail = True
                     break
             if not into_detail:
-                rollback()
+                logger.info("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗.")
+                for _ in range(3):
+                    PressReturn()
+                    Sleep(0.2)
+
+                AutoThisChar()
                 return
 
+            # 设置等级
             Sleep(1)
             scn = ScreenShot()
-            if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
-                if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
-                    logger.info("技能等级匹配失败. 使用1级技能.")
-                    rollback()
-                    return
+            has_lv_1 = (CheckIf(scn,f"spellskill\skillLvl\lv1")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv1"))
+            if (not has_lv_1):
+                if (skilllvl>=2):
+                    logger.error("错误: 设定了高于1级的技能, 但并未检测到技能等级.\n 使用默认技能.")
+            else:
+                if skilllvl!=1:
+                    has_lv_x = (CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}"))
+                else:
+                    has_lv_x = has_lv_1
 
+                if not has_lv_x:
+                    skilllvl = 1
+                    logger.error("错误: 未检测到目标等级\n 使用1级技能.")
+                if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
+                    if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
+                        logger.error("错误: 我认为不可能发生这种情况. 请务必告诉我.")
+
+            # 确认
             scn = ScreenShot()
             if Press(CheckIf(scn,'OK')):
                 Sleep(2)
@@ -1518,10 +1529,15 @@ def Factory():
                     Sleep(0.1)
                 Sleep(2)
 
+            # 资源不足
             Sleep(1)
             scn = ScreenShot()
             if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
-                rollback()
+                for _ in range(3):
+                    PressReturn()
+                    Sleep(0.2)
+
+                SkillLvlSelectAndDoubleCheck(skillPos,1)
                 return
 
         # 主逻辑开始
@@ -1574,8 +1590,8 @@ def Factory():
                     if match_rate > highest_match_rate:
                         highest_match_rate = match_rate
                         target_skill = skill
-                        logger.info(f"最佳 {candidate}, {highest_match_rate}")
-        logger.info(time.time() - t)
+                        logger.debug(f"最佳 {candidate}, {highest_match_rate}")
+        logger.debug(f"匹配时间 {time.time() - t}")
 
         # 5. 判断匹配率是否达标
         if highest_match_rate < 0.80:
@@ -2980,15 +2996,9 @@ def Factory():
                     Sleep(0.5)
                     Press([850,1100])
                 def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
-                    def rollback():
-                        for _ in range(3):
-                            PressReturn()
-                            Sleep(0.2)
-                        if skilllvl>=2:
-                            SkillLvlSelectAndDoubleCheck(skillPos,1)
-                        else:
-                            AutoThisChar()
-                    skillPosDict = { '左上':[266,1015],'右上':[640,1015],'左下':[266,1104],'右下':[640,1104]}
+                    skillPosDict = { '左上技能':[266,1015],'右上技能':[640,1015],'左下技能':[266,1104],'右下技能':[640,1104]}
+                    
+                    # 打开详情界面
                     into_detail = False
                     for _ in range(3):
                         Press(skillPosDict[skillPos])
@@ -2997,17 +3007,35 @@ def Factory():
                             into_detail = True
                             break
                     if not into_detail:
-                        rollback()
+                        logger.info("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗.")
+                        for _ in range(3):
+                            PressReturn()
+                            Sleep(0.2)
+
+                        AutoThisChar()
                         return
 
+                    # 设置等级
                     Sleep(1)
                     scn = ScreenShot()
-                    if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
-                        if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
-                            logger.info("技能等级匹配失败. 使用1级技能.")
-                            rollback()
-                            return
+                    has_lv_1 = (CheckIf(scn,f"spellskill\skillLvl\lv1")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv1"))
+                    if (not has_lv_1):
+                        if (skilllvl>=2):
+                            logger.error("错误: 设定了高于1级的技能, 但并未检测到技能等级.\n 使用默认技能.")
+                    else:
+                        if skilllvl!=1:
+                            has_lv_x = (CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}"))
+                        else:
+                            has_lv_x = has_lv_1
 
+                        if not has_lv_x:
+                            skilllvl = 1
+                            logger.error("错误: 未检测到目标等级\n 使用1级技能.")
+                        if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
+                            if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
+                                logger.error("错误: 我认为不可能发生这种情况. 请务必告诉我.")
+
+                    # 确认
                     scn = ScreenShot()
                     if Press(CheckIf(scn,'OK')):
                         Sleep(2)
@@ -3019,13 +3047,19 @@ def Factory():
                             Sleep(0.1)
                         Sleep(2)
 
+                    # 资源不足
                     Sleep(1)
                     scn = ScreenShot()
                     if CheckIf(scn,'notenoughsp') or CheckIf(scn,'notenoughmp'):
-                        rollback()
+                        for _ in range(3):
+                            PressReturn()
+                            Sleep(0.2)
+
+                        SkillLvlSelectAndDoubleCheck(skillPos,1)
                         return
+
                     
-                SkillLvlSelectAndDoubleCheck('左上',7)
+                SkillLvlSelectAndDoubleCheck('左上技能', 4)
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):
