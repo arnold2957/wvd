@@ -1331,7 +1331,7 @@ def Factory():
                     logger.info(f"即将进行善恶值调整. 剩余次数:{new_str}")
                     AddImportantInfo(f"新的善恶:{new_str}")
                     setting.KARMA_ADJUST = new_str
-                    SetOneVarInDEFAULTConfig("KARMA_ADJUST",setting.KARMA_ADJUST)
+                    SetOneVarInDEFAULTConfig("KARMA_ADJUST",setting.KARMA_ADJUST) #TODO
                     Sleep(2)
 
                 for op in DIALOG_OPTION_IMAGE_LIST:
@@ -1444,7 +1444,7 @@ def Factory():
                 overall = setting.TASK_POINT_STRATEGY["overall_strategy"]
                 if overall == "自定义任务点策略":
                     # 使用当前任务步骤索引获取具体策略
-                    task_step_idx = runtimeContext.taskStepIdx
+                    task_step_idx = runtimeContext.taskStepIdx #TODO
                     strategy_key = setting.TASK_POINT_STRATEGY["task_point"][task_step_idx]
                 else:
                     strategy_key = overall
