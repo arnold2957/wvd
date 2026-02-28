@@ -176,7 +176,9 @@ class SkillConfigPanel(CollapsibleSection):
         
     def _setup_body_ui(self,init_config=None):
         # --- 1. 功能按钮 ---
-        if init_config!=None and ('group_name' in init_config) and (init_config['group_name']!='全自动战斗'):
+        if init_config!=None and ('group_name' in init_config) and (init_config['group_name']=='全自动战斗'):
+            pass
+        else:
             action_bar = tk.Frame(self.content_frame, background=self.bg_color)
             action_bar.pack(fill=tk.X, pady=(0, 5))
 

@@ -1571,7 +1571,12 @@ def Factory():
             return
 
         # 3. 非全自动模式：点击任意键直到出现“flee”图片
-        FindCoordsOrElseExecuteFallbackAndWait("flee",[1,1],1)
+        [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag"],[1,1],1)
+        if (pos_x>=735)and(pos_x<=735+126)and(pos_y>=1158)and(pos_y<=1158+68):
+            pass
+        else:
+            logger.debug("战斗已结束.")
+            return
 
         # 4. 进行匹配
         highest_match_rate = 0
