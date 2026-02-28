@@ -95,7 +95,7 @@ class ScrollableFrame(ttk.Frame):
             self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
 class CollapsibleSection(tk.Frame):
-    def __init__(self, parent, title="", expanded=True,bg_color=None, *args, **kwargs):
+    def __init__(self, parent, title="", expanded=False,bg_color=None, *args, **kwargs):
         super().__init__(parent, class_='CollapsibleSection',*args, **kwargs)
         self.columnconfigure(0, weight=1)
         
@@ -135,17 +135,10 @@ class CollapsibleSection(tk.Frame):
             self.toggle_btn.configure(text=self.close_emoji)
             self.is_expanded = True
 
-    def toggle(self):
-        if self.is_expanded:
-            # 当前是展开的 -> 执行折叠
-            self.content_frame.pack_forget()     # 隐藏内容
-            self.toggle_btn.configure(text=self.showmore_emoji)  # 按钮变回"折叠态"图标
-            self.is_expanded = False
-        else:
-            # 当前是折叠的 -> 执行展开
-            # 注意: before=self.spacer 保证内容在底部分隔线之上
+    def show(self):
+        if not self.is_expanded:
             self.content_frame.pack(fill="x", expand=True, padx=5, pady=2, before=self.spacer)
-            self.toggle_btn.configure(text=self.close_emoji)  # 按钮变为"展开态"图标
+            self.toggle_btn.configure(text=self.close_emoji)
             self.is_expanded = True
 
 class SkillConfigPanel(CollapsibleSection):
@@ -712,6 +705,9 @@ class ConfigPanelApp(tk.Toplevel):
 
             self.save_config()
 
+            if self.TASK_SPECIFIC_CONFIG.get():
+                self.section_combat.show()
+
             color = "#196FBF" if self.TASK_SPECIFIC_CONFIG.get() else "black"
             for section in [self.section_karma, self.section_combat,self.section_advanced]:
                 section.label.config(fg=color)
@@ -852,7 +848,7 @@ class ConfigPanelApp(tk.Toplevel):
         # ==========================================
         # 分组 4: 战斗
         # ==========================================
-        self.section_combat = CollapsibleSection(content_root, title="战斗")
+        self.section_combat = CollapsibleSection(content_root, title="战斗", expanded=self.TASK_SPECIFIC_CONFIG.get())
         self.section_combat.pack(fill="x", pady=5)
         self.combat_container = self.section_combat.content_frame
         row_counter = 0
@@ -1073,7 +1069,7 @@ class ConfigPanelApp(tk.Toplevel):
             create_task_point_ui()
         self.farm_target_combo.bind("<<ComboboxSelected>>", on_farm_target_selected)
 
-        self.after(200, create_task_point_ui)
+        self.after(200, lambda : [create_task_point_ui(),switch_task_specific_config()])
 
         # ==========================================
         # 分组 4: 高级
@@ -1169,7 +1165,6 @@ class ConfigPanelApp(tk.Toplevel):
             self.STRATEGY = all_configs
             self.save_config()
             # 不需要 return
-
         def on_delete_panel(p):
             """删除面板的回调函数"""
             # 从字典中删除该panel
@@ -1187,7 +1182,6 @@ class ConfigPanelApp(tk.Toplevel):
                 self.strategy_panels_container.grid_forget()
 
             save_strategy()
-
         def on_panel_name_changed(panel, new_name):
             """面板名称改变时的回调"""
             # 检查新名称是否已经存在（排除自身）
@@ -1205,7 +1199,6 @@ class ConfigPanelApp(tk.Toplevel):
             # 保存
             save_strategy()
             return True
-
         def add_new_panel(init_config=None):
             self.strategy_panels_container.grid()
 
@@ -1358,7 +1351,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_rest_intervel.config(state="disable")
 
     def set_controls_state(self, state):
-        self.button_and_entry = [
+        Button_and_Entry = [
             self.adb_path_change_button,
             self.random_chest_check,
             self.who_will_open_combobox,
@@ -1383,11 +1376,21 @@ class ConfigPanelApp(tk.Toplevel):
 
         if state == tk.DISABLED:
             self.farm_target_combo.configure(state="disabled")
-            for widget in self.button_and_entry:
+            if hasattr(self, 'overall_combo'):
+                self.overall_combo.configure(state="disabled")
+            if hasattr(self, 'task_point_comboboxes'):
+                for combo in self.task_point_comboboxes.values():
+                    combo.configure(state="disabled")
+            for widget in Button_and_Entry:
                 widget.configure(state="disabled")
         else:
             self.farm_target_combo.configure(state="readonly")
-            for widget in self.button_and_entry:
+            if hasattr(self, 'overall_combo'):
+                self.overall_combo.configure(state="readonly")
+            if hasattr(self, 'task_point_comboboxes'):
+                for combo in self.task_point_comboboxes.values():
+                    combo.configure(state="readonly")
+            for widget in Button_and_Entry:
                 widget.configure(state="normal")
             self.updateACTIVE_REST_state()
 
