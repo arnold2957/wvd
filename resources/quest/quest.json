@@ -509,20 +509,28 @@
         "_TYPE":"quest"
     },
 
-    "Scorpionesses":{
-        "questName":"[悬赏+金币]悬赏点数: 蝎女",
+    "jier":{
+        "questName":"[悬赏]吉尔",
         "_TYPE":"quest"
     },
+
+    "Scorpionesses":{
+        "questName":"[悬赏]蝎女",
+        "_TYPE":"quest"
+    },
+
+    "Scorpionesses_plus_6_hands":{
+        "questName":"[悬赏]蝎女+风暴六手",
+        "_TYPE":"quest"
+    },
+    
 
     "steeltrail":{
         "questName":"[酒]钢试炼",
         "_TYPE":"quest"
     },
 
-    "jier":{
-        "questName":"[刷怪]悬赏点数: 吉尔",
-        "_TYPE":"quest"
-    },
+
 
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",

@@ -1463,11 +1463,19 @@ def Factory():
                 # 如果未找到，可考虑默认策略或报错，这里简单置空
                 runtimeContext.CURRENT_STRATEGY = {}
             return
-        def CombatAuto():
+        def AutoThisChar():
             Press([850,1100])
             Sleep(0.5)
             Press([850,1100])
             Sleep(2)
+            return
+        def ActiveAutoCombat():
+            scn = ScreenShot()
+            # v = CheckHow(scn,r"spellskill/CombatAutoDisable",[[841, 1124, 35, 13]])
+            # logger.info(f"disable: {v}")
+            if (CheckIf(scn,"spellskill/CombatAutoDisable",[[841, 1124, 35, 13]])):
+                Press([850,1100])
+            Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
             def rollback():
@@ -1477,7 +1485,7 @@ def Factory():
                 if skilllvl>=2:
                     SkillLvlSelectAndDoubleCheck(skillPos,1)
                 else:
-                    CombatAuto()
+                    AutoThisChar()
                 return
             skillPosDict = { '左上技能':[266,1015],'右上技能':[640,1015],'左下技能':[266,1104],'右下技能':[640,1104]}
             into_detail = False
@@ -1531,7 +1539,9 @@ def Factory():
         # 2. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
         if not skill_settings:
-            CombatAuto()
+            if runtimeContext.CURRENT_STRATEGY['group_name']!="全自动战斗":
+                logger.error("错误: 无法获取当前战斗策略. 使用全自动战斗.")
+            ActiveAutoCombat()
             return
 
         # 检查是否所有技能都是“重复”且“双击自动”
@@ -1541,7 +1551,7 @@ def Factory():
         )
 
         if all_repeat_and_auto:
-            CombatAuto()
+            ActiveAutoCombat()
             return
 
         # 3. 非全自动模式：点击任意键直到出现“flee”图片
@@ -1570,7 +1580,7 @@ def Factory():
         # 5. 判断匹配率是否达标
         if highest_match_rate < 0.80:
             # 匹配失败，自动战斗
-            CombatAuto()
+            AutoThisChar()
             return
 
         # 6. 按照技能等级释放技能
@@ -2728,8 +2738,6 @@ def Factory():
                         )
                         Sleep(10)
 
-
-
                     logger.info("第四步: 悬赏揭榜")
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
@@ -2750,6 +2758,99 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
                     )
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
+                        )
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+                    
+                    logger.info("第七步: 休息")
+                    if ((runtimeContext._COUNTERDUNG-1) % (setting.REST_INTERVEL+1) == 0):
+                        RestartableSequenceExecution(
+                            lambda:StateInn()
+                            )
+                        
+                    costtime = time.time()-starttime
+                    total_time = total_time + costtime
+                    logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:蝎女\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
+                            extra={"summary": True})
+            case 'Scorpionesses_plus_6_hands':
+                total_time = 0
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    starttime = time.time()
+                    runtimeContext._COUNTERDUNG += 1
+
+                    if not setting.ACTIVE_BEAUTIFUL_ORE:
+                        if not setting.ACTIVE_TRIUMPH:                            
+                            logger.info("第一步: 时空跳跃...")
+                            RestartableSequenceExecution(
+                                lambda: CursedWheelTimeLeap()
+                            )
+                            Sleep(10)
+                            logger.info("第二步: 返回要塞...")
+                            RestartableSequenceExecution(
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                                )
+                                
+                            logger.info("第三步: 前往王城...")
+                            RestartableSequenceExecution(
+                                lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                                )
+                        else:
+                            logger.info("第一步: 时空跳跃...")
+                            RestartableSequenceExecution(
+                                lambda: CursedWheelTimeLeap(chapter='cursedwheel_impregnableFortress', target="Triumph")
+                            )
+                            Sleep(10)
+                                
+                            logger.info("第三步: 前往王城...")
+                            RestartableSequenceExecution(
+                                lambda:TeleportFromCityToWorldLocation('City_RoyalCityLuknalia','input swipe 450 150 500 150'),
+                                )
+
+                    elif setting.ACTIVE_BEAUTIFUL_ORE:
+                        logger.info("第一步: 时空跳跃...")
+                        RestartableSequenceExecution(
+                            lambda: CursedWheelTimeLeap(chapter='cursedwheel_dhi', target="BeautifulOre")
+                        )
+                        Sleep(10)
+
+                    logger.info("第四步: 悬赏揭榜")
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('guildRequest',['guild',[1,1]],1)),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('Bounties',['guild','guildRequest','input swipe 600 1400 300 1400',[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('EdgeOfTown',['return',[1,1]],1)
+                        )
+
+                    logger.info("第五步: 击杀蝎女")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B2FTemple','GotoDung',[1,1]],1),
+                    )
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([TargetInfo('position','左下',[505,760]),
+                                             TargetInfo('position','左上',[506,821])]),
+                        )
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
+                    )
+
+                    logger.info("第5.5步: 击杀风暴六手")
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait('dungFlag',['EdgeOfTown','beginningAbyss','B5FWarpedOne\'sNest','GotoDung',[1,1]],1),
+                    )
+                    RestartableSequenceExecution(
+                        lambda:StateDungeon([TargetInfo('position','左上',[454,662]),
+                                             TargetInfo('position','左上',[135,714])]),
+                        )
+                    RestartableSequenceExecution(
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",['return',[1,1]],1),
+                    )
+                    
+                    logger.info("第六步: 提交悬赏")
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait('CompletionReported',['guild','guildRequest','input swipe 600 1400 300 1400','Bounties',[1,1]],1))
                         )
@@ -2867,7 +2968,7 @@ def Factory():
                     logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:吉尔\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
             case 'test':
-                def CombatAuto():
+                def AutoThisChar():
                     Press([850,1100])
                     Sleep(0.5)
                     Press([850,1100])
@@ -2879,7 +2980,7 @@ def Factory():
                         if skilllvl>=2:
                             SkillLvlSelectAndDoubleCheck(skillPos,1)
                         else:
-                            CombatAuto()
+                            AutoThisChar()
                     skillPosDict = { '左上':[266,1015],'右上':[640,1015],'左下':[266,1104],'右下':[640,1104]}
                     into_detail = False
                     for _ in range(3):
