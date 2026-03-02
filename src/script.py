@@ -52,11 +52,13 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "WHO_WILL_OPEN_IT",        tk.IntVar,     0],
             ["TEMPLATE",   "SKIP_COMBAT_RECOVER",     tk.BooleanVar, False],
             ["TEMPLATE",   "SKIP_CHEST_RECOVER",      tk.BooleanVar, False],
+            ["TEMPLATE",   "RECOVER_WHEN_BEGINNING",  tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_REST",             tk.BooleanVar, True],
             ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",  tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_TRIUMPH",          tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",    tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEG_MONEY",        tk.BooleanVar, True],
+            ["TEMPLATE",   "MAX_TRY_LIMIT",           tk.IntVar,     25],
             ["TEMPLATE",   "REST_INTERVEL",           tk.IntVar,     1],
             ["TEMPLATE",   "ACTIVE_CSC",              tk.BooleanVar, True],
             ]
@@ -101,9 +103,10 @@ class RuntimeContext:
     _IMPORTANTINFO = ""
     _STEPAFTERRESTART = True
     _RESUMEAVAILABLE = False
-    STRATEGY_change_by_Restart = {}
-    CombatReset = True
+    STRATEGY_CHANGE_BY_RESTART = {}
+    COMBAT_RESET = True
     CURRENT_STRATEGY = {}
+    NEED_RECOVER_WHEN_BEGINNING = True
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -816,7 +819,7 @@ def Factory():
                 return CheckIf(scn,pattern)
 
         while True:
-            for _ in range(runtimeContext._MAXRETRYLIMIT):
+            for _ in range(setting.MAX_TRY_LIMIT):
                 if setting._FORCESTOPING.is_set():
                     return None
                 scn = ScreenShot()
@@ -861,19 +864,18 @@ def Factory():
                             return None
                 Sleep(waitTime) # and wait
 
-            logger.info(f"{runtimeContext._MAXRETRYLIMIT}次截图依旧没有找到目标{targetPattern}, 疑似卡死. 重启游戏.")
+            logger.info(f"{setting.MAX_TRY_LIMIT}次截图依旧没有找到目标{targetPattern}, 疑似卡死. 重启游戏.")
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
     def restartGame(skipScreenShot = False):
         nonlocal runtimeContext
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
-        runtimeContext._MAXRETRYLIMIT = min(50, runtimeContext._MAXRETRYLIMIT + 5) # 每次重启后都会增加5次尝试次数, 以避免不同电脑导致的反复重启问题.
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
         runtimeContext._STEPAFTERRESTART = False
-        runtimeContext.STRATEGY_change_by_Restart = copy.deepcopy(setting.STRATEGY)
+        runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
 
         if not skipScreenShot:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
@@ -885,7 +887,7 @@ def Factory():
             logger.info(f"跳过了重启前截图.\n崩溃计数器: {runtimeContext._CRASHCOUNTER}\n崩溃计数器超过5次后会重启模拟器.")
             if runtimeContext._CRASHCOUNTER > 5:
                 runtimeContext._CRASHCOUNTER = 0
-                CheckAndRecoverDevice(setting, runtimeContext, FORCERESTART=True)
+                CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
 
         package_name = "jp.co.drecom.wizardry.daphne"
         mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
@@ -1073,10 +1075,14 @@ def Factory():
             if runtimeContext._COUNTERCOMBAT > 0:
                 summary_text += f"累计战斗{runtimeContext._COUNTERCOMBAT}次.战斗平均用时{round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)}秒."
             logger.info(f"{runtimeContext._IMPORTANTINFO}{summary_text}",extra={"summary": True})
+        # 圈数计时器
         runtimeContext._LAPTIME = time.time()
+        # 开箱或战斗标识
         if runtimeContext._MEET_CHEST_OR_COMBAT:
             runtimeContext._MEET_CHEST_OR_COMBAT = False
             runtimeContext._COUNTERDUNG+=1
+        # 首次进入地下城
+        runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
@@ -1218,7 +1224,7 @@ def Factory():
         counter = 0
         while 1:
             screen = ScreenShot()
-            logger.info(f'状态机检查中...(第{counter+1}次)')
+            logger.info(f'状态检查中...(第{counter+1}次)')
 
             if setting._FORCESTOPING.is_set():
                 return State.Quit, DungeonState.Quit, screen
@@ -1365,12 +1371,7 @@ def Factory():
                 PressReturn()
                 Sleep(0.5)
                 PressReturn()
-            if counter>15:
-                black = LoadTemplateImage("blackScreen")
-                mean_diff = cv2.absdiff(black, screen).mean()/255
-                if mean_diff<0.02:
-                    logger.info(f"警告: 游戏画面长时间处于黑屏中, 即将重启({25-counter})")
-            if counter>= 25:
+            if counter>= setting.MAX_TRY_LIMIT:
                 logger.info("看起来遇到了一些非同寻常的情况...重启游戏.")
                 restartGame()
                 counter = 0
@@ -1435,10 +1436,12 @@ def Factory():
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
-        FindCoordsOrElseExecuteFallbackAndWait('dungFlag', quest._EOT[-1][1], 1)
+        FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','GotoDung'], quest._EOT[-1][1], 1)
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
+        if runtimeContext._TIME_COMBAT==0:
+            runtimeContext._TIME_COMBAT = time.time()
         # 内部函数：复制策略到 runtime.CURRENT_STRATEGY
         def CopyStrategy():
             if not setting.TASK_SPECIFIC_CONFIG:
@@ -1452,9 +1455,9 @@ def Factory():
                 else:
                     strategy_key = overall
 
-            # 在 STRATEGY_change_by_Restart 列表中查找 group_name 匹配的字典
+            # 在 STRATEGY_CHANGE_BY_RESTART 列表中查找 group_name 匹配的字典
             target_dict = None
-            for d in runtimeContext.STRATEGY_change_by_Restart:
+            for d in runtimeContext.STRATEGY_CHANGE_BY_RESTART:
                 if d.get("group_name") == strategy_key:
                     target_dict = d
                     break
@@ -1551,9 +1554,9 @@ def Factory():
                 runtimeContext._COMBATSPD = True
                 Sleep(1)
         # 1. 检查重置标识
-        if runtimeContext.CombatReset:
+        if runtimeContext.COMBAT_RESET:
             CopyStrategy()
-            runtimeContext.CombatReset = False
+            runtimeContext.COMBAT_RESET = False
 
         # 2. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
@@ -1619,10 +1622,10 @@ def Factory():
         elif freq == "每次启动仅一次":
             # 从 CURRENT_STRATEGY 中删除
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
-            # 从 STRATEGY_change_by_Restart 中对应 group_name 的字典中删除
+            # 从 STRATEGY_CHANGE_BY_RESTART 中对应 group_name 的字典中删除
             group = runtimeContext.CURRENT_STRATEGY.get("group_name")
             if group:
-                for d in runtimeContext.STRATEGY_change_by_Restart:
+                for d in runtimeContext.STRATEGY_CHANGE_BY_RESTART:
                     if d.get("group_name") == group:
                         # 在对应的 skill_settings 中删除相同内容的字典
                         d["skill_settings"].remove(target_skill)
@@ -1881,7 +1884,7 @@ def Factory():
                     Press([1,1])
                     ########### COMBAT RESET
                     # 战斗结束了, 我们将一些设置复位
-                    runtimeContext.CombatReset = True
+                    runtimeContext.COMBAT_RESET = True
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -1923,6 +1926,10 @@ def Factory():
                             shouldRecover = True
                         else:
                             logger.info("由于面板配置, 跳过了战后后恢复.")
+                    if setting.RECOVER_WHEN_BEGINNING and runtimeContext.NEED_RECOVER_WHEN_BEGINNING:
+                        shouldRecover = True
+                        runtimeContext.NEED_RECOVER_WHEN_BEGINNING = False
+                        logger.info("由于面板配置, 在刚进入地下城时进行恢复.")
                     if runtimeContext._RECOVERAFTERREZ == True:
                         shouldRecover = True
                         runtimeContext._RECOVERAFTERREZ = False
@@ -3080,7 +3087,7 @@ def Factory():
         setting = set
         runtimeContext = RuntimeContext()
 
-        runtimeContext.STRATEGY_change_by_Restart = copy.deepcopy(setting.STRATEGY)
+        runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
 
         Sleep(1) # 没有等utils初始化完成
         

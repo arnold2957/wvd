@@ -409,18 +409,6 @@
         ]
     },
 
-    "DOW":{
-        "_TYPE":"dungeon",
-        "questName":"[矿石]风洞(特/上/中)",
-        "_TARGETINFOLIST":[
-        ["chest",[[700,1200,100,100]],[[0,780,900,500],[0,780,150,120]]],
-        ["DOW_quit",[[700,1200,100,100]],null]
-        ],
-        "_EOT":[
-            ["press","DOW",["EdgeOfTown",[1,1]],1],
-            ["press","DOWB1F",[1,1],1]
-        ]
-    },
     "DOF_Plus": {
         "_TYPE":"dungeon",
         "questName":"[矿石]火洞plus-地图全开",
@@ -431,6 +419,19 @@
         "_EOT":[
             ["press","DOF",["EdgeOfTown",[1,1]],1],
             ["press","DOFB1F",[1,1],1]
+        ]
+    },
+
+    "DOW":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]风洞(特/上/中)",
+        "_TARGETINFOLIST":[
+        ["chest",[[700,1200,100,100]],[[0,780,900,500],[0,780,150,120]]],
+        ["DOW_quit",[[700,1200,100,100]],null]
+        ],
+        "_EOT":[
+            ["press","DOW",["EdgeOfTown",[1,1]],1],
+            ["press","DOWB1F",[1,1],1]
         ]
     },
 
@@ -463,6 +464,20 @@
         ]
     },
 
+    "DOL_PLUS":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]光洞plus-地图全开",
+        "_EOT":[
+            ["press","DOL",["EdgeOfTown",[1,1]],1],
+            ["press","DOLB1F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["chest_auto"],
+            ["position", "左下", [26,1078]]
+        ]
+    },
+
     "DOS":{
         "_TYPE":"dungeon",
         "questName":"[矿石]水洞(银/特/上)",
@@ -476,6 +491,20 @@
             ["position", "左上", [185,1085]],
             ["chest","左上",[[0,690,481,485]]],
             ["DOS_quit"]
+        ]
+    },
+
+    "DOS_PLUS":{
+        "_TYPE":"dungeon",
+        "questName":"[矿石]水洞plus-地图全开",
+        "_EOT":[
+            ["press","DOS",["EdgeOfTown",[1,1]],1],
+            ["press","DOSB1F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["chest_auto"],
+            ["position", "右下", [872,1185]]
         ]
     },
 

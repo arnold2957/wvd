@@ -151,7 +151,7 @@ class SkillConfigPanel(CollapsibleSection):
                  on_config_change = None,
                  **kwargs):
         self.bg_color = "#FFFFFF"
-        super().__init__(parent, title=title, expanded=True, bg_color=self.bg_color, **kwargs)
+        super().__init__(parent, title=title, expanded=False, bg_color=self.bg_color, **kwargs)
         self.configure(
             relief=tk.GROOVE,
             borderwidth=2,
@@ -799,6 +799,13 @@ class ConfigPanelApp(tk.Toplevel):
                                                         command=self.save_config, style="Custom.TCheckbutton")
         self.skip_chest_recover_check.grid(row=0, column=1)
 
+        # 特殊恢复
+        row_counter += 1
+        row_recover = tk.Frame(container)
+        row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
+        self.recover_when_beginning_check = ttk.Checkbutton(row_recover, text="刚进入地下城时恢复一次.", variable=self.RECOVER_WHEN_BEGINNING, command=self.save_config, style="Custom.TCheckbutton")
+        self.recover_when_beginning_check.grid(row=0, column=0)
+
         # 休息设置
         row_counter += 1
         frame_row = ttk.Frame(container)
@@ -1146,6 +1153,24 @@ class ConfigPanelApp(tk.Toplevel):
             style="Custom.TCheckbutton"
         )
         self.active_csc.grid(row=0, column=0, sticky=tk.W)
+
+        # 5. 最大尝试次数
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        def validate_focusout(P):
+            if P == "" or (P.isdigit() and int(P) >= 25):
+                return True
+            else:
+                logger.info("尝试次数不能低于25次.")
+                self.MAX_TRY_LIMIT.set(25)
+                return False
+        ttk.Label(frame_row, text="状态检查的最大尝试次数:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.max_try_limit_entry = ttk.Entry(frame_row, textvariable=self.MAX_TRY_LIMIT, validate="focusout",
+                                             validatecommand=(self.register(validate_focusout), '%P'), width=3)
+        self.max_try_limit_entry.grid(row=0, column=1)
+        self.button_save_max_try_limit = ttk.Button(frame_row, text="保存", command=self.save_config, width=5)
+        self.button_save_max_try_limit.grid(row=0, column=2)
         
         # ==========================================
         # 分组 5: 战斗方案
@@ -1359,6 +1384,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.who_will_open_combobox,
             self.skip_recover_check,
             self.skip_chest_recover_check,
+            self.recover_when_beginning_check,
             self.active_rest_check,
             self.rest_intervel_entry,
             self.button_save_rest_intervel,
@@ -1373,7 +1399,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_adb_port,
             self.button_save_emu_index,
             self.delete_task_specific_config_button,
-            self.active_csc
+            self.active_csc,
+            self.max_try_limit_entry,
+            self.button_save_max_try_limit
             ]
 
         if state == tk.DISABLED:
