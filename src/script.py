@@ -261,7 +261,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                 if runtimeContext._RUNNING_EMU_PID:
                     logger.info(f"使用已知进程号{runtimeContext._RUNNING_EMU_PID}关闭模拟器...")
                     subprocess.run(
-                        f"taskkill /f /pid {runtimeContext._RUNNING_EMU_PID}", 
+                        f"taskkill /IM /pid {runtimeContext._RUNNING_EMU_PID}", 
                         shell=True,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
@@ -782,6 +782,9 @@ def Factory():
         scn_b = image * np.array([b, g, r])
         return np.clip(scn_b, 0, 255).astype(np.uint8)
     def TryPressRetry(scn):
+        if Press(CheckIf(scn,'startdownload')):
+            logger.info("开始下载……")
+            return True
         if Press(CheckIf(scn,'retry')):
             logger.info("发现并点击了\"重试\". 你遇到了网络波动.")
             return True
@@ -1581,6 +1584,7 @@ def Factory():
         # 4. 进行匹配
         highest_match_rate = 0
         target_skill = None
+        scn = ScreenShot()
         t = time.time()
         for skill in skill_settings:
             role_var = skill.get("role_var")
@@ -1591,7 +1595,7 @@ def Factory():
                 img_path = os.path.join(IMAGE_FOLDER, 'spellskill', 'char', f"{candidate}.png")
                 full_path = ResourcePath(img_path)
                 if os.path.exists(full_path):
-                    match_rate = CheckHow(ScreenShot(), f"spellskill/char/{candidate}", [[85, 57, 115, 54]])
+                    match_rate = CheckHow(scn, f"spellskill/char/{candidate}", [[85, 57, 100, 48]])
                     if match_rate > highest_match_rate:
                         highest_match_rate = match_rate
                         target_skill = skill
@@ -2168,7 +2172,7 @@ def Factory():
                     Sleep(10)
                     logger.info("第二步: 返回要塞...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                         )
 
                     logger.info("第三步: 前往王城...")
@@ -2486,7 +2490,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 返回要塞"),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
@@ -2615,7 +2619,7 @@ def Factory():
                     Sleep(10)
                     RestartableSequenceExecution(
                         lambda: logger.info("第二步: 返回要塞"),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                         )
                     RestartableSequenceExecution(
                         lambda: logger.info("第三步: 前往王城"),
@@ -2708,7 +2712,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: StateDungeon([TargetInfo('position','左上',[560,928+54],True),
                                               TargetInfo('harken2','左上')]),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                     )
 
                     if ((runtimeContext._COUNTERDUNG-1) % (setting.REST_INTERVEL+1) == 0):
@@ -2733,7 +2737,7 @@ def Factory():
                             Sleep(10)
                             logger.info("第二步: 返回要塞...")
                             RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                                 )
                                 
                             logger.info("第三步: 前往王城...")
@@ -2814,7 +2818,7 @@ def Factory():
                             Sleep(10)
                             logger.info("第二步: 返回要塞...")
                             RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                                lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                                 )
                                 
                             logger.info("第三步: 前往王城...")
@@ -2950,7 +2954,7 @@ def Factory():
                     Sleep(10)
                     logger.info("第二步: 返回要塞...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','dialogueChoices/blessing',[1,1]],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait('Inn',['returntotown','returnText','leaveDung','blessing',[1,1]],2)
                         )
 
                     logger.info("第三步: 前往王城...")
