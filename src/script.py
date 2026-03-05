@@ -598,7 +598,7 @@ def Factory():
                 if (current_h, current_w) != (1600, 900):
                     if (current_h, current_w) == (900, 1600):
                         logger.error(f"截图尺寸错误: 当前{image.shape}, 检测为横屏.")                        
-                        restartGame(skipScreenShot=True)
+                        restartGame()
                     else:
                         logger.error(f"截图尺寸错误: 期望(1600,900), 实际({current_h},{current_w}).")
                         raise RuntimeError(f"分辨率异常: {current_w}x{current_h}")
@@ -868,7 +868,7 @@ def Factory():
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
-    def restartGame(skipScreenShot = False):
+    def restartGame():
         nonlocal runtimeContext
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         runtimeContext._TIME_CHEST = 0
@@ -877,26 +877,43 @@ def Factory():
         runtimeContext._STEPAFTERRESTART = False
         runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
 
-        if not skipScreenShot:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-            file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
-            cv2.imwrite(file_path, ScreenShot())
-            logger.info(f"重启前截图已保存在{file_path}中.")
-        else:
-            runtimeContext._CRASHCOUNTER +=1
-            logger.info(f"跳过了重启前截图.\n崩溃计数器: {runtimeContext._CRASHCOUNTER}\n崩溃计数器超过5次后会重启模拟器.")
-            if runtimeContext._CRASHCOUNTER > 5:
-                runtimeContext._CRASHCOUNTER = 0
-                CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
+        # 保存重启前截图作为备份
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
+        file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
+        cv2.imwrite(file_path, ScreenShot())
+        logger.info(f"重启前截图已保存在{file_path}中.")
 
         package_name = "jp.co.drecom.wizardry.daphne"
-        mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
-        DeviceShell(f"am force-stop {package_name}")
-        Sleep(2)
-        logger.info("巫术, 启动!")
-        logger.debug(DeviceShell(f"am start -n {mainAct}"))
-        Sleep(10)
-        raise RestartSignal()
+        need_restart_EMU = False
+        for _ in range(setting.MAX_TRY_LIMIT):
+            if need_restart_EMU:
+                CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
+                Sleep(5)
+
+            pid = DeviceShell(f"pgrep -f {package_name}").strip()
+            logger.debug(f"pid检测结果:{pid}")
+            if (not pid):
+                runtimeContext._CRASHCOUNTER +=1
+                logger.info(f"崩溃计数: {runtimeContext._CRASHCOUNTER}\n崩溃计数超过5次后会重启模拟器.")
+                if runtimeContext._CRASHCOUNTER > 5:
+                    runtimeContext._CRASHCOUNTER = 0
+                    need_restart_EMU = True
+
+            # 清除旧日志
+            DeviceShell("logcat -c")
+            mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
+            DeviceShell(f"am force-stop {package_name}")
+            logger.info("巫术, 启动!")
+            logger.debug(DeviceShell(f"am start -n {mainAct}"))
+            Sleep(10)
+            logs = DeviceShell("logcat -d | grep -i 'unable to initialize.*graphics api'")
+            if logs.strip():
+                logger.error(f"检测到崩溃日志, 关闭模拟器重启.{logs}")
+                need_restart_EMU=True
+                continue
+            raise RestartSignal()
+        
+        logger.error("错误: 超过最大尝试重启次数.")
     class RestartSignal(Exception):
         pass
     def RestartableSequenceExecution(*operations):
@@ -1436,7 +1453,9 @@ def Factory():
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
-        FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','GotoDung'], quest._EOT[-1][1], 1)
+        RestartableSequenceExecution(
+            lambda: FindCoordsOrElseExecuteFallbackAndWait(['dungFlag','GotoDung'], [quest._EOT[-1][1],[1,1]], 1)
+            )
         Sleep(1)
         Press(CheckIf(ScreenShot(), 'GotoDung'))
     def StateCombat():
