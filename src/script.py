@@ -96,7 +96,6 @@ class RuntimeContext:
     _SUICIDE = False # 当有两个人死亡的时候(multipeopledead), 在战斗中尝试自杀.
     _MAXRETRYLIMIT = 20
     _ACTIVESPELLSEQUENCE = None
-    _SHOULDAPPLYSPELLSEQUENCE = True
     _RECOVERAFTERREZ = False
     _ZOOMWORLDMAP = False
     _CRASHCOUNTER = 0
@@ -107,6 +106,7 @@ class RuntimeContext:
     COMBAT_RESET = True
     CURRENT_STRATEGY = {}
     NEED_RECOVER_WHEN_BEGINNING = True
+    TASK_STEP_INDEX = 0
 class FarmQuest:
     _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
@@ -491,6 +491,7 @@ def Factory():
     toaster = ToastNotifier()
     setting =  None
     quest = None
+    runtimeContext = RuntimeContext()
     runtimeContext = None
     ##################################################################
     def ResetDevice(force_restart_emu=False, force_restart_adb = False):
@@ -597,8 +598,9 @@ def Factory():
                
                 if (current_h, current_w) != (1600, 900):
                     if (current_h, current_w) == (900, 1600):
-                        logger.error(f"截图尺寸错误: 当前{image.shape}, 检测为横屏.")                        
-                        restartGame()
+                        logger.error(f"截图尺寸错误: 当前{image.shape}, 检测为横屏.")  
+                        # 不能截图, 截图就爆栈了.                      
+                        restartGame(skip_screenshot=True)
                     else:
                         logger.error(f"截图尺寸错误: 期望(1600,900), 实际({current_h},{current_w}).")
                         raise RuntimeError(f"分辨率异常: {current_w}x{current_h}")
@@ -868,7 +870,7 @@ def Factory():
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
-    def restartGame():
+    def restartGame(skip_screenshot = False):
         nonlocal runtimeContext
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         runtimeContext._TIME_CHEST = 0
@@ -878,10 +880,11 @@ def Factory():
         runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
 
         # 保存重启前截图作为备份
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-        file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
-        cv2.imwrite(file_path, ScreenShot())
-        logger.info(f"重启前截图已保存在{file_path}中.")
+        if not skip_screenshot:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
+            file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
+            cv2.imwrite(file_path, ScreenShot())
+            logger.info(f"重启前截图已保存在{file_path}中.")
 
         package_name = "jp.co.drecom.wizardry.daphne"
         need_restart_EMU = False
@@ -1225,7 +1228,6 @@ def Factory():
     def RiseAgainReset(reason):
         nonlocal runtimeContext
         runtimeContext._SUICIDE = False # 死了 自杀成功 设置为false
-        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = True # 死了 序列失效, 应当重置序列.
         runtimeContext._RECOVERAFTERREZ = True
         if reason == 'chest':
             runtimeContext._COUNTERCHEST -=1
@@ -1337,7 +1339,7 @@ def Factory():
                         raise SystemExit
                     else:
                         logger.info("看起来你没有选择找王女要钱. 那么就等两个小时吧.", extra={"summary": True})
-                        Sleep(7200)
+                        Sleep(7300)
                         restartGame()
                 if CheckIf(screen,'ambush') or CheckIf(screen,'ignore'):
                     if int(setting.KARMA_ADJUST) == 0:
@@ -1469,7 +1471,7 @@ def Factory():
                 overall = setting.TASK_POINT_STRATEGY["overall_strategy"]
                 if overall == "自定义任务点策略":
                     # 使用当前任务步骤索引获取具体策略
-                    task_step_idx = runtimeContext.taskStepIdx #TODO
+                    task_step_idx = runtimeContext.TASK_STEP_INDEX
                     strategy_key = setting.TASK_POINT_STRATEGY["task_point"][task_step_idx]
                 else:
                     strategy_key = overall
@@ -1718,56 +1720,51 @@ def Factory():
                     break
             lastscreen = screen
         return dungState
-    def StateSearch(waitTimer, targetInfoList : list[TargetInfo]):
+    def StateSearch(waitTimer, targetInfo):
         normalPlace = ['harken','chest','leaveDung','position']
-        targetInfo = targetInfoList[0]
         target = targetInfo.target
         # 地图已经打开.
         map = ScreenShot()
         if not CheckIf(map,'mapFlag'):
-                return None,targetInfoList # 发生了错误
+                return None,False # 发生了错误
 
         try:
             searchResult = StateMap_FindSwipeClick(targetInfo)
         except KeyError as e:
             logger.info(f"错误: {e}") # 一般来说这里只会返回"地图不可用"
-            return None, targetInfoList
+            return None, False
     
         if not CheckIf(map,'mapFlag'):
-                return None,targetInfoList # 发生了错误, 应该是进战斗了
+                return None, False # 发生了错误, 应该是进战斗了
 
         if searchResult == None:
             if target == 'chest':
-                # 结束, 弹出.
-                targetInfoList.pop(0)
                 logger.info(f"没有找到宝箱.\n停止检索宝箱.")
+                return DungeonState.Map,  True
             elif (target == 'position' or target.startswith('stair')):
-                # 结束, 弹出.
-                targetInfoList.pop(0)
                 logger.info(f"已经抵达目标地点或目标楼层.")
+                return DungeonState.Map,  True
             else:
                 # 这种时候我们认为真正失败了. 所以不弹出.
                 # 当然, 更好的做法时传递finish标识()
                 logger.info(f"未找到目标{target}.")
-
-            return DungeonState.Map,  targetInfoList
+                return DungeonState.Map,  False
         else:
             if target in normalPlace or target.endswith("_quit") or target.startswith('stair'):
                 Press(searchResult)
                 Press([136,1431]) # automove
-                return StateMoving_CheckFrozen(),targetInfoList
+                return StateMoving_CheckFrozen(),False
             else:
                 if (CheckIf_FocusCursor(ScreenShot(),target)): #注意 这里通过二次确认 我们可以看到目标地点 而且是未选中的状态
                     logger.info("经过对比中心区域, 确认没有抵达.")
                     Press(searchResult)
                     Press([136,1431]) # automove
-                    return StateMoving_CheckFrozen(),targetInfoList
+                    return StateMoving_CheckFrozen(), False
                 else:
                     if setting._DUNGWAITTIMEOUT == 0:
                         logger.info("经过对比中心区域, 判断为抵达目标地点.")
                         logger.info("无需等待, 当前目标已完成.")
-                        targetInfoList.pop(0)
-                        return DungeonState.Map,  targetInfoList
+                        return DungeonState.Map, True
                     else:
                         logger.info("经过对比中心区域, 判断为抵达目标地点.")
                         logger.info('开始等待...等待...')
@@ -1777,14 +1774,13 @@ def Factory():
                         while 1:
                             if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
                                 logger.info("等得够久了. 目标地点完成.")
-                                targetInfoList.pop(0)
                                 Sleep(1)
                                 Press([777,150])
-                                return None,  targetInfoList
+                                return None, True
                             logger.info(f'还需要等待{setting._DUNGWAITTIMEOUT-time.time()+waitTimer}秒.')
                             if StateCombatCheck(ScreenShot()):
-                                return DungeonState.Combat,targetInfoList
-        return DungeonState.Map,  targetInfoList
+                                return DungeonState.Combat, False
+        return DungeonState.Map, False
     def StateChest():
         nonlocal runtimeContext
         availableChar = [0, 1, 2, 3, 4, 5]
@@ -1871,9 +1867,16 @@ def Factory():
         waitTimer = time.time()
         needRecoverBecauseCombat = False
         needRecoverBecauseChest = False
-        
+
         nonlocal runtimeContext
-        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = True
+        runtimeContext.TASK_STEP_INDEX = 0
+        def TargetPointComplete():
+            logger.info(f"任务点完成.{targetInfoList[0].target} {targetInfoList[0].roi}")
+            targetInfoList.pop(0)
+            runtimeContext.TASK_STEP_INDEX += 1
+            return
+        
+        ##############################################
         while 1:
             logger.info("----------------------")
             if setting._FORCESTOPING.is_set():
@@ -2023,13 +2026,6 @@ def Factory():
                     if dungState == DungeonState.Dungeon:
                         dungState = DungeonState.Map
                 case DungeonState.Map:
-                    ########### 重置施法序列 - 默认值(第一次)和重启后应当直接应用序列
-                    if runtimeContext._SHOULDAPPLYSPELLSEQUENCE: 
-                        runtimeContext._SHOULDAPPLYSPELLSEQUENCE = False
-                        if targetInfoList[0].activeSpellSequenceOverride:
-                            logger.info("因为初始化, 复制了施法序列.")
-                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
-
                     ########### 不打开地图, 执行自动任务
                     def startAuto():
                         for tar in ["chest_auto","mark_auto"]:
@@ -2047,12 +2043,12 @@ def Factory():
                                 if tar == "chest_auto":
                                     lastscreen = ScreenShot()
                                     if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
-                                        targetInfoList.pop(0)
+                                        TargetPointComplete()
                                         logger.info(f"退出宝箱搜索.")
                                         return DungeonState.Dungeon
                                     lastscreen = ScreenShot()
                                     if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
-                                        targetInfoList.pop(0)
+                                        TargetPointComplete()
                                         logger.info(f"退出宝箱搜索.")
                                         return DungeonState.Dungeon
 
@@ -2071,9 +2067,12 @@ def Factory():
                     Sleep(1)
                     Press([777,150])
 
-                    dungState, newTargetInfoList = StateSearch(waitTimer,targetInfoList)
+                    dungState, ifTargetPointComplete = StateSearch(waitTimer,targetInfoList[0])
+
+                    if ifTargetPointComplete:
+                        TargetPointComplete()
                     
-                    if newTargetInfoList == targetInfoList:
+                    if not ifTargetPointComplete:
                         gameFrozen_map +=1
                         logger.info(f"地图卡死检测:{gameFrozen_map}")
                     else:
@@ -2085,14 +2084,6 @@ def Factory():
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info("地下城目标完成. 地下城状态结束.(仅限任务模式.)")
                         break
-
-                    if (newTargetInfoList != targetInfoList):
-                        if newTargetInfoList[0].activeSpellSequenceOverride:
-                            logger.info("因为目标信息变动, 重新复制了施法序列.")
-                            runtimeContext._ACTIVESPELLSEQUENCE = copy.deepcopy(quest._SPELLSEQUENCE)
-                        else:
-                            logger.info("因为目标信息变动, 清空了施法序列.")
-                            runtimeContext._ACTIVESPELLSEQUENCE = None
 
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
