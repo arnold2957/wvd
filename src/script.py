@@ -271,6 +271,14 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                         check=False  # 不检查命令是否成功（进程可能不存在）
                     )
                     time.sleep(1)
+                    subprocess.run(
+                        f"taskkill /F /IM MuMuVMMHeadless.exe", 
+                        shell=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        check=False  # 不检查命令是否成功（进程可能不存在）
+                    )
+                    time.sleep(1)
                 else:
                     logger.info(f"模拟器uid未知, 全杀了.")
                     subprocess.run(
@@ -870,7 +878,7 @@ def Factory():
             Sleep()
             restartGame()
             return None # restartGame会抛出异常 所以直接返回none就行了
-    def restartGame(skip_screenshot = False):
+    def restartGame(skip_screenshot = False, force_restart_EMU = False):
         nonlocal runtimeContext
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         runtimeContext._TIME_CHEST = 0
@@ -887,36 +895,31 @@ def Factory():
             logger.info(f"重启前截图已保存在{file_path}中.")
 
         package_name = "jp.co.drecom.wizardry.daphne"
-        need_restart_EMU = False
-        for _ in range(setting.MAX_TRY_LIMIT):
-            if need_restart_EMU:
-                CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
-                Sleep(5)
 
-            pid = DeviceShell(f"pgrep -f {package_name}").strip()
-            logger.debug(f"pid检测结果:{pid}")
-            if (not pid):
-                runtimeContext._CRASHCOUNTER +=1
-                logger.info(f"崩溃计数: {runtimeContext._CRASHCOUNTER}\n崩溃计数超过5次后会重启模拟器.")
-                if runtimeContext._CRASHCOUNTER > 5:
-                    runtimeContext._CRASHCOUNTER = 0
-                    need_restart_EMU = True
+        pid = DeviceShell(f"pgrep -f {package_name}").strip()
+        logger.debug(f"pid检测结果:{pid}")
+        if (not pid):
+            runtimeContext._CRASHCOUNTER +=1
+            logger.info(f"崩溃计数: {runtimeContext._CRASHCOUNTER}\n崩溃计数超过5次后会重启模拟器.")
+            if runtimeContext._CRASHCOUNTER > 5:
+                runtimeContext._CRASHCOUNTER = 0
+                force_restart_EMU = True
 
-            # 清除旧日志
-            DeviceShell("logcat -c")
-            mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
-            DeviceShell(f"am force-stop {package_name}")
-            logger.info("巫术, 启动!")
-            logger.debug(DeviceShell(f"am start -n {mainAct}"))
-            Sleep(10)
-            logs = DeviceShell("logcat -d | grep -i 'unable to initialize.*graphics api'")
-            if logs.strip():
-                logger.error(f"检测到崩溃日志, 关闭模拟器重启.{logs}")
-                need_restart_EMU=True
-                continue
-            raise RestartSignal()
-        
-        logger.error("错误: 超过最大尝试重启次数.")
+        if force_restart_EMU:
+            CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
+            Sleep(5)
+
+        DeviceShell("logcat -c")
+        mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split('\n')[-1]
+        DeviceShell(f"am force-stop {package_name}")
+        logger.info("巫术, 启动!")
+        logger.debug(DeviceShell(f"am start -n {mainAct}"))
+        Sleep(10)
+        logs = DeviceShell("logcat -d | grep -i 'unable to initialize.*graphics api'")
+        if logs.strip():
+            logger.error(f"检测到崩溃日志, 关闭模拟器重启.{logs}")
+            restartGame(skip_screenshot = False, force_restart_EMU = True)
+        raise RestartSignal()
     class RestartSignal(Exception):
         pass
     def RestartableSequenceExecution(*operations):
