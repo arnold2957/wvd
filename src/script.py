@@ -1325,7 +1325,7 @@ def Factory():
 
             if counter>=4:
                 logger.info("看起来遇到了一些不太寻常的情况...")
-                if (CheckIf(screen,'RiseAgain')):
+                if Press(CheckIf(screen,'RiseAgain')):
                     RiseAgainReset(reason = 'combat')
                     return IdentifyState()
                 if CheckIf(screen, 'worldmapflag'):
@@ -1586,7 +1586,7 @@ def Factory():
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
         if not skill_settings:
             if runtimeContext.CURRENT_STRATEGY['group_name']!="全自动战斗":
-                logger.error("错误: 无法获取当前战斗策略. 使用全自动战斗.")
+                logger.info("当前战斗列表为空. 使用全自动战斗.")
             ActiveAutoCombat()
             return
 
@@ -2173,7 +2173,10 @@ def Factory():
                     runtimeContext._COUNTERDUNG += 1
                     def stepMain():
                         logger.info("第一步: 开始诅咒之旅...")
-                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel',[1,1]],1))
+                        Press(FindCoordsOrElseExecuteFallbackAndWait('cursedWheel_timeLeap',['ruins','cursedWheel','RiseAgain',[1,1]],1))
+                        for _ in range(10):
+                            Press([105,230])
+                            Sleep(1)
                         Press(FindCoordsOrElseExecuteFallbackAndWait('cursedwheel_impregnableFortress',['cursedWheelTapRight',[1,1]],1))
 
                         if not Press(CheckIf(ScreenShot(),'FortressArrival')):
