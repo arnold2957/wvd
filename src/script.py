@@ -1507,8 +1507,9 @@ def Factory():
                 Press([850,1100])
             Sleep(5)
             return
-        def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
+        def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl, supportTarget):
             skillPosDict = { '左上技能':[266,1015],'右上技能':[640,1015],'左下技能':[266,1104],'右下技能':[640,1104]}
+            supportTargetDict = {"左上": [200,1200], "中上": [450,1200], "右上": [700,1200], "左下":[200,1400], "中下":[450,1400], "右下":[700,1400]}
             
             # 打开详情界面
             into_detail = False
@@ -1546,6 +1547,11 @@ def Factory():
                 if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
                     if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
                         logger.error("错误: 我认为不可能发生这种情况. 请务必告诉我.")
+
+            # 辅助技能
+            if CheckIf(ScreenShot(),"supportSkillCheck",[[677,1475,189,80]]):
+                if supportTarget in supportTargetDict.keys():
+                    Press(supportTargetDict[supportTarget])
 
             # 确认
             scn = ScreenShot()
@@ -1636,7 +1642,7 @@ def Factory():
             return
 
         # 6. 按照技能等级释放技能
-        SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"))
+        SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
 
         # 9. 根据频次设置删除对应字典
         freq = target_skill.get("freq_var")
