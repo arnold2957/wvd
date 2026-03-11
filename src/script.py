@@ -102,7 +102,8 @@ class RuntimeContext:
     _IMPORTANTINFO = ""
     _STEPAFTERRESTART = True
     _RESUMEAVAILABLE = False
-    STRATEGY_CHANGE_BY_RESTART = {}
+    STRATEGY_RESET_EACH_RESTART = {}
+    STRATEGY_RESET_EACH_DUNGEON = {}
     COMBAT_RESET = True
     CURRENT_STRATEGY = {}
     NEED_RECOVER_WHEN_BEGINNING = True
@@ -885,7 +886,7 @@ def Factory():
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
         runtimeContext._STEPAFTERRESTART = False
-        runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
+        runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
 
         # 保存重启前截图作为备份
         if not skip_screenshot:
@@ -1106,6 +1107,7 @@ def Factory():
             runtimeContext._COUNTERDUNG+=1
         # 首次进入地下城
         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
+        runtimeContext.STRATEGY_RESET_EACH_DUNGEON = copy.deepcopy(runtimeContext.STRATEGY_RESET_EACH_RESTART)
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
@@ -1479,9 +1481,9 @@ def Factory():
                 else:
                     strategy_key = overall
 
-            # 在 STRATEGY_CHANGE_BY_RESTART 列表中查找 group_name 匹配的字典
+            # 在对应列表中查找 group_name 匹配的字典
             target_dict = None
-            for d in runtimeContext.STRATEGY_CHANGE_BY_RESTART:
+            for d in runtimeContext.STRATEGY_RESET_EACH_DUNGEON:
                 if d.get("group_name") == strategy_key:
                     target_dict = d
                     break
@@ -1646,21 +1648,24 @@ def Factory():
 
         # 9. 根据频次设置删除对应字典
         freq = target_skill.get("freq_var")
-        if freq == "每场战斗仅一次":
-            # 从 CURRENT_STRATEGY 的 skill_settings 中删除该字典
+        if "仅一次" in freq:
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
-        elif freq == "每次启动仅一次":
-            # 从 CURRENT_STRATEGY 中删除
-            runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
-            # 从 STRATEGY_CHANGE_BY_RESTART 中对应 group_name 的字典中删除
+        if ("每次启动" in freq) or ("每次副本" in freq):
             group = runtimeContext.CURRENT_STRATEGY.get("group_name")
             if group:
-                for d in runtimeContext.STRATEGY_CHANGE_BY_RESTART:
+                for d in runtimeContext.STRATEGY_RESET_EACH_DUNGEON:
                     if d.get("group_name") == group:
                         # 在对应的 skill_settings 中删除相同内容的字典
                         d["skill_settings"].remove(target_skill)
                         break
-
+        if freq == "每次启动仅一次":
+            group = runtimeContext.CURRENT_STRATEGY.get("group_name")
+            if group:
+                for d in runtimeContext.STRATEGY_RESET_EACH_RESTART:
+                    if d.get("group_name") == group:
+                        # 在对应的 skill_settings 中删除相同内容的字典
+                        d["skill_settings"].remove(target_skill)
+                        break
         return
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
         ### return = None: 视为没找到, 大约等于目标点结束.
@@ -3109,7 +3114,7 @@ def Factory():
         setting = set
         runtimeContext = RuntimeContext()
 
-        runtimeContext.STRATEGY_CHANGE_BY_RESTART = copy.deepcopy(setting.STRATEGY)
+        runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
 
         Sleep(1) # 没有等utils初始化完成
         

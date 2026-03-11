@@ -169,7 +169,7 @@ class SkillConfigPanel(CollapsibleSection):
         self.SKILL_OPTIONS = ["左上技能", "右上技能", "左下技能", "右下技能", "防御", "双击自动"]
         self.TARGET_OPTIONS = ["左上", "中上", "右上", "左下", "右下", "中下", "低生命值", "不可用"]
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
-        self.FREQ_OPTIONS = ["每场战斗仅一次", "每次启动仅一次", "重复"]
+        self.FREQ_OPTIONS = ["每场战斗仅一次", "每次副本仅一次", "每次启动仅一次", "重复"]
 
         # 用初始化内容构建
         self._setup_body_ui(init_config)
