@@ -28,3 +28,5 @@ screenshotwhenrestart/
 /热力图
 /图像检测
 /人物截取/
+/本地化
+*.mo

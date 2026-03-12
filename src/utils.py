@@ -10,6 +10,7 @@ import time
 import multiprocessing
 import numpy as np
 import glob
+import gettext
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -162,6 +163,7 @@ def LoadImage(path):
         logger.error(f"加载图片失败: {str(e)}")
         return None
     return img
+
 ############################################
 CONFIG_FILE = 'config.json'
 def SaveConfigToFile(config_data):
@@ -181,6 +183,11 @@ def SetOneVarInGeneralConfig(var, value):
     data = LoadRawConfigFromFile()
     data['GENERAL'][var] = value
     SaveConfigToFile(data)
+############################################
+localedir = ResourcePath("locale")
+trans = gettext.translation('messages', localedir, languages=['zh_CN'], fallback=True)
+# trans = gettext.translation('messages', localedir, languages=['en_US'], fallback=True)
+trans.install()
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"
 def ShowChangesLogWindow():
