@@ -1592,8 +1592,8 @@ def Factory():
         # 2. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
         if not skill_settings:
-            if runtimeContext.CURRENT_STRATEGY["group_name"]!=_("全自动战斗"):
-                logger.info(_("当前战斗列表为空. 使用全自动战斗."))
+            if runtimeContext.CURRENT_STRATEGY.get("group_name","")!=_("全自动战斗"):
+                logger.info(_("当前战斗不为\"全自动战斗\"但列表内容为空, 因此依旧使用全自动战斗."))
             ActiveAutoCombat()
             return
 
