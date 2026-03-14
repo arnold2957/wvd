@@ -452,7 +452,7 @@ msgstr "➕ Add new Strategy"
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1321
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1440
 msgid "脚本, 启动!"
-msgstr "Wvdas, Start!"
+msgstr "WvDAS, Start!"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1337
 msgid "发现新版本:"

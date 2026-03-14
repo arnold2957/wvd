@@ -221,7 +221,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         )
         result_str = result.stdout.strip()
         split_results_list = result_str.split("\n")
-        check_results_list = [int(task.split("","")[1]) for task in split_results_list if task]
+        check_results_list = [int(task.split("\",\"")[1]) for task in split_results_list if task]
         return check_results_list
     def KillAdb():
         adb_path = GetADBPathFromEmuPath(setting.EMU_PATH)
@@ -683,7 +683,7 @@ def Factory():
         for (x, y) in zip(xs, ys):
             rectangles.append([x, y, w, h])
             rectangles.append([x, y, w, h]) # 复制两次, 这样groupRectangles可以保留那些单独的矩形.
-        rectangles, _ = cv2.groupRectangles(rectangles, groupThreshold=1, eps=0.5)
+        rectangles, underscore = cv2.groupRectangles(rectangles, groupThreshold=1, eps=0.5)
         pos_list = []
         for rect in rectangles:
             x, y, rw, rh = rect
@@ -830,7 +830,7 @@ def Factory():
                 return CheckIf(scn,pattern)
 
         while True:
-            for _ in range(setting.MAX_TRY_LIMIT):
+            for underscore in range(setting.MAX_TRY_LIMIT):
                 if setting._FORCESTOPING.is_set():
                     return None
                 scn = ScreenShot()
@@ -1134,7 +1134,7 @@ def Factory():
         # 往下都是确保了现在能看见"worldmapflag", 并尝试看见"target"
         Sleep(0.5)
         if not runtimeContext._ZOOMWORLDMAP:
-            for _ in range(3):
+            for underscore in range(3):
                 Press([100,1500])
                 Sleep(0.5)
             Press([250,1500])
@@ -1161,7 +1161,7 @@ def Factory():
         # 往下都是确保了现在能看见"worldmapflag", 并尝试看见"target"
         Sleep(0.5)
         if not runtimeContext._ZOOMWORLDMAP:
-            for _ in range(3):
+            for underscore in range(3):
                 Press([100,1500])
                 Sleep(0.5)
             Press([250,1500])
@@ -1275,7 +1275,7 @@ def Factory():
             if CheckIf(screen,"someonedead"):
                 AddImportantInfo(_("尝试复活队友..."))
                 Sleep(1)
-                for _ in range(5):
+                for underscore in range(5):
                     Press([400+random.randint(0,100),750+random.randint(0,100)])
                     Sleep(1)
 
@@ -1330,7 +1330,7 @@ def Factory():
                     RiseAgainReset(reason = "combat")
                     return IdentifyState()
                 if CheckIf(screen, "worldmapflag"):
-                    for _ in range(3):
+                    for underscore in range(3):
                         Press([100,1500])
                         Sleep(0.5)
                     Press([250,1500])
@@ -1514,7 +1514,7 @@ def Factory():
             
             # 打开详情界面
             into_detail = False
-            for _ in range(3):
+            for underscore in range(3):
                 Press(skillPosDict[skillPos])
                 Sleep(1)
                 if CheckIf(ScreenShot(),"spellskill/skillDetail"):
@@ -1522,7 +1522,7 @@ def Factory():
                     break
             if not into_detail:
                 logger.info("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗.")
-                for _ in range(3):
+                for underscore in range(3):
                     PressReturn()
                     Sleep(0.2)
 
@@ -1570,7 +1570,7 @@ def Factory():
             Sleep(1)
             scn = ScreenShot()
             if CheckIf(scn,"notenoughsp") or CheckIf(scn,"notenoughmp"):
-                for _ in range(3):
+                for underscore in range(3):
                     PressReturn()
                     Sleep(0.2)
 
@@ -1713,7 +1713,7 @@ def Factory():
         logger.info(_("面具男, 移动."))
         while 1:
             Sleep(3)
-            _, dungState,screen = IdentifyState()
+            underscore, dungState,screen = IdentifyState()
             if dungState == DungeonState.Map:
                 logger.info(_("开始移动失败. 不要停下来啊面具男!"))
                 FindCoordsOrElseExecuteFallbackAndWait("dungFlag",[[280,1433],[1,1]],1)
@@ -1814,10 +1814,10 @@ def Factory():
                 Sleep(0.2)
                 Press(pos)
                 Sleep(1)
-                for _ in range(30):
+                for underscore in range(30):
                     Press(disarm)
                     Sleep(0.2)
-                for _ in range(3):
+                for underscore in range(3):
                     Press([1,1])
                     Press(disarm)
 
@@ -1844,7 +1844,7 @@ def Factory():
                         Press(pos)
                         Sleep(1.5)
                         # if not setting._SMARTDISARMCHEST:
-                        for _ in range(8):
+                        for underscore in range(8):
                             t = time.time()
                             Press(disarm)
                             if time.time()-t<0.3:
@@ -1989,7 +1989,7 @@ def Factory():
                                     Sleep(1.5)
                                     Press([600,1200])
                                     Sleep(1)
-                                    for _ in range(5):
+                                    for underscore in range(5):
                                         t = time.time()
                                         PressReturn()
                                         if time.time()-t<0.3:
@@ -2013,7 +2013,7 @@ def Factory():
                         lastscreen = ScreenShot()
                         for counter in range(30):
                             Sleep(3)
-                            _, dungState,screen = IdentifyState()
+                            underscore, dungState,screen = IdentifyState()
                             if dungState != DungeonState.Dungeon:
                                 logger.info(f"已退出移动状态. 当前状态为{dungState}.")
                                 not_moving = True
@@ -2110,7 +2110,7 @@ def Factory():
         StateInn()
         Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1))
         Press(FindCoordsOrElseExecuteFallbackAndWait("guildFeatured",["guildRequest",[1,1]],1))
-        for _ in range(3):
+        for underscore in range(3):
             Sleep(1)
             DeviceShell(f"input swipe 150 1000 150 200")
         Sleep(2)
@@ -2184,7 +2184,7 @@ def Factory():
                     def stepMain():
                         logger.info(_("第一步: 开始诅咒之旅..."))
                         Press(FindCoordsOrElseExecuteFallbackAndWait("cursedWheel_timeLeap",["ruins","cursedWheel","RiseAgain",[1,1]],1))
-                        for _ in range(10):
+                        for underscore in range(10):
                             Press([105,230])
                             Sleep(1)
                         Press(FindCoordsOrElseExecuteFallbackAndWait("cursedwheel_impregnableFortress",["cursedWheelTapRight",[1,1]],1))
@@ -2406,7 +2406,7 @@ def Factory():
                 needRecoverBecauseCombat = False
                 needRecoverBecauseChest = False
                 while 1:
-                    _, dungState,_ = IdentifyState()
+                    underscore, dungState,underscore = IdentifyState()
                     logger.info(dungState)
                     match dungState:
                         case None:
@@ -2490,7 +2490,7 @@ def Factory():
                                     if CheckIf(ScreenShot(),"recover"):
                                         Sleep(1)
                                         Press([600,1200])
-                                        for _ in range(5):
+                                        for underscore in range(5):
                                             t = time.time()
                                             PressReturn()
                                             if time.time()-t<0.3:
@@ -3032,6 +3032,13 @@ def Factory():
                     total_time = total_time + costtime
                     logger.info(f"第{runtimeContext._COUNTERDUNG}次\"悬赏:吉尔\"完成. \n该次花费时间{costtime:.2f}s.\n总计用时{total_time:.2f}s.\n平均用时{total_time/runtimeContext._COUNTERDUNG:.2f}",
                             extra={"summary": True})
+            case "lovesleep":
+                logger.info(_("开始睡觉."))
+                for counter in range(999):
+                    RestartableSequenceExecution(
+                            lambda:StateInn()
+                            )
+                    logger.info(_("完成了{a}次旅店休息.").format(a=counter),extra={"summary": True})
             case "test":
                 def AutoThisChar():
                     Press([850,1100])
@@ -3042,15 +3049,15 @@ def Factory():
                     
                     # 打开详情界面
                     into_detail = False
-                    for _ in range(3):
+                    for underscore in range(3):
                         Press(skillPosDict[skillPos])
                         Sleep(1)
                         if CheckIf(ScreenShot(),"spellskill/skillDetail"):
                             into_detail = True
                             break
                     if not into_detail:
-                        logger.info("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗.")
-                        for _ in range(3):
+                        logger.info(("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗."))
+                        for underscore in range(3):
                             PressReturn()
                             Sleep(0.2)
 
@@ -3093,7 +3100,7 @@ def Factory():
                     Sleep(1)
                     scn = ScreenShot()
                     if CheckIf(scn,"notenoughsp") or CheckIf(scn,"notenoughmp"):
-                        for _ in range(3):
+                        for underscore in range(3):
                             PressReturn()
                             Sleep(0.2)
 
