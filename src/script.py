@@ -19,7 +19,7 @@ DUNGEON_TARGETS = BuildQuestReflection()
 ##################################################################
         
 CONFIG_VAR_LIST = [
-            #categor      var_name,                  type,          default_value
+            #categor      var_name,                   type,          default_value
             ["GENERAL",   "EMU_PATH",                 tk.StringVar,  None],
             ["GENERAL",   "EMU_INDEX",                tk.IntVar,     0],
             ["GENERAL",   "ADB_ADRESS",               tk.StringVar,  "127.0.0.1:16384"],
@@ -647,7 +647,7 @@ def Factory():
                     # cv2.imwrite(file_path, ScreenShot())
                     return None
 
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
             cv2.imwrite("origin.png", screenshot)
@@ -699,7 +699,7 @@ def Factory():
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 
         threshold = 0.80
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
         logger.debug(f"搜索到疑似{shortPathOfTarget}, 匹配程度:{max_val*100:.2f}%")
         if max_val >= threshold:
             if max_val<=0.9:
@@ -733,7 +733,7 @@ def Factory():
         
             result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.80
-            _, max_val, _, _ = cv2.minMaxLoc(result)
+            ubderscore, max_val, ubderscore, ubderscore = cv2.minMaxLoc(result)
 
             logger.debug(f"目标格搜素{position}, 匹配程度:{max_val*100:.2f}%")
             if max_val > threshold:
@@ -751,7 +751,7 @@ def Factory():
             template = LoadTemplateImage(targetInfo.target)
             result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.80
-            _, max_val, _, _ = cv2.minMaxLoc(result)
+            underscore, max_val, underscore, underscore = cv2.minMaxLoc(result)
 
             logger.debug(f"搜索楼层标识{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
             if max_val > threshold:
@@ -763,7 +763,7 @@ def Factory():
             template = LoadTemplateImage(targetInfo.target)
             result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.80
-            _, max_val, _, _ = cv2.minMaxLoc(result)
+            underscore, max_val, underscore, underscore = cv2.minMaxLoc(result)
 
             logger.debug(f"搜索楼梯{targetInfo.target}, 匹配程度:{max_val*100:.2f}%")
             if max_val > threshold:
@@ -777,7 +777,7 @@ def Factory():
         cropped = screenshot[position[1]-50:position[1]+50, position[0]-50:position[0]+50]
         
         result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
         threshold = 0.80
         pos=[position[0]+max_loc[0] - cropped.shape[1]//2, position[1]+max_loc[1] -cropped.shape[0]//2]
 
@@ -947,7 +947,7 @@ def Factory():
 
         # 执行模板匹配
         result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if max_val > threshold:
             # 返回中心坐标（相对于截图左上角）
@@ -1001,7 +1001,7 @@ def Factory():
     def calculSpd(t,x):
         t_data = np.array(t)
         x_data = np.array(x)
-        peaks, _ = find_peaks(x_data)
+        peaks, underscore = find_peaks(x_data)
         if len(peaks) >= 2:
             t_peaks = t_data[peaks]
             p0 = np.mean(np.diff(t_peaks))
@@ -1010,7 +1010,7 @@ def Factory():
             p0 = 1.0  # 根据数据调整
 
         # 非线性最小二乘拟合
-        p_opt, _ = curve_fit(
+        p_opt, underscore = curve_fit(
             triangularWave,
             t_data,
             x_data,
@@ -1593,7 +1593,7 @@ def Factory():
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
         if not skill_settings:
             if runtimeContext.CURRENT_STRATEGY.get("group_name","")!=_("全自动战斗"):
-                logger.info(_("当前战斗不为\"全自动战斗\"但列表内容为空, 因此依旧使用全自动战斗."))
+                logger.info(_("当前战斗为\"全自动战斗\"或技能列表内容为空, 因此使用全自动战斗."))
             ActiveAutoCombat()
             return
 
@@ -1738,8 +1738,15 @@ def Factory():
         target = targetInfo.target
         # 地图已经打开.
         map = ScreenShot()
+
+        if CheckIf(map,"tooPoorToReadTheMap",None, True):
+            logger.info(_("在暴风雪中."))
+            Press(CheckIf(map,"dungFlag"))
+            return StateMoving_CheckFrozen(),False
+    
         if not CheckIf(map,"mapFlag"):
-                return None,False # 发生了错误
+            logger.info(_("没有检测到地图."))
+            return None,False # 发生了其他错误
 
         try:
             searchResult = StateMap_FindSwipeClick(targetInfo)
@@ -2079,6 +2086,7 @@ def Factory():
 
                     Sleep(1)
                     Press([777,150])
+                    Sleep(1)
 
                     dungState, ifTargetPointComplete = StateSearch(waitTimer,targetInfoList[0])
 
