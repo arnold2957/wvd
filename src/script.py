@@ -540,7 +540,7 @@ def Factory():
                     
                 return result
             except ( RuntimeError, ConnectionResetError, cv2.error) as e:
-                logger.warning(_("ADB操作失败 ({a}): {b}").format(a=type(e).__name__), b=e)
+                logger.warning(_("ADB操作失败 ({a}): {b}").format(a=type(e).__name__, b=e))
                 logger.info(_("ADB操作失败, 尝试重启ADB或模拟器程序..."))
                 ResetDevice()
                 time.sleep(1)
@@ -554,7 +554,7 @@ def Factory():
                 continue
             except Exception as e:
                 # 非预期异常直接抛出
-                logger.error(_("非预期的ADB异常({a}): {b}").format(a=type(e).__name__), b=e)
+                logger.error(_("非预期的ADB异常({a}): {b}").format(a=type(e).__name__, b=e))
                 raise
     
     def Sleep(t=1):
@@ -1093,7 +1093,7 @@ def Factory():
         nonlocal runtimeContext
         if runtimeContext._LAPTIME!= 0:
             runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-            summary_text = _("已完成{a}次\"{b}\"地下城.\n总计{c}秒.上次用时:{d}秒.\n".format(a=runtimeContext._COUNTERDUNG, b=setting.FARM_TARGET_TEXT), c=round(runtimeContext._TOTALTIME,2), d=round(time.time()-runtimeContext._LAPTIME,2))
+            summary_text = _("已完成{a}次\"{b}\"地下城.\n总计{c}秒.上次用时:{d}秒.\n".format(a=runtimeContext._COUNTERDUNG, b=setting.FARM_TARGET_TEXT, c=round(runtimeContext._TOTALTIME,2), d=round(time.time()-runtimeContext._LAPTIME,2)))
             if runtimeContext._COUNTERCHEST > 0:
                 summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
             if runtimeContext._COUNTERCOMBAT > 0:
