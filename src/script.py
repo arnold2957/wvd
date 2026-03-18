@@ -45,7 +45,8 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": _("全自动战斗"),
                                                                         "skill_settings": []
                                                                     },]],
-            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],         
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],        
+            ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
 
             ["TEMPLATE",   "TASK_POINT_STRATEGY",     dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",      tk.BooleanVar, False],
@@ -1608,7 +1609,7 @@ def Factory():
             return
 
         # 3. 非全自动模式：点击任意键直到出现“flee”图片
-        [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag"],[1,1],1)
+        [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag", "someonedead"],[1,1],1)
         if (pos_x>=735)and(pos_x<=735+126)and(pos_y>=1158)and(pos_y<=1158+68):
             pass
         else:

@@ -4,3 +4,4 @@ opencv-python
 scipy
 pyinstaller
 win10toast
+babel

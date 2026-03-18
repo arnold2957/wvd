@@ -113,12 +113,11 @@
 战斗策略中新增了若干角色.
 修复了由于字符串错误导致副本无法完成的问题.
 
-
+==v1.12.12-beta.24==
+现在在战斗中可以识别某人死亡的情况.
+You can switch to en_US by setting the 'language' field in config.json to 'en_US'. Please note that there may be some issues at the moment.
 
 todo:
-一部分翻译
-自动编译翻译二进制文件
-启动和切换翻译.
 定位狼洞为什么会刷1f进2f, 需要一份log. 如果你遇到了该问题欢迎发给我!
 
 注意: 由于部分角色我没有练, 因此如果你想要添加额外角色, 可以将角色战斗时的截图发给我!

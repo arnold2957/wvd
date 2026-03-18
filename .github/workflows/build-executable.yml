@@ -51,9 +51,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller
 
+    - name: Compile translation catalogs
+      run: |
+        python -m babel.messages.frontend compile -d locale -D messages
+
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --add-data "resources;resources/" src/main.py -n wvd
+        pyinstaller --onedir --add-data "resources;resources/" --add-data "locale;locale/" src/main.py -n wvd
         Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP

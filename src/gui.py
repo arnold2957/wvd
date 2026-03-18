@@ -455,7 +455,7 @@ class ConfigPanelApp(tk.Toplevel):
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
-        self.geometry('610x750')
+        self.geometry('630x750')
         
         self.title(self.TITLE)
 
@@ -491,6 +491,7 @@ class ConfigPanelApp(tk.Toplevel):
             else:
                 setattr(self, attr_name, var_type(config_dict[attr_name] if (attr_name in config_dict)and(config_dict[attr_name] is not None) else default_value))  
 
+        # --- 创建组件 ---
         self.create_widgets()
         self.updateACTIVE_REST_state() # 初始化时更新旅店住宿entry.
         
@@ -889,7 +890,7 @@ class ConfigPanelApp(tk.Toplevel):
             if self.is_current_task_dungeon:
                 for idx, point in enumerate(self.current_task_points):
                     if point in self.task_point_vars:
-                        config[_("task_point")][idx] = self.task_point_vars[point].get()
+                        config["task_point"][idx] = self.task_point_vars[point].get()
             
             self.TASK_POINT_STRATEGY = config
 

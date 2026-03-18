@@ -170,7 +170,7 @@ def SaveConfigToFile(config_data):
     try:
         with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=4)
-        logger.info("配置已保存。")
+        logger.info(_("配置已保存。"))
         return True
     except Exception as e:
         logger.error(f"保存配置时发生错误: {e}")
@@ -183,16 +183,22 @@ def SetOneVarInGeneralConfig(var, value):
     data = LoadRawConfigFromFile()
     data['GENERAL'][var] = value
     SaveConfigToFile(data)
+def GetOneVarInGeneralConfig(var, default_value):
+    data = LoadRawConfigFromFile()
+    if var in data['GENERAL']:
+        return data['GENERAL'][var]
+    else:
+        return default_value
 ############################################
 localedir = ResourcePath("locale")
-trans = gettext.translation('messages', localedir, languages=['zh_CN'], fallback=True)
-# trans = gettext.translation('messages', localedir, languages=['en_US'], fallback=True)
+languae = GetOneVarInGeneralConfig('LANGUAGE', 'zh_CN')
+trans = gettext.translation('messages', localedir, languages=[languae], fallback=True)
 trans.install()
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"
 def ShowChangesLogWindow():
     log_window = tk.Toplevel()
-    log_window.title("更新日志")
+    log_window.title(_("更新日志"))
     log_window.geometry("700x500")
 
     log_window.lift()  # 提升到最上层
