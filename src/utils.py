@@ -185,8 +185,9 @@ def SetOneVarInGeneralConfig(var, value):
     SaveConfigToFile(data)
 def GetOneVarInGeneralConfig(var, default_value):
     data = LoadRawConfigFromFile()
-    if var in data['GENERAL']:
-        return data['GENERAL'][var]
+    if 'GENERAL' in data:
+        if var in data['GENERAL']:
+            return data['GENERAL'][var]
     else:
         return default_value
 ############################################
