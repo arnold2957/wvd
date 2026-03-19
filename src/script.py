@@ -562,11 +562,13 @@ def Factory():
         time.sleep(t)
     def ScreenShot():
         t = time.time()
-        # 获取设备序列号，用于构造 adb 命令
-        serial = setting._ADBDEVICE.serial 
+
         
         while True:
             try:
+                # 获取设备序列号，用于构造 adb 命令
+                serial = setting._ADBDEVICE.serial 
+
                 process_result = subprocess.run(
                     [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out", "screencap"],
                     capture_output=True, # 捕获输出
@@ -1106,9 +1108,6 @@ def Factory():
         if runtimeContext._MEET_CHEST_OR_COMBAT:
             runtimeContext._MEET_CHEST_OR_COMBAT = False
             runtimeContext._COUNTERDUNG+=1
-        # 首次进入地下城
-        runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
-        runtimeContext.STRATEGY_RESET_EACH_DUNGEON = copy.deepcopy(runtimeContext.STRATEGY_RESET_EACH_RESTART)
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
@@ -1494,6 +1493,7 @@ def Factory():
             else:
                 # 如果未找到，可考虑默认策略或报错，这里简单置空
                 runtimeContext.CURRENT_STRATEGY = {}
+                logger.error(_("无法获取当前策略."))
             return
         def AutoThisChar():
             Press([850,1100])
@@ -1554,17 +1554,21 @@ def Factory():
             if CheckIf(ScreenShot(),"supportSkillCheck",[[677,1475,189,80]]):
                 if supportTarget in supportTargetDict.keys():
                     Press(supportTargetDict[supportTarget])
+                    logger.info(_("释放了位于\"{a}\"的辅助技能, 技能等级为{b}, 释放对象为{c}".format(a=skillPos, b=skilllvl, c=supportTarget)))
 
             # 确认
             scn = ScreenShot()
             if Press(CheckIf(scn,"OK")):
+                logger.info(_("释放了位于\"{a}\"的全体技能, 技能等级为{b}.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
             elif pos:=(CheckIf(scn,"next")):
                 Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
+                logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
             else:
                 for i in range(6):
                     Press([150*i-150,750])
                     Sleep(0.1)
+                logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
 
             # 资源不足
@@ -1592,9 +1596,18 @@ def Factory():
 
         # 2. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
-        if not skill_settings:
-            if runtimeContext.CURRENT_STRATEGY.get("group_name","")!=_("全自动战斗"):
-                logger.info(_("当前战斗为\"全自动战斗\"或技能列表内容为空, 因此使用全自动战斗."))
+        aac = False
+        if runtimeContext.CURRENT_STRATEGY == {}:
+            logger.error(_("错误: 当前战斗策略内容为空. 使用全自动战斗."))
+            aac = True
+        elif runtimeContext.CURRENT_STRATEGY.get("group_name","") ==_("全自动战斗"):
+            logger.info(_("当前战斗为\"全自动战斗\", 因此使用全自动战斗."))
+            aac = True
+        elif skill_settings == []:
+            logger.info(_("当前战斗技能列表内容为空, 因此使用全自动战斗."))
+            aac = True
+        
+        if aac:
             ActiveAutoCombat()
             return
 
@@ -1639,7 +1652,7 @@ def Factory():
 
         # 5. 判断匹配率是否达标
         if highest_match_rate < 0.80:
-            # 匹配失败，自动战斗
+            logger.info(_("并未设定该角色的行为, 使用自动战斗."))
             AutoThisChar()
             return
 
@@ -1648,15 +1661,17 @@ def Factory():
 
         # 9. 根据频次设置删除对应字典
         freq = target_skill.get("freq_var")
-        if _("仅一次") in freq:
+        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")) or (freq == _("每次战斗仅一次")):
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
-        if (_("每次启动") in freq) or (_("每次副本") in freq):
+            logger.info(_("在当前战斗的策略中删除了该技能."))
+        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")):
             group = runtimeContext.CURRENT_STRATEGY.get("group_name")
             if group:
                 for d in runtimeContext.STRATEGY_RESET_EACH_DUNGEON:
                     if d.get("group_name") == group:
                         # 在对应的 skill_settings 中删除相同内容的字典
                         d["skill_settings"].remove(target_skill)
+                        logger.info(_("在每次地下城的策略中删除了该技能."))
                         break
         if freq == _("每次启动仅一次"):
             group = runtimeContext.CURRENT_STRATEGY.get("group_name")
@@ -1665,6 +1680,7 @@ def Factory():
                     if d.get("group_name") == group:
                         # 在对应的 skill_settings 中删除相同内容的字典
                         d["skill_settings"].remove(target_skill)
+                        logger.info(_("在每次启动中使用的策略里删除了该技能."))
                         break
         return
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
@@ -1740,7 +1756,7 @@ def Factory():
         # 地图已经打开.
         map = ScreenShot()
 
-        if CheckIf(map,"tooPoorToReadTheMap",None, True):
+        if CheckIf(map,"tooPoorToReadTheMap"):
             logger.info(_("在暴风雪中."))
             Press(CheckIf(map,"dungFlag"))
             return StateMoving_CheckFrozen(),False
@@ -1892,10 +1908,13 @@ def Factory():
         nonlocal runtimeContext
         runtimeContext.TASK_STEP_INDEX = 0
         def TargetPointComplete():
-            logger.info(f"任务点完成.{targetInfoList[0].target} {targetInfoList[0].roi}")
+            logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi}")
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
             return
+        
+        runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
+        runtimeContext.STRATEGY_RESET_EACH_DUNGEON = copy.deepcopy(runtimeContext.STRATEGY_RESET_EACH_RESTART)
         
         ##############################################
         while 1:
@@ -2173,6 +2192,7 @@ def Factory():
                         )
                     state = State.Dungeon
                 case State.Dungeon:
+                    # 首次进入地下城
                     targetInfoList = quest._TARGETINFOLIST.copy()
                     RestartableSequenceExecution(
                         lambda: StateDungeon(targetInfoList)
@@ -2840,7 +2860,7 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time), d=total_time/runtimeContext._COUNTERDUNG),
+                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             extra={"summary": True})
             case "Scorpionesses_plus_6_hands":
                 total_time = 0
@@ -2940,7 +2960,7 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time), d=total_time/runtimeContext._COUNTERDUNG),
+                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             extra={"summary": True})
             case "steeltrail":
                 total_time = 0
@@ -3039,7 +3059,7 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:吉尔\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time), d=total_time/runtimeContext._COUNTERDUNG),
+                    logger.info(_("第{a}次\"悬赏:吉尔\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             extra={"summary": True})
             case "lovesleep":
                 logger.info(_("开始睡觉."))
