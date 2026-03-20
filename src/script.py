@@ -1476,7 +1476,7 @@ def Factory():
                 if overall == _("自定义任务点策略"):
                     # 使用当前任务步骤索引获取具体策略
                     task_step_idx = runtimeContext.TASK_STEP_INDEX
-                    strategy_key = setting.TASK_POINT_STRATEGY["task_point"][task_step_idx]
+                    strategy_key = setting.TASK_POINT_STRATEGY["task_point"][str(task_step_idx)]
                 else:
                     strategy_key = overall
 
