@@ -1666,12 +1666,17 @@ def Factory():
                 logger.info(_("不需要同时设置为\"双击自动\"且\"重复\", 因为这是未设置角色时的默认行为."))
             # 双击自动
             AutoThisChar()
+        elif target_skill.get("skill_var") == _("防御"):
+            Press([513,1200])
+            Sleep(0.1)
+            Press([513,1200])
+            Sleep(0.1)
         else:
             SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
 
         # 9. 根据频次设置删除对应字典
         freq = target_skill.get("freq_var")
-        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")) or (freq == _("每次战斗仅一次")):
+        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")) or (freq == _("每场战斗仅一次")):
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
             logger.info(_("在当前战斗的策略中删除了该技能."))
         if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")):
