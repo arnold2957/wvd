@@ -94,7 +94,7 @@
             ["position","右下",[72,972]],
             ["chest","右下",[[0,678,432,597]]],
             ["stair_DH_R5", "右下",[73,1240]],
-            ["position", "左上",[819,928]]
+            ["harken", "左上",null]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
@@ -260,6 +260,23 @@
         "questName":"[宝箱]忍洞一层宝箱",
         "_TARGETINFOLIST":[
 	        ["chest_auto"],
+            ["SSC/SSC_quit","左下","default"]
+        ],
+        "_preEOTcheck":"SSC/SSC",
+        "_EOT":[
+            ["press","intoWorldMap",["SSC/SSC","input swipe 700 500 600 600"],1]
+        ]
+    },
+
+    "SSC_3F":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]忍洞三层刷硬币酒",
+        "_TARGETINFOLIST":[
+            ["stair_2", "左上",[720,1140]],
+            ["stair_3", "左上",[560,1090]],
+            ["position", "左上",[670,820]],
+            ["stair_2", "左上",[560,1090]],
+            ["stair_1", "左上",[720,1140]],
             ["SSC/SSC_quit","左下","default"]
         ],
         "_preEOTcheck":"SSC/SSC",
@@ -561,11 +578,7 @@
 
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",
-        "_TYPE":"quest",
-        "_SPELLSEQUENCE":{
-            "LACONES":["LACONES","LACONES","LACONES","defend"],
-            "居合":["defend","居合"]
-        }
+        "_TYPE":"quest"
     },
     
     "lovesleep":{

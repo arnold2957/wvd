@@ -101,7 +101,6 @@ class RuntimeContext:
     _ZOOMWORLDMAP = False
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
-    _STEPAFTERRESTART = True
     _RESUMEAVAILABLE = False
     STRATEGY_RESET_EACH_RESTART = {}
     STRATEGY_RESET_EACH_DUNGEON = {}
@@ -888,7 +887,6 @@ def Factory():
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
-        runtimeContext._STEPAFTERRESTART = False
         runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
 
         # 保存重启前截图作为备份
@@ -1186,8 +1184,13 @@ def Factory():
 
         # 调整条目以找到跳跃目标
         Press(FindCoordsOrElseExecuteFallbackAndWait("cursedWheel",["ruins","startdownload",[1,1]],1))
+        for underscore in range(10):
+            Press([105,230])
+            Sleep(0.5)
         Press(FindCoordsOrElseExecuteFallbackAndWait(chapter,["cursedWheelTapRight","cursedWheel",[1,1]],1))
         if not Press(CheckIf(ScreenShot(),target)):
+            DeviceShell(f"input swipe 450 1200 450 200")
+            Sleep(2)
             DeviceShell(f"input swipe 450 1200 450 200")
             Sleep(2)
             Press(FindCoordsOrElseExecuteFallbackAndWait(target,"input swipe 50 1200 50 1300",1))
@@ -1582,6 +1585,7 @@ def Factory():
                 SkillLvlSelectAndDoubleCheck(skillPos,1)
                 return
 
+        ###################################################################################
         # 主逻辑开始
         # 0. 开启二倍速
         screen = ScreenShot()
@@ -1657,7 +1661,13 @@ def Factory():
             return
 
         # 6. 按照技能等级释放技能
-        SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
+        if target_skill.get("skill_var") == _("双击自动"):
+            if target_skill.get("freq_var") == _("重复"):
+                logger.info(_("不需要同时设置为\"双击自动\"且\"重复\", 因为这是未设置角色时的默认行为."))
+            # 双击自动
+            AutoThisChar()
+        else:
+            SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
 
         # 9. 根据频次设置删除对应字典
         freq = target_skill.get("freq_var")
@@ -2026,13 +2036,6 @@ def Factory():
                             else:
                                 logger.info(_("自动回复异常, 中止本次回复."))
                                 break
-                    ########### 防止转圈
-                    if not runtimeContext._STEPAFTERRESTART:
-                        Press([27,950])
-                        Sleep(1)
-                        Press([853,950])
-
-                        runtimeContext._STEPAFTERRESTART = True
                     ########### 尝试resume
                     not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),"resume")):
@@ -2210,25 +2213,10 @@ def Factory():
 
                     starttime = time.time()
                     runtimeContext._COUNTERDUNG += 1
-                    def stepMain():
-                        logger.info(_("第一步: 开始诅咒之旅..."))
-                        Press(FindCoordsOrElseExecuteFallbackAndWait("cursedWheel_timeLeap",["ruins","cursedWheel","RiseAgain",[1,1]],1))
-                        for underscore in range(10):
-                            Press([105,230])
-                            Sleep(1)
-                        Press(FindCoordsOrElseExecuteFallbackAndWait("cursedwheel_impregnableFortress",["cursedWheelTapRight",[1,1]],1))
 
-                        if not Press(CheckIf(ScreenShot(),"FortressArrival")):
-                            DeviceShell(f"input swipe 450 1200 450 200")
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("FortressArrival","input swipe 50 1200 50 1300",1))
-
-                        while pos:= CheckIf(ScreenShot(), "leap"):
-                            Press(pos)
-                            Sleep(2)
-                            Press(CheckIf(ScreenShot(),"FortressArrival"))
-                            Sleep(1)
-                    RestartableSequenceExecution(
-                        lambda: stepMain()
+                    logger.info(_("第一步: 时间跳跃..."))
+                    RestartableSequenceExecution(    
+                        lambda: CursedWheelTimeLeap(target="FortressArrival",chapter = "cursedwheel_impregnableFortress")
                         )
 
                     Sleep(10)
@@ -2764,8 +2752,8 @@ def Factory():
                     runtimeContext._COUNTERDUNG+=1
 
                     quest._EOT = [
-                        ["TEMPLATE",   "press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-                        ["TEMPLATE",   "press","fortressb7f",[1,1],1]]
+                        ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+                        ["press","fortressb7f",[1,1],1]]
                     RestartableSequenceExecution(
                         lambda: StateEoT()
                         )
