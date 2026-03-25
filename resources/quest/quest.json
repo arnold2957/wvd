@@ -1,20 +1,4 @@
 {
-    "GoblinCave":{
-        "_TYPE":"dungeon",
-        "questName":"[酒+善恶]初始深渊哥布林洞窟救圣女",
-        "_TARGETINFOLIST":[
-            ["stair_goblinsNest","右下",[875,867]],
-            ["position","左下",[134,973]],
-            ["position","右下",[286,919]],
-            ["position","右上",[713,341]],
-            ["stair_3","左下",[26,546]],
-            ["harken","右下",null]
-        ],
-        "_EOT":[
-            ["press","beginningAbyss",["EdgeOfTown",[1,1]],1],
-            ["press","caveinZone",[1,1],1]
-        ]
-    },
 
     "Dist":{
         "_TYPE":"dungeon",
@@ -54,20 +38,6 @@
         "_EOT":[
             ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
             ["press","fortressb1f","input swipe 650 250 650 900",1]
-        ]
-    },
-
-    "DH-entrance":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]深雪入口",
-        "_TARGETINFOLIST":[
-            ["position","右下",[872,920]],
-            ["position","右下",[552,865]],
-            ["position","右下",[819,1240]]
-        ],
-        "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-entrance","input swipe 650 250 650 900",1]
         ]
     },
 
@@ -179,32 +149,6 @@
         ]
     },
 
-    "SC-B1F":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]人鱼洞B1F byXX",
-        "_TARGETINFOLIST":[
-            ["chest_auto"],
-            ["position","左下",[138,652]]
-        ],
-        "_EOT":[
-            ["press","SC/SC",["EdgeOfTown",[1,1]],1],
-            ["press","SC/SCB1F",[1,1],1]
-        ]
-    },
-
-    "SC-B2F":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]人鱼洞B2F",
-        "_TARGETINFOLIST":[
-            ["chest_auto"],
-            ["position","右上", [660,660]]
-        ],
-        "_EOT":[
-            ["press","SC/SC",["EdgeOfTown",[1,1]],1],
-            ["press","SC/SCB2F","input swipe 650 900 650 250",1]
-        ]
-    },
-
     "IWO":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鬼洞1f 水路出发",
@@ -260,23 +204,6 @@
         "questName":"[宝箱]忍洞一层宝箱",
         "_TARGETINFOLIST":[
 	        ["chest_auto"],
-            ["SSC/SSC_quit","左下","default"]
-        ],
-        "_preEOTcheck":"SSC/SSC",
-        "_EOT":[
-            ["press","intoWorldMap",["SSC/SSC","input swipe 700 500 600 600"],1]
-        ]
-    },
-
-    "SSC_3F":{
-        "_TYPE":"dungeon",
-        "questName":"[刷怪]忍洞三层刷硬币酒",
-        "_TARGETINFOLIST":[
-            ["stair_2", "左上",[720,1140]],
-            ["stair_3", "左上",[560,1090]],
-            ["position", "左上",[670,820]],
-            ["stair_2", "左上",[560,1090]],
-            ["stair_1", "左上",[720,1140]],
             ["SSC/SSC_quit","左下","default"]
         ],
         "_preEOTcheck":"SSC/SSC",
@@ -380,21 +307,6 @@
             ["press","COS/COSB2F",[1,1],1]
         ]
     },
-
-    "TWC":{
-        "_TYPE":"dungeon",
-        "questName":"[刷怪]魔女洞窟",
-        "_TARGETINFOLIST":[
-            ["position","右上",[340,287]],
-            ["position","左上",[345,929]]
-        ],
-        "_EOT":
-        [
-            ["press","TWC/TWC",["EdgeOfTown",[1,1]],1],
-            ["press","TWC/TWCB1F",[1,1],1]
-        ]
-    },
-
 
     "DOE":{
         "_TYPE":"dungeon",
@@ -530,11 +442,6 @@
         "_TYPE":"quest"
     },
 
-    "fordraig":{
-        "questName":"[任务]角鹫之剑 fordraig",
-        "_TYPE":"quest"
-    },
-
     "darkLight":{
         "questName":"[装备]暗灯",
         "_TYPE":"quest"
@@ -550,11 +457,6 @@
         "_TYPE":"quest"
     },
 
-    "CaveOfSeperation":{
-        "questName":"[任务]离别洞窟 约定之剑",
-        "_TYPE":"quest"
-    },
-
     "jier":{
         "questName":"[悬赏]吉尔",
         "_TYPE":"quest"
@@ -567,12 +469,6 @@
 
     "Scorpionesses_plus_6_hands":{
         "questName":"[悬赏]蝎女+风暴六手",
-        "_TYPE":"quest"
-    },
-    
-
-    "steeltrail":{
-        "questName":"[酒]钢试炼",
         "_TYPE":"quest"
     },
 

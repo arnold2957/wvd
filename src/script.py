@@ -2282,7 +2282,7 @@ def Factory():
                         lambda: stepMain()
                         )
                     costtime = time.time()-starttime
-                    logger.info(_("第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps.".format(a=runtimeContext._COUNTERDUNG, b=costtime), c=7000/costtime),
+                    logger.info(_("第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps.".format(a=runtimeContext._COUNTERDUNG, b=costtime, c=7000/costtime)),
                                 extra={"summary": True})
             case "fordraig":
                 quest._SPECIALDIALOGOPTION = ["fordraig/thedagger","fordraig/InsertTheDagger"]
@@ -3056,11 +3056,12 @@ def Factory():
                             extra={"summary": True})
             case "lovesleep":
                 logger.info(_("开始睡觉."))
-                for counter in range(999):
+                t = time.time()
+                for counter in range(9999):
                     RestartableSequenceExecution(
                             lambda:StateInn()
                             )
-                    logger.info(_("完成了{a}次旅店休息.").format(a=counter),extra={"summary": True})
+                    logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
             case "test":
                 def AutoThisChar():
                     Press([850,1100])
