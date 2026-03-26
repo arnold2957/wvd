@@ -898,14 +898,11 @@ def Factory():
 
         package_name = "jp.co.drecom.wizardry.daphne"
 
-        pid = DeviceShell(f"pgrep -f {package_name}").strip()
-        logger.debug(_("pid检测结果:{a}".format(a=pid)))
-        if (not pid):
-            runtimeContext._CRASHCOUNTER +=1
-            logger.info(_("崩溃计数: {a}\n崩溃计数超过5次后会重启模拟器.".format(a=runtimeContext._CRASHCOUNTER)))
-            if runtimeContext._CRASHCOUNTER > 5:
-                runtimeContext._CRASHCOUNTER = 0
-                force_restart_EMU = True
+        runtimeContext._CRASHCOUNTER +=1
+        logger.info(_("崩溃计数: {a}\n崩溃计数超过10次后会重启模拟器.".format(a=runtimeContext._CRASHCOUNTER)))
+        if runtimeContext._CRASHCOUNTER > 10:
+            runtimeContext._CRASHCOUNTER = 0
+            force_restart_EMU = True
 
         if force_restart_EMU:
             CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
