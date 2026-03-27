@@ -1623,7 +1623,7 @@ def Factory():
             return
 
         # 3. 非全自动模式：点击任意键直到出现“flee”图片
-        [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag", "someonedead"],[1,1],1)
+        [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag", "someonedead","RiseAgain"],[1,1],1)
         if (pos_x>=735)and(pos_x<=735+126)and(pos_y>=1158)and(pos_y<=1158+68):
             pass
         else:
