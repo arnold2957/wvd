@@ -1353,7 +1353,7 @@ def Factory():
                         Press(CheckIf(screen,"ambush"))
                         num = int(setting.KARMA_ADJUST)
                         num = num + 2
-                        new_str = "{a}".format(num)
+                        new_str = "{a}".format(a=num)
                     else:
                         Press(CheckIf(screen,"ignore"))
                         num = int(setting.KARMA_ADJUST)
@@ -2537,7 +2537,7 @@ def Factory():
 
                     RestartableSequenceExecution(
                         lambda: logger.info(_("第一步: 重置因果")),
-                        lambda: CursedWheelTimeLeap(None,"LBC/symbolofalliance",[["LBC/EnaWasSaved",2,1,0]])
+                        lambda: CursedWheelTimeLeap("GhostsOfYore","LBC/symbolofalliance",[["LBC/EnaWasSaved",2,1,0]])
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
@@ -2666,7 +2666,7 @@ def Factory():
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
                         lambda: logger.info(_("第一步: 重置因果")),
-                        lambda: CursedWheelTimeLeap(None,"COS/ArnasPast")
+                        lambda: CursedWheelTimeLeap("GhostsOfYore","COS/ArnasPast")
                         )
                     Sleep(10)
                     RestartableSequenceExecution(
