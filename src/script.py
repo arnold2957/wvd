@@ -3026,7 +3026,8 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B4FLabyrinth","GotoDung",[1,1]],1)
                         )
                     RestartableSequenceExecution( 
-                        lambda:StateDungeon([TargetInfo("position","左下",[452,1026]),
+                        lambda:StateDungeon([TargetInfo("position","左下",[452,545]),
+                                             TargetInfo("position","左下",[452,1026]),
                                              TargetInfo("harken","左上",None)]),
                         )
                     
