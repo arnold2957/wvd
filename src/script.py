@@ -1292,6 +1292,18 @@ def Factory():
                     logger.info(_("不满足回城条件, 跳过回城."))
                     return State.EoT,DungeonState.Quit,screen
 
+            if CheckIf(screen, "worldmapflag"):
+                for underscore in range(3):
+                    Press([100,1500])
+                    Sleep(0.5)
+                Press([250,1500])
+                # 由于定位流程包含了返回键, 有时会退出到大地图, 因此强制执行RTT流程, 不管是否需要住宿.
+                # if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
+                if quest._RTT:
+                    for info in quest._RTT:
+                        TeleportFromDungeonToCity(*info[2])
+                    return IdentifyState()
+                       
             if pos:=(CheckIf(screen,"openworldmap")):
                 if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                     Press(pos)
@@ -1329,12 +1341,6 @@ def Factory():
                 if Press(CheckIf(screen,"RiseAgain")):
                     RiseAgainReset(reason = "combat")
                     return IdentifyState()
-                if CheckIf(screen, "worldmapflag"):
-                    for underscore in range(3):
-                        Press([100,1500])
-                        Sleep(0.5)
-                    Press([250,1500])
-                    # 这里不需要continue或者递归 直接继续进行就行
                 if Press(CheckIf(screen, "sandman_recover")):
                     return IdentifyState()
                 if (CheckIf(screen,"cursedWheel_timeLeap")):
