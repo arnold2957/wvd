@@ -1585,7 +1585,7 @@ def Factory():
                     PressReturn()
                     Sleep(0.2)
 
-                SkillLvlSelectAndDoubleCheck(skillPos,1)
+                SkillLvlSelectAndDoubleCheck(skillPos,1,supportTarget)
                 return
 
         ###################################################################################
@@ -2023,7 +2023,7 @@ def Factory():
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(2)
                                 continue
-                            elif CheckIf(scn,"trait"):
+                            elif CheckIf(scn:=ScreenShot(),"trait"):
                                 if CheckIf(scn,"story", [[676,800,220,108]]):
                                     Press([725,850])
                                 else:
