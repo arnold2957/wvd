@@ -71,24 +71,6 @@
             ["press","DH-R5","input swipe 650 250 650 900",1]
         ]
     },
-    "DH-7f-left":{
-            "_TYPE":"dungeon",
-            "questName":"[宝箱+刷怪]深雪R7矿洞左",
-            "_TARGETINFOLIST":[
-                ["stair_DH_R7","右上",[870,1040]],
-                ["position","左下",[80,440]],
-                ["position","左下",[240,440]],
-                ["position","左下",[560,545]],
-                ["position","左下",[400,705]],
-                ["chest","左下",[[0,305,745,800],[425,785,320,320]]],
-                ["stair_DH_R6", "左下",[30,920]],
-                ["harken2", "右上",null]
-            ],
-            "_EOT":[
-                ["press","DH",["EdgeOfTown",[1,1]],1],
-                ["press","DH-R6","input swipe 650 900 650 250",1]
-            ]
-    },
 
     "DH-7f-right":{
         "_TYPE":"dungeon",
@@ -140,6 +122,22 @@
             ["position","左下",[130,865]],
             ["chest","左下",[[110,900,790,260]]],
             ["chest","右下",[[100,790,800,490],[100,1185,350,95]]],
+            ["stair_DH_R9", "右下",[820,1240]],
+            ["harken", "左上",null]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-R9","input swipe 650 900 650 250",1]
+        ]
+    },
+
+    "DH-10f-JR":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]深雪R10(自定义)",
+        "_TARGETINFOLIST":[
+            ["stair_DH_R10","左上",[80,235]],
+            ["position","右下",[655,330]],
+            ["position","右下",[500,385]],
             ["stair_DH_R9", "右下",[820,1240]],
             ["harken", "左上",null]
         ],
@@ -420,19 +418,6 @@
             ["position", "左上", [185,1085]],
             ["chest","左上",[[0,690,481,485]]],
             ["DOS_quit"]
-        ]
-    },
-
-    "DOS_PLUS":{
-        "_TYPE":"dungeon",
-        "questName":"[矿石]水洞plus-地图全开",
-        "_EOT":[
-            ["press","DOS",["EdgeOfTown",[1,1]],1],
-            ["press","DOSB1F",[1,1],1]
-        ],
-        "_TARGETINFOLIST":
-        [
-            ["position", "右下", [872,1185]]
         ]
     },
 

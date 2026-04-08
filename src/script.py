@@ -1592,10 +1592,9 @@ def Factory():
         # 主逻辑开始
         # 0. 开启二倍速
         screen = ScreenShot()
-        if not runtimeContext._COMBATSPD:
-            if Press(CheckIf(screen,"combatSpd")) or Press(CheckIf(screen,"combatSpd_DHI")):
-                runtimeContext._COMBATSPD = True
-                Sleep(1)
+        if Press(CheckIf(screen,"combatSpd")) or Press(CheckIf(screen,"combatSpd_DHI")):
+            runtimeContext._COMBATSPD = True
+            Sleep(1)
         # 1. 检查重置标识
         if runtimeContext.COMBAT_RESET:
             CopyStrategy()
