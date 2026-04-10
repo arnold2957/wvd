@@ -109,7 +109,6 @@ class RuntimeContext:
     NEED_RECOVER_WHEN_BEGINNING = True
     TASK_STEP_INDEX = 0
 class FarmQuest:
-    _DUNGWAITTIMEOUT = 0
     _TARGETINFOLIST = None
     _EOT = None
     _preEOTcheck = None
@@ -1730,14 +1729,16 @@ def Factory():
                     logger.info(_("找到了 {a}! {b}".format(a=target, b=targetPos)))
                     if (target == "chest") and (swipeDir!= None):
                         logger.debug(_("宝箱热力图: 地图:{a} 方向:{b} 位置:{c}".format(a=setting.FARM_TARGET, b=swipeDir, c=targetPos)))
-                    if not roi:
-                        # 如果没有指定roi 我们使用二次确认
-                        # logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                        # DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
-                        # 二次确认也不拖动了 太容易触发bug
-                        Sleep(2)
-                        Press([1,210]) # 点击地图左上角来清除选中状态
-                        targetPos = CheckIf(ScreenShot(),target,roi)
+                    Sleep(1)
+                    # 二次确认也不确认了, 会撞上哈肯然后跳到别的楼层.
+                    # if not roi:
+                    #     # 如果没有指定roi 我们使用二次确认
+                    #     # logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
+                    #     # DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
+                    #     # 二次确认也不拖动了 太容易触发bug
+                    #     Sleep(2)
+                    #     Press([1,210]) # 点击地图左上角来清除选中状态
+                    #     targetPos = CheckIf(ScreenShot(),target,roi)
                     break
         return targetPos
     def StateMoving_CheckFrozen():
@@ -1815,25 +1816,25 @@ def Factory():
                     Press([136,1431]) # automove
                     return StateMoving_CheckFrozen(), False
                 else:
-                    if setting._DUNGWAITTIMEOUT == 0:
+                    # if setting._DUNGWAITTIMEOUT == 0:
                         logger.info(_("经过对比中心区域, 判断为抵达目标地点."))
                         logger.info(_("无需等待, 当前目标已完成."))
                         return DungeonState.Map, True
-                    else:
-                        logger.info(_("经过对比中心区域, 判断为抵达目标地点."))
-                        logger.info(_("开始等待...等待..."))
-                        PressReturn()
-                        Sleep(0.5)
-                        PressReturn()
-                        while 1:
-                            if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
-                                logger.info(_("等得够久了. 目标地点完成."))
-                                Sleep(1)
-                                Press([777,150])
-                                return None, True
-                            logger.info(_("还需要等待{a}秒.".foramt(a=setting._DUNGWAITTIMEOUT-time.time()+waitTimer)))
-                            if StateCombatCheck(ScreenShot()):
-                                return DungeonState.Combat, False
+                    # else:
+                    #     logger.info(_("经过对比中心区域, 判断为抵达目标地点."))
+                    #     logger.info(_("开始等待...等待..."))
+                    #     PressReturn()
+                    #     Sleep(0.5)
+                    #     PressReturn()
+                    #     while 1:
+                    #         if setting._DUNGWAITTIMEOUT-time.time()+waitTimer<0:
+                    #             logger.info(_("等得够久了. 目标地点完成."))
+                    #             Sleep(1)
+                    #             Press([777,150])
+                    #             return None, True
+                    #         logger.info(_("还需要等待{a}秒.".foramt(a=setting._DUNGWAITTIMEOUT-time.time()+waitTimer)))
+                    #         if StateCombatCheck(ScreenShot()):
+                    #             return DungeonState.Combat, False
         return DungeonState.Map, False
     def StateChest():
         nonlocal runtimeContext
