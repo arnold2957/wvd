@@ -952,9 +952,10 @@ class ConfigPanelApp(tk.Toplevel):
             try:
                 self.current_task_points = LoadQuest(task_name)._TARGETINFOLIST
                 self.is_current_task_dungeon = (LoadQuest(task_name)._TYPE == 'dungeon')
-            except NameError:
+            except Exception:
                 logger.error(_('不可用的任务名.'))
                 self.current_task_points = []
+                self.is_current_task_dungeon = False
 
             # 获取所有策略面板名称
             strategy_names = list(self.strategy_panels.values())

@@ -1413,17 +1413,24 @@ def Factory():
             Sleep(1)
             counter += 1
         return None, None, screen
-    def GameFrozenCheck(queue, scn):
+    def GameFrozenCheck(queue, scn,  tick= 10, threshold = 0.15):
+        LENGTH = tick
         if scn is None:
             raise ValueError(_("GameFrozenCheck被传入了一个空值."))
-        logger.info(_("卡死检测截图"))
-        LENGTH = 10
-        if len(queue) > LENGTH:
-            queue = []
+        
+        logger.debug(_("卡死检测截图"))
+
+        if len(queue) >= LENGTH:
+            queue.pop(0)
         queue.append(scn)
-        totalDiff = 0
-        t = time.time()
-        if len(queue)==LENGTH:
+
+        if not hasattr(GameFrozenCheck, "call_counter"):
+            GameFrozenCheck.call_counter = 0
+        GameFrozenCheck.call_counter += 1
+
+        if GameFrozenCheck.call_counter % tick == 0 and len(queue) == LENGTH:
+            totalDiff = 0
+            t = time.time()
             for i in range(1,LENGTH):
                 grayThis = cv2.cvtColor(queue[i], cv2.COLOR_BGR2GRAY)
                 grayLast = cv2.cvtColor(queue[i-1], cv2.COLOR_BGR2GRAY)
@@ -1431,7 +1438,7 @@ def Factory():
                 totalDiff += mean_diff
             logger.info(f"卡死检测耗时: {time.time()-t:.5f}秒")
             logger.info(f"卡死检测结果: {totalDiff:.5f}")
-            if totalDiff<=0.15:
+            if totalDiff<=threshold:
                 return queue, True
         return queue, False
     def StateCombatCheck(screen):
@@ -1865,7 +1872,7 @@ def Factory():
 
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
-                ["dungFlag","combatActive","chestOpening","whowillopenit","RiseAgain"],
+                ["dungFlag","combatActive","chestOpening","whowillopenit","RiseAgain", "ambush"],
                 [[1,1],[1,1],"chestFlag"],
                 1)
             scn = ScreenShot()
@@ -1910,6 +1917,9 @@ def Factory():
                 return None
             if CheckIf(scn,"dungFlag"):
                 return DungeonState.Dungeon
+            if CheckIf(scn, "ambush"):
+                logger.info("开箱子然后遇到怪物还是善恶, 你这什么运气啊.")
+                return None
             if StateCombatCheck(scn):
                 return DungeonState.Combat
             
@@ -3066,76 +3076,96 @@ def Factory():
                             lambda:StateInn()
                             )
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
-            case "test":
-                def AutoThisChar():
-                    Press([850,1100])
-                    Sleep(0.5)
-                    Press([850,1100])
-                def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl):
-                    skillPosDict = { "左上技能":[266,1015],"右上技能":[640,1015],"左下技能":[266,1104],"右下技能":[640,1104]}
-                    
-                    # 打开详情界面
-                    into_detail = False
-                    for underscore in range(3):
-                        Press(skillPosDict[skillPos])
+            case "mergeBlastNumber":
+                def split_image(img):
+                    img_analyze = {}
+                    for i in range(5):
+                        for j in range(7):
+                            cropped = img[(274+114*j):(368+114*j),(174+114*i):(268+114*i)]
+                            img_analyze[i*10+j] = cropped
+                    return img_analyze
+                def smallgame_check(a,b):
+                    result = cv2.matchTemplate(a, b, cv2.TM_CCOEFF_NORMED)
+                    underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
+                    return max_val
+                def shoot(i):
+                    Press([221+114*i,321])
+                ############
+                screen_queue = []
+                empty_img = LoadTemplateImage('smallgame_empty')
+                merge_counter = 0
+                start_time = time.time()
+                while 1:
+                    Sleep(1)
+                    img = ScreenShot()
+                    if Press(CheckIf(img,"smallgame/nothanks")):
                         Sleep(1)
-                        if CheckIf(ScreenShot(),"spellskill/skillDetail"):
-                            into_detail = True
-                            break
-                    if not into_detail:
-                        logger.info(("没有检测到任务详情界面. 疑似法力不足, 使用自动战斗."))
-                        for underscore in range(3):
-                            PressReturn()
-                            Sleep(0.2)
+                        continue
+                    if Press(CheckIf(img,"smallgame/nothanks_y")):
+                        Sleep(1)
+                        continue
+                    if Press(CheckIf(img,"smallgame/nothanks_s")):
+                        Sleep(1)
+                        continue
+                    if Press(CheckIf(img,"smallgame/yes")):
+                        Sleep(1)
+                        continue
+                    if Press(CheckIf(img,"smallgame/play")):
+                        Sleep(1)
+                        continue
+                    screen_queue, if_frozen = GameFrozenCheck(screen_queue,img[274:(274+114*7),174:(174+114*5)],3,0.002)
+                    if if_frozen:
+                        if smallgame_check(img[1150-50:1150+50,800-50:800+50],empty_img[1150-50:1150+50,800-50:800+50]) > 0.9:
+                            Press([800,1150])
+                            Sleep(2)
+                            Press([315,1037])
+                            Sleep(0.5)
+                            shoot(0)
+                            continue
+                    img_analyze = split_image(img)
 
-                        AutoThisChar()
-                        return
+                    empty_img = LoadTemplateImage('smallgame/smallgame_empty')
+                    img_analyze_empty = split_image(empty_img)
 
-                    # 设置等级
-                    Sleep(1)
-                    scn = ScreenShot()
-                    has_lv_1 = (CheckIf(scn,f"spellskill\skillLvl\lv1")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv1"))
-                    if (not has_lv_1):
-                        if (skilllvl>=2):
-                            logger.error("错误: 设定了高于1级的技能, 但并未检测到技能等级.\n 使用默认技能.")
-                    else:
-                        if skilllvl!=1:
-                            has_lv_x = (CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}"))
-                        else:
-                            has_lv_x = has_lv_1
-
-                        if not has_lv_x:
-                            skilllvl = 1
-                            logger.error("错误: 未检测到目标等级\n 使用1级技能.")
-                        if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
-                            if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
-                                logger.error("错误: 我认为不可能发生这种情况. 请务必告诉我.")
-
-                    # 确认
-                    scn = ScreenShot()
-                    if Press(CheckIf(scn,"OK")):
-                        Sleep(2)
-                    elif pos:=(CheckIf(scn,"next")):
-                        Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
-                    else:
-                        for i in range(6):
-                            Press([150*i-150,750])
-                            Sleep(0.1)
-                        Sleep(2)
-
-                    # 资源不足
-                    Sleep(1)
-                    scn = ScreenShot()
-                    if CheckIf(scn,"notenoughsp") or CheckIf(scn,"notenoughmp"):
-                        for underscore in range(3):
-                            PressReturn()
-                            Sleep(0.2)
-
-                        SkillLvlSelectAndDoubleCheck(skillPos,1)
-                        return
-
+                    depth = [7,7,7,7,7]
+                    for k in img_analyze.keys():
+                        r = smallgame_check(img_analyze[k],img_analyze_empty[k])
+                        if r>0.98:
+                            if k%10 < depth[k//10]:
+                                depth[k//10] = k % 10
                     
-                SkillLvlSelectAndDoubleCheck("左上技能", 4)
+                    # logger.info(depth)
+
+                    next = img[1178-40:1178+40,450-40:450+40,]
+
+                    send = False
+                    for i in range(5):
+                        if depth[i]!=0:
+                            k = i*10+depth[i]-1
+                            if k in img_analyze:
+                                r = smallgame_check(img_analyze[k],next)
+                                if r >0.95:
+                                    send = True
+                                    break
+                    if send:
+                        logger.info(f"合成{i}")
+                        shoot(i)
+                        merge_counter+=1
+                        cost_time = time.time()-start_time
+                        if merge_counter %20 ==0:
+                            logger.info(f"完成最多{merge_counter}次合并, 用时{cost_time:.2f}s. 平均{cost_time/merge_counter:.2f}秒一次合并.", extra={"summary": True})
+                        continue
+                    for i in range(5):
+                        if depth[i]==0:
+                            logger.info(f"空白{i}")
+                            shoot(i)
+                            continue
+                    
+                    mindeep = depth.index(min(depth))
+                    logger.info(f"摆烂{mindeep}")
+                    shoot(mindeep)
+                    continue
+        ##########################
         setting._FINISHINGCALLBACK()
         return
     def Farm(set:FarmConfig):
