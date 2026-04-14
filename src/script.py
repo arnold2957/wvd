@@ -3076,7 +3076,7 @@ def Factory():
                             lambda:StateInn()
                             )
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
-            case "mergeBlastNumber":
+            case "retard_tapjoy":
                 def split_image(img):
                     img_analyze = {}
                     for i in range(5):
@@ -3092,7 +3092,7 @@ def Factory():
                     Press([221+114*i,321])
                 ############
                 screen_queue = []
-                empty_img = LoadTemplateImage('smallgame_empty')
+                empty_img = LoadTemplateImage('smallgame/smallgame_empty')
                 merge_counter = 0
                 start_time = time.time()
                 while 1:
