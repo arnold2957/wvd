@@ -121,12 +121,10 @@ class FarmQuest:
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(_("FarmQuest对象没有属性'%s'") % name)
 class TargetInfo:
-    def __init__(self, target: str, swipeDir: list = None, roi=None, activeSpellSequenceOverride = False):
+    def __init__(self, target: str, swipeDir: list = None, roi=None):
         self.target = target
         self.swipeDir = swipeDir
-        # 注意 roi校验需要target的值. 请严格保证roi在最后.
         self.roi = roi
-        self.activeSpellSequenceOverride = activeSpellSequenceOverride
     @property
     def swipeDir(self):
         return self._swipeDir
@@ -630,10 +628,8 @@ def Factory():
                     logger.info(_("ADB操作失败/数据错误, 尝试重启ADB或模拟器程序..."))
                     ResetDevice()
                 time.sleep(1)
-    def _check(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        template = LoadTemplateImage(shortPathOfTarget)
+    def _check(screenImage, template, roi = None, outputMatchResult = False):
         screenshot = screenImage.copy()
-        threshold = 0.80
         pos = None
         search_area = CutRoI(screenshot, roi)
         try:
@@ -658,7 +654,7 @@ def Factory():
         pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
         return pos,max_val
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _check(screenImage, shortPathOfTarget, roi, outputMatchResult)
+        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult)
 
         if max_val < 0.8:
             logger.debug(_("匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val*100)))
@@ -667,7 +663,7 @@ def Factory():
             logger.debug(_("匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget, b=max_val*100,c=pos)))
             return pos
     def CheckHow(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _check(screenImage, shortPathOfTarget, roi, outputMatchResult)
+        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult)
 
         logger.debug(_("匹配检测: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget,b=max_val*100, c=pos)))
         return max_val
@@ -730,14 +726,10 @@ def Factory():
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
 
         for i in range(4):
-            template = LoadTemplateImage(f"cursor_{i}")
-        
-            result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
-            threshold = 0.80
-            ubderscore, max_val, ubderscore, ubderscore = cv2.minMaxLoc(result)
+            pos, max_val = _check(cropped, LoadTemplateImage(f"cursor_{i}"))
 
-            logger.debug(_("目标格搜素{a}, 匹配程度:{b:.2f}%".format(a=position, b=max_val*100)))
-            if max_val > threshold:
+            logger.debug(_("目标格搜索{a}, 匹配程度:{b:.2f}%".format(a=position, b=max_val*100)))
+            if max_val > 0.8:
                 logger.debug(_("已达到检测阈值."))
                 return None 
         return position
@@ -746,13 +738,11 @@ def Factory():
         screenshot = screenImage
         position = targetInfo.roi
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
+        threshold = 0.8
         
         if (targetInfo.target not in stair_img):
             # 验证楼层
-            template = LoadTemplateImage(targetInfo.target)
-            result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
-            threshold = 0.80
-            underscore, max_val, underscore, underscore = cv2.minMaxLoc(result)
+            pos, max_val = _check(screenshot, LoadTemplateImage(targetInfo.target))
 
             logger.debug(_("搜索楼层标识{a}, 匹配程度:{b:.2f}%".format(a=targetInfo.target,b=max_val*100)))
             if max_val > threshold:
@@ -761,16 +751,45 @@ def Factory():
             return position
             
         else: #equal: targetInfo.target IN stair_img
-            template = LoadTemplateImage(targetInfo.target)
-            result = cv2.matchTemplate(cropped, template, cv2.TM_CCOEFF_NORMED)
-            threshold = 0.80
-            underscore, max_val, underscore, underscore = cv2.minMaxLoc(result)
+            pos, max_val = _check(cropped, LoadTemplateImage(targetInfo.target))
 
             logger.debug(_("搜索楼梯{a}, 匹配程度:{b:.2f}%".format(a=targetInfo.target, b=max_val*100)))
             if max_val > threshold:
                 logger.info(_("判定为楼梯存在, 尚未通过."))
                 return position
             return None
+    def CheckIf_harkenStair(screenImage,targetInfo: TargetInfo):
+        screenshot = screenImage
+        target = targetInfo.target
+        correctStair = targetInfo.roi
+        threshold = 0.80
+
+        isInCorrectStair = True
+
+        if (correctStair != None) and isinstance(correctStair, str) and correctStair.startswith('stair_'):
+            pos, max_val = _check(screenshot, LoadTemplateImage(correctStair))
+
+            logger.debug(_("带验证的哈肯搜索, 目标楼层标识{a}, 匹配程度:{b:.2f}%".format(a=correctStair,b=max_val*100)))
+            if max_val > threshold:
+                logger.info(_("带验证的哈肯搜索, 楼层正确, 判定为当前处于正确楼层."))
+                isInCorrectStair = True
+            isInCorrectStair = False
+        
+        if not isInCorrectStair:
+            logger.info(_("目前处于错误的楼层中, 可能是由于错误点击导致的, 开始全地图搜索哈肯."))
+            pos = StateMap_FindSwipeClick(TargetInfo('harken', None, None))
+            if pos == None:
+                pos = StateMap_FindSwipeClick(TargetInfo('Bharken', None, None))
+            return pos
+        if isInCorrectStair:
+            pos, max_val = _check(screenshot, LoadTemplateImage(target))
+
+            logger.debug(_("不带验证的哈肯搜索, 目标{a}, 匹配程度:{b:.2f}%".format(a=target,b=max_val*100)))
+            if max_val > threshold:
+                logger.info(_("不带验证的哈肯搜索, 已找到哈肯."))
+                return pos
+            return None
+            
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
         template =  LoadTemplateImage(f"fastforward_off")
@@ -1515,14 +1534,12 @@ def Factory():
             return
         def ActiveAutoCombat():
             scn = ScreenShot()
-            # v = CheckHow(scn,r"spellskill/CombatAutoDisable",[[841, 1124, 35, 13]])
-            # logger.info(f"disable: {v}")
-            if (CheckIf(scn,"spellskill/CombatAutoDisable",[[841, 1124, 35, 13]])):
+            if (CheckIf(scn,"spellskill/CombatAutoDisable",[[841, 1124-42, 35, 13]])):
                 Press([850,1100])
             Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl, supportTarget):
-            skillPosDict = { "左上技能":[266,1015],"右上技能":[640,1015],"左下技能":[266,1104],"右下技能":[640,1104]}
+            skillPosDict = { "左上技能":[266,965],"右上技能":[640,965],"左下技能":[266,1054],"右下技能":[640,1054]}
             supportTargetDict = {"左上角色": [200,1200], "中上角色": [450,1200], "右上角色": [700,1200], "左下角色":[200,1400], "中下角色":[450,1400], "右下角色":[700,1400]}
             
             # 打开详情界面
@@ -1727,6 +1744,8 @@ def Factory():
             if target == "position":
                 logger.info(_("当前目标: 地点{a}".format(a=roi)))
                 targetPos = CheckIf_ReachPosition(scn,targetInfo)
+            elif target in ['harken','Bharken']:
+                targetPos = CheckIf_harkenStair(scn,targetInfo)
             elif target.startswith("stair"):
                 logger.info(_("当前目标: 楼梯{a}".format(a=target)))
                 targetPos = CheckIf_throughStair(scn,targetInfo)
