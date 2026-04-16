@@ -47,6 +47,7 @@ CONFIG_VAR_LIST = [
                                                                     },]],
             ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],        
             ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
+            ["GENERAL",   "WEBSITE_ORG_TIME",              tk.StringVar, None],
 
             ["TEMPLATE",   "TASK_POINT_STRATEGY",     dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",      tk.BooleanVar, False],
@@ -2797,7 +2798,7 @@ def Factory():
                     
                     logger.info(_("跳过了巨人检测环节. 现在默认总是击杀灯怪."))
                     RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo("position","左上",[560,928+54],True),
+                        lambda: StateDungeon([TargetInfo("position","左上",[560,928+54]),
                                               TargetInfo("harken2","左上")]),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returntotown","returnText","leaveDung","blessing",[1,1]],2)
                     )

@@ -5,6 +5,7 @@ import logging
 from script import *
 from auto_updater import *
 from utils import *
+import webbrowser
 ############################################
 def BLOCK_WHEEL(event):
     # 向上查找第一个 Canvas 类型的控件
@@ -482,6 +483,7 @@ class ConfigPanelApp(tk.Toplevel):
             foreground=[("disabled selected", "#8CB7DF"),("disabled", "#A0A0A0"), ("selected", "#196FBF")])
         self.style.configure("BoldFont.TCheckbutton", font=("微软雅黑", 9,"bold"))
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
+        self.style.configure("Red.TButton", foreground="red")   # 文字设为红色
 
         # --- UI 变量 ---
         config_dict = LoadConfig()
@@ -1086,100 +1088,9 @@ class ConfigPanelApp(tk.Toplevel):
         self.after(200, lambda : [create_task_point_ui(),switch_task_specific_config()])
 
         # ==========================================
-        # 分组 4: 高级
+        # 分组 4: 战斗方案
         # ==========================================
-        self.section_advanced = CollapsibleSection(content_root, title=_("高级"))
-        self.section_advanced.pack(fill="x", pady=5)
-        
-        # 获取容器
-        container = self.section_advanced.content_frame
-        row_counter = 0
 
-        # 1. 自动要钱
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.active_beg_money = ttk.Checkbutton(
-            frame_row,
-            variable=self.ACTIVE_BEG_MONEY,
-            text=_("没有火的时候自动找王女要钱"),
-            command=self.save_config, # 如果这里需要特定逻辑，可以改回 checkcommand
-            style="Custom.TCheckbutton"
-        )
-        self.active_beg_money.grid(row=0, column=0, sticky=tk.W)
-
-        # 2. 豪华房
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.active_royalsuite_rest = ttk.Checkbutton(
-            frame_row,
-            variable=self.ACTIVE_ROYALSUITE_REST,
-            text=_("住豪华房"),
-            command=self.save_config,
-            style="Custom.TCheckbutton"
-        )
-        self.active_royalsuite_rest.grid(row=0, column=0, sticky=tk.W)
-
-        # 3. 凯旋
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.active_triumph = ttk.Checkbutton(
-            frame_row,
-            variable=self.ACTIVE_TRIUMPH,
-            text=_("跳跃到第三章结局\"凯旋\""),
-            command=self.save_config,
-            style="Custom.TCheckbutton"
-        )
-        self.active_triumph.grid(row=0, column=0, sticky=tk.W)
-
-        # 3. 第四章
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.active_beautiful_ore = ttk.Checkbutton(
-            frame_row,
-            variable=self.ACTIVE_BEAUTIFUL_ORE,
-            text=_("跳跃到第四章结局\"美丽矿石的真相\""),
-            command=self.save_config,
-            style="Custom.TCheckbutton"
-        )
-        self.active_beautiful_ore.grid(row=0, column=0, sticky=tk.W)
-
-        # 4. 因果调整
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        self.active_csc = ttk.Checkbutton(
-            frame_row,
-            variable=self.ACTIVE_CSC,
-            text=_("尝试调整因果"),
-            command=self.save_config,
-            style="Custom.TCheckbutton"
-        )
-        self.active_csc.grid(row=0, column=0, sticky=tk.W)
-
-        # 5. 最大尝试次数
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        def validate_focusout(P):
-            if P == "" or (P.isdigit() and int(P) >= 25):
-                return True
-            else:
-                logger.info(_("尝试次数不能低于25次."))
-                self.MAX_TRY_LIMIT.set(25)
-                return False
-        ttk.Label(frame_row, text=_("状态检查的最大尝试次数:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.max_try_limit_entry = ttk.Entry(frame_row, textvariable=self.MAX_TRY_LIMIT, validate="focusout",
-                                             validatecommand=(self.register(validate_focusout), '%P'), width=3)
-        self.max_try_limit_entry.grid(row=0, column=1)
-        self.button_save_max_try_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_max_try_limit.grid(row=0, column=2)
-        
-        # ==========================================
-        # 分组 5: 战斗方案
-        # ==========================================
         self.section_combat_adv = CollapsibleSection(content_root, title=_("战斗方案"))
         self.section_combat_adv.pack(fill="x")
         container = self.section_combat_adv.content_frame
@@ -1291,6 +1202,156 @@ class ConfigPanelApp(tk.Toplevel):
         else:
             # 无策略，创建一个默认面板
             add_new_panel()
+
+        # ==========================================
+        # 分组 5: 日常
+        # ==========================================
+        self.section_daily = CollapsibleSection(content_root, title=_("日常/周常"))
+        self.section_daily.pack(fill="x", pady=5)
+        container = self.section_daily.content_frame
+        row_counter = 0
+
+        DATE_FORMAT = "%Y-%m-%d"
+        def is_same_week(date_str: str) -> bool:
+            """
+            判断传入的日期是否与当前日期在同一周（周一至周日）
+            :param date_str: 日期字符串，格式如 "2026-04-16"
+            :return: 同一周返回 True，否则 False
+            """
+            try:
+                input_date = datetime.strptime(date_str, DATE_FORMAT).date()
+            except ValueError:
+                raise ValueError(f"日期格式错误，应为 {DATE_FORMAT}")
+
+            current_date = datetime.now().date()
+
+            # isocalendar() 返回 (年份, 第几周, 星期几)  星期一为1，星期日为7
+            input_year, input_week, _ = input_date.isocalendar()
+            cur_year, cur_week, _ = current_date.isocalendar()
+
+            return input_year == cur_year and input_week == cur_week
+        
+        def click_org_web(url, widget):
+            webbrowser.open(url)
+            widget.config(style="TButton")
+            self.WEBSITE_ORG_TIME.set(datetime.now().strftime(DATE_FORMAT))
+            self.save_config()
+
+        # 1. 官网拿钻石
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.official_org_website_1 = ttk.Button(
+            frame_row,
+            text=_("旧官网(50钻)"),
+            command=lambda: click_org_web("https://store.wizardry.info/",self.official_org_website_1))
+        self.official_org_website_1.grid(row=0, column=0, sticky=tk.W)
+        
+        # 2. 官网拿钻石
+        self.official_org_website_2 = ttk.Button(
+            frame_row,
+            text=_("新官网(50钻)"),
+            command=lambda: click_org_web("https://webstore.wizardry.info/",self.official_org_website_2))
+        self.official_org_website_2.grid(row=0, column=1, sticky=tk.W)
+
+        last_time_web_org = self.WEBSITE_ORG_TIME.get()
+        if (last_time_web_org == '') or (not is_same_week(last_time_web_org)):
+            self.section_daily.show()
+            self.official_org_website_1.config(style="Red.TButton")
+            self.official_org_website_2.config(style="Red.TButton")
+
+        # ==========================================
+        # 分组 6: 高级
+        # ==========================================
+
+        self.section_advanced = CollapsibleSection(content_root, title=_("高级"))
+        self.section_advanced.pack(fill="x", pady=5)
+        
+        # 获取容器
+        container = self.section_advanced.content_frame
+        row_counter = 0
+
+        # 1. 自动要钱
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_beg_money = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_BEG_MONEY,
+            text=_("没有火的时候自动找王女要钱"),
+            command=self.save_config, # 如果这里需要特定逻辑，可以改回 checkcommand
+            style="Custom.TCheckbutton"
+        )
+        self.active_beg_money.grid(row=0, column=0, sticky=tk.W)
+
+        # 2. 豪华房
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_royalsuite_rest = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_ROYALSUITE_REST,
+            text=_("住豪华房"),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.active_royalsuite_rest.grid(row=0, column=0, sticky=tk.W)
+
+        # 3. 凯旋
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_triumph = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_TRIUMPH,
+            text=_("跳跃到第三章结局\"凯旋\""),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.active_triumph.grid(row=0, column=0, sticky=tk.W)
+
+        # 3. 第四章
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_beautiful_ore = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_BEAUTIFUL_ORE,
+            text=_("跳跃到第四章结局\"美丽矿石的真相\""),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.active_beautiful_ore.grid(row=0, column=0, sticky=tk.W)
+
+        # 4. 因果调整
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_csc = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_CSC,
+            text=_("尝试调整因果"),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.active_csc.grid(row=0, column=0, sticky=tk.W)
+
+        # 5. 最大尝试次数
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        def validate_focusout(P):
+            if P == "" or (P.isdigit() and int(P) >= 25):
+                return True
+            else:
+                logger.info(_("尝试次数不能低于25次."))
+                self.MAX_TRY_LIMIT.set(25)
+                return False
+        ttk.Label(frame_row, text=_("状态检查的最大尝试次数:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.max_try_limit_entry = ttk.Entry(frame_row, textvariable=self.MAX_TRY_LIMIT, validate="focusout",
+                                             validatecommand=(self.register(validate_focusout), '%P'), width=3)
+        self.max_try_limit_entry.grid(row=0, column=1)
+        self.button_save_max_try_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
+        self.button_save_max_try_limit.grid(row=0, column=2)
+        
 
         ###################################################################
         # 分割线
@@ -1406,7 +1467,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.delete_task_specific_config_button,
             self.active_csc,
             self.max_try_limit_entry,
-            self.button_save_max_try_limit
+            self.button_save_max_try_limit,
+            self.official_org_website_2,
+            self.official_org_website_1
             ]
 
         if state == tk.DISABLED:
