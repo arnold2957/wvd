@@ -6,6 +6,7 @@ from script import *
 from auto_updater import *
 from utils import *
 import webbrowser
+from datetime import datetime, date
 ############################################
 def BLOCK_WHEEL(event):
     # 向上查找第一个 Canvas 类型的控件
@@ -743,7 +744,7 @@ class ConfigPanelApp(tk.Toplevel):
                                               values=list(DUNGEON_TARGETS.keys()),
                                               state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
-        # self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config()) # 这里用后面的战斗部分的g更新方法覆盖
+        # self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config()) # 这里用后面的战斗部分的更新方法覆盖
 
         row_counter += 1
         frame_row = ttk.Frame(container)
@@ -1259,6 +1260,46 @@ class ConfigPanelApp(tk.Toplevel):
             self.official_org_website_1.config(style="Red.TButton")
             self.official_org_website_2.config(style="Red.TButton")
 
+        # 3. 灵庙提示
+        def is_same_fortnight(date_str: str) -> bool:
+            """
+            判断传入的日期是否与当前日期在同一个14天内（以双周周六为分界线）
+            :param date_str: 日期字符串，格式如 "2026-04-16"
+            :return: 同一14天周期返回 True，否则 False
+            """
+            FIRST_DOUBLE_SATURDAY = date(1970, 1, 11)
+            try:
+                input_date = datetime.strptime(date_str, DATE_FORMAT).date()
+            except ValueError:
+                raise ValueError(f"日期格式错误，应为 {DATE_FORMAT}")
+
+            current_date = datetime.now().date()
+
+            # 计算所属周期的起始双周周六的周期编号
+            input_period = (input_date - FIRST_DOUBLE_SATURDAY).days // 14
+            current_period = (current_date - FIRST_DOUBLE_SATURDAY).days // 14
+
+            return input_period == current_period
+        def click_am():
+            self.farm_target_combo.set('[骨头]炉壶灵庙(王都出发)')
+            self.farm_target_combo.event_generate('<<ComboboxSelected>>')
+            self.AM_switch.grid_remove()
+            self.AM_REFRESH_TIME.set(datetime.now().strftime(DATE_FORMAT))
+            self.save_config()
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.AM_switch = ttk.Button(
+            frame_row,
+            text=_("灵庙已刷新! 点此自动切换"),
+            command=click_am)
+        
+        last_time_am = self.AM_REFRESH_TIME.get()
+        if (last_time_am == '') or (not is_same_fortnight(last_time_am)):
+            self.section_daily.show()
+            self.AM_switch.grid(row=0, column=1, sticky=tk.W)
+            self.AM_switch.config(style="Red.TButton")
+
         # ==========================================
         # 分组 6: 高级
         # ==========================================
@@ -1469,7 +1510,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.max_try_limit_entry,
             self.button_save_max_try_limit,
             self.official_org_website_2,
-            self.official_org_website_1
+            self.official_org_website_1,
+            self.AM_switch
             ]
 
         if state == tk.DISABLED:

@@ -433,6 +433,23 @@
             ["DOS_quit"]
         ]
     },
+    
+    "LMG-GT":{
+        "_TYPE":"dungeon",
+        "questName":"[骨头]炉壶灵庙(王都出发)",
+        "_TARGETINFOLIST":[
+            ["position","右下",[393,545]],
+            ["position","右下",[657,755]],
+            ["position","右下",[555,1235]],
+            ["position","右下",[178,1240]]
+        ],
+        "_preEOTcheck":"LMG/LMG",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
+            ["press","LMG/LMG1F",[1,1],1]
+        ]
+    },
 
     "7000G":{
         "questName":"[金币]7000G",

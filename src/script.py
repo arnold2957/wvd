@@ -47,7 +47,8 @@ CONFIG_VAR_LIST = [
                                                                     },]],
             ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],        
             ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
-            ["GENERAL",   "WEBSITE_ORG_TIME",              tk.StringVar, None],
+            ["GENERAL",   "WEBSITE_ORG_TIME",         tk.StringVar, None],
+            ["GENERAL",   "AM_REFRESH_TIME",          tk.StringVar, None],
 
             ["TEMPLATE",   "TASK_POINT_STRATEGY",     dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",      tk.BooleanVar, False],
@@ -1437,10 +1438,8 @@ def Factory():
         LENGTH = tick
         if scn is None:
             raise ValueError(_("GameFrozenCheck被传入了一个空值."))
-        
-        logger.debug(_("卡死检测截图"))
 
-        if len(queue) >= LENGTH:
+        while len(queue) >= LENGTH:
             queue.pop(0)
         queue.append(scn)
 
@@ -1448,7 +1447,9 @@ def Factory():
             GameFrozenCheck.call_counter = 0
         GameFrozenCheck.call_counter += 1
 
-        if GameFrozenCheck.call_counter % tick == 0 and len(queue) == LENGTH:
+        logger.debug(_("卡死检测截图 counter={a} length={b}".format(a=GameFrozenCheck.call_counter, b=len(queue))))
+
+        if (GameFrozenCheck.call_counter % tick == 0) and (len(queue)==LENGTH):
             totalDiff = 0
             t = time.time()
             for i in range(1,LENGTH):
