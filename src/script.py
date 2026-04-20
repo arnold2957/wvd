@@ -775,11 +775,12 @@ def Factory():
         if (correctStair != None) and isinstance(correctStair, str) and correctStair.startswith('stair_'):
             pos, max_val = _check(screenshot, LoadTemplateImage(correctStair))
 
-            logger.debug(_("带验证的哈肯搜索, 目标楼层标识{a}, 匹配程度:{b:.2f}%".format(a=correctStair,b=max_val*100)))
+            logger.debug(_("楼层验证中, 目标楼层标识{a}, 匹配程度:{b:.2f}%".format(a=correctStair,b=max_val*100)))
             if max_val > threshold:
-                logger.info(_("带验证的哈肯搜索, 楼层正确, 判定为当前处于正确楼层."))
+                logger.info(_("楼层验证判定通过, 当前处于正确楼层."))
                 isInCorrectStair = True
-            isInCorrectStair = False
+            else:
+                isInCorrectStair = False
         
         if not isInCorrectStair:
             logger.info(_("目前处于错误的楼层中, 可能是由于错误点击导致的, 开始全地图搜索哈肯."))
@@ -790,9 +791,9 @@ def Factory():
         if isInCorrectStair:
             pos, max_val = _check(screenshot, LoadTemplateImage(target))
 
-            logger.debug(_("不带验证的哈肯搜索, 目标{a}, 匹配程度:{b:.2f}%".format(a=target,b=max_val*100)))
+            logger.debug(_("哈肯搜索, 目标{a}, 匹配程度:{b:.2f}%".format(a=target,b=max_val*100)))
             if max_val > threshold:
-                logger.info(_("不带验证的哈肯搜索, 已找到哈肯."))
+                logger.info(_("哈肯搜索, 已找到哈肯."))
                 return pos
             return None
             
