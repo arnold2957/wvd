@@ -454,46 +454,45 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
     
     return None
 ##################################################################
-def CutRoI(screenshot,roi):
-    if roi is None:
+def CutRoI(screenshot, roi):
+    """
+    screenshot: 输入图像
+    roi: 列表，第一个元素是 (x, y, w, h) 作为main_rect，后续元素是需要涂黑的矩形
+    返回: 只包含 main_rect 区域的图像，其中与其他 RoI 重叠的部分已被涂黑
+    """
+    if roi is None or len(roi) == 0:
         return screenshot
 
-    img_height, img_width = screenshot.shape[:2]
-    roi_copy = roi.copy()
-    roi1_rect = roi_copy.pop(0)  # 第一个矩形 (x, y, width, height)
+    # 第一个是 main_rect，其余是需要涂黑的区域
+    main_rect = roi[0]
+    other_rects = roi[1:] if len(roi) > 1 else []
 
-    x1, y1, w1, h1 = roi1_rect
+    img_h, img_w = screenshot.shape[:2]
 
-    roi1_y_start_clipped = max(0, y1)
-    roi1_y_end_clipped = min(img_height, y1 + h1)
-    roi1_x_start_clipped = max(0, x1)
-    roi1_x_end_clipped = min(img_width, x1 + w1)
+    # 在原图上直接涂黑其他 RoI（注意边界裁剪）
+    for rect in other_rects:
+        x, y, w, h = rect
+        x_start = max(0, x)
+        y_start = max(0, y)
+        x_end = min(img_w, x + w)
+        y_end = min(img_h, y + h)
 
-    pixels_not_in_roi1_mask = np.ones((img_height, img_width), dtype=bool)
-    if roi1_x_start_clipped < roi1_x_end_clipped and roi1_y_start_clipped < roi1_y_end_clipped:
-        pixels_not_in_roi1_mask[roi1_y_start_clipped:roi1_y_end_clipped, roi1_x_start_clipped:roi1_x_end_clipped] = False
+        if x_start < x_end and y_start < y_end:
+            screenshot[y_start:y_end, x_start:x_end] = 0
 
-    screenshot[pixels_not_in_roi1_mask] = 255
+    # 裁剪出 roi1 区域
+    x1, y1, w1, h1 = main_rect
+    x1_start = max(0, x1)
+    y1_start = max(0, y1)
+    x1_end = min(img_w, x1 + w1)
+    y1_end = min(img_h, y1 + h1)
 
-    if (roi is not []):
-        for roi2_rect in roi_copy:
-            x2, y2, w2, h2 = roi2_rect
+    if x1_start >= x1_end or y1_start >= y1_end:
+        logger.error("错误:roi1范围无效.")
+        return screenshot  # 无效 roi1，返回原图
 
-            roi2_y_start_clipped = max(0, y2)
-            roi2_y_end_clipped = min(img_height, y2 + h2)
-            roi2_x_start_clipped = max(0, x2)
-            roi2_x_end_clipped = min(img_width, x2 + w2)
-
-            if roi2_x_start_clipped < roi2_x_end_clipped and roi2_y_start_clipped < roi2_y_end_clipped:
-                pixels_in_roi2_mask_for_current_op = np.zeros((img_height, img_width), dtype=bool)
-                pixels_in_roi2_mask_for_current_op[roi2_y_start_clipped:roi2_y_end_clipped, roi2_x_start_clipped:roi2_x_end_clipped] = True
-
-                # 将位于 roi2 中的像素设置为0
-                # (如果这些像素之前因为不在roi1中已经被设为0，则此操作无额外效果)
-                screenshot[pixels_in_roi2_mask_for_current_op] = 0
-
-    # cv2.imwrite(f"CutRoI_{time.time()}.png", screenshot)
-    return screenshot
+    main_img = screenshot[y1_start:y1_end, x1_start:x1_end].copy()
+    return main_img
 ##################################################################
 def Factory():
     toaster = ToastNotifier()
@@ -649,11 +648,16 @@ def Factory():
         underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
-            cv2.imwrite("origin.png", screenshot)
-            cv2.rectangle(screenshot, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            cv2.imwrite("matched.png", screenshot)
+            cv2.imwrite("origin.png", search_area)
+            cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+            cv2.imwrite("matched.png", search_area)
 
-        pos=[max_loc[0] + template.shape[1]//2, max_loc[1] + template.shape[0]//2]
+        if roi is None or len(roi) == 0:
+            pos=[max_loc[0] + template.shape[1]//2,
+                 max_loc[1] + template.shape[0]//2]
+        else:
+            pos=[roi[0][0] + max_loc[0] + template.shape[1]//2,
+                 roi[0][1] + max_loc[1] + template.shape[0]//2]
         return pos,max_val
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult)
@@ -816,6 +820,9 @@ def Factory():
         DeviceShell("input keyevent KEYCODE_BACK")
     def WrapImage(image,r,g,b):
         scn_b = image * np.array([b, g, r])
+        return np.clip(scn_b, 0, 255).astype(np.uint8)
+    def MinusImage(image,r,g,b):
+        scn_b = image - np.array([b, g, r])
         return np.clip(scn_b, 0, 255).astype(np.uint8)
     def TryPressRetry(scn):
         if Press(CheckIf(scn,"startdownload")):
@@ -1536,7 +1543,7 @@ def Factory():
             return
         def ActiveAutoCombat():
             scn = ScreenShot()
-            if (CheckIf(scn,"spellskill/CombatAutoDisable",[[841, 1124-42, 35, 13]])):
+            if CheckIf(scn,"spellskill/CombatAutoDisable",[[842, 1124-42, 35, 13]]):
                 Press([850,1100])
             Sleep(5)
             return
@@ -2111,18 +2118,20 @@ def Factory():
                     ########### 不打开地图, 执行自动任务
                     def startAuto():
                         for tar in ["chest_auto","mark_auto"]:
-                            if targetInfoList[0] and (targetInfoList[0].target == tar):
-                                
+                            if targetInfoList[0] and (targetInfoList[0].target == tar):                        
                                 lastscreen = ScreenShot()
-                                if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
+                                if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
                                     Press(CheckIf(lastscreen,"mapflag"))
-                                    Press([664,329])
+                                    Press([762,346]) # 认为是没有展开菜单
                                     Sleep(1)
                                     lastscreen = ScreenShot()
-                                    if not Press(CheckIf(lastscreen,tar,[[710,250,180,180]])):
+                                    if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
                                         return None # 如果我们两次检测失败, 认为发生了异常
                                 
                                 if tar == "chest_auto":
+                                    if not CheckIf(MinusImage(lastscreen,90,90,90),"chest_auto_minus",[[811,340, 41, 30]]): # 精确匹配按钮是否可用
+                                        logger.info('宝箱按钮不可用.')
+                                        return DungeonState.Dungeon
                                     lastscreen = ScreenShot()
                                     if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
                                         TargetPointComplete()
