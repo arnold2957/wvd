@@ -1766,16 +1766,9 @@ def Factory():
                     if (target == "chest") and (swipeDir!= None):
                         logger.debug(_("宝箱热力图: 地图:{a} 方向:{b} 位置:{c}".format(a=setting.FARM_TARGET, b=swipeDir, c=targetPos)))
                     Sleep(1)
-                    # 二次确认也不确认了, 会撞上哈肯然后跳到别的楼层.
-                    # if not roi:
-                    #     # 如果没有指定roi 我们使用二次确认
-                    #     # logger.debug(f"拖动: {targetPos[0]},{targetPos[1]} -> 450,800")
-                    #     # DeviceShell(f"input swipe {targetPos[0]} {targetPos[1]} {(targetPos[0]+450)//2} {(targetPos[1]+800)//2}")
-                    #     # 二次确认也不拖动了 太容易触发bug
-                    #     Sleep(2)
-                    #     Press([1,210]) # 点击地图左上角来清除选中状态
-                    #     targetPos = CheckIf(ScreenShot(),target,roi)
                     break
+            if targetPos!=None:
+                return targetPos
         return targetPos
     def StateMoving_CheckFrozen():
         runtimeContext._RESUMEAVAILABLE = True
@@ -1805,7 +1798,7 @@ def Factory():
             lastscreen = screen
         return dungState
     def StateSearch(waitTimer, targetInfo):
-        normalPlace = ["harken","chest","leaveDung","position"]
+        normalPlace = ["harken","chest","leaveDung","position","Bharken"]
         target = targetInfo.target
         # 地图已经打开.
         map = ScreenShot()

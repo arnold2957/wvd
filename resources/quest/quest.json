@@ -92,6 +92,20 @@
         ]
     },
 
+    "DH-7f-auto":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱+刷怪]深雪R7自动箱",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["harken", "右上",null]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-R7","input swipe 650 900 650 250",1]
+        ]
+    },
+
+
     "DH-Church":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]深雪教会区",
