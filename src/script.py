@@ -1787,8 +1787,8 @@ def Factory():
                 logger.info(_("已退出移动状态. 当前状态: {a}.".format(a=dungState)))
                 break
             if lastscreen is not None:
-                gray1 = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-                gray2 = cv2.cvtColor(lastscreen, cv2.COLOR_BGR2GRAY)
+                gray1 = cv2.cvtColor(CutRoI(screen,[[650,25,225,225]]), cv2.COLOR_BGR2GRAY)
+                gray2 = cv2.cvtColor(CutRoI(lastscreen,[[650,25,225,225]]), cv2.COLOR_BGR2GRAY)
                 mean_diff = cv2.absdiff(gray1, gray2).mean()/255
                 logger.debug(f"移动停止检查:{mean_diff:.2f}")
                 if mean_diff < 0.1:

@@ -48,7 +48,7 @@
             ["position","右上",[500,610]],
             ["position","右上",[445,290]],
             ["position","右上",[820,605]],
-            ["harken", "右上",null]
+            ["harken", "右上","stair_DH_R4"]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
