@@ -104,6 +104,7 @@ class RuntimeContext:
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
     _RESUMEAVAILABLE = False
+    _STEPAFTERRESTART = True
     STRATEGY_RESET_EACH_RESTART = {}
     STRATEGY_RESET_EACH_DUNGEON = {}
     COMBAT_RESET = True
@@ -915,6 +916,7 @@ def Factory():
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
+        runtimeContext._STEPAFTERRESTART = False
         runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
 
         # 保存重启前截图作为备份
@@ -2076,6 +2078,16 @@ def Factory():
                             else:
                                 logger.info(_("自动回复异常, 中止本次回复."))
                                 break
+                    ########### 防止卡空气墙
+                    if not runtimeContext._STEPAFTERRESTART:
+                        logger.info("防止卡空气墙, 右转后左右走.")
+                        DeviceShell(f"input swipe 300 950 600 950")
+                        Sleep(1)
+                        Press([27,950])
+                        Sleep(1)
+                        Press([853,950])
+
+                        runtimeContext._STEPAFTERRESTART = True
                     ########### 尝试resume
                     not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),"resume")):
