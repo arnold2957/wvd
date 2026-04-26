@@ -2059,7 +2059,9 @@ def Factory():
                         shouldRecover = True
                         runtimeContext._RECOVERAFTERREZ = False
                     if shouldRecover:
-                        Press([1,1])
+                        for undrscore in range(3):
+                            Press([1,1])
+                            Sleep(0.1)
                         counter_trychar = -1
                         while 1:
                             counter_trychar += 1

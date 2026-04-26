@@ -151,7 +151,7 @@
         "_TARGETINFOLIST":[
             ["chest","左上",null],
             ["chest","右上",null],
-            ["Bharken", "右下","stair_DH_Church"]
+            ["Bharken", "右上","stair_DH_Church"]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
@@ -164,7 +164,7 @@
         "questName":"[宝箱]教会-全范围找箱",
         "_TARGETINFOLIST":[
             ["chest_auto"],
-            ["Bharken", "右下","stair_DH_Church"]
+            ["Bharken", "右上","stair_DH_Church"]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
