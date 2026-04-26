@@ -220,8 +220,19 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
             text=True
         )
         result_str = result.stdout.strip()
+        logger.debug(result_str)
         split_results_list = result_str.split("\n")
-        check_results_list = [int(task.split("\",\"")[1]) for task in split_results_list if task]
+        check_results_list = []
+        for task in split_results_list:
+            if not task:
+                continue
+            parts = task.split("\",\"")
+            if len(parts) >= 2:
+                try:
+                    pid = int(parts[1])
+                    check_results_list.append(pid)
+                except ValueError:
+                    pass
         return check_results_list
     def KillAdb():
         adb_path = GetADBPathFromEmuPath(setting.EMU_PATH)

@@ -105,35 +105,6 @@
         ]
     },
 
-
-    "DH-Church":{
-        "_TYPE":"dungeon",
-        "questName":"[刷怪]深雪教会区",
-        "_TARGETINFOLIST":[
-            ["position","左下",[240,810]],
-            ["position","左下",[130,400]],
-            ["position","右上",[500,930]],
-            ["Bharken", "右上","stair_DH_Church"]
-        ],
-        "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-Church","input swipe 650 900 650 250",1]
-        ]
-    },
-
-    "DH-Church-auto":{
-        "_TYPE":"dungeon",
-        "questName":"[宝箱]教会-全范围找箱",
-        "_TARGETINFOLIST":[
-            ["chest_auto"],
-            ["Bharken", "右下","stair_DH_Church"]
-        ],
-        "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-Church","input swipe 650 900 650 250",1]
-        ]
-    },
-
     "DH-10f-test":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R10",
@@ -171,6 +142,33 @@
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
             ["press","DH-R9","input swipe 650 900 650 250",1]
+        ]
+    },
+
+    "DH-Church-upper":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]教会-自动宝箱上半",
+        "_TARGETINFOLIST":[
+            ["chest","左上",null],
+            ["chest","右上",null],
+            ["Bharken", "右下","stair_DH_Church"]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-Church","input swipe 650 900 650 250",1]
+        ]
+    },
+    
+    "DH-Church-auto":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]教会-全范围找箱",
+        "_TARGETINFOLIST":[
+            ["chest_auto"],
+            ["Bharken", "右下","stair_DH_Church"]
+        ],
+        "_EOT":[
+            ["press","DH",["EdgeOfTown",[1,1]],1],
+            ["press","DH-Church","input swipe 650 900 650 250",1]
         ]
     },
 
