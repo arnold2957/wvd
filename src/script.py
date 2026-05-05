@@ -2151,16 +2151,18 @@ def Factory():
                                     if not CheckIf(MinusImage(lastscreen,90,90,90),"chest_auto_minus",[[811,340, 41, 30]]): # 精确匹配按钮是否可用
                                         logger.info('宝箱按钮不可用.')
                                         return DungeonState.Dungeon
-                                    lastscreen = ScreenShot()
-                                    if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
-                                        TargetPointComplete()
-                                        logger.info(_("退出宝箱搜索."))
-                                        return DungeonState.Dungeon
-                                    lastscreen = ScreenShot()
-                                    if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
-                                        TargetPointComplete()
-                                        logger.info(_("退出宝箱搜索."))
-                                        return DungeonState.Dungeon
+                                    
+                                lastscreen = ScreenShot()
+                                if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
+                                    TargetPointComplete()
+                                    logger.info(_("退出自动搜索."))
+                                    return DungeonState.Dungeon
+                                lastscreen = ScreenShot()
+                                if CheckIf(lastscreen,"NoChestCanBeFound") or CheckIf(lastscreen,"theRouteToTheDestinationCannotBeFound"):
+                                    TargetPointComplete()
+                                    logger.info(_("退出自动搜索."))
+                                    return DungeonState.Dungeon
+
 
                                 Sleep(1)
                                 Press(CheckIf(lastscreen,"resume")) # 立刻按一次resume 以兼容暴风雪场景.
@@ -3052,7 +3054,6 @@ def Factory():
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"钢试炼\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             extra={"summary": True})
-
             case "jier":
                 total_time = 0
                 while 1:
@@ -3214,6 +3215,26 @@ def Factory():
                     logger.info(f"摆烂{mindeep}")
                     shoot(mindeep)
                     continue
+            case "fortress-B8F_trap":
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(_("第{a}次要塞小精灵完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                                    extra={"summary": True})
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
+
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([TargetInfo("stair_fortress1f","左上",[720,395]),
+                                              TargetInfo("mark_auto"),
+                                              TargetInfo("position","右下",[712,972]),
+                                              TargetInfo("position","右下",[500,1080]),
+                                              TargetInfo("position","右下",[765,918]),
+                                              TargetInfo("position","右下",[606,1026]),
+                                              TargetInfo("stair_fortressGate","左下", [720,1027]),])
+                        )
         ##########################
         setting._FINISHINGCALLBACK()
         return

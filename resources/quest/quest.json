@@ -47,9 +47,7 @@
         "_TARGETINFOLIST":[
             ["stair_fortress1f","左上",[720,395]],
             ["position","左下",[453,865]],
-            ["chest","左下",[[1,783,900,376],[1,839,423,362]]],
             ["position","右下",[500,918]],
-            ["chest","右下",[[1,783,900,500]]],
             ["stair_fortressGate","左下", [720,1027]],
             ["position","左下",[720,1241]]
         ],
@@ -60,21 +58,8 @@
     },
 
     "fortress-B8F_trap":{
-        "_TYPE":"dungeon",
-        "questName":"[妖精]要塞八层陷阱",
-        "_TARGETINFOLIST":[
-            ["stair_fortress1f","左上",[720,395]],
-            ["position","右下",[712,972]],
-            ["position","右下",[500,1080]],
-            ["position","右下",[765,918]],
-            ["position","右下",[606,1026]],
-            ["stair_fortressGate","左下", [720,1027]],
-            ["position","左下",[720,1241]]
-        ],
-        "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressEntrance","input swipe 650 250 650 900",1]
-        ]
+        "_TYPE":"quest",
+        "questName":"[妖精]要塞八层陷阱"
     },
 
 
