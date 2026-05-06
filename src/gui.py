@@ -1055,6 +1055,12 @@ class ConfigPanelApp(tk.Toplevel):
             self.overall_combo.bind("<<ComboboxSelected>>", on_switch_overall_update_ui)
 
             return
+        def show_task_tip():
+            task_name = self.FARM_TARGET.get()
+            if not task_name:
+                return
+            if tip := LoadQuest(task_name)._TIPS:
+                logger.info(f"\n\n########### TIPS #############\n\n{tip}\n\n##############################")
         def update_combat_strategy_combobox_values():
             if not hasattr(self, 'task_point_comboboxes') or not self.task_point_comboboxes:
                 return
@@ -1084,6 +1090,7 @@ class ConfigPanelApp(tk.Toplevel):
         def on_farm_target_selected(event):
             close_task_specific_config()
             create_task_point_ui()
+            show_task_tip()
         self.farm_target_combo.bind("<<ComboboxSelected>>", on_farm_target_selected)
 
         self.after(200, lambda : [create_task_point_ui(),switch_task_specific_config()])

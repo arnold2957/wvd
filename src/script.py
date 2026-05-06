@@ -119,7 +119,9 @@ class FarmQuest:
     _SPECIALFORCESTOPINGSYMBOL = None
     _SPELLSEQUENCE = None
     _TYPE = None
-    _RTT = None
+    _RTT = None # Return To Town, 回程时执行的流程
+    _TIPS = None
+
     def __getattr__(self, name):
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(_("FarmQuest对象没有属性'%s'") % name)
@@ -175,7 +177,7 @@ class TargetInfo:
 def LoadQuest(farmtarget):
     # 构建文件路径
     jsondict = LoadJson(ResourcePath(QUEST_FILE))
-    logger.info(farmtarget)
+    logger.debug(f"读取任务{farmtarget}")
     if farmtarget in jsondict:
         data = jsondict[farmtarget]
     else:
