@@ -62,6 +62,19 @@
         "questName":"[妖精]要塞八层陷阱",
         "_TIPS":"要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n然后不停刷新8f门口两个怪, 确保其中之一是3小恶魔+1小精灵.\n然后在该位置打上标记.\n然后开启脚本."
     },
+    	
+    "fortress-10F":{
+        "_TYPE":"dungeon",
+        "questName":"[灯怪]要塞10层",
+        "_TARGETINFOLIST":[
+            ["position","左下",[560,757]],
+            ["Bharken2","左下",null]
+        ],
+        "_EOT":[
+            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+            ["press","fortressb10f","input swipe 650 900 650 250",1]
+        ]
+    },
 
 
     "DH-4f":{
