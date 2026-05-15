@@ -62,6 +62,7 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",    tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEG_MONEY",        tk.BooleanVar, True],
             ["TEMPLATE",   "MAX_TRY_LIMIT",           tk.IntVar,     25],
+            ["TEMPLATE",   "MAX_CRASH_LIMIT",         tk.IntVar,     10],
             ["TEMPLATE",   "REST_INTERVEL",           tk.IntVar,     1],
             ["TEMPLATE",   "ACTIVE_CSC",              tk.BooleanVar, True],
             ]
@@ -424,7 +425,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                     runtimeContext._RUNNING_EMU_PID = int(results_list[0])
                     logger.info(_("模拟器进程号为{a}.".format(a=runtimeContext._RUNNING_EMU_PID)))
                 else:
-                    logger.info(_("\n\n***********\n有多个模拟器已经启动, 无法识别进程号. 当需要重启模拟器的时候, 会重启所有模拟器.\n为了避免本问题, 请关闭目标模拟器, 并使用本脚本自动启动模拟器.\n\n"))
+                    logger.info(_("\n\n***********\n有多个模拟器已经启动, 无法识别进程号. 当需要重启模拟器的时候, 会重启所有模拟器.\n为了避免此问题, 请关闭目标模拟器, 并使用本脚本自动启动模拟器.\n\n"))
                 break
 
             if (not runtimeContext._RUNNING_EMU_PID) or (runtimeContext._RUNNING_EMU_PID not in CheckEmulator()):
@@ -942,8 +943,8 @@ def Factory():
         package_name = "jp.co.drecom.wizardry.daphne"
 
         runtimeContext._CRASHCOUNTER +=1
-        logger.info(_("崩溃计数: {a}\n崩溃计数超过10次后会重启模拟器.".format(a=runtimeContext._CRASHCOUNTER)))
-        if runtimeContext._CRASHCOUNTER > 10:
+        logger.info(_("崩溃计数: {a}\n崩溃计数超过{b}次后会重启模拟器.".format(a=runtimeContext._CRASHCOUNTER, b=setting.MAX_CRASH_LIMIT)))
+        if runtimeContext._CRASHCOUNTER > setting.MAX_CRASH_LIMIT:
             runtimeContext._CRASHCOUNTER = 0
             force_restart_EMU = True
 
@@ -1132,6 +1133,11 @@ def Factory():
 
     def DungeonCompletionCounter():
         nonlocal runtimeContext
+        # 如果发生了开箱或者战斗那么+1
+        if runtimeContext._MEET_CHEST_OR_COMBAT:
+            runtimeContext._MEET_CHEST_OR_COMBAT = False
+            runtimeContext._COUNTERDUNG+=1
+
         if runtimeContext._LAPTIME!= 0:
             runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
             summary_text = _("已完成{a}次\"{b}\"地下城.\n总计{c}秒.上次用时:{d}秒.\n".format(a=runtimeContext._COUNTERDUNG, b=setting.FARM_TARGET_TEXT, c=round(runtimeContext._TOTALTIME,2), d=round(time.time()-runtimeContext._LAPTIME,2)))
@@ -1142,10 +1148,7 @@ def Factory():
             logger.info("{a}{b}".format(a=runtimeContext._IMPORTANTINFO, b=summary_text),extra={"summary": True})
         # 圈数计时器
         runtimeContext._LAPTIME = time.time()
-        # 开箱或战斗标识
-        if runtimeContext._MEET_CHEST_OR_COMBAT:
-            runtimeContext._MEET_CHEST_OR_COMBAT = False
-            runtimeContext._COUNTERDUNG+=1
+
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext

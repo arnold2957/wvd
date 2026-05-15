@@ -1383,22 +1383,43 @@ class ConfigPanelApp(tk.Toplevel):
         self.active_csc.grid(row=0, column=0, sticky=tk.W)
 
         # 5. 最大尝试次数
+        def validate_focusout(P,limit,w):
+            if P == "" or (P.isdigit() and int(P) >= int(limit)):
+                return True
+            else:
+                logger.info(_("尝试次数不能低于{a}次.".format(a=limit)))
+                w.set(limit)
+                return False
+
         row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        def validate_focusout(P):
-            if P == "" or (P.isdigit() and int(P) >= 25):
-                return True
-            else:
-                logger.info(_("尝试次数不能低于25次."))
-                self.MAX_TRY_LIMIT.set(25)
-                return False
-        ttk.Label(frame_row, text=_("状态检查的最大尝试次数:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.max_try_limit_entry = ttk.Entry(frame_row, textvariable=self.MAX_TRY_LIMIT, validate="focusout",
-                                             validatecommand=(self.register(validate_focusout), '%P'), width=3)
-        self.max_try_limit_entry.grid(row=0, column=1)
+        self.max_try_limit_entry = ttk.Entry(
+            frame_row,
+            textvariable=self.MAX_TRY_LIMIT,
+            validate="focusout",validatecommand=(
+                self.register(validate_focusout),
+                '%P',25,self.MAX_TRY_LIMIT),
+            width=3)
+        self.max_try_limit_entry.grid(row=0, column=0)
+        ttk.Label(frame_row, text=_("次定位失败后重启游戏.")).grid(row=0, column=1, sticky=tk.W, pady=5)
         self.button_save_max_try_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
         self.button_save_max_try_limit.grid(row=0, column=2)
+
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.max_crash_limit_entry = ttk.Entry(
+            frame_row,
+            textvariable=self.MAX_CRASH_LIMIT,
+            validate="focusout",validatecommand=(
+                self.register(validate_focusout),
+                '%P',10,self.MAX_CRASH_LIMIT),
+            width=3)
+        self.max_crash_limit_entry.grid(row=0, column=0)
+        ttk.Label(frame_row, text=_("次重启游戏后重启模拟器.")).grid(row=0, column=1, sticky=tk.W, pady=5)
+        self.button_save_max_crash_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
+        self.button_save_max_crash_limit.grid(row=0, column=2)
         
 
         ###################################################################
@@ -1516,6 +1537,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_csc,
             self.max_try_limit_entry,
             self.button_save_max_try_limit,
+            self.max_crash_limit_entry,
+            self.button_save_max_crash_limit,
             self.official_org_website_2,
             self.official_org_website_1,
             self.AM_switch

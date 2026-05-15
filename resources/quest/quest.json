@@ -261,10 +261,10 @@
     },
     "fordraig-B3F":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]鸟洞三层fordraigB3F",
+        "questName":"[宝箱]鸟洞fordraig 3F",
         "_TARGETINFOLIST":[
-            ["chest",null],
-            ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
+            ["chest_auto"],
+            ["harken"]
         ],
         "_preEOTcheck":"fordraig/B3F",
         "_EOT":[
