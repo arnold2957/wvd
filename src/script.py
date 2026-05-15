@@ -1955,6 +1955,15 @@ def Factory():
             if CheckIf(scn,"RiseAgain"):
                 RiseAgainReset(reason = "chest")
                 return None
+            
+            # 此处易出bug：在开箱失败的情况下，会播放人物掉血的动画，此时小地图会短暂显示出来
+            # 若顶部的while loop恰好在此时截图，会判断画面中有"dungFlag"，然而实际上还在开箱结算界面
+            # 进而导致此处返回DungeonState.Dungeon，然后StateDungeon进入case DungeonState.Dungeon尝试resume但是没有resume按钮
+            # 然后导致转DungeonState.Map尝试打开地图，StateSearch(.)找不到地图会转到dungState = None
+            # 此时StateDungeon(.)开始重新IdentifyState()，但是宝箱结算界面不能被识别
+            # 于是IdentifyState()一直要重新识别到开始尝试点击[1,1]才能把结算对话过掉
+            # 解决方法很简单：重新截图，在图像识别的时候保持截图是最新的
+            scn = ScreenShot()
             if CheckIf(scn,"dungFlag"):
                 return DungeonState.Dungeon
             if CheckIf(scn, "ambush"):
