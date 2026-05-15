@@ -259,6 +259,19 @@
             ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],1]
         ]
     },
+    "malice-B3F":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]怨嗟洞窟三层maliceB3F",
+        "_EOT":[
+            ["press","malice_malice",["EdgeOfTown",[1,1]],1],
+            ["press","malice_B3F",[1,1],1]
+        ],
+        "_TARGETINFOLIST":
+        [
+            ["position","右上",[715,290]],
+            ["harken2",null,null]
+        ]
+    },
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鸟洞fordraig 3F",
