@@ -1180,7 +1180,7 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,press_any_key],1)
+        pos = FindCoordsOrElseExecuteFallbackAndWait([target,"openworldmap"],[swipe,press_any_key],1)
 
         # 现在已经确保了可以看见target, 那么确保可以点击成功
         Sleep(1)
@@ -1507,17 +1507,22 @@ def Factory():
         FindCoordsOrElseExecuteFallbackAndWait("Stay",["OK",[299,1464]],2)
         PressReturn()
     def StateEoT():
-        runtimeContext._RESUMEAVAILABLE = False
-        if quest._preEOTcheck:
-            if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
-                pass
-        for info in quest._EOT:
+        def EoTStep(info):
             if info[1]=="intoWorldMap":
                 TeleportFromCityToWorldLocation(*info[2])
             else:
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
+
+        runtimeContext._RESUMEAVAILABLE = False
+        if quest._preEOTcheck:
+            if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
+                pass
+        for info in quest._EOT:
+            RestartableSequenceExecution(
+                lambda: EoTStep(info)
+                )
         RestartableSequenceExecution(
             lambda: FindCoordsOrElseExecuteFallbackAndWait(["dungFlag","GotoDung"], [quest._EOT[-1][1],[1,1]], 1)
             )
