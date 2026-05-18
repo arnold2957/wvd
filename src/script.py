@@ -1960,6 +1960,9 @@ def Factory():
             if CheckIf(scn,"RiseAgain"):
                 RiseAgainReset(reason = "chest")
                 return None
+            
+            # 在图像识别的时候保持截图是最新的
+            scn = ScreenShot()
             if CheckIf(scn,"dungFlag"):
                 return DungeonState.Dungeon
             if CheckIf(scn, "ambush"):
