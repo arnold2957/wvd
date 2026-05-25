@@ -1,4 +1,3 @@
-from ppadb.client import Client as AdbClient
 from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
@@ -7,6 +6,7 @@ from datetime import datetime
 import os
 import subprocess
 from utils import *
+from device import create_device
 import random
 from threading import Thread,Event
 from pathlib import Path
@@ -20,9 +20,11 @@ DUNGEON_TARGETS = BuildQuestReflection()
         
 CONFIG_VAR_LIST = [
             #categor      var_name,                   type,          default_value
+            ["GENERAL",   "DEVICE_TYPE",              tk.StringVar,  "mumu"],
             ["GENERAL",   "EMU_PATH",                 tk.StringVar,  None],
             ["GENERAL",   "EMU_INDEX",                tk.IntVar,     0],
             ["GENERAL",   "ADB_ADRESS",               tk.StringVar,  "127.0.0.1:16384"],
+            ["GENERAL",   "ADB_PATH",                 tk.StringVar,  None],
             ["GENERAL",   "LAST_VERSION",             tk.StringVar,  None],
             ["GENERAL",   "LATEST_VERSION",           tk.StringVar,  None],
             ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
@@ -76,6 +78,7 @@ class FarmConfig:
         self._MSGQUEUE = None
         #### 底层接口
         self._ADBDEVICE = None
+        self._DEVICE = None
     def __getitem__(self, key):
         return getattr(self, key)
     def __getattr__(self, name):
@@ -204,271 +207,6 @@ def CMDLine(cmd):
     result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding="utf-8")
     logger.debug(_("cmd命令返回:{a}\n cmd命令错误:{b}").format(a=result.stdout, b=result.stderr))
     return result
-def GetADBPathFromEmuPath(emu_path):
-        adb_path = emu_path
-        adb_path = adb_path.replace("HD-Player.exe", "HD-Adb.exe") # 蓝叠
-        adb_path = adb_path.replace("MuMuPlayer.exe", "adb.exe") # mumu
-        adb_path = adb_path.replace("MuMuNxDevice.exe", "adb.exe") # mumu
-        if not os.path.exists(adb_path):
-            logger.error(_("adb程序序不存在: {a}").format(a=adb_path))
-            return None
-    
-        return adb_path
-def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, FORCE_RESTART_EMU = False, FORCE_RESTART_ADB = False):
-    def CheckEmulator():
-        result = subprocess.run(
-            "tasklist /FO CSV /NH | findstr \"MuMuNxDevice.exe MuMuPlayer.exe\"",
-            shell=True,
-            capture_output=True, 
-            text=True
-        )
-        result_str = result.stdout.strip()
-        logger.debug(result_str)
-        split_results_list = result_str.split("\n")
-        check_results_list = []
-        for task in split_results_list:
-            if not task:
-                continue
-            parts = task.split("\",\"")
-            if len(parts) >= 2:
-                try:
-                    pid = int(parts[1])
-                    check_results_list.append(pid)
-                except ValueError:
-                    pass
-        return check_results_list
-    def KillAdb():
-        adb_path = GetADBPathFromEmuPath(setting.EMU_PATH)
-        try:
-            logger.info(_("正在检查并关闭adb..."))
-            # Windows 系统使用 taskkill 命令
-            if os.name == "nt":
-                subprocess.run(
-                    f"taskkill /f /im adb.exe", 
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False  # 不检查命令是否成功（进程可能不存在）
-                )
-                time.sleep(1)
-                subprocess.run(
-                    f"taskkill /f /im HD-Adb.exe", 
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False  # 不检查命令是否成功（进程可能不存在）
-                )
-            else:
-                subprocess.run(
-                    f"pkill -f {adb_path}", 
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False
-                )
-            logger.info(_("已尝试终止adb"))
-        except Exception as e:
-            logger.error(_("终止模拟器进程时出错: {a}").format(a=str(e)))
-    def KillEmulator():
-        emulator_name = os.path.basename(setting.EMU_PATH)
-        emulator_SVC = "MuMuVMMSVC.exe"
-        try:
-            logger.info(_("正在检查并关闭已运行的模拟器实例{a}...").format(a=emulator_name))
-            # Windows 系统使用 taskkill 命令
-            if os.name == "nt":
-                if runtimeContext._RUNNING_EMU_PID:
-                    logger.info(_("使用已知进程号{a}关闭模拟器...").format(a=runtimeContext._RUNNING_EMU_PID))
-                    subprocess.run(
-                        f"taskkill /IM /pid {runtimeContext._RUNNING_EMU_PID}", 
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
-                    )
-                    time.sleep(1)
-                    subprocess.run(
-                        f"taskkill /F /IM MuMuVMMHeadless.exe", 
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
-                    )
-                    time.sleep(1)
-                else:
-                    logger.info(_("模拟器uid未知, 全杀了."))
-                    subprocess.run(
-                        f"taskkill /f /im {emulator_name}", 
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
-                    )
-                    time.sleep(1)
-                    subprocess.run(
-                        f"taskkill /f /im {emulator_SVC}", 
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
-                    )
-                    time.sleep(1)
-
-            # Unix/Linux 系统使用 pkill 命令
-            else:
-                subprocess.run(
-                    f"pkill -f {emulator_name}", 
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False
-                )
-                subprocess.run(
-                    f"pkill -f {emulator_headless}", 
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    check=False
-                )
-            logger.info(_("已尝试终止模拟器进程: {a}".format(a=emulator_name)))
-        except Exception as e:
-            logger.error(_("终止模拟器进程时出错: {a}".format(a=str(e))))
-        finally:
-            # 重置进程号
-            runtimeContext._RUNNING_EMU_PID = None
-
-    def StartEmulator():
-        hd_player_path = setting.EMU_PATH
-        if not os.path.exists(hd_player_path):
-            logger.error(_("模拟器启动程序不存在: {a}".format(a=hd_player_path)))
-            return False
-        
-        cmd = ("\"{hd}\" control -v {a}").format(hd=hd_player_path, a=setting.EMU_INDEX)
-        try:
-            logger.info(_("启动模拟器: {a}".format(a=cmd)))
-
-            # 启动前检查进程
-            pre_result_list = CheckEmulator()
-
-            subprocess.Popen(
-                cmd, 
-                shell=True,
-                stdout=subprocess.DEVNULL, 
-                stderr=subprocess.DEVNULL,
-                cwd=os.path.dirname(hd_player_path))
-
-            # 延时
-            time.sleep(5)
-
-            # 启动后检查进程
-            aft_results_list = CheckEmulator()
-
-            logger.info(aft_results_list)
-            new_tasks = [task for task in aft_results_list if task not in pre_result_list]
-            if new_tasks:
-                # 模拟器启动成功，pid捕获成功
-                runtimeContext._RUNNING_EMU_PID = int(new_tasks[0])
-                logger.info(_("模拟器启动开始，进程号为{a}".format(a=runtimeContext._RUNNING_EMU_PID)))
-
-        except Exception as e:
-            logger.error(_("启动模拟器失败: {a}".format(a=str(e))))
-            return False
-        
-        logger.info(_("等待模拟器启动..."))
-        time.sleep(15)
-
-    # 以上是内部函数
-    ####################################
-    # 功能实现
-
-    if FORCE_RESTART_EMU:
-        KillEmulator()
-        time.sleep(1)
-    
-    if FORCE_RESTART_ADB:
-        KillAdb()
-        time.sleep(1)
-
-    MAXRETRIES = 20
-
-    adb_path = GetADBPathFromEmuPath(setting.EMU_PATH)
-
-    for attempt in range(MAXRETRIES):
-        logger.info(_("-----------------------\n开始尝试连接adb. 次数:{a}/{b}...").format(a=attempt + 1, b=MAXRETRIES))
-
-        if attempt == 3:
-            logger.info(_("失败次数过多, 尝试关闭adb."))
-            KillAdb()
-
-            # 我们不起手就关, 但是如果2次链接还是尝试失败, 那就触发一次强制重启.
-        
-        try:
-            logger.info(_("检查adb服务..."))
-            result = CMDLine(f"\"{adb_path}\" devices")
-            if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
-                time.sleep(2)
-                result = CMDLine(f"\"{adb_path}\" devices")
-                if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
-                    logger.info("adb服务未启动!\n启动adb服务...")
-                    CMDLine(f"\"{adb_path}\" kill-server")
-                    CMDLine(f"\"{adb_path}\" start-server")
-                    time.sleep(2)
-
-            logger.debug(_("尝试连接到adb..."))
-            result = CMDLine(f"\"{adb_path}\" connect {setting.ADB_ADRESS}")
-
-            result = CMDLine(f"\"{adb_path}\" devices")
-            if ("{a}").format(a=setting.ADB_ADRESS) in result.stdout:
-                logger.info(_("成功连接到模拟器!"))
-                results_list = CheckEmulator()
-                logger.debug("{a}".format(a=results_list))
-                if len(results_list)==1:
-                    runtimeContext._RUNNING_EMU_PID = int(results_list[0])
-                    logger.info(_("模拟器进程号为{a}.".format(a=runtimeContext._RUNNING_EMU_PID)))
-                else:
-                    logger.info(_("\n\n***********\n有多个模拟器已经启动, 无法识别进程号. 当需要重启模拟器的时候, 会重启所有模拟器.\n为了避免此问题, 请关闭目标模拟器, 并使用本脚本自动启动模拟器.\n\n"))
-                break
-
-            if (not runtimeContext._RUNNING_EMU_PID) or (runtimeContext._RUNNING_EMU_PID not in CheckEmulator()):
-                logger.info(_("模拟器未运行，尝试启动..."))
-                StartEmulator()
-                logger.info(_("模拟器(应该)启动完毕.\n 尝试连接到模拟器..."))
-                result = CMDLine(f"\"{adb_path}\" connect {setting.ADB_ADRESS}")
-                if result.returncode == 0 and ("connected" in result.stdout or "already" in result.stdout):
-                    logger.info(_("成功连接到模拟器"))
-                    break
-                logger.info(_("无法连接. 检查adb端口."))
-
-            logger.info(_("连接失败: {a}".format(a=result.stderr.strip())))
-            time.sleep(2)
-            KillEmulator()
-            KillAdb()
-            time.sleep(2)
-        except Exception as e:
-            logger.error(_("重启ADB服务时出错: {a}".format(a=e)))
-            time.sleep(2)
-            KillEmulator()
-            KillAdb()
-            time.sleep(2)
-            return None
-    else:
-        logger.info(_("达到最大重试次数，连接失败"))
-        return None
-
-    try:
-        client = AdbClient(host="127.0.0.1", port=5037)
-        devices = client.devices()
-        
-        # 查找匹配的设备
-        target_device = "{a}".format(a=setting.ADB_ADRESS)
-        for device in devices:
-            if device.serial == target_device:
-                logger.info(_("成功创建设备对象: {a}".format(a=device.serial)))
-                return device
-    except Exception as e:
-        logger.error(_("创建ADB设备时出错: {a}".format(a=e)))
-    
-    return None
-##################################################################
 def CutRoI(screenshot, roi):
     """
     screenshot: 输入图像
@@ -519,7 +257,12 @@ def Factory():
     def ResetDevice(force_restart_emu=False, force_restart_adb = False):
         nonlocal setting # 修改device
         nonlocal runtimeContext
-        if device := CheckAndRecoverDevice(setting, runtimeContext, force_restart_emu, force_restart_adb):
+        if setting._FORCESTOPING and setting._FORCESTOPING.is_set():
+            logger.info(_("任务正在停止，跳过设备重连."))
+            return None
+        if setting._DEVICE is None:
+            setting._DEVICE = create_device(setting, runtimeContext)
+        if device := setting._DEVICE.connect(force_restart_emu, force_restart_adb):
             setting._ADBDEVICE = device
             logger.info(_("ADB服务成功启动，设备已连接."))
     def DeviceShell(cmdStr):
@@ -532,7 +275,7 @@ def Factory():
             def adb_command_thread():
                 nonlocal exception, result
                 try:
-                    result = setting._ADBDEVICE.shell(cmdStr, timeout=5)
+                    result = setting._DEVICE.shell(cmdStr, timeout=5)
                 except Exception as e:
                     exception = e
                 finally:
@@ -578,14 +321,7 @@ def Factory():
         
         while True:
             try:
-                # 获取设备序列号，用于构造 adb 命令
-                serial = setting._ADBDEVICE.serial 
-
-                process_result = subprocess.run(
-                    [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out", "screencap"],
-                    capture_output=True, # 捕获输出
-                    timeout=5            # 设置超时
-                )
+                process_result = setting._DEVICE.screencap()
                 
                 if process_result.stderr:
                     logger.error(_("截图命令报错: {a}".format(a=process_result.stderr.decode('utf-8', errors='ignore'))))
@@ -949,16 +685,14 @@ def Factory():
             force_restart_EMU = True
 
         if force_restart_EMU:
-            CheckAndRecoverDevice(setting, runtimeContext, FORCE_RESTART_EMU=True)
+            if setting._DEVICE is None:
+                setting._DEVICE = create_device(setting, runtimeContext)
+            setting._DEVICE.connect(force_restart_emu=True)
             Sleep(5)
 
-        DeviceShell("logcat -c")
-        mainAct = DeviceShell(f"cmd package resolve-activity --brief {package_name}").strip().split("\n")[-1]
-        DeviceShell(f"am force-stop {package_name}")
-        logger.info(_("巫术, 启动!"))
-        logger.debug(DeviceShell(f"am start -n {mainAct}"))
+        setting._DEVICE.restart_game(package_name)
         Sleep(10)
-        logs = DeviceShell("logcat -d | grep -i \"unable to initialize.*graphics api\"")
+        logs = setting._DEVICE.find_graphics_api_crash_log()
         if logs.strip():
             logger.error(_("检测到崩溃日志, 关闭模拟器重启.{a}".format(a=logs)))
             restartGame(skip_screenshot = False, force_restart_EMU = True)
@@ -967,11 +701,20 @@ def Factory():
         pass
     def RestartableSequenceExecution(*operations):
         while True:
+            if setting._FORCESTOPING.is_set():
+                logger.info(_("任务已停止."))
+                return
             try:
                 for op in operations:
+                    if setting._FORCESTOPING.is_set():
+                        logger.info(_("任务已停止."))
+                        return
                     op()
                 return
             except RestartSignal:
+                if setting._FORCESTOPING.is_set():
+                    logger.info(_("任务已停止."))
+                    return
                 logger.info(_("任务进度重置中..."))
                 continue
     ##################################################################
@@ -3135,9 +2878,13 @@ def Factory():
                 logger.info(_("开始睡觉."))
                 t = time.time()
                 for counter in range(9999):
+                    if setting._FORCESTOPING.is_set():
+                        break
                     RestartableSequenceExecution(
                             lambda:StateInn()
                             )
+                    if setting._FORCESTOPING.is_set():
+                        break
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
             case "retard_tapjoy":
                 def split_image(img):
@@ -3159,6 +2906,8 @@ def Factory():
                 merge_counter = 0
                 start_time = time.time()
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
                     Sleep(1)
                     img = ScreenShot()
                     if Press(CheckIf(img,"smallgame/nothanks")):
@@ -3265,6 +3014,11 @@ def Factory():
         Sleep(1) # 没有等utils初始化完成
         
         ResetDevice()
+        if setting._DEVICE and setting._ADBDEVICE:
+            setting._DEVICE.restart_game()
+            Sleep(10)
+        else:
+            logger.info(_("ADB设备尚未连接，跳过启动时重启游戏."))
 
         quest = LoadQuest(setting.FARM_TARGET)
         if quest:

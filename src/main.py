@@ -1,5 +1,8 @@
 from gui import *
 import argparse
+import os
+import signal
+import threading
 
 __version__ = '2.2.8' 
 OWNER = "arnold2957"
@@ -11,6 +14,7 @@ class AppController(tk.Tk):
         self.withdraw()
         self.msg_queue = queue.Queue()
         self.main_window = None
+        self._shutting_down = False
         if not headless:
             if not self.main_window:
                 self.main_window = ConfigPanelApp(self,
@@ -22,6 +26,7 @@ class AppController(tk.Tk):
             
         self.quest_threading = None
         self.quest_setting = None
+        self._display_restored = False
 
         self.is_checking_for_update = False 
         self.updater = AutoUpdater(
@@ -32,6 +37,40 @@ class AppController(tk.Tk):
         )
         self.schedule_periodic_update_check()
         self.check_queue()
+
+    def force_shutdown(self, signum=None, frame=None, exit_code=130):
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+
+        def fallback_exit():
+            os._exit(exit_code)
+
+        fallback_timer = threading.Timer(30.0, fallback_exit)
+        fallback_timer.daemon = True
+        fallback_timer.start()
+
+        try:
+            logger.info("正在强制停止程序...")
+            if self.quest_setting and hasattr(self.quest_setting, '_FORCESTOPING'):
+                self.quest_setting._FORCESTOPING.set()
+                self.cleanup_device_after_stop()
+            if self.main_window and self.main_window.winfo_exists():
+                try:
+                    self.main_window.destroy()
+                except Exception:
+                    pass
+            try:
+                self.quit()
+            except Exception:
+                pass
+            try:
+                self.destroy()
+            except Exception:
+                pass
+            StopLogListener()
+        except Exception:
+            os._exit(exit_code)
 
     def run_in_thread(self, target_func, *args):
         thread = threading.Thread(target=target_func, args=args, daemon=True)
@@ -60,8 +99,10 @@ class AppController(tk.Tk):
                     self.quest_setting = value                    
                     self.quest_setting._MSGQUEUE = self.msg_queue
                     self.quest_setting._FORCESTOPING = Event()
+                    self._display_restored = False
                     Farm = Factory()
                     self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                    self.quest_threading.daemon = True
                     self.quest_threading.start()
                     logger.info(f'启动任务\"{self.quest_setting.FARM_TARGET_TEXT}\"...')
 
@@ -70,6 +111,7 @@ class AppController(tk.Tk):
                     if hasattr(self, 'quest_threading') and self.quest_threading.is_alive():
                         if hasattr(self.quest_setting, '_FORCESTOPING'):
                             self.quest_setting._FORCESTOPING.set()
+                        self.cleanup_device_after_stop()
                 
                 case 'turn_to_7000G':
                     logger.info('开始要钱...')
@@ -79,6 +121,7 @@ class AppController(tk.Tk):
                         if not self.quest_threading.is_alive():
                             Farm = Factory()
                             self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                            self.quest_threading.daemon = True
                             self.quest_threading.start()
                             break
                     if self.main_window:
@@ -146,7 +189,20 @@ class AppController(tk.Tk):
             pass
         finally:
             # 持续监听
-            self.after(100, self.check_queue)
+            if not self._shutting_down:
+                self.after(100, self.check_queue)
+
+    def cleanup_device_after_stop(self):
+        if self._display_restored:
+            return
+        device = getattr(self.quest_setting, "_DEVICE", None) if self.quest_setting else None
+        if not device:
+            return
+        try:
+            if device.cleanup_after_stop():
+                self._display_restored = True
+        except Exception as e:
+            logger.error(_("停止后清理设备时出错: {a}").format(a=e))
 
 def parse_args():
     """解析命令行参数"""
@@ -175,7 +231,13 @@ def main():
     args = parse_args()
 
     controller = AppController(args.headless, args.config)
-    controller.mainloop()
+    signal.signal(signal.SIGINT, controller.force_shutdown)
+    try:
+        controller.mainloop()
+    except KeyboardInterrupt:
+        controller.force_shutdown()
+    finally:
+        StopLogListener()
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
