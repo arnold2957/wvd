@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox,simpledialog
 import os
 import logging
+import subprocess
 from script import *
+from device import DEVICE_REGISTRY, device_path, path_exists
 from auto_updater import *
 from utils import *
 import webbrowser
@@ -443,6 +445,15 @@ def LoadConfig(specific = 'ALL'):
     elif specific == "default":
         result_config = raw_config.get("DEFAULT", {})
 
+    if specific in ("ALL", "general"):
+        device_type = result_config.get("DEVICE_TYPE")
+        emu_path = str(result_config.get("EMU_PATH") or "").lower()
+        if not device_type:
+            if "hd-player.exe" in emu_path or "hd-adb.exe" in emu_path:
+                result_config["DEVICE_TYPE"] = "bluestacks"
+            else:
+                result_config["DEVICE_TYPE"] = "mumu"
+
     return result_config
 ############################################
 class ConfigPanelApp(tk.Toplevel):
@@ -468,10 +479,11 @@ class ConfigPanelApp(tk.Toplevel):
         self.adb_active = False
 
         # 关闭时退出整个程序
-        self.protocol("WM_DELETE_WINDOW", self.controller.destroy)
+        self.protocol("WM_DELETE_WINDOW", lambda: self.controller.force_shutdown(exit_code=0))
 
         # --- 任务状态 ---
         self.quest_active = False
+        self.quest_stopping = False
 
         # --- 任务点 ---
         self.task_point_vars = {}
@@ -510,6 +522,9 @@ class ConfigPanelApp(tk.Toplevel):
             self.save_config()
     
     def save_config(self):
+        if hasattr(self, "device_type_display") and hasattr(self, "DEVICE_TYPE_OPTIONS"):
+            self.DEVICE_TYPE.set(self.DEVICE_TYPE_OPTIONS.get(self.device_type_display.get(), self.DEVICE_TYPE.get()))
+
         # karma
         if self.KARMA_ADJUST.get().isdigit():
             valuestr = self.KARMA_ADJUST.get()
@@ -517,7 +532,24 @@ class ConfigPanelApp(tk.Toplevel):
 
         # emu path
         emu_path = self.EMU_PATH.get()
-        emu_path = emu_path.replace("HD-Adb.exe", "HD-Player.exe")
+        if self.DEVICE_TYPE.get() == "bluestacks":
+            path = device_path(emu_path) if emu_path else None
+            if path and path.name.lower() in ["hd-adb.exe", "hd-player.exe"]:
+                emu_path = str(path.parent)
+        elif self.DEVICE_TYPE.get() == "mumu":
+            path = device_path(emu_path) if emu_path else None
+            if path and path.name.lower() in ["adb.exe", "mumuplayer.exe", "mumunxdevice.exe"]:
+                emu_path = str(path.parent)
+            if path and path.name.lower() == "shell":
+                emu_path = str(path.parent.parent.parent)
+        elif self.DEVICE_TYPE.get() == "gpg_dev":
+            path = device_path(emu_path) if emu_path else None
+            if path and path.name.lower() in ["adb.exe", "crosvm.exe", "service.exe"]:
+                emu_path = str(path.parent)
+            if path and path.name.lower() == "service":
+                emu_path = str(path.parent.parent)
+            if path and path.name.lower() == "emulator":
+                emu_path = str(path.parent.parent)
         self.EMU_PATH.set(emu_path)
 
         # farm target
@@ -594,67 +626,404 @@ class ConfigPanelApp(tk.Toplevel):
         content_root = self.scroll_view.scrollable_frame
 
         # ==========================================
-        # 分组 1: 基础设置 & 模拟器
+        # 分组 1: 基础设置 & 设备
         # ==========================================
-        self.section_emu = CollapsibleSection(content_root, title=_("模拟器"), expanded= False if self.EMU_PATH.get() else True,)
+        self.section_emu = CollapsibleSection(content_root, title=_("设备"), expanded= False if self.EMU_PATH.get() or self.ADB_PATH.get() else True,)
         self.section_emu.pack(fill="x", pady=(0, 5)) # 使用pack垂直堆叠
         
         # 获取折叠板的内容容器
         container = self.section_emu.content_frame 
 
-        row_counter = 0 
+        row_counter = 0
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        
+        ttk.Label(frame_row, text=_("类型:")).grid(row=0, column=0, sticky=tk.W, padx=(5, 0), pady=2)
+        self.DEVICE_TYPE_OPTIONS = {
+            _("MuMu 模拟器"): "mumu",
+            _("BlueStacks Legacy"): "bluestacks",
+            _("Google Play 游戏电脑版开发人员模拟器"): "gpg_dev",
+            _("实体设备"): "physical",
+        }
+        self.DEVICE_TYPE_LABELS = {value: key for key, value in self.DEVICE_TYPE_OPTIONS.items()}
+        self.device_type_display = tk.StringVar(value=self.DEVICE_TYPE_LABELS.get(self.DEVICE_TYPE.get(), _("MuMu 模拟器")))
+        self.device_type_combobox = ttk.Combobox(
+            frame_row,
+            textvariable=self.device_type_display,
+            values=list(self.DEVICE_TYPE_OPTIONS.keys()),
+            state="readonly",
+            width=28,
+        )
+        self.device_type_combobox.grid(row=0, column=1, sticky=tk.W, padx=5, pady=2)
         self.adb_status_label = ttk.Label(frame_row)
-        self.adb_status_label.grid(row=0, column=0)
-        
-        adb_entry = ttk.Entry(frame_row, textvariable=self.EMU_PATH)
-        adb_entry.grid_remove()
+        self.adb_status_label.grid(row=0, column=2, sticky=tk.W, padx=(0, 5), pady=2)
+        row_counter += 1
+
+        self.device_paths_block = ttk.LabelFrame(container, text=_("配置"))
+        self.device_paths_block.grid(row=row_counter, column=0, sticky=tk.W, pady=(4, 2))
+
+        self.device_install_path = tk.StringVar(value="")
+        self.device_emulator_path = tk.StringVar(value="")
+        self.device_adb_tools_path = tk.StringVar(value="")
+        self.device_extra_path = tk.StringVar(value="")
+        self.device_real_paths = {}
+        self.device_missing_paths = []
+
+        self.path_rows = {}
+        for path_row, key, label_text, variable in [
+            (3, "install", _("安装目录:"), self.device_install_path),
+            (4, "emulator", _("模拟器程序:"), self.device_emulator_path),
+            (5, "adb", _("ADB工具:"), self.device_adb_tools_path),
+            (6, "cleanup_processes", _("清理进程:"), self.device_extra_path),
+        ]:
+            label = ttk.Label(self.device_paths_block, text=label_text, width=11)
+            label.grid(row=path_row, column=0, sticky=tk.W, padx=(5, 0), pady=2)
+            entry = ttk.Entry(self.device_paths_block, textvariable=variable, width=26, state="readonly")
+            entry.grid(row=path_row, column=1, sticky=tk.W, padx=5, pady=2)
+            self.path_rows[key] = {"label": label, "entry": entry, "label_text": label_text}
         
         def selectADB_PATH():
-            path = filedialog.askopenfilename(
-                title=_("选择ADB执行文件"),
-                filetypes=[("Executable", "*.exe"), ("All files", "*.*")]
-            )
+            if self.DEVICE_TYPE.get() == "gpg_dev":
+                path = filedialog.askdirectory(title=_("选择模拟器目录"))
+            else:
+                path = filedialog.askdirectory(title=_("选择模拟器安装目录"))
             if path:
                 self.EMU_PATH.set(path)
                 self.save_config()
 
         self.adb_path_change_button = ttk.Button(
-            frame_row, text=_("修改"), command=selectADB_PATH, width=5
+            self.device_paths_block, text=_("修改"), command=selectADB_PATH, width=5
         )
-        self.adb_path_change_button.grid(row=0, column=1)
+        self.adb_path_change_button.grid(row=3, column=2, sticky=tk.W, padx=(0, 0), pady=2)
+
+        def selectPHYSICAL_ADB_PATH():
+            path = filedialog.askopenfilename(
+                title=_("选择ADB执行文件"),
+                filetypes=[("Executable", "*.exe"), ("All files", "*.*")]
+            )
+            if path:
+                self.ADB_PATH.set(path)
+                self.save_config()
+
+        self.physical_adb_path_change_button = ttk.Button(
+            self.device_paths_block, text=_("修改"), command=selectPHYSICAL_ADB_PATH, width=5
+        )
+        self.physical_adb_path_change_button.grid(row=5, column=2, sticky=tk.W, padx=(0, 0), pady=2)
+
+        self.device_config_warning = ttk.Label(
+            self.device_paths_block,
+            text=_("部分必要文件未找到，请检查安装目录或ADB工具路径。"),
+            foreground="red",
+            wraplength=420,
+        )
+        self.device_config_warning.grid(row=7, column=0, columnspan=3, sticky=tk.W, padx=(5, 0), pady=(4, 2))
+        self.device_config_warning.grid_remove()
         
         def update_adb_status(*args):
-            if self.EMU_PATH.get():
-                self.adb_status_label.config(text=_("已设置模拟器"), foreground="green")
+            if self.DEVICE_TYPE.get() == "physical":
+                if self.ADB_PATH.get():
+                    self.adb_status_label.config(text=_("已设置设备"), foreground="green")
+                else:
+                    self.adb_status_label.config(text=_("未找到设备"), foreground="red")
+            elif self.EMU_PATH.get():
+                if self.DEVICE_TYPE.get() == "gpg_dev":
+                    self.adb_status_label.config(text=_("已设置模拟器目录"), foreground="green")
+                else:
+                    self.adb_status_label.config(text=_("已设置模拟器"), foreground="green")
             else:
-                self.adb_status_label.config(text=_("未设置模拟器"), foreground="red")
+                self.adb_status_label.config(text=_("未找到模拟器"), foreground="red")
+
+        def display_device_path(value, install_root=None):
+            path_text = str(value or "")
+            if not path_text or install_root is None:
+                return path_text
+            path = device_path(path_text)
+            root = device_path(install_root)
+            try:
+                relative = path.relative_to(root)
+            except ValueError:
+                return path_text
+            return "$" + _("安装目录") + "\\" + str(relative)
+
+        def set_path_row(key, value, required=True, display_value=None):
+            real_value = str(value or "")
+            display_value = str(display_value if display_value is not None else real_value)
+            self.device_real_paths[key] = real_value
+            row = self.path_rows[key]
+            row["label"].configure(text=row["label_text"], foreground="black")
+            self.path_rows[key]["entry"].configure(foreground="black")
+            if key == "install":
+                self.device_install_path.set(display_value)
+            elif key == "emulator":
+                self.device_emulator_path.set(display_value)
+            elif key == "adb":
+                self.device_adb_tools_path.set(display_value)
+            elif key == "cleanup_processes":
+                self.device_extra_path.set(display_value)
+
+            if not real_value:
+                if required:
+                    self.path_rows[key]["entry"].configure(foreground="red")
+                    row["label"].configure(foreground="red")
+                    self.device_missing_paths.append(key)
+                return
+
+            path = device_path(real_value)
+            if path_exists(path):
+                row["label"].configure(foreground="green")
+            elif required:
+                self.path_rows[key]["entry"].configure(foreground="red")
+                row["label"].configure(foreground="red")
+                self.device_missing_paths.append(key)
+
+        def update_device_config_warning():
+            if not hasattr(self, "device_config_warning"):
+                return
+            if self.device_missing_paths:
+                self.device_config_warning.grid()
+            else:
+                self.device_config_warning.grid_remove()
+
+        def apply_path_row_visibility():
+            device_cls = DEVICE_REGISTRY.get(self.DEVICE_TYPE.get())
+            visible_rows = getattr(device_cls, "visible_path_rows", []) if device_cls else []
+            for key, widgets in self.path_rows.items():
+                if key in visible_rows:
+                    widgets["label"].grid()
+                    widgets["entry"].grid()
+                else:
+                    widgets["label"].grid_remove()
+                    widgets["entry"].grid_remove()
+
+        def adb_tools_available():
+            adb_path_text = self.device_real_paths.get("adb", "")
+            return bool(adb_path_text) and path_exists(device_path(adb_path_text))
+
+        def update_adb_test_button_visibility():
+            if not hasattr(self, "button_test_adb_port"):
+                return
+            if adb_tools_available():
+                if not self.button_test_adb_port.winfo_manager():
+                    self.button_test_adb_port.pack(side=tk.LEFT)
+            else:
+                self.button_test_adb_port.pack_forget()
+
+        def test_adb_connection():
+            self.save_config()
+            adb_path_text = self.device_real_paths.get("adb", "")
+            if not adb_path_text or not path_exists(device_path(adb_path_text)):
+                messagebox.showwarning(_("ADB测试"), _("ADB工具不存在，无法测试连接。"))
+                return
+
+            adb_path = str(device_path(adb_path_text))
+            serial = self.ADB_ADRESS.get().strip()
+            try:
+                if ":" in serial:
+                    subprocess.run(
+                        [adb_path, "connect", serial],
+                        capture_output=True,
+                        text=True,
+                        timeout=8,
+                        encoding="utf-8",
+                        errors="ignore",
+                    )
+                result = subprocess.run(
+                    [adb_path, "devices"],
+                    capture_output=True,
+                    text=True,
+                    timeout=8,
+                    encoding="utf-8",
+                    errors="ignore",
+                )
+            except Exception as exc:
+                messagebox.showerror(_("ADB测试"), _("ADB测试失败: {a}").format(a=exc))
+                return
+
+            output = (result.stdout or "") + (result.stderr or "")
+            if serial and serial in output:
+                messagebox.showinfo(_("ADB测试"), _("ADB连接成功，地址已保存。"))
+            else:
+                messagebox.showwarning(_("ADB测试"), _("未在ADB设备列表中找到该地址。"))
+
+        def update_device_paths(*args):
+            emu_path = self.EMU_PATH.get()
+            self.device_install_path.set("")
+            self.device_emulator_path.set("")
+            self.device_adb_tools_path.set("")
+            self.device_extra_path.set("")
+            self.device_real_paths = {}
+            self.device_missing_paths = []
+
+            if self.DEVICE_TYPE.get() == "physical":
+                set_path_row("install", "", required=False)
+                set_path_row("emulator", "", required=False)
+                set_path_row("adb", self.ADB_PATH.get(), required=True)
+                set_path_row("cleanup_processes", "", required=False)
+                apply_path_row_visibility()
+                update_adb_test_button_visibility()
+                update_device_config_warning()
+                return
+
+            if not emu_path:
+                set_path_row("install", "", required=True)
+                set_path_row("emulator", "", required=True)
+                set_path_row("adb", "", required=True)
+                set_path_row("cleanup_processes", "", required=False)
+                apply_path_row_visibility()
+                update_adb_test_button_visibility()
+                update_device_config_warning()
+                return
+
+            root = device_path(emu_path)
+            match self.DEVICE_TYPE.get():
+                case "mumu":
+                    if root.name.lower() == "shell":
+                        root = root.parent.parent.parent
+                    shell_dir = root / "nx_device" / "12.0" / "shell"
+                    set_path_row("install", root)
+                    set_path_row(
+                        "emulator",
+                        shell_dir / "MuMuNxDevice.exe",
+                        display_value=display_device_path(shell_dir / "MuMuNxDevice.exe", root),
+                    )
+                    set_path_row(
+                        "adb",
+                        shell_dir / "adb.exe",
+                        display_value=display_device_path(shell_dir / "adb.exe", root),
+                    )
+                    set_path_row("cleanup_processes", "MuMuVMMSVC.exe, MuMuVMMHeadless.exe", required=False)
+                case "bluestacks":
+                    set_path_row("install", root)
+                    set_path_row(
+                        "emulator",
+                        root / "HD-Player.exe",
+                        display_value=display_device_path(root / "HD-Player.exe", root),
+                    )
+                    set_path_row(
+                        "adb",
+                        root / "HD-Adb.exe",
+                        display_value=display_device_path(root / "HD-Adb.exe", root),
+                    )
+                    set_path_row("cleanup_processes", "", required=False)
+                case "gpg_dev":
+                    if root.name.lower() == "emulator":
+                        root = root.parent.parent
+                    emulator_dir = root / "current" / "emulator"
+                    set_path_row("install", root)
+                    set_path_row(
+                        "emulator",
+                        root / "Bootstrapper.exe",
+                        display_value=display_device_path(root / "Bootstrapper.exe", root),
+                    )
+                    set_path_row(
+                        "adb",
+                        emulator_dir / "adb.exe",
+                        display_value=display_device_path(emulator_dir / "adb.exe", root),
+                    )
+                    set_path_row("cleanup_processes", "", required=False)
+                case _:
+                    set_path_row("install", "", required=False)
+                    set_path_row("emulator", "", required=False)
+                    set_path_row("adb", "", required=False)
+                    set_path_row("cleanup_processes", "", required=False)
+
+            apply_path_row_visibility()
+            update_adb_test_button_visibility()
+            update_device_config_warning()
+
+        def detect_default_emulator_path(device_type):
+            device_cls = DEVICE_REGISTRY.get(device_type)
+            if not device_cls:
+                return None
+            for root in getattr(device_cls, "default_install_roots", []):
+                path = device_path(root)
+                if path_exists(path):
+                    return str(path)
+            return None
+
+        def detect_default_adb_path(device_type):
+            device_cls = DEVICE_REGISTRY.get(device_type)
+            if not device_cls:
+                return None
+            first_existing_default_adb_path = getattr(device_cls, "first_existing_default_adb_path", None)
+            if not first_existing_default_adb_path:
+                return None
+            path = first_existing_default_adb_path()
+            return str(path) if path else None
         
         self.EMU_PATH.trace_add("write", lambda *args: update_adb_status())
+        self.EMU_PATH.trace_add("write", lambda *args: update_device_paths())
+        self.ADB_PATH.trace_add("write", lambda *args: update_adb_status())
+        self.ADB_PATH.trace_add("write", lambda *args: update_device_paths())
         update_adb_status()
+        update_device_paths()
 
-        # 端口和编号
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        ttk.Label(frame_row, text=_("ADB地址:")).grid(row=0, column=2, sticky=tk.W, pady=5)
+        self.adb_address_label = ttk.Label(self.device_paths_block, text=_("ADB地址:"), width=11)
+        self.adb_address_label.grid(row=1, column=0, sticky=tk.W, padx=(5, 0), pady=2)
         vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
-        self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_ADRESS, validate="key",
-                                        width=15)
-        self.adb_port_entry.grid(row=0, column=3)
-        self.button_save_adb_port = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_adb_port.grid(row=0, column=4)
-        row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-        ttk.Label(frame_row, text=_("模拟器编号:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.emu_index_entry = ttk.Entry(frame_row, textvariable=self.EMU_INDEX, validate="key",
+        self.adb_port_entry = ttk.Entry(self.device_paths_block, textvariable=self.ADB_ADRESS, validate="key",
+                                        width=26)
+        self.adb_port_entry.grid(row=1, column=1, sticky=tk.W, padx=5, pady=2)
+        self.adb_address_actions = ttk.Frame(self.device_paths_block)
+        self.adb_address_actions.grid(row=1, column=2, sticky=tk.W, padx=(0, 0), pady=2)
+        self.button_test_adb_port = ttk.Button(self.adb_address_actions, text=_("测试"), command=test_adb_connection, width=5)
+        self.button_test_adb_port.pack(side=tk.LEFT)
+
+        self.emu_index_label = ttk.Label(self.device_paths_block, text=_("多开编号:"), width=11)
+        self.emu_index_label.grid(row=2, column=0, sticky=tk.W, padx=(5, 0), pady=2)
+        self.emu_index_entry = ttk.Entry(self.device_paths_block, textvariable=self.EMU_INDEX, validate="key",
                                          validatecommand=(vcmd_non_neg, '%P'), width=5)
-        self.emu_index_entry.grid(row=0, column=1)
-        self.button_save_emu_index = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_emu_index.grid(row=0, column=2)
+        self.emu_index_entry.grid(row=2, column=1, sticky=tk.W, padx=5, pady=2)
+        self.button_save_emu_index = ttk.Button(self.device_paths_block, text=_("保存"), command=self.save_config, width=5)
+        self.button_save_emu_index.grid(row=2, column=2, sticky=tk.W, padx=(0, 0), pady=2)
+
+        def on_device_type_change(save=False):
+            self.DEVICE_TYPE.set(self.DEVICE_TYPE_OPTIONS.get(self.device_type_display.get(), "mumu"))
+            device_type = self.DEVICE_TYPE.get()
+            device_cls = DEVICE_REGISTRY.get(device_type)
+            visible_fields = getattr(device_cls, "visible_config_fields", [])
+            if "emu_path" in visible_fields:
+                self.adb_path_change_button.grid()
+            else:
+                self.adb_path_change_button.grid_remove()
+            if "adb_path" in visible_fields:
+                self.physical_adb_path_change_button.grid()
+            else:
+                self.physical_adb_path_change_button.grid_remove()
+
+            if "emu_index" in visible_fields:
+                self.emu_index_label.grid()
+                self.emu_index_entry.grid()
+                self.button_save_emu_index.grid()
+            else:
+                self.emu_index_label.grid_remove()
+                self.emu_index_entry.grid_remove()
+                self.button_save_emu_index.grid_remove()
+
+            self.adb_address_label.config(text=getattr(device_cls, "address_label", _("ADB地址:")))
+            default_adb_address = getattr(device_cls, "default_adb_address", "")
+            if save and default_adb_address:
+                self.ADB_ADRESS.set(default_adb_address)
+
+            if "emu_path" in visible_fields:
+                default_path = detect_default_emulator_path(device_type)
+                if save:
+                    self.EMU_PATH.set(default_path or "")
+                elif default_path and not self.EMU_PATH.get():
+                    self.EMU_PATH.set(default_path)
+            if "adb_path" in visible_fields:
+                default_path = detect_default_adb_path(device_type)
+                if save:
+                    self.ADB_PATH.set(default_path or "")
+                elif default_path and not self.ADB_PATH.get():
+                    self.ADB_PATH.set(default_path)
+            update_adb_status()
+            update_device_paths()
+            update_adb_test_button_visibility()
+            if save:
+                self.save_config()
+
+        self.device_type_combobox.bind("<<ComboboxSelected>>", lambda e: on_device_type_change(save=True))
+        on_device_type_change()
 
 
         # ==========================================
@@ -1514,7 +1883,9 @@ class ConfigPanelApp(tk.Toplevel):
 
     def set_controls_state(self, state):
         Button_and_Entry = [
+            self.device_type_combobox,
             self.adb_path_change_button,
+            self.physical_adb_path_change_button,
             self.random_chest_check,
             self.who_will_open_combobox,
             self.skip_recover_check,
@@ -1531,7 +1902,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_royalsuite_rest,
             self.active_beg_money,
             self.task_specific_config_check,
-            self.button_save_adb_port,
+            self.button_test_adb_port,
             self.button_save_emu_index,
             self.delete_task_specific_config_button,
             self.active_csc,
@@ -1565,6 +1936,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.updateACTIVE_REST_state()
 
     def toggle_start_stop(self):
+        if self.quest_stopping:
+            return
         if not self.quest_active:
             self.start_stop_btn.config(text="停止")
             self.set_controls_state(tk.DISABLED)
@@ -1572,12 +1945,15 @@ class ConfigPanelApp(tk.Toplevel):
             setting._FINISHINGCALLBACK = self.finishingcallback
             self.msg_queue.put(('start_quest', setting))
             self.quest_active = True
+            self.quest_stopping = False
         else:
+            self.quest_stopping = True
+            self.start_stop_btn.config(text=_("停止中..."), state=tk.DISABLED)
             self.msg_queue.put(('stop_quest', None))
 
     def finishingcallback(self):
         logger.info(_("已停止."))
-        self.start_stop_btn.config(text=_("脚本, 启动!"))
+        self.start_stop_btn.config(text=_("脚本, 启动!"), state=tk.NORMAL)
         self.set_controls_state(tk.NORMAL)
         
         config = LoadConfig()
@@ -1585,6 +1961,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.KARMA_ADJUST.set(config['KARMA_ADJUST'])
 
         self.quest_active = False
+        self.quest_stopping = False
 
     def turn_to_7000G(self):
         self.summary_log_display.config(bg="#F4C6DB" )
