@@ -7,10 +7,10 @@ import logging.handlers
 import sys
 import cv2
 import time
-import multiprocessing
 import numpy as np
 import glob
 import gettext
+import queue
 
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
@@ -50,11 +50,28 @@ def setup_file_handler():
     file_handler.setFormatter(file_formatter)
     return file_handler
 
-log_queue = multiprocessing.Queue(-1)
-queue_listener = logging.handlers.QueueListener(log_queue, setup_file_handler())
+log_queue = queue.Queue(-1)
+queue_listener = None
+_log_listener_started = False
 
 def StartLogListener():
+    global queue_listener, _log_listener_started
+    if _log_listener_started:
+        return
+    queue_listener = logging.handlers.QueueListener(log_queue, setup_file_handler())
     queue_listener.start()
+    _log_listener_started = True
+
+def StopLogListener():
+    global queue_listener, _log_listener_started
+    if not _log_listener_started:
+        return
+    listener = queue_listener
+    queue_listener.stop()
+    for handler in listener.handlers:
+        handler.close()
+    queue_listener = None
+    _log_listener_started = False
 #===========================================
 class LoggerStream:
     """自定义流，将输出重定向到logger"""
@@ -83,6 +100,10 @@ def RegisterQueueHandler():
     sys.stdout = LoggerStream(logger, logging.DEBUG)
     sys.stderr = LoggerStream(logger, logging.ERROR)
     
+    for handler in logger.handlers:
+        if isinstance(handler, logging.handlers.QueueHandler) and handler.queue is log_queue:
+            return
+
     # 创建QueueHandler并连接到全局队列
     queue_handler = logging.handlers.QueueHandler(log_queue)
     queue_handler.setLevel(logging.DEBUG)
