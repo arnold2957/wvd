@@ -1250,14 +1250,14 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         self.official_org_website_1 = ttk.Button(
             frame_row,
-            text=_("旧官网(50钻)"),
+            text=_("点此领取50钻(旧)"),
             command=lambda: click_org_web("https://store.wizardry.info/",self.official_org_website_1))
         self.official_org_website_1.grid(row=0, column=0, sticky=tk.W)
         
         # 2. 官网拿钻石
         self.official_org_website_2 = ttk.Button(
             frame_row,
-            text=_("新官网(50钻)"),
+            text=_("点此领取50钻(新)"),
             command=lambda: click_org_web("https://webstore.wizardry.info/",self.official_org_website_2))
         self.official_org_website_2.grid(row=0, column=1, sticky=tk.W)
 

@@ -187,6 +187,7 @@
         "_TARGETINFOLIST":[
             ["chest","左上",null],
             ["chest","右上",null],
+            ["position","右上", [816,710]],
             ["Bharken", "右上","stair_DH_Church"]
         ],
         "_EOT":[
@@ -200,6 +201,7 @@
         "questName":"[宝箱]教会-全范围找箱",
         "_TARGETINFOLIST":[
             ["chest_auto"],
+            ["position","右上", [816,710]],
             ["Bharken", "右上","stair_DH_Church"]
         ],
         "_EOT":[
@@ -545,6 +547,12 @@
 
     "7000G":{
         "questName":"[金币]7000G",
+        "_TYPE":"quest"
+    },
+
+    "manualSepDemon":{
+        "questName":"[装备]半自动大恶魔",
+        "_TIPS":"启动脚本时, 如果位于副本内, 会自动退出副本. 然后该脚本会尝试重置并进入离别大恶魔所在房间后停止. \n\n固定跳跃到第四章结尾.",
         "_TYPE":"quest"
     },
 

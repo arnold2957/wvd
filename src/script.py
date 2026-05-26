@@ -1227,11 +1227,15 @@ def Factory():
 
         # 调整条目以找到跳跃目标
         Press(FindCoordsOrElseExecuteFallbackAndWait("cursedWheel",["ruins","startdownload",[1,1]],1))
+
+        # 翻页
         for underscore in range(10):
             Press([105,230])
             Sleep(0.5)
         Press(FindCoordsOrElseExecuteFallbackAndWait(chapter,["cursedWheelTapRight","cursedWheel",[1,1]],1))
         if not Press(CheckIf(ScreenShot(),target)):
+            DeviceShell(f"input swipe 450 1200 450 200")
+            Sleep(2)
             DeviceShell(f"input swipe 450 1200 450 200")
             Sleep(2)
             DeviceShell(f"input swipe 450 1200 450 200")
@@ -1317,6 +1321,8 @@ def Factory():
                 
             if StateCombatCheck(screen):
                 return State.Dungeon, DungeonState.Combat, screen
+
+            screen = ScreenShot()
 
             if CheckIf(screen,"someonedead"):
                 AddImportantInfo(_("尝试复活队友..."))
@@ -2105,7 +2111,7 @@ def Factory():
                                 logger.info(_("自动回复异常, 中止本次回复."))
                                 break
                     ########### 防止卡空气墙
-                    if not runtimeContext._STEPAFTERRESTART:
+                    if (not runtimeContext._STEPAFTERRESTART) and (quest._TYPE == "dungeon"): # 加入类别判断以避免干扰任务流程
                         logger.info("防止卡空气墙, 右转后左右走.")
                         DeviceShell(f"input swipe 300 950 600 950")
                         Sleep(1)
@@ -2463,9 +2469,7 @@ def Factory():
                         while 1:
                             Press(FindCoordsOrElseExecuteFallbackAndWait(["icanstillgo","combatActive"],["input swipe 400 400 400 100",[1,1]],1))
                             Sleep(1)
-                            if setting._AOE_ONCE:
-                                runtimeContext._ENOUGH_AOE = False
-                                runtimeContext._AOE_CAST_TIME = 0
+                            runtimeContext.COMBAT_RESET = True
                             while 1:
                                 scn=ScreenShot()
                                 if TryPressRetry(scn):
@@ -2527,9 +2531,7 @@ def Factory():
                             Press([1,1])
                             ########### COMBAT RESET
                             # 战斗结束了, 我们将一些设置复位
-                            if setting._AOE_ONCE:
-                                runtimeContext._ENOUGH_AOE = False
-                                runtimeContext._AOE_CAST_TIME = 0
+                            runtimeContext.COMBAT_RESET = True
                             ########### TIMER
                             if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                                 spend_on_chest = 0
@@ -2604,6 +2606,28 @@ def Factory():
                             needRecoverBecauseCombat =True
                             StateCombat()
                             dungState = None
+            case "manualSepDemon":
+                RestartableSequenceExecution(
+                    lambda: StateDungeon([TargetInfo("stair_2","左下",[827,547]),
+                                         TargetInfo("harken","左下",None)]))
+                
+                StateInn()
+
+                RestartableSequenceExecution(
+                    lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre"))
+
+                quest._EOT = [
+                    ["press","COS/COS",["EdgeOfTown",[1,1]],1],
+                    ["press","COS/COSB2F",[1,1],1]
+                ]
+                RestartableSequenceExecution(
+                    lambda: StateEoT()
+                    )
+                
+                RestartableSequenceExecution(
+                    lambda: StateDungeon([TargetInfo("stair_3","左上",[720,822]),
+                                         TargetInfo("position","左上",[185,341])]))
+
             case "LBC-oneGorgon":
                 while 1:
                     if setting._FORCESTOPING.is_set():
