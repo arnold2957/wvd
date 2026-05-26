@@ -2626,7 +2626,7 @@ def Factory():
                 
                 RestartableSequenceExecution(
                     lambda: StateDungeon([TargetInfo("stair_3","左上",[720,822]),
-                                         TargetInfo("position","左上",[185,341])]))
+                                         TargetInfo("position","左上",[79,447])]))
 
             case "LBC-oneGorgon":
                 while 1:
