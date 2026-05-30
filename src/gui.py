@@ -640,8 +640,34 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         ttk.Label(frame_row, text=_("ADB地址:")).grid(row=0, column=2, sticky=tk.W, pady=5)
-        vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
-        self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_ADRESS, validate="key",
+
+        def validate_adb_focusout(P):
+            """焦点离开时自动补全，否则保留用户输入"""
+            if P == "":
+                return True
+
+            # 情况1：纯数字无 '.'
+            if P.isdigit() and '.' not in P:
+                new_val = f"127.0.0.1:{P}"
+                self.ADB_ADRESS.set(new_val)
+                return True
+
+            # 情况2：包含逗号，且其余全是数字
+            if ',' in P:
+                parts = P.split(',')
+                if all(p.strip().isdigit() for p in parts if p.strip()):
+                    ports = [int(p.strip()) for p in parts if p.strip()]
+                    new_val = f"127.0.0.1:{max(ports)}"
+                    self.ADB_ADRESS.set(new_val)
+                    return True
+
+            # 其他情况：不做任何处理，保留用户输入，允许焦点离开
+            return True
+        
+        self.adb_port_entry = ttk.Entry(frame_row, textvariable=self.ADB_ADRESS, validate="focusout",
+                                        validatecommand=(
+                                        self.register(validate_adb_focusout),
+                                        '%P'),
                                         width=15)
         self.adb_port_entry.grid(row=0, column=3)
         self.button_save_adb_port = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
@@ -650,6 +676,7 @@ class ConfigPanelApp(tk.Toplevel):
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         ttk.Label(frame_row, text=_("模拟器编号:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        vcmd_non_neg = self.register(lambda x: ((x=="")or(x.isdigit())))
         self.emu_index_entry = ttk.Entry(frame_row, textvariable=self.EMU_INDEX, validate="key",
                                          validatecommand=(vcmd_non_neg, '%P'), width=5)
         self.emu_index_entry.grid(row=0, column=1)

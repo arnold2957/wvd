@@ -1226,7 +1226,14 @@ def Factory():
         logger.info(_("开始时间跳跃, 本次跳跃目标:{a}".format(a=target)))
 
         # 调整条目以找到跳跃目标
-        Press(FindCoordsOrElseExecuteFallbackAndWait("cursedWheel",["ruins","startdownload",[1,1]],1))
+        FindCoordsOrElseExecuteFallbackAndWait("cursedWheelTitle",["cursedWheel","ruins","startdownload",[1,1]],1)
+        Sleep(2)
+        if Press(CheckIf(ScreenShot(),target)):
+            Sleep(2)
+            Press(CheckIf(ScreenShot(),"leap"))
+            Sleep(2)
+            if not CheckIf(ScreenShot(),"leap"):
+                return
 
         # 翻页
         for underscore in range(10):
@@ -3054,7 +3061,7 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                    logger.info(_("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             extra={"summary": True})
             case "steeltrail":
                 total_time = 0
