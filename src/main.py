@@ -175,7 +175,10 @@ def main():
     args = parse_args()
 
     controller = AppController(args.headless, args.config)
-    controller.mainloop()
+    try:
+        controller.mainloop()
+    finally:
+        StopLogListener()
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
