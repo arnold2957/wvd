@@ -2618,6 +2618,8 @@ def Factory():
                     lambda: StateDungeon([TargetInfo("stair_2","左下",[827,547]),
                                          TargetInfo("harken","左下",None)]))
                 
+                PressReturn()
+                PressReturn()
                 StateInn()
 
                 RestartableSequenceExecution(
