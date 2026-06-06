@@ -1640,8 +1640,9 @@ def Factory():
                 Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
                 logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
             else:
-                for i in range(6):
-                    Press([150*i-150,750])
+                for t in range(12):
+                    i= t % 6
+                    Press([150*i-150-15+random.randint(0,30),750-30+random.randint(0,60)])
                     Sleep(0.1)
                 logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
