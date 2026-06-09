@@ -25,7 +25,7 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "ADB_ADRESS",               tk.StringVar,  "127.0.0.1:16384"],
             ["GENERAL",   "LAST_VERSION",             tk.StringVar,  None],
             ["GENERAL",   "LATEST_VERSION",           tk.StringVar,  None],
-            ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  list(DUNGEON_TARGETS.keys())[0] if DUNGEON_TARGETS else ""],
+            ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  ""],
             ["GENERAL",   "FARM_TARGET",              tk.StringVar,  None],
             ["GENERAL",   "KARMA_ADJUST",             tk.StringVar,  "+0"],
             ["GENERAL",   "TASK_SPECIFIC_CONFIG",     tk.BooleanVar, False],
@@ -192,7 +192,7 @@ def LoadQuest(farmtarget):
             setattr(quest, key, [TargetInfo(*args) for args in value])
         elif hasattr(FarmQuest, key):
             setattr(quest, key, value)
-        elif key in ["type","questName","questId"]:
+        elif key in ["type","questName","questId","questCategory"]:
             pass
         else:
             logger.info(_("'%s'并不存在于FarmQuest中.") % key)

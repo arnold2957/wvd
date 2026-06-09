@@ -259,7 +259,10 @@ def BuildQuestReflection():
                 raise ValueError(f"Duplicate questName found: '{quest_name}'")
             
             # 添加到映射表和已见集合
-            quest_reflect_map[quest_name] = quest_code
+            category = quest_info["questCategory"]
+            if category not in quest_reflect_map:
+                quest_reflect_map[category] = {}
+            quest_reflect_map[category][quest_name] = quest_code
             seen_names.add(quest_name)
         
         return quest_reflect_map

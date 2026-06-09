@@ -521,10 +521,12 @@ class ConfigPanelApp(tk.Toplevel):
         self.EMU_PATH.set(emu_path)
 
         # farm target
-        if self.FARM_TARGET_TEXT.get() in DUNGEON_TARGETS:
-            self.FARM_TARGET.set(DUNGEON_TARGETS[self.FARM_TARGET_TEXT.get()])
-        else:
-            self.FARM_TARGET.set(None)
+        for category in DUNGEON_TARGETS.keys():
+            if self.FARM_TARGET_TEXT.get() in DUNGEON_TARGETS[category]:
+                self.FARM_TARGET.set(DUNGEON_TARGETS[category][self.FARM_TARGET_TEXT.get()])
+                break
+            else:
+                self.FARM_TARGET.set(None)
         
         ##################
         existing_config = LoadRawConfigFromFile() or {}
@@ -692,7 +694,22 @@ class ConfigPanelApp(tk.Toplevel):
         container = self.section_farm.content_frame
         row_counter = 0
 
+        # 分类目标, 我们先写行, 等下面再写这行有什么
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        current_quest_cate = ""
+        for k in DUNGEON_TARGETS.keys():
+            if self.FARM_TARGET_TEXT.get() in DUNGEON_TARGETS[k]:
+                current_quest_cate = k
+        ttk.Label(frame_row, text=_("任务类别:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.farm_target_category_combo = ttk.Combobox(frame_row,
+                                              values=list(DUNGEON_TARGETS.keys()),
+                                              state="readonly")
+        self.farm_target_category_combo.set(current_quest_cate)
+        self.farm_target_category_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # 地下城目标
+        row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
             
@@ -721,6 +738,7 @@ class ConfigPanelApp(tk.Toplevel):
 
             # 更新善恶
             # TODO 暂时不写了 太麻烦了.
+            # 莫非善恶已经正常了?
 
             # 任务点, 这里无论如何都要拿specific的设置.
             specific_config = LoadConfig("specific")
@@ -768,10 +786,21 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, text=_("任务目标:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.farm_target_combo = ttk.Combobox(frame_row,
                                               textvariable=self.FARM_TARGET_TEXT, 
-                                              values=list(DUNGEON_TARGETS.keys()),
+                                              values=list(DUNGEON_TARGETS[self.farm_target_category_combo.get()].keys()),
                                               state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         # self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config()) # 这里用后面的战斗部分的更新方法覆盖
+
+        # 这是分类那个combobox
+        def on_category_change(event=None):
+            category = self.farm_target_category_combo.get()
+            self.farm_target_combo['values'] = list(DUNGEON_TARGETS[category].keys())
+            current_target = self.farm_target_combo.get()
+            if current_target not in self.farm_target_combo['values']:
+                self.farm_target_combo.set(self.farm_target_combo['values'][0])
+                self.farm_target_combo.event_generate('<<ComboboxSelected>>')
+        self.farm_target_category_combo.bind('<<ComboboxSelected>>', on_category_change)
+
 
         row_counter += 1
         frame_row = ttk.Frame(container)
@@ -983,6 +1012,7 @@ class ConfigPanelApp(tk.Toplevel):
                 self.current_task_points = LoadQuest(task_name)._TARGETINFOLIST
                 self.is_current_task_dungeon = (LoadQuest(task_name)._TYPE == 'dungeon')
             except Exception:
+                logger.info(task_name)
                 logger.error(_('不可用的任务名.'))
                 self.current_task_points = []
                 self.is_current_task_dungeon = False
@@ -1315,6 +1345,7 @@ class ConfigPanelApp(tk.Toplevel):
 
             return input_period == current_period
         def click_am():
+            self.farm_target_category_combo.set('月常')
             self.farm_target_combo.set('[骨头]炉壶灵庙(王都出发)')
             self.farm_target_combo.event_generate('<<ComboboxSelected>>')
             self.AM_switch.grid_remove()
@@ -1568,7 +1599,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_max_crash_limit,
             self.official_org_website_2,
             self.official_org_website_1,
-            self.AM_switch
+            self.AM_switch,
+            self.farm_target_category_combo
             ]
 
         if state == tk.DISABLED:

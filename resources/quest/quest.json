@@ -3,6 +3,7 @@
     "Dist":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]水路一号街",
+        "questCategory": "主线前三章",
         "_TARGETINFOLIST":[
             ["chest"],
             ["harken"]
@@ -16,6 +17,7 @@
     "lounge":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]水路船二lounge",
+        "questCategory": "主线前三章",
         "_TARGETINFOLIST":[
             ["stair_lounge","左上",[292,394]],
             ["chest_auto"],
@@ -31,6 +33,7 @@
     "fortress-B1F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]要塞一层",
+        "questCategory": "主线前三章",
         "_TARGETINFOLIST":[
             ["chest","左下",[[0,305,900,965]]],
             ["harken","左下",null]
@@ -44,6 +47,7 @@
     "fortress-B8F_entrance":{
         "_TYPE":"dungeon",
         "questName":"[妖精]要塞八层门口",
+        "questCategory": "主线前三章",
         "_TARGETINFOLIST":[
             ["stair_fortress1f","左上",[720,395]],
             ["position","左下",[453,865]],
@@ -60,12 +64,14 @@
     "fortress-B8F_trap":{
         "_TYPE":"quest",
         "questName":"[妖精]要塞八层陷阱",
+        "questCategory": "主线前三章",
         "_TIPS":"要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n然后不停刷新8f门口两个怪, 确保其中之一是3小恶魔+1小精灵.\n然后在该位置打上标记.\n然后开启脚本."
     },
     	
     "fortress-10F":{
         "_TYPE":"dungeon",
         "questName":"[灯怪]要塞10层",
+        "questCategory": "主线前三章",
         "_TARGETINFOLIST":[
             ["position","左下",[560,757]],
             ["Bharken2","左下",null]
@@ -80,6 +86,7 @@
     "DH-4f":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]深雪R4",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["position","右上",[500,610]],
             ["position","右上",[445,290]],
@@ -95,6 +102,7 @@
     "DH-6f":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R6",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["stair_DH_R6","右上",[286,236]],
             ["position","右下",[72,972]],
@@ -111,6 +119,7 @@
     "DH-7f-right":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R7矿洞右",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["position","右下",[770,600]],
             ["position","右下",[770,1190]],
@@ -131,6 +140,7 @@
     "DH-7f-auto":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R7自动箱",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["harken", "右上",null]
@@ -144,6 +154,7 @@
     "DH-10f-test":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R10",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["stair_DH_R10","左上",[80,235]],
             ["position","右下",[600,1240]],
@@ -168,6 +179,7 @@
     "DH-10f-JR":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]深雪R10(自定义)",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["stair_DH_R10","左上",[80,235]],
             ["position","右下",[655,330]],
@@ -184,6 +196,7 @@
     "DH-Church-upper":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]教会-自动宝箱上半",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["chest","左上",null],
             ["chest","右上",null],
@@ -199,6 +212,7 @@
     "DH-Church-auto":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]教会-全范围找箱",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上", [816,710]],
@@ -213,6 +227,7 @@
     "White-G-v2":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]教会白巨人 byXX",
+        "questCategory": "主线第四章",
         "_TARGETINFOLIST":[
             ["Mark_auto"]
         ],
@@ -225,6 +240,7 @@
     "HSR-1F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]药师洞1f宝箱(雪地出发)",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","左下",[720,1135]]
@@ -240,6 +256,7 @@
     "IWO":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鬼洞1f 水路出发",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","左下", [186,1028]]
@@ -258,6 +275,7 @@
     "IWO_2":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]鬼洞2F",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右下", [500, 815]]
@@ -276,6 +294,7 @@
     "malice-B3F":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]怨嗟洞窟三层maliceB3F",
+        "questCategory": "任务洞窟",
         "_EOT":[
             ["press","malice_malice",["EdgeOfTown",[1,1]],1],
             ["press","malice_B3F",[1,1],1]
@@ -289,6 +308,7 @@
     "fordraig-B3F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]弗德莱戈的迷宫三层fordraigB3F",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
@@ -303,6 +323,7 @@
     "SSC_chest":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]忍洞一层宝箱",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
 	        ["chest_auto"],
             ["SSC/SSC_quit","左下","default"]
@@ -316,6 +337,7 @@
     "LBC":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]卢比肯宝箱",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest"],
             ["LBC/LBC_quit"]
@@ -330,6 +352,7 @@
     "AWD":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]狼洞2f宝箱",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右下",[766,974]]
@@ -344,6 +367,7 @@
     "AWD-noGorgon":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]狼洞1f宝箱",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上",[766,930]]
@@ -360,6 +384,7 @@
     "GHB":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]百花之庭固定怪",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["position","左上",[80,450]],
             ["position","右上",[340,450]],
@@ -381,6 +406,7 @@
     "COS_chest":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]离别洞窟",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest","左上",null],
             ["chest","右上",null],
@@ -399,6 +425,7 @@
     "COS_chest_short":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]离别洞窟(只刷2f)",
+        "questCategory": "任务洞窟",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["harken","左下",null]
@@ -412,6 +439,7 @@
     "DOE":{
         "_TYPE":"dungeon",
         "questName":"[矿石]土洞(中/次)",
+        "questCategory": "矿石",
         "_EOT":[
             ["press","DOE",["EdgeOfTown",[1,1]],1],
             ["press","DOEB1F",[1,1],1]
@@ -427,6 +455,7 @@
     "DOF": {
         "_TYPE":"dungeon",
         "questName":"[矿石]火洞(特/中/次)",
+        "questCategory": "矿石",
         "_TARGETINFOLIST":[
             ["position","左下",[347,866]],
             ["position","左下",[400,1183]],
@@ -442,6 +471,7 @@
     "DOF_Plus": {
         "_TYPE":"dungeon",
         "questName":"[矿石]火洞plus-地图全开",
+        "questCategory": "矿石",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","左上",[719,713]]
@@ -455,6 +485,7 @@
     "DOW":{
         "_TYPE":"dungeon",
         "questName":"[矿石]风洞(特/上/中)",
+        "questCategory": "矿石",
         "_TARGETINFOLIST":[
         ["chest",[[700,1200,100,100]],[[0,780,900,500],[0,780,150,120]]],
         ["DOW_quit",[[700,1200,100,100]],null]
@@ -468,6 +499,7 @@
     "DOW_Plus":{
         "_TYPE":"dungeon",
         "questName":"[矿石]风洞plus-地图全开",
+        "questCategory": "矿石",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","左上",[34,822]]
@@ -481,6 +513,7 @@
     "DOL":{
         "_TYPE":"dungeon",
         "questName":"[矿石]光洞(特/上/中)",
+        "questCategory": "矿石",
         "_EOT":[
             ["press","DOL",["EdgeOfTown",[1,1]],1],
             ["press","DOLB1F",[1,1],1]
@@ -497,6 +530,7 @@
     "DOL_PLUS":{
         "_TYPE":"dungeon",
         "questName":"[矿石]光洞plus-地图全开",
+        "questCategory": "矿石",
         "_EOT":[
             ["press","DOL",["EdgeOfTown",[1,1]],1],
             ["press","DOLB1F",[1,1],1]
@@ -511,6 +545,7 @@
     "DOS":{
         "_TYPE":"dungeon",
         "questName":"[矿石]水洞(银/特/上)",
+        "questCategory": "矿石",
         "_EOT":[
             ["press","DOS",["EdgeOfTown",[1,1]],1],
             ["press","DOSB1F",[1,1],1]
@@ -527,6 +562,7 @@
     "LMG-GT":{
         "_TYPE":"dungeon",
         "questName":"[骨头]炉壶灵庙(王都出发)",
+        "questCategory": "月常",
         "_TARGETINFOLIST":[
             ["position","右下",[393,545]],
             ["position","右下",[657,755]],
@@ -543,6 +579,7 @@
     "LMG-FT":{
         "_TYPE":"dungeon",
         "questName":"[骨头]炉壶灵庙(战士骨)",
+        "questCategory": "月常",
         "_TARGETINFOLIST":[
             ["position","右下",[393,545]],
             ["position","右下",[657,755]],
@@ -559,57 +596,68 @@
 
     "7000G":{
         "questName":"[金币]7000G",
+        "questCategory": "其他",
         "_TYPE":"quest"
     },
 
     "manualSepDemon":{
         "questName":"[装备]半自动大恶魔",
+        "questCategory": "其他",
         "_TIPS":"启动脚本时, 如果位于副本内, 会自动退出副本. 然后该脚本会尝试重置并进入离别大恶魔所在房间后停止. \n\n固定跳跃到第四章结尾.",
         "_TYPE":"quest"
     },
 
     "darkLight":{
         "questName":"[装备]暗灯",
+        "questCategory": "其他",
         "_TYPE":"quest"
     },
 
     "LBC-oneGorgon":{
         "questName":"[任务]卢比肯 三牛",
+        "questCategory": "任务洞窟",
         "_TYPE":"quest"
     },
 
     "SSC-goldenchest":{
         "questName":"[任务]忍洞一层 金箱",
+        "questCategory": "任务洞窟",
         "_TYPE":"quest"
     },
 
     "jier":{
         "questName":"[悬赏]吉尔",
+        "questCategory": "月常",
         "_TYPE":"quest"
     },
 
     "Scorpionesses":{
         "questName":"[悬赏]蝎女",
+        "questCategory": "月常",
         "_TYPE":"quest"
     },
 
     "Scorpionesses_plus_6_hands":{
         "questName":"[悬赏]蝎女+风暴六手",
+        "questCategory": "月常",
         "_TYPE":"quest"
     },
 
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",
+        "questCategory": "主线前三章",
         "_TYPE":"quest"
     },
     
     "lovesleep":{
         "questName":"[刷药]喜欢睡觉",
+        "questCategory": "其他",
         "_TYPE":"quest"
     },
 
     "retard_tapjoy":{
         "questName":"mergeBlastNumber",
+        "questCategory": "其他",
         "_TYPE":"quest"
     }
 
