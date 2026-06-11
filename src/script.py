@@ -1152,7 +1152,7 @@ def Factory():
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
-        FindCoordsOrElseExecuteFallbackAndWait(["intoWorldMap","dungFlag","worldmapflag","openworldmap","startdownload"],["closePartyInfo","closePartyInfo_fortress","closePartyInfo_waterway",[1,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(["intoWorldMap","dungFlag","worldmapflag","openworldmap"],["startdownload","closePartyInfo","closePartyInfo_fortress","closePartyInfo_waterway",[1,1]],1)
         
         if CheckIf(scn:=ScreenShot(), "dungflag"):
             # 如果已经在副本里了 直接结束.
