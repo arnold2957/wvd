@@ -784,9 +784,14 @@ class ConfigPanelApp(tk.Toplevel):
             return
 
         ttk.Label(frame_row, text=_("任务目标:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        category = self.farm_target_category_combo.get()
+        if category not in DUNGEON_TARGETS.keys():
+            dungeon_target_list = [key for k in DUNGEON_TARGETS.keys() for key in DUNGEON_TARGETS[k].keys()]
+        else:
+            dungeon_target_list = [key for key in DUNGEON_TARGETS[category].keys()]
         self.farm_target_combo = ttk.Combobox(frame_row,
                                               textvariable=self.FARM_TARGET_TEXT, 
-                                              values=list(DUNGEON_TARGETS[self.farm_target_category_combo.get()].keys()),
+                                              values=dungeon_target_list,
                                               state="readonly")
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         # self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config()) # 这里用后面的战斗部分的更新方法覆盖
