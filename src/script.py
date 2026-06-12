@@ -202,7 +202,20 @@ def LoadQuest(farmtarget):
 def CMDLine(cmd):
     logger.debug(_("执行cmd命令: %s") % cmd)
     result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding="utf-8")
-    logger.debug(_("cmd命令返回:{a}\n cmd命令错误:{b}").format(a=result.stdout, b=result.stderr))
+    
+    stdout = (result.stdout or '').strip()
+    stderr = (result.stderr or '').strip()
+
+    if stdout or stderr:
+        parts = ["***********"]
+        if stdout:
+            parts.append(_("cmd命令返回:{}").format(stdout))
+            parts.append("***********")
+        if stderr:
+            parts.append(_("cmd命令错误:{}").format(stderr))
+            parts.append("***********")
+        parts.append(" ")
+        logger.info("\n".join(parts))
     return result
 def GetADBPathFromEmuPath(emu_path):
         adb_path = emu_path

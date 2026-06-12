@@ -1,8 +1,7 @@
 **新版本!**
-==v2.2.19==
-修复了若干说明的文本错误.
-Added English translations for task names and daily/monthly tasks.
-Set the "language" in config.json to "en_US" to enable localization.
+==v2.3.1==
+现在进行cmd相关操作(比如adb或者重启模拟器), 会直接打印相关的cmd命令返回或错误, 以便更高效的解决可能的adb错误.
+另: 我认为上一个版本应该是2.3.0
 
 **已知问题**
 重构状态机.
@@ -10,6 +9,11 @@ Set the "language" in config.json to "en_US" to enable localization.
 从mod读取自定义任务.
 
 **历史更新**
+==v2.2.19==
+修复了若干说明的文本错误.
+Added English translations for task names and daily/monthly tasks.
+Set the "language" in config.json to "en_US" to enable localization.
+
 ==v2.2.18==
 修复了当任务名不可用的时候, 脚本无法启动的问题.
 
