@@ -1,7 +1,8 @@
 **新版本!**
-==v2.2.18==
-修复了当任务名不可用的时候, 脚本无法启动的问题.
-
+==v2.2.19==
+修复了若干说明的文本错误.
+Added English translations for task names and daily/monthly tasks.
+Set the "language" in config.json to "en_US" to enable localization.
 
 **已知问题**
 重构状态机.
@@ -9,6 +10,9 @@
 从mod读取自定义任务.
 
 **历史更新**
+==v2.2.18==
+修复了当任务名不可用的时候, 脚本无法启动的问题.
+
 ==v2.2.17==
 修复了狼洞可能会卡在主城里无限往左拖动屏幕的问题.
 

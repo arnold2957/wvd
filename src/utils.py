@@ -192,8 +192,8 @@ def GetOneVarInGeneralConfig(var, default_value):
         return default_value
 ############################################
 localedir = ResourcePath("locale")
-languae = GetOneVarInGeneralConfig('LANGUAGE', 'zh_CN')
-trans = gettext.translation('messages', localedir, languages=[languae], fallback=True)
+LANGUAGE = GetOneVarInGeneralConfig('LANGUAGE', 'zh_CN')
+trans = gettext.translation('messages', localedir, languages=[LANGUAGE], fallback=True)
 trans.install()
 ###########################################
 CHANGES_LOG = "CHANGES_LOG.md"
@@ -252,18 +252,17 @@ def BuildQuestReflection():
         # 遍历所有任务代号
         for quest_code, quest_info in data.items():
             # 获取本地化任务名称
-            quest_name = quest_info["questName"]
-            
+            quest_name = quest_info.get(f"questName_{LANGUAGE}", quest_info["questName"])
+
             # 检查名称是否重复
             if quest_name in seen_names:
                 raise ValueError(f"Duplicate questName found: '{quest_name}'")
+            seen_names.add(quest_name)
             
             # 添加到映射表和已见集合
-            category = quest_info["questCategory"]
-            if category not in quest_reflect_map:
-                quest_reflect_map[category] = {}
-            quest_reflect_map[category][quest_name] = quest_code
-            seen_names.add(quest_name)
+            category = quest_info.get(f"questCategory_{LANGUAGE}", quest_info["questCategory"])
+            quest_reflect_map.setdefault(category, {})[quest_name] = quest_code
+            
         
         return quest_reflect_map
     

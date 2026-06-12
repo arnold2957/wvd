@@ -792,7 +792,8 @@ class ConfigPanelApp(tk.Toplevel):
         self.farm_target_combo = ttk.Combobox(frame_row,
                                               textvariable=self.FARM_TARGET_TEXT, 
                                               values=dungeon_target_list,
-                                              state="readonly")
+                                              state="readonly",
+                                              width=25)
         self.farm_target_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
         # self.farm_target_combo.bind("<<ComboboxSelected>>", lambda e: close_task_specific_config()) # 这里用后面的战斗部分的更新方法覆盖
 
@@ -1317,6 +1318,9 @@ class ConfigPanelApp(tk.Toplevel):
         self.official_org_website_1.grid(row=0, column=0, sticky=tk.W)
         
         # 2. 官网拿钻石
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         self.official_org_website_2 = ttk.Button(
             frame_row,
             text=_("点此领取50钻(新)"),

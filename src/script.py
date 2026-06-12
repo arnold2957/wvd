@@ -192,7 +192,7 @@ def LoadQuest(farmtarget):
             setattr(quest, key, [TargetInfo(*args) for args in value])
         elif hasattr(FarmQuest, key):
             setattr(quest, key, value)
-        elif key in ["type","questName","questId","questCategory"]:
+        elif key in ["type","questName","questId","questCategory","questName_en_US","questCategory_en_US"]:
             pass
         else:
             logger.info(_("'%s'并不存在于FarmQuest中.") % key)
@@ -2077,7 +2077,7 @@ def Factory():
                             logger.info(_("由于面板配置, 进行战后恢复."))
                             shouldRecover = True
                         else:
-                            logger.info(_("由于面板配置, 跳过了战后后恢复."))
+                            logger.info(_("由于面板配置, 跳过了战后恢复."))
                     if setting.RECOVER_WHEN_BEGINNING and runtimeContext.NEED_RECOVER_WHEN_BEGINNING:
                         shouldRecover = True
                         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = False
@@ -2580,7 +2580,7 @@ def Factory():
                                     logger.info(_("由于面板配置, 进行战后恢复."))
                                     shouldRecover = True
                                 else:
-                                    logger.info(_("由于面板配置, 跳过了战后后恢复."))
+                                    logger.info(_("由于面板配置, 跳过了战后恢复."))
                             if shouldRecover:
                                 Press([1,1])
                                 FindCoordsOrElseExecuteFallbackAndWait( # 点击打开人物面板有可能会被战斗打断
