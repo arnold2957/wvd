@@ -980,11 +980,20 @@ def Factory():
         pass
     def RestartableSequenceExecution(*operations):
         while True:
+            if setting._FORCESTOPING.is_set():
+                logger.info(_("任务已停止."))
+                return
             try:
                 for op in operations:
+                    if setting._FORCESTOPING.is_set():
+                        logger.info(_("任务已停止."))
+                        return
                     op()
                 return
             except RestartSignal:
+                if setting._FORCESTOPING.is_set():
+                    logger.info(_("任务已停止."))
+                    return
                 logger.info(_("任务进度重置中..."))
                 continue
     ##################################################################
@@ -3182,9 +3191,13 @@ def Factory():
                 logger.info(_("开始睡觉."))
                 t = time.time()
                 for counter in range(9999):
+                    if setting._FORCESTOPING.is_set():
+                        break
                     RestartableSequenceExecution(
                             lambda:StateInn()
                             )
+                    if setting._FORCESTOPING.is_set():
+                        break
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
             case "retard_tapjoy":
                 def split_image(img):
