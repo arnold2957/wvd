@@ -452,7 +452,7 @@ class ConfigPanelApp(tk.Toplevel):
         self.INTRODUCTION = _("遇到问题? 请访问:\n%s \n或加入Q群: 922497356.") % self.URL
 
         RegisterQueueHandler()
-        StartLogListener()
+        LOG_LISTENER_MGR.start()
 
         super().__init__(master_controller)
         self.controller = master_controller
@@ -1449,6 +1449,19 @@ class ConfigPanelApp(tk.Toplevel):
         )
         self.active_csc.grid(row=0, column=0, sticky=tk.W)
 
+        # 4. 重启后绕过空气墙
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.bypass_the_wall = ttk.Checkbutton(
+            frame_row,
+            variable=self.BYPASS_THE_WALL,
+            text=_("重启后尝试绕过空气墙"),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.bypass_the_wall.grid(row=0, column=0, sticky=tk.W)
+
         # 5. 最大尝试次数
         def validate_focusout(P,limit,w):
             if P == "" or (P.isdigit() and int(P) >= int(limit)):
@@ -1602,6 +1615,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.button_save_emu_index,
             self.delete_task_specific_config_button,
             self.active_csc,
+            self.bypass_the_wall,
             self.max_try_limit_entry,
             self.button_save_max_try_limit,
             self.max_crash_limit_entry,

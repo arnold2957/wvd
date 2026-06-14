@@ -7,7 +7,7 @@ import logging.handlers
 import sys
 import cv2
 import time
-import multiprocessing
+import queue
 import numpy as np
 import glob
 import gettext
@@ -35,7 +35,7 @@ for filename in os.listdir(LOGS_FOLDER_NAME):
 LOG_FILE_PREFIX = LOGS_FOLDER_NAME + "/log"
 logger = logging.getLogger('WvDASLogger')
 #===========================================
-def setup_file_handler():
+def SetupFileHandle():
     """设置文件处理器"""
     os.makedirs(LOGS_FOLDER_NAME, exist_ok=True)
     current_time = time.strftime("%y%m%d-%H%M%S")
@@ -50,11 +50,31 @@ def setup_file_handler():
     file_handler.setFormatter(file_formatter)
     return file_handler
 
-log_queue = multiprocessing.Queue(-1)
-queue_listener = logging.handlers.QueueListener(log_queue, setup_file_handler())
+log_queue = queue.Queue(-1)
 
-def StartLogListener():
-    queue_listener.start()
+class LogListenerManager:
+    def __init__(self):
+        self.listener = None
+        self.started = False
+
+    def start(self):
+        if self.started:
+            return
+        self.listener = logging.handlers.QueueListener(log_queue, SetupFileHandle())
+        self.listener.start()
+        self.started = True
+
+    def stop(self):
+        if not self.started:
+            return
+        self.listener.stop()
+        for handler in self.listener.handlers:
+            handler.close()
+        self.listener = None
+        self.started = False
+
+# 
+LOG_LISTENER_MGR = LogListenerManager()
 #===========================================
 class LoggerStream:
     """自定义流，将输出重定向到logger"""
@@ -83,6 +103,10 @@ def RegisterQueueHandler():
     sys.stdout = LoggerStream(logger, logging.DEBUG)
     sys.stderr = LoggerStream(logger, logging.ERROR)
     
+    for handler in logger.handlers:
+        if isinstance(handler, logging.handlers.QueueHandler) and handler.queue is log_queue:
+            return
+
     # 创建QueueHandler并连接到全局队列
     queue_handler = logging.handlers.QueueHandler(log_queue)
     queue_handler.setLevel(logging.DEBUG)

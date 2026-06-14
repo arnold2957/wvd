@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '2.3.1' 
+__version__ = '2.3.2' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -175,12 +175,15 @@ def main():
     args = parse_args()
 
     controller = AppController(args.headless, args.config)
-    controller.mainloop()
+    try:
+        controller.mainloop()
+    finally:
+        LOG_LISTENER_MGR.stop()
 
 def HeadlessActive(config_path,msg_queue):
     RegisterConsoleHandler()
     RegisterQueueHandler()
-    StartLogListener()
+    LOG_LISTENER_MGR.start()
 
     setting = FarmConfig()
     setting = LoadSettingFromDict(LoadConfig())
