@@ -1742,7 +1742,7 @@ def Factory():
                 img_path = os.path.join(IMAGE_FOLDER, "spellskill", "char", f"{candidate}.png")
                 full_path = ResourcePath(img_path)
                 if os.path.exists(full_path):
-                    match_rate = CheckHow(scn, f"spellskill/char/{candidate}", [[85, 57, 100, 48]])
+                    match_rate = CheckHow(scn, f"spellskill/char/{candidate}", [[87,55,73,51]])
                     if match_rate > highest_match_rate:
                         highest_match_rate = match_rate
                         target_skill = skill
