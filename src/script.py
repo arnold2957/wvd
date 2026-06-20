@@ -36,7 +36,6 @@ CONFIG_VAR_LIST = [
                                                                                 "role_var": _("F 柚奈壬姬"),
                                                                                 "skill_var": _("左上技能"),
                                                                                 "target_var": _("不可用"),
-                                                                                "freq_var": _("每次启动仅一次"),
                                                                                 "skill_lvl": 1
                                                                             }
                                                                         ]
@@ -45,7 +44,8 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": _("全自动战斗"),
                                                                         "skill_settings": []
                                                                     },]],
-            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],        
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],
+            ["GENERAL",   "RELOAD_STRATEGY_WHEN",      tk.StringVar, _("不需要")],
             ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
             ["GENERAL",   "WEBSITE_ORG_TIME",         tk.StringVar, None],
             ["GENERAL",   "AM_REFRESH_TIME",          tk.StringVar, None],
@@ -107,9 +107,6 @@ class RuntimeContext:
     _IMPORTANTINFO = ""
     _RESUMEAVAILABLE = False
     _BYPASSAFTERRESTART = True
-    STRATEGY_RESET_EACH_RESTART = {}
-    STRATEGY_RESET_EACH_DUNGEON = {}
-    COMBAT_RESET = True
     CURRENT_STRATEGY = {}
     NEED_RECOVER_WHEN_BEGINNING = True
     TASK_STEP_INDEX = 0
@@ -945,7 +942,9 @@ def Factory():
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
         runtimeContext._ZOOMWORLDMAP = False
         runtimeContext._BYPASSAFTERRESTART = False
-        runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
+
+        # 重新装载战斗策略
+        ReloadStrategy()
 
         # 保存重启前截图作为备份
         if not skip_screenshot:
@@ -998,149 +997,37 @@ def Factory():
                 logger.info(_("任务进度重置中..."))
                 continue
     ##################################################################
-    # def getCursorCoordinates(input, threshold=0.8):
-    #     """在本地图片中查找模板位置"""
-    #     template = LoadTemplateImage("cursor")
-    #     if template is None:
-    #         raise ValueError(_("无法加载模板图片！"))
+    def ReloadStrategy():
+        # 会在每次重启游戏和角色死亡后重置策略.
+        # 根据面板设置, 可以有额外的重启要求.
+        nonlocal runtimeContext, setting
 
-    #     h, w = template.shape[:2]  # 获取模板尺寸
-    #     coordinates = []
+        logger.info(_("重置战斗策略."))
 
-    #     # 按指定顺序读取截图文件
-    #     img = input
+        # 如果不是特定任务配置，使用默认的全局策略
+        if not setting.TASK_SPECIFIC_CONFIG:
+            strategy_key = setting.DEFAULT_OVERALL_STRATEGY
+        else:
+            overall = setting.TASK_POINT_STRATEGY.get("overall_strategy", "")
+            if overall == _("自定义任务点策略"):
+                task_step_idx = getattr(runtimeContext, 'TASK_STEP_INDEX', 0)
+                strategy_key = setting.TASK_POINT_STRATEGY.get("task_point", {}).get(str(task_step_idx), "")
+            else:
+                strategy_key = overall
 
-    #     # 执行模板匹配
-    #     result = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-    #     underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
+        # 直接从 setting.STRATEGY 原始列表中查找匹配项并深拷贝
+        target_dict = None
+        for d in setting.STRATEGY:
+            if d.get("group_name") == strategy_key:
+                target_dict = d
+                break
 
-    #     if max_val > threshold:
-    #         # 返回中心坐标（相对于截图左上角）
-    #         center_x = max_loc[0] + w // 2
-    #         coordinates = center_x
-    #     else:
-    #         coordinates = None
-    #     return coordinates
-    # def findWidestRectMid(input):
-    #     crop_area = (30,62),(880,115)
-    #     # 转换为灰度图
-    #     gray = cv2.cvtColor(input, cv2.COLOR_BGR2GRAY)
-
-    #     # 裁剪图像 (y1:y2, x1:x2)
-    #     (x1, y1), (x2, y2) = crop_area
-    #     cropped = gray[y1:y2, x1:x2]
-
-    #     # cv2.imwrite("Matched Result.png",cropped)
-
-    #     # 返回结果
-    #     column_means = np.mean(cropped, axis=0)
-    #     aver = np.average(column_means)
-    #     binary = column_means > aver
-
-    #     # 离散化
-    #     rect_range = []
-    #     startIndex = None
-    #     for i, val in enumerate(binary):
-    #         if val and startIndex is None:
-    #             startIndex = i
-    #         elif not val and startIndex is not None:
-    #             rect_range.append([startIndex,i-1])
-    #             startIndex = None
-    #     if startIndex is not None:
-    #         rect_range.append([startIndex,i-1])
-
-    #     logger.debug(rect_range)
-
-    #     widest = 0
-    #     widest_rect = []
-    #     for rect in rect_range:
-    #         if rect[1]-rect[0]>widest:
-    #             widest = rect[1]-rect[0]
-    #             widest_rect = rect
-
-
-    #     return int((widest_rect[1]+widest_rect[0])/2)+x1
-    # def triangularWave(t, p, c):
-    #     t_mod = np.mod(t-c, p)
-    #     return np.where(t_mod < p/2, (2/p)*t_mod, 2 - (2/p)*t_mod)
-    # def calculSpd(t,x):
-    #     t_data = np.array(t)
-    #     x_data = np.array(x)
-    #     peaks, underscore = find_peaks(x_data)
-    #     if len(peaks) >= 2:
-    #         t_peaks = t_data[peaks]
-    #         p0 = np.mean(np.diff(t_peaks))
-    #     else:
-    #         # 备选方法：傅里叶变换或手动设置初值
-    #         p0 = 1.0  # 根据数据调整
-
-    #     # 非线性最小二乘拟合
-    #     p_opt, underscore = curve_fit(
-    #         triangularWave,
-    #         t_data,
-    #         x_data,
-    #         p0=[p0,0],
-    #         bounds=(0, np.inf)  # 确保周期为正
-    #     )
-    #     estimated_p = p_opt[0]
-    #     logger.debug(f"周期 p = {estimated_p:.4f}")
-    #     estimated_c = p_opt[1]
-    #     logger.debug(f"初始偏移 c = {estimated_c:.4f}")
-
-    #     return p_opt[0], p_opt[1]
-    # def ChestOpen():
-    #     logger.info(("开始智能开箱(?)..."))
-    #     ts = []
-    #     xs = []
-    #     t0 = float(DeviceShell("date +%s.%N").strip())
-    #     while 1:
-    #         while 1:
-    #             Sleep(0.2)
-    #             t = float(DeviceShell("date +%s.%N").strip())
-    #             s = ScreenShot()
-    #             x = getCursorCoordinates(s)
-    #             if x != None:
-    #                 ts.append(t-t0)
-    #                 xs.append(x/900)
-    #                 logger.debug(f"t={t-t0}, x={x}")
-    #             else:
-    #                 # cv2.imwrite("Matched Result.png",s)
-    #                 None
-    #             if len(ts)>=20:
-    #                 break
-    #         p, c = calculSpd(ts,xs)
-    #         spd = 2/p*900
-    #         logger.debug(f"s = {2/p*900}")
-
-    #         t = float(DeviceShell("date +%s.%N").strip())
-    #         s = ScreenShot()
-    #         x = getCursorCoordinates(s)
-    #         target = findWidestRectMid(s)
-    #         logger.debug(f"理论点: {triangularWave(t-t0,p,c)*900}")
-    #         logger.debug(f"起始点: {x}")
-    #         logger.debug(f"目标点: {target}")
-
-    #         if x!=None:
-    #             waittime = 0
-    #             t_mod = np.mod(t-c, p)
-    #             if t_mod<p/2:
-    #                 # 正向移动, 向右
-    #                 waittime = ((900-x)+(900-target))/spd
-    #                 logger.debug("先向右再向左")
-    #             else:
-    #                 waittime = (x+target)/spd
-    #                 logger.debug("先向左再向右")
-
-    #             if waittime > 0.270 :
-    #                 logger.debug(f"预计等待 {waittime}")
-    #                 Sleep(waittime-0.270)
-    #                 DeviceShell(f"input tap 527 920") # 这里和retry重合, 也和to_title+retry重合.
-    #                 Sleep(3)
-    #             else:
-    #                 logger.debug(f"等待时间过短: {waittime}")
-
-    #         if not CheckIf(ScreenShot(), "chestOpening"):
-    #             break
+        if target_dict is not None:
+            runtimeContext.CURRENT_STRATEGY = copy.deepcopy(target_dict)
+            logger.debug(_("策略已重置为: {a}").format(a=strategy_key))
+        else:
+            runtimeContext.CURRENT_STRATEGY = {}
+            logger.error(_("无法获取当前策略，将降级为全自动战斗。"))
     ##################################################################
     class State(Enum):
         Dungeon = "dungeon"
@@ -1322,6 +1209,10 @@ def Factory():
         AddImportantInfo(_("面具死了, 但是再起."))
         Press([450,750])
         Sleep(10)
+
+        ReloadStrategy()
+
+        return 
     def IdentifyState():
         nonlocal setting # 修改因果
         counter = 0
@@ -1356,6 +1247,7 @@ def Factory():
 
             if CheckIf(screen,"someonedead"):
                 AddImportantInfo(_("尝试复活队友..."))
+                ReloadStrategy()
                 Sleep(1)
                 for underscore in range(5):
                     Press([400+random.randint(0,100),750+random.randint(0,100)])
@@ -1568,33 +1460,6 @@ def Factory():
         if runtimeContext._TIME_COMBAT==0:
             runtimeContext._TIME_COMBAT = time.time()
         # 内部函数：复制策略到 runtime.CURRENT_STRATEGY
-        def CopyStrategy():
-            if not setting.TASK_SPECIFIC_CONFIG:
-                strategy_key = setting.DEFAULT_OVERALL_STRATEGY
-            else:
-                overall = setting.TASK_POINT_STRATEGY["overall_strategy"]
-                if overall == _("自定义任务点策略"):
-                    # 使用当前任务步骤索引获取具体策略
-                    task_step_idx = runtimeContext.TASK_STEP_INDEX
-                    strategy_key = setting.TASK_POINT_STRATEGY["task_point"][str(task_step_idx)]
-                else:
-                    strategy_key = overall
-
-            # 在对应列表中查找 group_name 匹配的字典
-            target_dict = None
-            for d in runtimeContext.STRATEGY_RESET_EACH_DUNGEON:
-                if d.get("group_name") == strategy_key:
-                    target_dict = d
-                    break
-
-            if target_dict is not None:
-                # 拷贝该字典到 CURRENT_STRATEGY
-                runtimeContext.CURRENT_STRATEGY = copy.deepcopy(target_dict)
-            else:
-                # 如果未找到，可考虑默认策略或报错，这里简单置空
-                runtimeContext.CURRENT_STRATEGY = {}
-                logger.error(_("无法获取当前策略."))
-            return
         def AutoThisChar():
             Press([850,1100])
             Sleep(0.5)
@@ -1689,9 +1554,8 @@ def Factory():
             runtimeContext._COMBATSPD = True
             Sleep(1)
         # 1. 检查重置标识
-        if runtimeContext.COMBAT_RESET:
-            CopyStrategy()
-            runtimeContext.COMBAT_RESET = False
+        if setting.RELOAD_STRATEGY_WHEN == _("每场战斗前"):
+            ReloadStrategy()
 
         # 2. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
@@ -1707,16 +1571,6 @@ def Factory():
             aac = True
         
         if aac:
-            ActiveAutoCombat()
-            return
-
-        # 检查是否所有技能都是“重复”且“双击自动”
-        all_repeat_and_auto = all(
-            item.get("freq_var") == _("重复") and item.get("skill_var") == _("双击自动")
-            for item in skill_settings
-        )
-
-        if all_repeat_and_auto:
             ActiveAutoCombat()
             return
 
@@ -1756,12 +1610,7 @@ def Factory():
             return
 
         # 6. 按照技能等级释放技能
-        if target_skill.get("skill_var") == _("双击自动"):
-            if target_skill.get("freq_var") == _("重复"):
-                logger.info(_("不需要同时设置为\"双击自动\"且\"重复\", 因为这是未设置角色时的默认行为."))
-            # 双击自动
-            AutoThisChar()
-        elif target_skill.get("skill_var") == _("防御"):
+        if target_skill.get("skill_var") == _("防御"):
             Press([513,1200])
             Sleep(0.1)
             Press([513,1200])
@@ -1769,29 +1618,11 @@ def Factory():
         else:
             SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
 
-        # 9. 根据频次设置删除对应字典
-        freq = target_skill.get("freq_var")
-        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")) or (freq == _("每场战斗仅一次")):
+        # 9. 释放技能后删除条目
+        if target_skill in runtimeContext.CURRENT_STRATEGY.get("skill_settings", []):
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
-            logger.info(_("在当前战斗的策略中删除了该技能."))
-        if (freq == _("每次启动仅一次")) or (freq == _("每次副本仅一次")):
-            group = runtimeContext.CURRENT_STRATEGY.get("group_name")
-            if group:
-                for d in runtimeContext.STRATEGY_RESET_EACH_DUNGEON:
-                    if d.get("group_name") == group:
-                        # 在对应的 skill_settings 中删除相同内容的字典
-                        d["skill_settings"].remove(target_skill)
-                        logger.info(_("在每次地下城的策略中删除了该技能."))
-                        break
-        if freq == _("每次启动仅一次"):
-            group = runtimeContext.CURRENT_STRATEGY.get("group_name")
-            if group:
-                for d in runtimeContext.STRATEGY_RESET_EACH_RESTART:
-                    if d.get("group_name") == group:
-                        # 在对应的 skill_settings 中删除相同内容的字典
-                        d["skill_settings"].remove(target_skill)
-                        logger.info(_("在每次启动中使用的策略里删除了该技能."))
-                        break
+            logger.debug(_("技能已释放，已从当前策略队列中移除。"))
+
         return
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
         ### return = None: 视为没找到, 大约等于目标点结束.
@@ -2027,7 +1858,9 @@ def Factory():
             return
         
         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
-        runtimeContext.STRATEGY_RESET_EACH_DUNGEON = copy.deepcopy(runtimeContext.STRATEGY_RESET_EACH_RESTART)
+
+        if setting.RELOAD_STRATEGY_WHEN == _("每次副本开始"):
+            ReloadStrategy()
         
         ##############################################
         while 1:
@@ -2057,9 +1890,6 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
-                    ########### COMBAT RESET
-                    # 战斗结束了, 我们将一些设置复位
-                    runtimeContext.COMBAT_RESET = True
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -2501,7 +2331,7 @@ def Factory():
                         while 1:
                             Press(FindCoordsOrElseExecuteFallbackAndWait(["icanstillgo","combatActive"],["input swipe 400 400 400 100",[1,1]],1))
                             Sleep(1)
-                            runtimeContext.COMBAT_RESET = True
+                            ReloadStrategy()
                             while 1:
                                 scn=ScreenShot()
                                 if TryPressRetry(scn):
@@ -2561,9 +2391,6 @@ def Factory():
                                 restartGame()
                         case DungeonState.Dungeon:
                             Press([1,1])
-                            ########### COMBAT RESET
-                            # 战斗结束了, 我们将一些设置复位
-                            runtimeContext.COMBAT_RESET = True
                             ########### TIMER
                             if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                                 spend_on_chest = 0
@@ -3322,7 +3149,7 @@ def Factory():
         setting = set
         runtimeContext = RuntimeContext()
 
-        runtimeContext.STRATEGY_RESET_EACH_RESTART = copy.deepcopy(setting.STRATEGY)
+        ReloadStrategy()
 
         Sleep(1) # 没有等utils初始化完成
         

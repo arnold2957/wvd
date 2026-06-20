@@ -168,10 +168,9 @@ class SkillConfigPanel(CollapsibleSection):
         
         # 常量
         self.ROLE_LIST = CHAR_LIST
-        self.SKILL_OPTIONS = [_("左上技能"), _("右上技能"), _("左下技能"), _("右下技能"), _("防御"), _("双击自动")]
+        self.SKILL_OPTIONS = [_("左上技能"), _("右上技能"), _("左下技能"), _("右下技能"), _("防御")]
         self.TARGET_OPTIONS = [_("左上角色"), _("中上角色"), _("右上角色"), _("左下角色"), _("右下角色"), _("中下角色"), _("不可用")]
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
-        self.FREQ_OPTIONS = [_("每场战斗仅一次"), _("每次副本仅一次"), _("每次启动仅一次"), _("重复")]
 
         # 用初始化内容构建
         self._setup_body_ui(init_config)
@@ -305,7 +304,7 @@ class SkillConfigPanel(CollapsibleSection):
         role_cb.grid(row=0, column=0, padx=(0, 5), sticky=tk.W)
 
         skill_cb = ttk.Combobox(row_frame, textvariable=skill_var, values=self.SKILL_OPTIONS, width=7, state="readonly")
-        skill_cb.grid(row=0, column=1, padx=(0, 5), sticky=tk.W)
+        skill_cb.grid(row=0, column=1, sticky=tk.W, padx=(0, 5))
         
         if is_default:
             skill_var.set(_("双击自动"))
@@ -313,38 +312,29 @@ class SkillConfigPanel(CollapsibleSection):
         else:
             skill_cb.current(0)
 
-        freq_cb = ttk.Combobox(row_frame, textvariable=freq_var, values=self.FREQ_OPTIONS, width=10, state="readonly")
-        freq_cb.grid(row=0, column=2, sticky=tk.W)
-        
-        if is_default:
-            freq_var.set(_("重复"))
-            freq_cb.config(state="disabled")
-        else:
-            freq_cb.current(2)
-
-        row_counter = 1
-        row_frame = tk.Frame(card)
-        row_frame.grid(row=row_counter, sticky=tk.EW)
-
-        tk.Label(row_frame, text=_("治疗:"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=0, sticky=tk.E, pady=(5, 0))
+        # 保留代码 我们未来可能会用到
+        # row_counter = 1
+        # row_frame = tk.Frame(card)
+        # row_frame.grid(row=row_counter, sticky=tk.EW)
+        # tk.Label(row_frame, text=_("治疗:"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=0, sticky=tk.E, pady=(5, 0))
         target_cb = ttk.Combobox(row_frame, textvariable=target_var, values=self.TARGET_OPTIONS, width=7, state="readonly")
-        target_cb.grid(row=0, column=1, sticky=tk.W, padx=(0, 5), pady=(5, 0))
+        # target_cb.grid(row=0, column=1, sticky=tk.W, padx=(0, 5), pady=(5, 0))
 
-        tk.Label(row_frame, text=_("等级:"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=2, sticky=tk.E, pady=(5, 0))
-        skill_lvl = ttk.Combobox(row_frame, textvariable=lvl_var, values=self.SKILL_LVL, width=5, state="readonly")
-        skill_lvl.grid(row=0, column=3, sticky=tk.W, padx=(0, 5), pady=(5, 0))
+        tk.Label(row_frame, text=_("等级"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=2, sticky=tk.E)
+        skill_lvl = ttk.Combobox(row_frame, textvariable=lvl_var, values=self.SKILL_LVL, width=2, state="readonly")
+        skill_lvl.grid(row=0, column=3, sticky=tk.W, padx=(0, 5))
         
         if is_default:
             target_var.set(_("不可用"))
             lvl_var.set(1)
             target_cb.config(state="disabled")
             skill_lvl.config(state="disabled")
-            tk.Label(row_frame, text=_("[默认]"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=4, sticky=tk.E, pady=(5, 0))
+            tk.Label(row_frame, text=_("[默认]"), font=("微软雅黑", 9), bg=card_bg).grid(row=0, column=4, sticky=tk.E)
         else:
             target_cb.current(6)
             skill_lvl.current(0)  # 默认选择第1级
-            del_btn = ttk.Button(row_frame, text=_("取消"), width=6, command=lambda: self._remove_row(parent))
-            del_btn.grid(row=0, column=4, sticky=tk.E, pady=(5, 0))
+            del_btn = ttk.Button(row_frame, text=_("取消"), width=5, command=lambda: self._remove_row(parent))
+            del_btn.grid(row=0, column=4, sticky=tk.E)
 
         row_data = {
             'frame': parent, 
@@ -352,7 +342,7 @@ class SkillConfigPanel(CollapsibleSection):
             'skill_var': skill_var, 'skill_widget': skill_cb,
             'target_var': target_var, 'target_widget': target_cb,
             'lvl_var': lvl_var, 'skill_lvl': skill_lvl,  # 添加lvl_var和skill_lvl
-            'freq_var': freq_var, 'freq_widget': freq_cb
+            'freq_var': freq_var,
         }
 
         if not is_default:
@@ -360,7 +350,6 @@ class SkillConfigPanel(CollapsibleSection):
             role_cb.bind("<<ComboboxSelected>>", lambda e: self.on_config_change and self.on_config_change())
             skill_cb.bind("<<ComboboxSelected>>", lambda e: [self._on_skill_change(row_data), self.on_config_change and self.on_config_change()])
             target_cb.bind("<<ComboboxSelected>>", lambda e: self.on_config_change and self.on_config_change())
-            freq_cb.bind("<<ComboboxSelected>>", lambda e: self.on_config_change and self.on_config_change())
             skill_lvl.bind("<<ComboboxSelected>>", lambda e: self.on_config_change and self.on_config_change())
 
         return row_data
@@ -1165,8 +1154,22 @@ class ConfigPanelApp(tk.Toplevel):
         self.section_combat_adv = CollapsibleSection(content_root, title=_("战斗方案"))
         self.section_combat_adv.pack(fill="x")
         container = self.section_combat_adv.content_frame
-        row_counter = 0
 
+        row_counter = 0
+        ttk.Label(container, text="战斗方案会在每次重启游戏, 以及任意角色死亡后重置.", width=20, anchor=tk.W).grid(row=row_counter, column=0, sticky=tk.EW)
+
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+
+        ttk.Label(frame_row, text=_("你也可以增加额外的重置:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.reload_strategy_combobox = ttk.Combobox(frame_row, textvariable=self.RELOAD_STRATEGY_WHEN,
+                                                     values=[_("不需要"), _("每场战斗前"), _("每次副本开始")],
+                                                     state="readonly", width=12)
+        self.reload_strategy_combobox.grid(row=0, column=1, sticky=tk.W, pady=5)
+        self.reload_strategy_combobox.bind("<<ComboboxSelected>>", lambda e: self.save_config())
+
+        row_counter += 1
         self.strategy_panels = {}  # 改为字典 {panel: name}
 
         def save_strategy():
@@ -1623,7 +1626,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.official_org_website_2,
             self.official_org_website_1,
             self.AM_switch,
-            self.farm_target_category_combo
+            self.farm_target_category_combo,
+            self.reload_strategy_combobox, 
             ]
 
         if state == tk.DISABLED:
