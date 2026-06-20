@@ -3149,9 +3149,9 @@ def Factory():
         setting = set
         runtimeContext = RuntimeContext()
 
-        ReloadStrategy()
-
         Sleep(1) # 没有等utils初始化完成
+
+        ReloadStrategy()
         
         ResetDevice()
 
