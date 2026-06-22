@@ -421,7 +421,8 @@
         "questCategory_en_US": "Request Caves",
         "_TARGETINFOLIST":[
             ["chest_auto"],
-            ["position","右上",[766,930]]
+            ["position","右上",[766,930]],
+            ["harken","右下"]
         ],
         "_preEOTcheck":"AWD/AWD",
         "_EOT":

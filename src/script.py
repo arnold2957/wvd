@@ -1529,8 +1529,7 @@ def Factory():
                 logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
             else:
                 for t in range(12):
-                    i= t % 6
-                    Press([150*i-150-15+random.randint(0,30),750-30+random.randint(0,60)])
+                    Press([75+random.random()*770,296+random.random()*600])
                     Sleep(0.1)
                 logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
@@ -3149,7 +3148,7 @@ def Factory():
         setting = set
         runtimeContext = RuntimeContext()
 
-        Sleep(1) # 没有等utils初始化完成
+        Sleep(1)
 
         ReloadStrategy()
         
