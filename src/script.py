@@ -1447,7 +1447,7 @@ def Factory():
         if quest._preEOTcheck:
             if Press(CheckIf(ScreenShot(),quest._preEOTcheck)):
                 pass
-        if len(quest._EOT)>2:
+        if len(quest._EOT)>=2:
             for info in quest._EOT[:-1]:
                 RestartableSequenceExecution(
                     lambda: EoTStep(info)
@@ -1455,6 +1455,7 @@ def Factory():
         RestartableSequenceExecution(
             lambda: FindCoordsOrElseExecuteFallbackAndWait(["dungFlag","GotoDung",quest._EOT[-1][1]], [quest._EOT[-1][2],[1,1]], 1)
             )
+        Press(CheckIf(ScreenShot(), quest._EOT[-1][1]))
         Sleep(1)
         Press(CheckIf(ScreenShot(), "GotoDung"))
     def StateCombat():
