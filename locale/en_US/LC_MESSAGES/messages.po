@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-12 14:26+0800\n"
-"PO-Revision-Date: 2026-06-12 14:27+0800\n"
+"POT-Creation-Date: 2026-06-25 20:51+0800\n"
+"PO-Revision-Date: 2026-06-25 21:13+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en_US\n"
 "Language-Team: en_US <LL@li.org>\n"
@@ -23,36 +23,32 @@ msgid "技能配置组"
 msgstr "Skill Strategy Group"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:236
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:235
 #: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:37
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1478
 msgid "左上技能"
 msgstr "Top-Left Skill"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1478
 msgid "右上技能"
 msgstr "Top-Right Skill"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1478
 msgid "左下技能"
 msgstr "Bottom-Left Skill"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1478
 msgid "右下技能"
 msgstr "Bottom-Right Skill"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:377
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1741
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:366
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1614
 msgid "防御"
 msgstr "defend"
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:171
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:311
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:377
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1692
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1736
-msgid "双击自动"
-msgstr "Double Tap Auto"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:172
 msgid "左上角色"
@@ -79,111 +75,89 @@ msgid "中下角色"
 msgstr "Bottom-Mid Char."
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:172
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:338
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:379
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:384
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:328
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:368
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:373
 #: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:38
 msgid "不可用"
 msgstr "Unavailable"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:174
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1751
-msgid "每场战斗仅一次"
-msgstr "Once per Combat"
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:174
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1751
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1754
-msgid "每次副本仅一次"
-msgstr "Once per Dungeon"
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:174
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:39
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1751
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1754
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1763
-msgid "每次启动仅一次"
-msgstr "Once per Session"
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:174
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:238
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:320
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1692
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1737
-msgid "重复"
-msgstr "Repeat"
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:181
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:748
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1042
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1046
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1099
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:45
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:48
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1679
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:180
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:737
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1031
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1035
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1088
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:44
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:47
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1567
 msgid "全自动战斗"
 msgstr "Full Auto"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:187
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:186
 msgid "➕新增角色"
 msgstr "➕Add Char."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:190
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:189
 msgid "🗑删除此组"
 msgstr "🗑Delete Group"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:193
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:192
 msgid "✎重命名"
 msgstr "✎Rename"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:237
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:385
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:236
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:374
 msgid "低生命值"
 msgstr "Low HP"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:249
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:237
+msgid "重复"
+msgstr "Repeat"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:248
 msgid "重命名"
 msgstr "Rename"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:249
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:248
 msgid "修改配置组名称:"
 msgstr "Modify Strategy Group Name:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:266
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:265
 msgid "确认删除"
 msgstr "Confirm Deletion"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:266
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:265
 #, python-format
 msgid "确定要删除[%s]吗？"
 msgstr "Are you sure you want to delete [%s]?"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:300
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:299
 msgid "默认"
 msgstr "Default"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:329
-msgid "治疗:"
-msgstr "Buff Tar.:"
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:310
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:366
+msgid "双击自动"
+msgstr "Double Tap Auto"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:333
-msgid "等级:"
-msgstr "Lv:"
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:323
+msgid "等级"
+msgstr "lvl"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:342
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:332
 msgid "[默认]"
 msgstr "[Default]"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:346
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:336
 msgid "取消"
 msgstr "Cancel"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:451
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:440
 #, python-format
 msgid "WvDAS 巫术daphne自动刷怪 v%s @德德Dellyla(B站)"
 msgstr "WvDAS v%s @Dellyla (Bilibili)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:452
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:441
 #, python-format
 msgid ""
 "遇到问题? 请访问:\n"
@@ -193,318 +167,347 @@ msgstr ""
 "Encountering issues? Please visit:\n"
 "%s \n"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:503
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:492
 #, python-format
 msgid "当前版本: %s"
 msgstr "Current Version: %s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:601
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:590
 msgid "模拟器"
 msgstr "EMULATOR"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:619
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:608
 msgid "选择ADB执行文件"
 msgstr "Select ADB Executable"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:627
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:616
 msgid "修改"
 msgstr "Edit"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:633
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:622
 msgid "已设置模拟器"
 msgstr "Emulator set. "
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:635
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:624
 msgid "未设置模拟器"
 msgstr "Emulator not set. "
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:644
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:633
 msgid "ADB地址:"
 msgstr "ADB Address:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:675
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:685
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:893
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1473
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1488
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:664
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:674
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:882
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1489
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1504
 msgid "保存"
 msgstr "Save"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:680
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:669
 msgid "模拟器编号:"
 msgstr "Emulator Index:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:692
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:681
 msgid "目标"
 msgstr "TASK"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:704
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:693
 msgid "任务类别:"
-msgstr "Task Target:"
+msgstr "Task Category:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:737
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:841
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:726
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:830
 msgid "随机"
 msgstr "Random"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:780
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:769
 #, python-format
 msgid "删除任务定制的配置文件, 任务为 %s."
 msgstr "Deleted task-specific configuration file for task: %s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:786
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:775
 msgid "任务目标:"
 msgstr "Task Target:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:815
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:804
 msgid "用任务定制的配置文件覆盖默认配置."
 msgstr "Override with task-specific config."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:822
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:811
 msgid "清除"
 msgstr "Clear"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:828
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:817
 msgid "探索"
 msgstr "EXPLORE"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:838
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:827
 msgid "开箱人选:"
 msgstr "Chest Opener:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "左上"
 msgstr "Top-Left"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "中上"
 msgstr "Top-Mid"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "右上"
 msgstr "Top-Right"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "左下"
 msgstr "Bottom-Left"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "中下"
 msgstr "Bottom-Mid"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:840
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:829
 msgid "右下"
 msgstr "Bottom-Right"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:853
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:842
 msgid "快速开箱"
 msgstr "Quick Open"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:861
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:850
 msgid "跳过战后恢复"
 msgstr "Skip Post-Combat Recovery"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:867
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:856
 msgid "跳过开箱后恢复"
 msgstr "Skip Post-Chest Recovery"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:875
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:864
 msgid "刚进入地下城时恢复一次."
 msgstr "Recover once upon entering dungeon."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:885
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:874
 msgid "启用旅店休息"
 msgstr "Enable Inn Rest."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:888
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:877
 msgid " | 完成"
 msgstr "| Rest every"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:892
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:881
 msgid "次后休息."
 msgstr "runs."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:900
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:889
 msgid "善恶:"
 msgstr "Personality:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:903
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:905
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:892
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:894
 msgid "维持现状"
 msgstr "Maintain"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:903
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:906
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:892
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:895
 msgid "恶→中立,中立→善"
 msgstr "E->N, N->G"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:903
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:907
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:892
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:896
 msgid "善→中立,中立→恶"
 msgstr "G->N, N->E"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:922
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:911
 msgid "还需"
 msgstr "Need"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:924
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:913
 msgid "点"
 msgstr " more"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:929
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:918
 msgid "战斗"
 msgstr "COMBAT"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:934
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:923
 msgid "请先选择任务目标"
 msgstr "Please select a task target first."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:947
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:948
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:952
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1038
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1069
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1070
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1134
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:936
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:937
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:941
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1027
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1058
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1059
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1123
 msgid "全程"
 msgstr "Overall"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:979
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1044
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1115
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1135
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1150
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1553
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:968
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1033
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1104
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1124
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1139
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1012
 msgid "自定义任务点策略"
 msgstr "Custom Task Point Strategy"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:985
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:974
 msgid "启用任务专用配置"
 msgstr "Enable Task-Specific Config"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:986
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:975
 msgid "自定义任务点策略需要使用任务专用的配置文件。是否立即启用任务专用配置？"
 msgstr "Custom task point strategy requires task-specific config. Enable now?"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1022
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1011
 msgid "不可用的任务名."
 msgstr "Invalid task name."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1060
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1049
 msgid "当前保存的战斗策略无效, 使用默认策略\"全自动战斗\"."
 msgstr "Current strategy is invalid. Using default strategy \"Full Auto\"."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1061
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1050
 msgid "全自动战斗."
 msgstr "Full Auto."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1112
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1101
 #, python-format
 msgid "已刷新任务点界面，任务点数量: %s"
 msgstr "Refreshed task point UI. Number of task points: %s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1165
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1154
 msgid "战斗方案"
 msgstr "COMBAT PLAN"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1204
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1159
+msgid "战斗方案会在每次重启游戏, 以及任意角色死亡后重置."
+msgstr ""
+"Strategy will always reload when someone dies \n"
+" or game restarts."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1165
+msgid "你也可以增加额外的重置:"
+msgstr "Trigger an additional reload:"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1167
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:48
+msgid "不需要"
+msgstr "Never"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1167
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1558
+msgid "每场战斗前"
+msgstr "Before combat"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1167
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1863
+msgid "每次副本开始"
+msgstr "Dungeon start"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1207
 msgid "错误"
 msgstr "Error"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1204
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1207
 #, python-format
 msgid "名称 '%s' 已存在，请使用其他名称"
 msgstr "Name '%s' already exists. Please use a different name."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1235
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1237
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1238
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1240
 #, python-format
 msgid "策略配置 %s"
 msgstr "Plan %s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1261
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1264
 msgid "➕ 添加新技能配置"
 msgstr "➕ Add New Plan"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1280
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1283
 msgid "日常/周常"
 msgstr "Daily/Monthly"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1316
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1319
 msgid "点此领取50钻(旧)"
 msgstr "Click Here For 50 Gems(Old)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1326
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1329
 msgid "点此领取50钻(新)"
 msgstr "Click Here For 50 Gems(New)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1368
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1371
 msgid "灵庙已刷新! 点此自动切换"
 msgstr "Mausoleum is refreshed! Click Here to Switch."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1381
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1384
 msgid "高级"
 msgstr "ADVANCED"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1394
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1397
 msgid "没有火的时候自动找王女要钱"
 msgstr "Beg money from Princess if no Flames."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1407
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1410
 msgid "住豪华房"
 msgstr "Stay in Royal Suite."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1420
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1423
 msgid "跳跃到第三章结局\"凯旋\""
 msgstr "Time leap to Ch.3 ending if possible."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1433
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1436
 msgid "跳跃到第四章结局\"美丽矿石的真相\""
 msgstr "Time leap to Ch.4 ending if possible."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1446
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1449
 msgid "尝试调整因果"
 msgstr "Attempt to adjust CSC."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1457
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1462
+msgid "重启后尝试绕过空气墙"
+msgstr "Try bypass invisiable walls after restart."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1473
 msgid "尝试次数不能低于{a}次."
 msgstr "Retry limit cannot be less than {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1472
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1488
 msgid "次定位失败后重启游戏."
 msgstr " positioning failures restart game."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1487
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1503
 msgid "次重启游戏后重启模拟器."
 msgstr " game restarts restart emulator."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1523
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1648
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1539
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1666
 msgid "脚本, 启动!"
 msgstr "WvDAS, Start!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1539
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1555
 msgid "发现新版本:"
 msgstr "New Version Available:"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1547
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1563
 msgid "自动下载"
 msgstr "Auto Download"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1562
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1578
 msgid "手动下载最新版"
 msgstr "Download Manually"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1647
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1665
 msgid "已停止."
 msgstr "Stopped."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1662
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1680
 msgid "唔, 看起来一次成功的地下城都没有完成."
 msgstr "Hmm, it seems no dungeons were successfully completed."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1663
+#: c:/Users/Arnold/Desktop/andsimscripts/src/gui.py:1681
 #, python-format
 msgid ""
 "你的队伍已经耗尽了所有的再起之火.\n"
@@ -534,92 +537,92 @@ msgstr "Yuzu"
 msgid "F 柚奈壬姬"
 msgstr "F 柚奈壬姬"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:83
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:84
 #, python-format
 msgid "FarmConfig对象没有属性'%s'"
 msgstr "FarmConfig object has no attribute '%s'"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:128
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:126
 #, python-format
 msgid "FarmQuest对象没有属性'%s'"
 msgstr "FarmQuest object has no attribute '%s'"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:185
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:183
 msgid "任务列表已更新.请重新手动选择地下城任务."
 msgstr "Task list updated. Please manually re-select the dungeon task."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:198
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:196
 #, python-format
 msgid "'%s'并不存在于FarmQuest中."
 msgstr "'%s' does not exist in FarmQuest."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:203
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:201
 #, python-format
 msgid "执行cmd命令: %s"
 msgstr "Executing cmd command: %s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:205
-msgid ""
-"cmd命令返回:{a}\n"
-" cmd命令错误:{b}"
-msgstr ""
-"cmd return: {a}\n"
-" cmd error: {b}"
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:210
+msgid "cmd命令返回:{}"
+msgstr "command returns:{}"
 
 #: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:213
+msgid "cmd命令错误:{}"
+msgstr "command errors: {}"
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:224
 msgid "adb程序序不存在: {a}"
 msgstr "adb executable does not exist: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:243
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:254
 msgid "正在检查并关闭adb..."
 msgstr "Checking and closing adb..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:269
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:280
 msgid "已尝试终止adb"
 msgstr "Attempted to terminate adb."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:271
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:334
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:282
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:345
 msgid "终止模拟器进程时出错: {a}"
 msgstr "Error terminating emulator process: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:276
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:287
 msgid "正在检查并关闭已运行的模拟器实例{a}..."
 msgstr "Checking and closing running emulator instance(s) {a}..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:280
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:291
 msgid "使用已知进程号{a}关闭模拟器..."
 msgstr "Closing emulator using known PID {a}..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:298
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:309
 msgid "模拟器uid未知, 全杀了."
 msgstr "Emulator UID unknown, terminating all instances."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:332
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:343
 msgid "已尝试终止模拟器进程: {a}"
 msgstr "Attempted to terminate emulator process: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:342
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:353
 msgid "模拟器启动程序不存在: {a}"
 msgstr "Emulator launcher does not exist: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:347
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:358
 msgid "启动模拟器: {a}"
 msgstr "Starting emulator: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:370
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:381
 msgid "模拟器启动开始，进程号为{a}"
 msgstr "Emulator start initiated, PID: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:373
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:384
 msgid "启动模拟器失败: {a}"
 msgstr "Failed to start emulator: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:376
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:387
 msgid "等待模拟器启动..."
 msgstr "Waiting for emulator to start..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:396
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:407
 msgid ""
 "-----------------------\n"
 "开始尝试连接adb. 次数:{a}/{b}..."
@@ -627,27 +630,27 @@ msgstr ""
 "-----------------------\n"
 "Attempting to connect to adb. Attempt {a}/{b}..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:399
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:410
 msgid "失败次数过多, 尝试关闭adb."
 msgstr "Too many failures, attempting to close adb."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:405
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:416
 msgid "检查adb服务..."
 msgstr "Checking adb service..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:416
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:427
 msgid "尝试连接到adb..."
 msgstr "Attempting to connect to adb..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:421
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:432
 msgid "成功连接到模拟器!"
 msgstr "Successfully connected to emulator!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:426
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:437
 msgid "模拟器进程号为{a}."
 msgstr "Emulator PID: {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:428
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:439
 msgid ""
 "\n"
 "\n"
@@ -665,11 +668,11 @@ msgstr ""
 " it automatically.\n"
 "\n"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:432
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:443
 msgid "模拟器未运行，尝试启动..."
 msgstr "Emulator not running, attempting to start..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:434
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:445
 msgid ""
 "模拟器(应该)启动完毕.\n"
 " 尝试连接到模拟器..."
@@ -677,247 +680,267 @@ msgstr ""
 "Emulator (should be) started.\n"
 " Attempting to connect..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:437
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:448
 msgid "成功连接到模拟器"
 msgstr "Successfully connected to emulator."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:439
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:450
 msgid "无法连接. 检查adb端口."
 msgstr "Cannot connect. Check adb port."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:441
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:452
 msgid "连接失败: {a}"
 msgstr "Connection failed: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:447
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:458
 msgid "重启ADB服务时出错: {a}"
 msgstr "Error restarting ADB server: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:454
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:465
 msgid "达到最大重试次数，连接失败"
 msgstr "Max retries reached, connection failed."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:465
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:476
 msgid "成功创建设备对象: {a}"
 msgstr "Successfully created device object: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:468
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:479
 msgid "创建ADB设备时出错: {a}"
 msgstr "Error creating ADB device: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:524
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:535
 msgid "ADB服务成功启动，设备已连接."
 msgstr "ADB server started successfully, device connected."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:527
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:538
 msgid "DeviceShell {a}"
 msgstr "DeviceShell {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:548
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:559
 msgid "ADB命令执行超时: {a}"
 msgstr "ADB command execution timeout: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:549
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:560
 msgid "ADB命令在7秒内未完成"
 msgstr "ADB command did not complete within 7 seconds."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:556
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:567
 msgid "ADB操作失败 ({a}): {b}"
 msgstr "ADB operation failed ({a}): {b}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:557
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:638
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:568
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:649
 msgid "ADB操作失败, 尝试重启ADB或模拟器程序..."
 msgstr "ADB operation failed, attempting to restart ADB or emulator..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:563
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:574
 msgid "ADB超时, 尝试重启ADB或模拟器程序..."
 msgstr "ADB timeout, attempting to restart ADB or emulator..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:570
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:581
 msgid "非预期的ADB异常({a}): {b}"
 msgstr "Unexpected ADB exception ({a}): {b}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:591
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:602
 msgid "截图命令报错: {a}"
 msgstr "Screenshot command error: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:592
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:603
 msgid "截图命令报错"
 msgstr "Screenshot command error."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:598
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:609
 msgid "截图数据不足12字节(无头信息)"
 msgstr "Screenshot data less than 12 bytes (no header)."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:599
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:610
 msgid "截图数据异常"
 msgstr "Screenshot data abnormal."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:613
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:624
 msgid "数据长度校验失败: 头部声明 {a}x{b}, 实际收到 {c}, 期望 {d}"
 msgstr ""
 "Data length verification failed: header claims {a}x{b}, received {c}, "
 "expected {d}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:614
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:625
 msgid "截图数据不完整"
 msgstr "Screenshot data incomplete."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:625
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:636
 msgid "截图尺寸错误: 当前{a}, 检测为横屏."
 msgstr "Screenshot size error: current {a}, detected landscape orientation."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:629
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:640
 msgid "截图尺寸错误: 期望(1600,900), 实际({a},{b})."
 msgstr "Screenshot size error: expected (1600,900), actual ({a},{b})."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:630
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:641
 msgid "分辨率异常: {a}x{b}"
 msgstr "Resolution abnormal: {a}x{b}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:637
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:648
 msgid "截图超时 (Subprocess)"
 msgstr "Screenshot timeout (Subprocess)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:642
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:653
 msgid "截图发生异常: {a}"
 msgstr "Screenshot exception: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:644
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:655
 msgid "ADB操作失败/数据错误, 尝试重启ADB或模拟器程序..."
 msgstr ""
 "ADB operation failed / data error, attempting to restart ADB or "
 "emulator..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:657
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:668
 msgid "cv2异常."
 msgstr "cv2 exception."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:681
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:692
 msgid "匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值."
 msgstr "Match failed: {a} match confidence {b:.2f}%, below threshold."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:684
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:695
 msgid "匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}."
 msgstr "Match successful: {a} match confidence {b:.2f}%, at {c}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:689
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:700
 msgid "匹配检测: {a}的匹配程度为{b:.2f}%, 位于{c}."
 msgstr "Match check: {a} match confidence {b:.2f}%, at {c}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:721
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:732
 msgid "搜索到疑似{a}, 匹配程度:{b:.2f}%"
 msgstr "Found potential {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:724
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:735
 msgid "警告: {a}的匹配程度超过了80%但不足90%"
 msgstr "Warning: {a} confidence is over 80% but below 90%."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:739
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:750
 msgid "中心匹配检查:{a:.2f}"
 msgstr "Center match check: {a:.2f}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:752
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:763
 msgid "目标格搜索{a}, 匹配程度:{b:.2f}%"
 msgstr "Searching target tile {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:754
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:765
 msgid "已达到检测阈值."
 msgstr "Detection threshold met."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:768
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:779
 msgid "搜索楼层标识{a}, 匹配程度:{b:.2f}%"
-msgstr "Searching floor indicator {a}, confidence: {b:.2f}%"
+msgstr "Harken search, target {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:770
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:781
 msgid "楼层正确, 判定为已通过"
-msgstr "Floor correct,判定为已通过"
+msgstr "Floor correct, determined as passed."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:777
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:788
 msgid "搜索楼梯{a}, 匹配程度:{b:.2f}%"
 msgstr "Searching stairs {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:779
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:790
 msgid "判定为楼梯存在, 尚未通过."
 msgstr "Determined that stairs exist, not yet passed."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:793
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:804
 msgid "楼层验证中, 目标楼层标识{a}, 匹配程度:{b:.2f}%"
 msgstr "Searching floor indicator {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:795
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:806
 msgid "楼层验证判定通过, 当前处于正确楼层."
-msgstr ""
+msgstr "Pass the floor validation. Now in the correct floor."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:801
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:812
 msgid "目前处于错误的楼层中, 可能是由于错误点击导致的, 开始全地图搜索哈肯."
 msgstr ""
+"Now in the wrong floor. It may be caused by an accidental press. "
+"Searching Harken..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:809
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:820
 msgid "哈肯搜索, 目标{a}, 匹配程度:{b:.2f}%"
 msgstr "Searching floor indicator {a}, confidence: {b:.2f}%"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:811
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:822
 msgid "哈肯搜索, 已找到哈肯."
-msgstr ""
+msgstr "Harken Found."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:827
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:838
 msgid "快进未开启, 即将开启.{a}"
 msgstr "Fast-forward not enabled, enabling now. {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:845
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:856
 msgid "开始下载……"
 msgstr "Starting download..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:848
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:852
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:859
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:863
 msgid "发现并点击了\"重试\". 你遇到了网络波动."
 msgstr "Found and clicked \"Retry\". You encountered network instability."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:858
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:869
 msgid "👆向上滑动查看重要信息👆\n"
 msgstr "👆Swipe up for important info👆\n"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:911
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:922
 msgid "错误: 非法的目标{a}."
 msgstr "Error: Invalid target {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:918
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:929
 msgid "错误: 非法的目标."
 msgstr "Error: Invalid target."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:923
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:934
 msgid "{a}次截图依旧没有找到目标{b}, 疑似卡死. 重启游戏."
 msgstr ""
 "Target {b} not found after {a} screenshots, possible freeze. Restarting "
 "game."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:941
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:954
 msgid "重启前截图已保存在{a}中."
 msgstr "Pre-restart screenshot saved in {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:946
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:959
 msgid ""
 "崩溃计数: {a}\n"
 "崩溃计数超过{b}次后会重启模拟器."
 msgstr ""
 "Crash count: {a}\n"
-"Emulator will restart after 5 crashes."
+"Emulator will restart after {b} crashes."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:958
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:971
 msgid "巫术, 启动!"
 msgstr "Wizardry, Start!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:963
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:976
 msgid "检测到崩溃日志, 关闭模拟器重启.{a}"
 msgstr "Crash log detected, closing emulator and restarting. {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:975
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:984
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:989
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:995
+msgid "任务已停止."
+msgstr "Task stopped."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:997
 msgid "任务进度重置中..."
 msgstr "Resetting task progress..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1143
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1005
+msgid "重置战斗策略."
+msgstr "Reload strategy."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1027
+msgid "策略已重置为: {a}"
+msgstr "Reload strategy by {a}."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1030
+msgid "无法获取当前策略，将降级为全自动战斗。"
+msgstr "Unable to get current strategy, downgrade to AutoCombat."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1053
 msgid ""
 "已完成{a}次\"{b}\"地下城.\n"
 "总计{c}秒.上次用时:{d}秒.\n"
@@ -925,200 +948,206 @@ msgstr ""
 "Completed {a} runs of \"{b}\" dungeon.\n"
 "Total {c}s. Last run: {d}s.\n"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1147
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1057
 msgid "累计战斗{a}次.战斗平均用时{b}秒."
 msgstr "Total combats: {a}. Average combat time: {b}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1223
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1133
 msgid "因为面板设置, 跳过了调整因果."
 msgstr "Skipped CSC adjustment due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1226
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1136
 msgid "开始时间跳跃, 本次跳跃目标:{a}"
 msgstr "Starting time leap, target: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1298
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1208
 msgid "快快请起."
 msgstr "Please rise quickly."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1299
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1209
 msgid "面具死了, 但是再起."
 msgstr "Masked One died, but revived."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1307
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1221
 msgid "状态检查中...(第{a}次)"
 msgstr "Checking status... (Attempt {a})"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1316
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1230
 msgid "确认, 下载, 确认."
 msgstr "Confirm, download, confirm."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1335
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1249
 msgid "尝试复活队友..."
 msgstr "Attempting to revive ally..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1351
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1374
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1266
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1289
 msgid "不满足回城条件, 跳过回城."
 msgstr "Conditions for returning to town not met, skipping."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1399
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1314
 msgid "看起来遇到了一些不太寻常的情况..."
 msgstr "It seems we've encountered something unusual..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1410
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1325
 msgid "看起来你没有选择找王女要钱. 那么就等两个小时吧."
 msgstr "Looks like you didn't choose to beg the princess. Waiting two hours then."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1428
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1343
 msgid "即将进行善恶值调整. 剩余次数:{a}"
 msgstr "About to adjust alignment. Attempts left: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1429
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1344
 msgid "新的善恶:{a}"
 msgstr "New alignment: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1438
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1353
 msgid "购买了骨头."
 msgstr "Purchased Bones."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1440
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1355
 msgid "购买了尸油."
 msgstr "Purchased Corpse Oil."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1451
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1366
 msgid "死了好几个, 惨哦"
 msgstr "Several died, that's rough."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1457
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1372
 msgid "网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!"
 msgstr "Network failure alert! Returning to title, repeat, returning to title!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1463
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1378
 msgid "看起来遇到了一些非同寻常的情况...重启游戏."
 msgstr "Seems like an extraordinary situation... restarting game."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1479
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1394
 msgid "GameFrozenCheck被传入了一个空值."
 msgstr "GameFrozenCheck received a null value."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1489
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1404
 msgid "卡死检测截图 counter={a} length={b}"
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1573
-msgid "无法获取当前策略."
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1490
+msgid "没有检测到任务详情界面. 疑似法力不足, 使用自动战斗."
+msgstr ""
+"Task details UI not detected. Suspected insufficient mana, using Auto "
+"Combat."
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1504
+msgid ""
+"错误: 设定了高于1级的技能, 但并未检测到技能等级.\n"
+" 使用默认技能."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1632
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1513
+msgid ""
+"错误: 未检测到目标等级\n"
+" 使用1级技能."
+msgstr ""
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1516
+msgid "错误: 我认为不可能发生这种情况. 请务必告诉我."
+msgstr ""
+
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1522
 msgid "释放了位于\"{a}\"的辅助技能, 技能等级为{b}, 释放对象为{c}"
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1637
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1527
 msgid "释放了位于\"{a}\"的全体技能, 技能等级为{b}."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1641
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1531
 msgid "释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1647
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1536
 msgid "释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1677
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1565
 msgid "错误: 当前战斗策略内容为空. 使用全自动战斗."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1680
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1568
 msgid "当前战斗为\"全自动战斗\", 因此使用全自动战斗."
 msgstr "Current combat is \"Full Auto\" or skill list is empty, using Full Auto."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1683
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1571
 msgid "当前战斗技能列表内容为空, 因此使用全自动战斗."
 msgstr "Current combat is \"Full Auto\" or skill list is empty, using Full Auto."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1705
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1583
 msgid "战斗已结束."
 msgstr "Combat ended."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1726
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1604
 msgid "最佳 {a}, {b}"
 msgstr "Best {a}, {b}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1731
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1609
 msgid "并未设定该角色的行为, 使用自动战斗."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1738
-msgid "不需要同时设置为\"双击自动\"且\"重复\", 因为这是未设置角色时的默认行为."
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1625
+msgid "技能已释放，已从当前策略队列中移除。"
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1753
-msgid "在当前战斗的策略中删除了该技能."
-msgstr ""
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1761
-msgid "在每次地下城的策略中删除了该技能."
-msgstr ""
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1770
-msgid "在每次启动中使用的策略里删除了该技能."
-msgstr ""
-
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1781
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1636
 msgid "地图不可用."
 msgstr "Map unavailable."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1792
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1647
 msgid "当前目标: 地点{a}"
 msgstr "Current target: Location {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1797
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1652
 msgid "当前目标: 楼梯{a}"
 msgstr "Current target: Stairs {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1800
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1655
 msgid "搜索{a}..."
 msgstr "Searching for {a}..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1802
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1657
 msgid "找到了 {a}! {b}"
 msgstr "Found {a}! {b}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1804
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1659
 msgid "宝箱热力图: 地图:{a} 方向:{b} 位置:{c}"
 msgstr "Chest heatmap: Map:{a} Direction:{b} Position:{c}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1814
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1669
 msgid "面具男, 移动."
 msgstr "Masked One, move."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1819
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1674
 msgid "开始移动失败. 不要停下来啊面具男!"
 msgstr "Failed to start moving. Don't stop now, Masked One!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1824
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1679
 msgid "已退出移动状态. 当前状态: {a}."
 msgstr "Exited movement state. Current state: {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1833
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1688
 msgid "已退出移动状态. 进行状态检查..."
 msgstr "Exited movement state. Checking status..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1844
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1699
 msgid "在暴风雪中."
 msgstr "In a blizzard."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1849
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1704
 msgid "没有检测到地图."
 msgstr "No map detected."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1855
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1710
 msgid "错误: {a}"
 msgstr "Error: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1863
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1718
 msgid ""
 "没有找到宝箱.\n"
 "停止检索宝箱."
@@ -1126,388 +1155,385 @@ msgstr ""
 "No chests found.\n"
 "Stopping chest search."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1866
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1721
 msgid "已经抵达目标地点或目标楼层."
 msgstr "Already at target location or target floor."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1871
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1726
 msgid "未找到目标{a}."
 msgstr "Target {a} not found."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1880
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1735
 msgid "经过对比中心区域, 确认没有抵达."
 msgstr "After comparing central area, confirmed not arrived."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1886
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1741
 msgid "经过对比中心区域, 判断为抵达目标地点."
 msgstr "After comparing central area, determined target location reached."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1887
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1742
 msgid "无需等待, 当前目标已完成."
 msgstr "No need to wait, current target complete."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2013
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2259
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2272
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1870
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2114
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2127
 msgid "即将停止脚本..."
 msgstr "About to stop script..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2015
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1872
 msgid "当前状态(地下城): {a}"
 msgstr "Current state (Dungeon): {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2024
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2529
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1881
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2384
 msgid "由于画面卡死, 在state:None中重启."
 msgstr "Restarting due to screen freeze in state: None."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2028
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2533
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1885
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2388
 msgid "由于宝箱用时过久, 在state:None中重启."
 msgstr "Restarting due to chest taking too long in state: None."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2031
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2536
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1888
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2391
 msgid "由于战斗用时过久, 在state:None中重启."
 msgstr "Restarting due to combat taking too long in state: None."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2063
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2566
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1917
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2418
 msgid "进行开启宝箱后的恢复."
 msgstr "Performing post-chest recovery."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2068
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2571
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1922
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2423
 msgid "由于面板配置, 进行开启宝箱后恢复."
 msgstr "Performing post-chest recovery due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2071
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2574
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1925
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2426
 msgid "由于面板配置, 跳过了开启宝箱后恢复."
 msgstr "Skipped post-chest recovery due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2077
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2580
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1931
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2432
 msgid "由于面板配置, 进行战后恢复."
 msgstr "Performing post-combat recovery due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2080
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2583
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1934
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2435
 msgid "由于面板配置, 跳过了战后恢复."
 msgstr "Skipped post-combat recovery due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2084
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1938
 msgid "由于面板配置, 在刚进入地下城时进行恢复."
 msgstr "Performing recovery upon dungeon entry due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2119
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1973
 msgid "自动回复异常, 中止本次回复."
 msgstr "Auto-recovery error, aborting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2134
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1989
 msgid "resume可用. 使用resume."
 msgstr "Resume available. Using resume."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2140
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2149
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:1995
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2004
 msgid "已退出移动状态. 当前状态为{a}."
 msgstr "Exited movement state. Current state: {a}."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2185
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2190
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2040
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2045
 msgid "退出自动搜索."
 msgstr "Exiting chest search."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2217
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2072
 msgid "地图卡死检测:{a}"
 msgstr "Map freeze detection: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2225
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2080
 msgid "地下城目标完成. 地下城状态结束.(仅限任务模式.)"
 msgstr "Dungeon Task complete. Dungeon state ended. (Task mode only.)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2249
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2104
 msgid "奇怪, 任务怎么已经接了."
 msgstr "Strange, the task is already accepted."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2261
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2116
 msgid "当前状态: {a}"
 msgstr "Current state: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2270
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2125
 msgid "下一状态: {a}"
 msgstr "Next state: {a}"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2276
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2131
 msgid "因为没有遇到战斗或宝箱, 跳过住宿."
 msgstr "Skipping inn due to no combat or chest encountered."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2278
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2133
 msgid "因为面板设置, 跳过住宿."
 msgstr "Skipping inn due to panel setting."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2280
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2135
 msgid "还有许多地下城要刷. 面具男, 现在还不能休息哦."
 msgstr "Many dungeons left to farm. Masked One, you can't rest yet."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2282
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2137
 msgid "休息时间到!"
 msgstr "Time to rest!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2313
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2168
 msgid "第一步: 时间跳跃..."
 msgstr "Step 1: Time-Space Leap..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2319
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2904
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2985
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3120
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2174
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2756
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2837
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2972
 msgid "第二步: 返回要塞..."
 msgstr "Step 2: Return to the Stronghold..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2324
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2909
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2920
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2990
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3001
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3125
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2179
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2761
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2772
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2842
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2853
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2977
 msgid "第三步: 前往王城..."
 msgstr "Step 3: Go to the Royal Capital..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2330
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2185
 msgid "第四步: 给我!(伸手)"
 msgstr "Step 4: Give it to me! (reaches out)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2376
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2231
 msgid "第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps."
 msgstr "Run {a} of \"7000G\" completed. Time: {b:.2f}s, Profit: {c:.2f} G/s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2386
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2241
 msgid "第一步: 诅咒之旅..."
 msgstr "Step 1: Cursed Journey..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2395
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2250
 msgid "第二步: 领取任务."
 msgstr "Step 2: Accept the task."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2399
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2254
 msgid "第三步: 进入地下城."
 msgstr "Step 3: Enter the dungeon."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2404
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2259
 msgid "第四步: 陷阱."
 msgstr "Step 4: Trap."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2421
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2276
 msgid "已完成第二个陷阱."
 msgstr "Completed second trap."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2431
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2286
 msgid "已完成第三个陷阱."
 msgstr "Completed third trap."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2445
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2300
 msgid "第{a}次\"鸟剑\"完成. 该次花费时间{b:.2f}."
 msgstr "Run {a} of \"Fordraig Sword\" completed. Time: {b:.2f}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2449
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2304
 msgid "注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1."
 msgstr ""
 "Note: \"Rest Interval\" controls how many combats before returning to "
 "town. Rest currently disabled, forcing to 1."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2452
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2307
 msgid "注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1."
 msgstr ""
 "Note: \"Rest Interval\" controls how many combats before returning to "
 "town. Current value 0 is invalid, minimum is 1."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2454
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2309
 msgid "注意, 该流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!"
 msgstr ""
 "Note: This task does not include time leap and task acceptance, please "
 "ensure the task is accepted before starting!"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2472
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2327
 msgid "已抵达目标地点, 开始战斗."
 msgstr "Arrived at target location, starting combat."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2475
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2330
 msgid "第{a}轮开始."
 msgstr "Round {a} start."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2492
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2347
 msgid "第1场战斗结束."
 msgstr "Combat 1 finished."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2496
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2351
 msgid "第2场战斗结束."
 msgstr "Combat 2 finished."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2500
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2355
 msgid "第{a}轮结束."
 msgstr "Round {a} finished."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2511
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2366
 msgid "第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒."
 msgstr ""
 "Round {a}x{b} of \"Repel Enemy Forces\" completed. Total combats: {c}. "
-"Time: {d:.2f}s.\" # Edited: corrected variable placeholder (last one "
-"should be d"
+"Time: {d:.2f}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2647
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2499
 msgid "第{a}次三牛完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
 "Run {a} of \"Three Oxen\" completed. Time: {b}s. Total chests opened: "
 "{c}, total combats: {d}, total time: {e}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2653
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2715
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2782
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2505
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2567
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2634
 msgid "第一步: 重置因果"
 msgstr "Step 1: Reset CSC"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2658
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2787
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2510
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2639
 msgid "第二步: 返回要塞"
 msgstr "Step 2: Return to Stronghold"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2662
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2514
 msgid "第三步: 前往王城"
 msgstr "Step 3: Go to Royal Capital"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2668
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2797
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2520
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2649
 msgid "第四步: 领取任务"
 msgstr "Step 4: Accept Task"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2672
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2524
 msgid "第五步: 进入牛洞"
 msgstr "Step 5: Enter Ox Cave"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2682
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2534
 msgid "第六步: 击杀一牛"
 msgstr "Step 6: Defeat First Ox"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2686
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2538
 msgid "第七步: 回去睡觉"
 msgstr "Step 7: Go back to sleep"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2690
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2542
 msgid "第八步: 再入牛洞"
 msgstr "Step 8: Re-enter Ox Cave"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2694
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2546
 msgid "第九步: 击杀二牛"
 msgstr "Step 9: Defeat Second Ox"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2700
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2552
 msgid "第六步: 连杀三牛"
 msgstr "Step 6: Defeat Three Oxen consecutively"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2710
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2562
 msgid "第{a}次忍洞完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
 "Run {a} of \"Ninja Cave\" completed. Time: {b}s. Total chests opened: "
 "{c}, total combats: {d}, total time: {e}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2722
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2574
 msgid "第二步: 前往王城"
 msgstr "Step 2: Go to Royal Capital"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2745
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2597
 msgid "第三步: 领取任务"
 msgstr "Step 3: Accept Task"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2750
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2602
 msgid "第四步: 进入忍洞"
 msgstr "Step 4: Enter Ninja Cave"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2754
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2606
 msgid "第五步: 关闭陷阱"
 msgstr "Step 5: Disable traps"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2760
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2612
 msgid "第六步: 第一个箱子"
 msgstr "Step 6: First chest"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2777
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2629
 msgid "第{a}次约定之剑完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
 "Run {a} of \"Sword of Promise\" completed. Time: {b}s. Total chests "
 "opened: {c}, total combats: {d}, total time: {e}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2791
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2643
 msgid "第三步: 前往王城)"
-msgstr ""
-"Step 3: Go to Royal Capital)\" # Edited: removed extra parenthesis? Keep "
-"as is for now"
+msgstr "Step 3: Go to Royal Capital)"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2804
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2656
 msgid "第五步: 进入洞窟"
 msgstr "Step 5: Enter the Cavern"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2815
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2667
 msgid "第六步: 1层找人"
 msgstr "Step 6: Find person on Floor 1"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2825
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2677
 msgid "第七步: 2层找人"
 msgstr "Step 7: Find person on Floor 2"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2836
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2688
 msgid "第八步: 3层找人"
 msgstr "Step 8: Find person on Floor 3"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2852
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2704
 msgid "第九步: 离开洞穴"
 msgstr "Step 9: Leave the cave"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2865
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2717
 msgid "第{a}次巨人完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
 "Run {a} of \"Giant\" completed. Time: {b}s. Total chests opened: {c}, "
 "total combats: {d}, total time: {e}s."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2877
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2729
 msgid "跳过了巨人检测环节. 现在默认总是击杀灯怪."
 msgstr ""
 "Skipped giant detection. Defaulting to always kill the Monster with "
 "Lantern."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2899
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2914
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2926
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2980
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2995
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3007
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2751
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2766
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2778
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2832
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2847
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2859
 msgid "第一步: 时空跳跃..."
 msgstr "Step 1: Time-Space Leap..."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2932
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3013
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3130
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2784
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2865
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2982
 msgid "第四步: 悬赏揭榜"
 msgstr "Step 4: Claim Bounty"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2939
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3020
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2791
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2872
 msgid "第五步: 击杀蝎女"
 msgstr "Step 5: Defeat Scorpion Woman"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2948
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3044
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3147
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2800
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2896
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2999
 msgid "第六步: 提交悬赏"
 msgstr "Step 6: Turn in Bounty"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2959
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3059
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3158
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2811
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2911
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3010
 msgid "第七步: 休息"
 msgstr "Step 7: Rest"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2967
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2819
 msgid ""
 "第{a}次\"悬赏:蝎女\"完成. \n"
 "该次花费时间{b:.2f}s.\n"
@@ -1519,11 +1545,11 @@ msgstr ""
 "Total time: {c:.2f}s.\n"
 "Average: {d:.2f}s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3032
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2884
 msgid "第5.5步: 击杀风暴六手"
 msgstr "Step 5.5: Defeat Storm Six-Arms"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3067
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2919
 msgid ""
 "第{a}次\"悬赏:蝎女+六手\"完成. \n"
 "该次花费时间{b:.2f}s.\n"
@@ -1535,7 +1561,7 @@ msgstr ""
 "Total time: {c:.2f}s.\n"
 "Average: {d:.2f}s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3102
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2954
 msgid ""
 "第{a}次\"钢试炼\"完成. \n"
 "该次花费时间{b:.2f}s.\n"
@@ -1547,11 +1573,11 @@ msgstr ""
 "Total time: {c:.2f}s.\n"
 "Average: {d:.2f}s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3137
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:2989
 msgid "第五步: 和吉尔说再见吧"
 msgstr "Step 5: Say goodbye to Jill"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3166
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3018
 msgid ""
 "第{a}次\"悬赏:吉尔\"完成. \n"
 "该次花费时间{b:.2f}s.\n"
@@ -1563,26 +1589,26 @@ msgstr ""
 "Total time: {c:.2f}s.\n"
 "Average: {d:.2f}s"
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3169
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3021
 msgid "开始睡觉."
 msgstr "Going to sleep."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3175
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3031
 msgid ""
 "完成了{a}次旅店休息.\n"
 "总计用时{c:.2f}s.\n"
 "平均用时{d:.2f}s."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3271
+#: c:/Users/Arnold/Desktop/andsimscripts/src/script.py:3127
 msgid "第{a}次要塞小精灵完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/utils.py:173
+#: c:/Users/Arnold/Desktop/andsimscripts/src/utils.py:197
 msgid "配置已保存。"
 msgstr "Config file saved."
 
-#: c:/Users/Arnold/Desktop/andsimscripts/src/utils.py:202
+#: c:/Users/Arnold/Desktop/andsimscripts/src/utils.py:226
 msgid "更新日志"
 msgstr "What's New"
 

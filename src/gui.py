@@ -1156,7 +1156,7 @@ class ConfigPanelApp(tk.Toplevel):
         container = self.section_combat_adv.content_frame
 
         row_counter = 0
-        ttk.Label(container, text="战斗方案会在每次重启游戏, 以及任意角色死亡后重置.", width=20, anchor=tk.W).grid(row=row_counter, column=0, sticky=tk.EW)
+        ttk.Label(container, text=_("战斗方案会在每次重启游戏, 以及任意角色死亡后重置."), width=20, anchor=tk.W).grid(row=row_counter, column=0, sticky=tk.EW)
 
         row_counter += 1
         frame_row = ttk.Frame(container)
