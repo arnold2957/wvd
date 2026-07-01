@@ -1,4 +1,11 @@
 {
+    "LMG-COMBO":{
+        "_TYPE":"combo_dungeon",
+        "questName":"[连刷]全部炉壶灵庙",
+        "questName_en_US": "[Combo] All Mausoleums",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests"
+    },
 
     "Dist":{
         "_TYPE":"dungeon",
@@ -648,7 +655,7 @@
         "_EOT":
         [
             ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
-            ["press","LMG/LMG1F",[1,1],1]
+            ["press","LMG/CrucibleMausoleumB1F",[1,1],1]
         ]
     },
     "LMG-FT":{
@@ -667,7 +674,83 @@
         "_EOT":
         [
             ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
-            ["press","LMG/FTB1F",[1,1],1]
+            ["press","LMG/FighterTombB1F",[1,1],1]
+        ]
+    },
+    "LMG-KT":{
+        "_TYPE":"dungeon",
+        "questName":"[骨头]炉壶灵庙(骑士骨)",
+        "questName_en_US": "[Bone] Mausoleum Knight",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests",
+        "_TARGETINFOLIST":[
+            ["position","右下",[393,545]],
+            ["position","右下",[657,755]],
+            ["position","右下",[555,1235]],
+            ["position","右下",[178,1240]]
+        ],
+        "_preEOTcheck":"LMG/LMG",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
+            ["press","LMG/KnightTombB1F",[1,1],1]
+        ]
+    },
+    "LMG-MT":{
+        "_TYPE":"dungeon",
+        "questName":"[骨头]炉壶灵庙(魔术师骨)",
+        "questName_en_US": "[Bone] Mausoleum Mage",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests",
+        "_TARGETINFOLIST":[
+            ["position","右下",[393,545]],
+            ["position","右下",[657,755]],
+            ["position","右下",[555,1235]],
+            ["position","右下",[178,1240]]
+        ],
+        "_preEOTcheck":"LMG/LMG",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
+            ["press","LMG/MageTombB1F",[1,1],1]
+        ]
+    },
+    "LMG-TT":{
+        "_TYPE":"dungeon",
+        "questName":"[骨头]炉壶灵庙(盗贼骨)",
+        "questName_en_US": "[Bone] Mausoleum Thief",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests",
+        "_TARGETINFOLIST":[
+            ["position","右下",[393,545]],
+            ["position","右下",[657,755]],
+            ["position","右下",[555,1235]],
+            ["position","右下",[178,1240]]
+        ],
+        "_preEOTcheck":"LMG/LMG",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
+            ["press","LMG/ThiefTombB1F",[1,1],1]
+        ]
+    },
+    "LMG-PT":{
+        "_TYPE":"dungeon",
+        "questName":"[骨头]炉壶灵庙(僧侣骨)",
+        "questName_en_US": "[Bone] Mausoleum Priest",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests",
+        "_TARGETINFOLIST":[
+            ["position","右下",[393,545]],
+            ["position","右下",[657,755]],
+            ["position","右下",[555,1235]],
+            ["position","右下",[178,1240]]
+        ],
+        "_preEOTcheck":"LMG/LMG",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
+            ["press","LMG/PriestTombB1F",[1,1],1]
         ]
     },
 

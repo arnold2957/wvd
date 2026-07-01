@@ -197,9 +197,18 @@ def LoadQuest(farmtarget):
     
     return quest
 ##################################################################
-def CMDLine(cmd):
+def CMDLine(cmd, timeout=10):
     logger.debug(_("执行cmd命令: %s") % cmd)
-    result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding="utf-8")
+    try:
+        result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=timeout, errors="ignore")
+    except subprocess.TimeoutExpired:
+        logger.warning(_("cmd命令超时({a}秒): {b}".format(a=timeout, b=cmd)))
+        # 返回一个安全的空结果, 避免异常传播导致重试机制失效
+        class DummyResult:
+            stdout = ""
+            stderr = ""
+            returncode = -1
+        return DummyResult()
     
     stdout = (result.stdout or '').strip()
     stderr = (result.stderr or '').strip()
@@ -415,20 +424,25 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         try:
             logger.info(_("检查adb服务..."))
             result = CMDLine(f"\"{adb_path}\" devices")
-            if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
+            target_offline = f"{setting.ADB_ADRESS}\toffline" in result.stdout
+            if ("daemon not running" in result.stderr) or target_offline:
                 time.sleep(2)
                 result = CMDLine(f"\"{adb_path}\" devices")
-                if ("daemon not running" in result.stderr) or ("offline" in result.stdout):
-                    logger.info("adb服务未启动!\n启动adb服务...")
+                target_offline = f"{setting.ADB_ADRESS}\toffline" in result.stdout
+                if ("daemon not running" in result.stderr) or target_offline:
+                    logger.info("adb服务未启动或目标设备离线!\n重启adb服务...")
+                    CMDLine(f"\"{adb_path}\" disconnect {setting.ADB_ADRESS}")
                     CMDLine(f"\"{adb_path}\" kill-server")
                     CMDLine(f"\"{adb_path}\" start-server")
                     time.sleep(2)
 
             logger.debug(_("尝试连接到adb..."))
+            CMDLine(f"\"{adb_path}\" disconnect {setting.ADB_ADRESS}")
             result = CMDLine(f"\"{adb_path}\" connect {setting.ADB_ADRESS}")
 
             result = CMDLine(f"\"{adb_path}\" devices")
-            if ("{a}").format(a=setting.ADB_ADRESS) in result.stdout:
+            target_online = f"{setting.ADB_ADRESS}\tdevice" in result.stdout
+            if target_online:
                 logger.info(_("成功连接到模拟器!"))
                 results_list = CheckEmulator()
                 logger.debug("{a}".format(a=results_list))
@@ -460,7 +474,7 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
             KillEmulator()
             KillAdb()
             time.sleep(2)
-            return None
+            continue
     else:
         logger.info(_("达到最大重试次数，连接失败"))
         return None
@@ -755,10 +769,18 @@ def Factory():
     def CheckIf_ReachPosition(screenImage,targetInfo : TargetInfo):
         screenshot = screenImage
         position = targetInfo.roi
-        cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
+        y1, y2 = max(0, position[1]-33), min(screenshot.shape[0], position[1]+33)
+        x1, x2 = max(0, position[0]-33), min(screenshot.shape[1], position[0]+33)
+        cropped = screenshot[y1:y2, x1:x2]
 
         for i in range(4):
-            pos, max_val = _check(cropped, LoadTemplateImage(f"cursor_{i}"))
+            template = LoadTemplateImage(f"cursor_{i}")
+            if cropped.shape[0] < template.shape[0] or cropped.shape[1] < template.shape[1]:
+                continue
+            res = _check(cropped, template)
+            if res is None:
+                continue
+            pos, max_val = res
 
             logger.debug(_("目标格搜索{a}, 匹配程度:{b:.2f}%".format(a=position, b=max_val*100)))
             if max_val > 0.8:
@@ -1040,6 +1062,7 @@ def Factory():
         Chest = "chest"
         Combat = "combat"
         Quit = "quit"
+        MoveStuck = "movestuck"
 
     def DungeonCompletionCounter():
         nonlocal runtimeContext
@@ -1446,19 +1469,21 @@ def Factory():
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
                     Press(pos)
-        for info in quest._EOT[:-1]:
-            RestartableSequenceExecution(lambda i=info: EoTStep(i))
-
-        last = quest._EOT[-1]
-        if last[1] == "intoWorldMap":
-            TeleportFromCityToWorldLocation(*last[2])
-        else:
+        last_is_into_world_map = (len(quest._EOT) > 0 and quest._EOT[-1][1] == "intoWorldMap")
+        steps_to_run = quest._EOT if last_is_into_world_map else quest._EOT[:-1]
+        
+        for info in steps_to_run:
             RestartableSequenceExecution(
-                lambda: FindCoordsOrElseExecuteFallbackAndWait(
-                    ["dungFlag", "GotoDung", last[1]], [last[2], [1, 1]], 1
+                lambda info=info: EoTStep(info)
                 )
+                
+        final_target = "GotoDung" if last_is_into_world_map else quest._EOT[-1][1]
+        final_fallback = quest._EOT[-1][2] if not last_is_into_world_map else [1,1]
+
+        RestartableSequenceExecution(
+            lambda: FindCoordsOrElseExecuteFallbackAndWait(["dungFlag","GotoDung",final_target], [final_fallback,[1,1]], 1)
             )
-        Press(CheckIf(ScreenShot(), quest._EOT[-1][1]))
+        Press(CheckIf(ScreenShot(), final_target))
         Sleep(1)
         Press(CheckIf(ScreenShot(), "GotoDung"))
         return
@@ -1674,6 +1699,7 @@ def Factory():
         while 1:
             Sleep(3)
             underscore, dungState,screen = IdentifyState()
+                
             if dungState == DungeonState.Map:
                 logger.info(_("开始移动失败. 不要停下来啊面具男!"))
                 FindCoordsOrElseExecuteFallbackAndWait("dungFlag",[[280,1433],[1,1]],1)
@@ -1688,7 +1714,7 @@ def Factory():
                 mean_diff = cv2.absdiff(gray1, gray2).mean()/255
                 logger.debug(f"移动停止检查:{mean_diff:.2f}")
                 if mean_diff < 0.1:
-                    dungState = None
+                    dungState = DungeonState.MoveStuck
                     logger.info(_("已退出移动状态. 进行状态检查..."))
                     break
             lastscreen = screen
@@ -2036,6 +2062,7 @@ def Factory():
                                 if tar == "chest_auto":
                                     if not CheckIf(MinusImage(lastscreen,90,90,90),"chest_auto_minus",[[811,340, 41, 30]]): # 精确匹配按钮是否可用
                                         logger.info('宝箱按钮不可用.')
+                                        TargetPointComplete()
                                         return DungeonState.Dungeon
                                     
                                 lastscreen = ScreenShot()
@@ -2052,13 +2079,25 @@ def Factory():
 
                                 Sleep(1)
                                 Press(CheckIf(lastscreen,"resume")) # 立刻按一次resume 以兼容暴风雪场景.
-                                return StateMoving_CheckFrozen()
+                                result = StateMoving_CheckFrozen()
+                                if result == DungeonState.MoveStuck:
+                                    # 自动任务移动卡死, 标记目标完成
+                                    scn = ScreenShot()
+                                    if CheckIf(scn,"NoChestCanBeFound") or CheckIf(scn,"theRouteToTheDestinationCannotBeFound"):
+                                        TargetPointComplete()
+                                        logger.info(_("自动任务移动卡死, 标记目标完成."))
+                                        return DungeonState.Dungeon
+                                    else:
+                                        TargetPointComplete()
+                                        logger.info(_("自动任务移动卡死, 标记目标完成."))
+                                        return DungeonState.Dungeon
+                                return result
                             
                         return DungeonState.Dungeon
 
                     dungState = startAuto()
                     if dungState == None:
-                        # 如果状态无效, 直接进入下一轮.
+                        # 如果状态无效, 直接进入下一轮
                         continue
                     ########### 不是自动任务, 开始搜索
 
@@ -2145,6 +2184,9 @@ def Factory():
                     state = State.EoT
                 case State.EoT:
                     DungeonCompletionCounter()
+                    if getattr(setting, "MAX_RUN_COUNT", 0) > 0 and runtimeContext._COUNTERDUNG >= setting.MAX_RUN_COUNT:
+                        logger.info(_("达到连刷设定的上限 {a} 次，完成当前地下城！").format(a=setting.MAX_RUN_COUNT))
+                        break
                     RestartableSequenceExecution(
                         lambda:StateEoT()
                         )
@@ -3162,7 +3204,45 @@ def Factory():
 
         quest = LoadQuest(setting.FARM_TARGET)
         if quest:
-            if quest._TYPE =="dungeon":
+            if quest._TYPE == "combo_dungeon":
+                combo_settings = [
+                    ("LMG-FT", 3),
+                    ("LMG-TT", 3),
+                    ("LMG-PT", 3),
+                    ("LMG-MT", 3),
+                    ("LMG-KT", 3),
+                    ("LMG-GT", 1),
+                ]
+                for sub_target, count in combo_settings:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if count <= 0:
+                        continue
+                    
+                    logger.info("=========================================")
+                    logger.info(f"开始连刷目标: {sub_target}, 计划次数: {count}")
+                    logger.info("=========================================")
+                    
+                    setting.FARM_TARGET = sub_target
+                    sub_quest = LoadQuest(sub_target)
+                    try:
+                        jsondict = LoadJson(ResourcePath(QUEST_FILE))
+                        setting.FARM_TARGET_TEXT = jsondict[sub_target].get("questName", sub_target)
+                    except:
+                        setting.FARM_TARGET_TEXT = sub_target
+                    setting.MAX_RUN_COUNT = count
+                    runtimeContext._COUNTERDUNG = 0
+                    quest = sub_quest
+                    
+                    saved_callback = setting._FINISHINGCALLBACK
+                    setting._FINISHINGCALLBACK = lambda: None
+                    if quest._TYPE == "dungeon":
+                        DungeonFarm()
+                    else:
+                        QuestFarm()
+                    setting._FINISHINGCALLBACK = saved_callback
+                setting._FINISHINGCALLBACK()
+            elif quest._TYPE =="dungeon":
                 DungeonFarm()
             else:
                 QuestFarm()
