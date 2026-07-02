@@ -45,7 +45,7 @@ CONFIG_VAR_LIST = [
                                                                         "skill_settings": []
                                                                     },]],
             ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],
-            ["GENERAL",   "RELOAD_STRATEGY_WHEN",      tk.StringVar, _("不需要")],
+            ["GENERAL",   "RELOAD_STRATEGY_WHEN",     tk.StringVar, _("不需要")],
             ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
             ["GENERAL",   "WEBSITE_ORG_TIME",         tk.StringVar, None],
             ["GENERAL",   "AM_REFRESH_TIME",          tk.StringVar, None],
@@ -1666,7 +1666,7 @@ def Factory():
             if targetPos!=None:
                 return targetPos
         return targetPos
-    def StateMoving_CheckFrozen():
+    def StateMoving_CheckStop():
         runtimeContext._RESUMEAVAILABLE = True
         lastscreen = None
         dungState = None
@@ -1702,7 +1702,7 @@ def Factory():
         if CheckIf(map,"tooPoorToReadTheMap"):
             logger.info(_("在暴风雪中."))
             Press(CheckIf(map,"dungFlag"))
-            return StateMoving_CheckFrozen(),False
+            return StateMoving_CheckStop(),False
     
         if not CheckIf(map,"mapFlag"):
             logger.info(_("没有检测到地图."))
@@ -1733,13 +1733,13 @@ def Factory():
             if target in normalPlace or target.endswith("_quit") or target.startswith("stair"):
                 Press(searchResult)
                 Press([136,1431]) # automove
-                return StateMoving_CheckFrozen(),False
+                return StateMoving_CheckStop(),False
             else:
                 if (CheckIf_FocusCursor(ScreenShot(),target)): #注意 这里通过二次确认 我们可以看到目标地点 而且是未选中的状态
                     logger.info(_("经过对比中心区域, 确认没有抵达."))
                     Press(searchResult)
                     Press([136,1431]) # automove
-                    return StateMoving_CheckFrozen(), False
+                    return StateMoving_CheckStop(), False
                 else:
                     # if setting._DUNGWAITTIMEOUT == 0:
                         logger.info(_("经过对比中心区域, 判断为抵达目标地点."))
@@ -1846,8 +1846,9 @@ def Factory():
             
             TryPressRetry(scn)
     def StateDungeon(targetInfoList : list[TargetInfo]):
-        gameFrozen_none = []
-        gameFrozen_map = 0
+        gameFrozen_StateNoneScreenHistory = []
+        gameFrozen_StateMapCounter = 0
+        GAMEFROZEN_STATEMAPLIMIT = 20+20*len(targetInfoList)
         dungState = None
         shouldRecover = False
         waitTimer = time.time()
@@ -1879,8 +1880,10 @@ def Factory():
                 case None:
                     s, dungState,scn = IdentifyState()
                     if (s == State.Inn) or (dungState == DungeonState.Quit):
+                        logger.debug(_(f"本次地下城打开地图次数{gameFrozen_StateMapCounter}"))
                         break
-                    gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
+
+                    gameFrozen_StateNoneScreenHistory, result = GameFrozenCheck(gameFrozen_StateNoneScreenHistory,scn)
                     if result:
                         logger.info(_("由于画面卡死, 在state:None中重启."))
                         restartGame()
@@ -1892,6 +1895,7 @@ def Factory():
                         logger.info(_("由于战斗用时过久, 在state:None中重启."))
                         restartGame()
                 case DungeonState.Quit:
+                    logger.debug(_(f"本次地下城打开地图次数{gameFrozen_StateMapCounter}"))
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
@@ -2020,6 +2024,12 @@ def Factory():
                     if dungState == DungeonState.Dungeon:
                         dungState = DungeonState.Map
                 case DungeonState.Map:
+                    ########### 卡死检测
+                    gameFrozen_StateMapCounter +=1
+                    if gameFrozen_StateMapCounter > GAMEFROZEN_STATEMAPLIMIT:
+                        logger.info(_("多次访问地图, 认为游戏卡死. 重启游戏."))
+                        gameFrozen_StateMapCounter = 0
+                        restartGame()
                     ########### 不打开地图, 执行自动任务
                     def startAuto():
                         for tar in ["chest_auto","mark_auto"]:
@@ -2052,7 +2062,7 @@ def Factory():
 
                                 Sleep(1)
                                 Press(CheckIf(lastscreen,"resume")) # 立刻按一次resume 以兼容暴风雪场景.
-                                return StateMoving_CheckFrozen()
+                                return StateMoving_CheckStop()
                             
                         return DungeonState.Dungeon
 
@@ -2070,20 +2080,10 @@ def Factory():
 
                     if ifTargetPointComplete:
                         TargetPointComplete()
-                    
-                    if not ifTargetPointComplete:
-                        gameFrozen_map +=1
-                        logger.info(_("地图卡死检测:{a}".format(a=gameFrozen_map)))
-                    else:
-                        gameFrozen_map = 0
-                    if gameFrozen_map > 50:
-                        gameFrozen_map = 0
-                        restartGame()
 
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info(_("地下城目标完成. 地下城状态结束.(仅限任务模式.)"))
                         break
-
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
                     dungState = StateChest()
@@ -2370,7 +2370,7 @@ def Factory():
                     logger.info(_("第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒.".format(a=counter, b=setting.REST_INTERVEL, c=counter*setting.REST_INTERVEL*2), c=(time.time()-t)),
                                     extra={"summary": True})
             case "darkLight":
-                gameFrozen_none = []
+                gameFrozen_StateNoneScreenHistory = []
                 dungState = None
                 shouldRecover = False
                 needRecoverBecauseCombat = False
@@ -2383,7 +2383,7 @@ def Factory():
                             s, dungState,scn = IdentifyState()
                             if (s == State.Inn) or (dungState == DungeonState.Quit):
                                 break
-                            gameFrozen_none, result = GameFrozenCheck(gameFrozen_none,scn)
+                            gameFrozen_StateNoneScreenHistory, result = GameFrozenCheck(gameFrozen_StateNoneScreenHistory,scn)
                             if result:
                                 logger.info(_("由于画面卡死, 在state:None中重启."))
                                 restartGame()
