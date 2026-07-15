@@ -162,17 +162,27 @@ def parse_args():
     
     # 添加可选的config_path参数
     parser.add_argument(
-        '-config', 
-        '--config', 
+        '-config',
+        '--config',
         type=str,  # 自动转换为字符串
         default=None,  # 默认值设为None
         help='配置文件路径 (例如: c:/config.json)'
     )
-    
+
+    parser.add_argument(
+        '--test-formation',
+        action='store_true',
+        help='运行队形修正功能的离线测试(无需战斗), 更多测试选项见 test_formation.py'
+    )
+
     return parser.parse_args()
 
 def main():
     args = parse_args()
+
+    if args.test_formation:
+        import test_formation
+        sys.exit(test_formation.test_offline(test_formation.DEFAULT_TEST_IMAGE))
 
     controller = AppController(args.headless, args.config)
     try:

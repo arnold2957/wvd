@@ -864,6 +864,14 @@ class ConfigPanelApp(tk.Toplevel):
         self.recover_when_beginning_check = ttk.Checkbutton(row_recover, text=_("刚进入地下城时恢复一次."), variable=self.RECOVER_WHEN_BEGINNING, command=self.save_config, style="Custom.TCheckbutton")
         self.recover_when_beginning_check.grid(row=0, column=0)
 
+        # 队形修正
+        row_counter += 1
+        row_recover = tk.Frame(container)
+        row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
+        self.active_formation_fix_check = ttk.Checkbutton(row_recover, text=_("战后检查并修正队形(前后排)."), variable=self.ACTIVE_FORMATION_FIX,
+                                                          command=self.save_config, style="Custom.TCheckbutton")
+        self.active_formation_fix_check.grid(row=0, column=0)
+
         # 休息设置
         row_counter += 1
         frame_row = ttk.Frame(container)

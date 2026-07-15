@@ -1,6 +1,7 @@
 from ppadb.client import Client as AdbClient
 from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
+from scipy.optimize import linear_sum_assignment
 from scipy.signal import find_peaks
 from enum import Enum
 from datetime import datetime
@@ -16,6 +17,82 @@ import struct
 
 DUNGEON_TARGETS = BuildQuestReflection()
 
+##################################################################
+# 队形检查与修正: 常量定义 (分辨率 900x1600)
+# 战斗界面下方六个队员信息格的"名字"行 ROI: [x, y, w, h]
+# 顺序: 上排左/中/右, 下排左/中/右
+FORMATION_CELL_ROIS = [
+    [30,  1278, 288, 28],
+    [318, 1278, 288, 28],
+    [606, 1278, 288, 28],
+    [30,  1456, 288, 28],
+    [318, 1456, 288, 28],
+    [606, 1456, 288, 28],
+    ]
+# 比对置信度阈值: 最差一格的匹配度低于此值时认为画面不含队员面板, 跳过判断.
+FORMATION_MATCH_THRESHOLD = 0.6
+# 名字行文字的亮度阈值: 高于此值的像素视为文字. 比对前先二值化提取文字,
+# 使背景颜色变化(意志力<50时的蓝底/受击红闪)完全不影响比对.
+FORMATION_TEXT_BINARY_THRESHOLD = 160
+# 比对时当前画面格子向四周外扩的像素数, 容忍文字位置抖动.
+FORMATION_MATCH_MARGIN = 10
+# 每格名字行至少要有的文字像素数, 用于确认画面里真的有完整队员面板.
+FORMATION_MIN_TEXT_PIXELS = 80
+# 地下城画面下方工具栏的"队列编辑"图标(两个人+循环箭头).
+# 点击后图标变金色进入编辑模式, 拖拽两个队员面板即可互换位置, 再点一次退出.
+FORMATION_EDIT_ICON_POS = [765, 1185]
+FORMATION_EDIT_ICON_ROI = [[725, 1145, 80, 80]]
+FORMATION_EDIT_ON_TEMPLATE = "formation/edit_on"    # 金色=编辑模式开启
+FORMATION_EDIT_OFF_TEMPLATE = "formation/edit_off"  # 白色=普通状态
+# 六个队员面板的中心坐标(拖拽起止点), 顺序与 FORMATION_CELL_ROIS 一致
+FORMATION_SLOT_CENTER_POS = [
+    [170, 1320], [455, 1320], [740, 1320],
+    [170, 1495], [455, 1495], [740, 1495],
+    ]
+
+def CropFormationCells(screen, margin=0):
+    # 裁出六格名字行并二值化提取文字. 只保留亮色文字的形状,
+    # 背景颜色(蓝底/灰底/红闪)不参与比对.
+    # margin>0 时向四周外扩(用于当前画面), 让基准模板可以在其中滑动匹配,
+    # 以容忍面板文字位置的少量抖动.
+    cells = []
+    for x, y, w, h in FORMATION_CELL_ROIS:
+        cell = screen[max(y-margin,0):y+h+margin, max(x-margin,0):x+w+margin]
+        gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
+        underscore, binary = cv2.threshold(gray, FORMATION_TEXT_BINARY_THRESHOLD, 255, cv2.THRESH_BINARY)
+        cells.append(binary)
+    return cells
+def CompareFormation(refCells, curScreen):
+    # 返回 (perm, confidence). perm[i]=j 表示基准中位于格i的队员现在位于格j.
+    # confidence 为最差一格的匹配度, 过低说明画面里没有队员面板, 不可依据.
+    curCells = CropFormationCells(curScreen, margin=FORMATION_MATCH_MARGIN)
+    n = len(refCells)
+    sim = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            v = float(cv2.matchTemplate(curCells[j], refCells[i], cv2.TM_CCOEFF_NORMED).max())
+            # 全黑图(无文字)会得到无效相关值, 视为不匹配.
+            sim[i][j] = v if np.isfinite(v) else 0.0
+    underscore, col_ind = linear_sum_assignment(-sim)
+    perm = [int(v) for v in col_ind]
+    matched = [sim[i][perm[i]] for i in range(n)]
+    logger.debug("队形逐格匹配度: {a}".format(a=[round(float(v),2) for v in matched]))
+    return perm, min(matched)
+def FormationCellsValid(cells):
+    # 六格都有足够的文字像素才算捕捉到完整面板.
+    return all(int((c > 0).sum()) >= FORMATION_MIN_TEXT_PIXELS for c in cells)
+def PermutationToSwaps(perm):
+    # 把置换分解为若干次"格a<->格b"互换(作用在当前布局上, 依序执行后复原).
+    occ = [None]*len(perm)
+    for member, slot in enumerate(perm):
+        occ[slot] = member
+    swaps = []
+    for i in range(len(occ)):
+        if occ[i] != i:
+            j = occ.index(i)
+            swaps.append((i, j))
+            occ[i], occ[j] = occ[j], occ[i]
+    return swaps
 ##################################################################
         
 CONFIG_VAR_LIST = [
@@ -66,6 +143,7 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "REST_INTERVEL",           tk.IntVar,     1],
             ["TEMPLATE",   "ACTIVE_CSC",              tk.BooleanVar, True],
             ["TEMPLATE",   "BYPASS_THE_WALL",         tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_FORMATION_FIX",    tk.BooleanVar, False],
             ]
 class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
@@ -110,6 +188,10 @@ class RuntimeContext:
     CURRENT_STRATEGY = {}
     NEED_RECOVER_WHEN_BEGINNING = True
     TASK_STEP_INDEX = 0
+    #### 队形检查与修正
+    _FORMATION_REF = None      # 战斗开始时六格名字行的快照
+    _FORMATION_LASTSCN = None  # 战斗中最近一回合的整屏截图
+    _FORMATION_INBATTLE = False
 class FarmQuest:
     _TARGETINFOLIST = None
     _EOT = None
@@ -1462,6 +1544,94 @@ def Factory():
         Sleep(1)
         Press(CheckIf(ScreenShot(), "GotoDung"))
         return
+    ############################ 队形检查与修正 ############################
+    # 战斗界面正下方有六个队员信息格(两排三列). 每格截取"名字"一行做快照:
+    # 战斗开始时存一份基准, 战斗结束时与最后一回合的画面比对. 名字行不随
+    # 血量变化, 若敌方技能拖拽/击退改变了前后排, 6x6交叉匹配可得出
+    # "哪格的人跑到了哪格"的置换关系, 之后按格位互换即可复原, 无需辨识角色.
+    # (纯计算函数 CropFormationCells/CompareFormation/PermutationToSwaps 在模块顶部)
+    def TryCaptureFormationBaseline(screen):
+        # 任务开始后, 第一次在画面上看到完整队员面板时记录"任务基准队形".
+        # 此后整个任务期间都以它为准, 战后修正会把队形还原到任务开始时的样子.
+        # 用工具栏的队列编辑图标确认下方确实是队员面板(而非恰好有文字的对话框).
+        if not setting.ACTIVE_FORMATION_FIX:
+            return
+        if runtimeContext._FORMATION_REF is not None:
+            return
+        if not (CheckIf(screen, FORMATION_EDIT_OFF_TEMPLATE, FORMATION_EDIT_ICON_ROI)
+                or CheckIf(screen, FORMATION_EDIT_ON_TEMPLATE, FORMATION_EDIT_ICON_ROI)):
+            return
+        cells = CropFormationCells(screen)
+        if FormationCellsValid(cells):
+            runtimeContext._FORMATION_REF = cells
+            logger.info(_("已记录任务基准队形."))
+    def SnapFormationOnCombat(screen):
+        # 挂在StateCombat内: 每回合仅保留最近截图的引用, 不做比对.
+        # 若开战前从未捕捉到基准(极少见), 以第一回合画面兜底.
+        if not setting.ACTIVE_FORMATION_FIX:
+            return
+        if runtimeContext._FORMATION_REF is None:
+            TryCaptureFormationBaseline(screen)
+        runtimeContext._FORMATION_INBATTLE = True
+        runtimeContext._FORMATION_LASTSCN = screen
+    def FixFormation(swaps):
+        # 开启地下城画面下方的队列编辑模式(金色图标), 拖拽互换格位, 再关闭.
+        # 任何一步失败都只记录警告并放弃, 不阻塞主流程.
+        try:
+            if not CheckIf(ScreenShot(), FORMATION_EDIT_OFF_TEMPLATE, FORMATION_EDIT_ICON_ROI):
+                logger.warning(_("没有找到队列编辑按钮, 放弃本次队形修正."))
+                return False
+            Press(FORMATION_EDIT_ICON_POS)
+            Sleep(1.2)
+            if not CheckIf(ScreenShot(), FORMATION_EDIT_ON_TEMPLATE, FORMATION_EDIT_ICON_ROI):
+                logger.warning(_("未能进入队列编辑模式, 放弃本次队形修正."))
+                return False
+            for a, b in swaps:
+                ax, ay = FORMATION_SLOT_CENTER_POS[a]
+                bx, by = FORMATION_SLOT_CENTER_POS[b]
+                DeviceShell(f"input swipe {ax} {ay} {bx} {by} 800")
+                Sleep(1.2)
+            Press(FORMATION_EDIT_ICON_POS)  # 退出编辑模式
+            Sleep(1)
+            logger.info(_("队形修正完成."))
+            return True
+        except Exception as e:
+            logger.warning(_("队形修正过程发生异常: {a}, 已放弃.".format(a=e)))
+            return False
+    def MaybeFixFormationAfterCombat():
+        # 战斗结束后调用一次: 与"任务基准队形"比对, 需要时进行修正.
+        # 优先用战斗结束后的地下城画面(面板可见, 连敌方收尾动作的拖拽也能捕捉),
+        # 画面被遮挡时退回战斗最后一回合的截图.
+        if not setting.ACTIVE_FORMATION_FIX:
+            return
+        if not runtimeContext._FORMATION_INBATTLE:
+            return
+        refCells = runtimeContext._FORMATION_REF
+        lastscn = runtimeContext._FORMATION_LASTSCN
+        runtimeContext._FORMATION_INBATTLE = False
+        runtimeContext._FORMATION_LASTSCN = None
+        if refCells is None:
+            return
+        perm, confidence = CompareFormation(refCells, ScreenShot())
+        if (confidence < FORMATION_MATCH_THRESHOLD) and (lastscn is not None):
+            perm, confidence = CompareFormation(refCells, lastscn)
+        if confidence < FORMATION_MATCH_THRESHOLD:
+            logger.info(_("队形比对置信度过低({a:.2f}), 跳过本次队形检查.".format(a=confidence)))
+            return
+        if perm == list(range(len(perm))):
+            logger.debug("队形无变化.")
+            return
+        swaps = PermutationToSwaps(perm)
+        logger.info(_("检测到队形被打乱: {a}. 进行队形修正...".format(
+            a=", ".join("格{a}<->格{b}".format(a=x+1, b=y+1) for x, y in swaps))))
+        if FixFormation(swaps):
+            # 修正后在地下城画面(面板仍可见)复核一次
+            perm2, conf2 = CompareFormation(refCells, ScreenShot())
+            if (conf2 >= FORMATION_MATCH_THRESHOLD) and (perm2 == list(range(len(perm2)))):
+                logger.info(_("队形已确认恢复."))
+            else:
+                logger.warning(_("队形修正后校验未通过(置信度{a:.2f}), 请留意.".format(a=conf2)))
+    ############################ 队形检查与修正结束 ############################
     def StateCombat():
         if runtimeContext._TIME_COMBAT==0:
             runtimeContext._TIME_COMBAT = time.time()
@@ -1555,6 +1725,7 @@ def Factory():
         # 主逻辑开始
         # 0. 开启二倍速
         screen = ScreenShot()
+        SnapFormationOnCombat(screen)
         if Press(CheckIf(screen,"combatSpd")) or Press(CheckIf(screen,"combatSpd_DHI")):
             runtimeContext._COMBATSPD = True
             Sleep(1)
@@ -1857,6 +2028,10 @@ def Factory():
 
         nonlocal runtimeContext
         runtimeContext.TASK_STEP_INDEX = 0
+        # 进入地下城时清掉战斗过程状态. 注意: 任务基准队形(_FORMATION_REF)
+        # 是任务级的, 在整个任务期间保留, 这里不清除.
+        runtimeContext._FORMATION_INBATTLE = False
+        runtimeContext._FORMATION_LASTSCN = None
         def TargetPointComplete():
             logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi}")
             targetInfoList.pop(0)
@@ -1879,6 +2054,9 @@ def Factory():
             match dungState:
                 case None:
                     s, dungState,scn = IdentifyState()
+                    # 任务基准队形未记录时, 在能看到队员面板的画面上捕捉一次.
+                    if scn is not None:
+                        TryCaptureFormationBaseline(scn)
                     if (s == State.Inn) or (dungState == DungeonState.Quit):
                         logger.debug(_(f"本次地下城打开地图次数{gameFrozen_StateMapCounter}"))
                         break
@@ -1935,6 +2113,7 @@ def Factory():
                         runtimeContext._COUNTERCOMBAT+=1
                         needRecoverBecauseCombat = False
                         runtimeContext._MEET_CHEST_OR_COMBAT = True
+                        MaybeFixFormationAfterCombat()
                         if (not setting.SKIP_COMBAT_RECOVER):
                             logger.info(_("由于面板配置, 进行战后恢复."))
                             shouldRecover = True
@@ -2432,6 +2611,7 @@ def Factory():
                                 runtimeContext._COUNTERCOMBAT+=1
                                 needRecoverBecauseCombat = False
                                 runtimeContext._MEET_CHEST_OR_COMBAT = True
+                                MaybeFixFormationAfterCombat()
                                 if (not setting.SKIP_COMBAT_RECOVER):
                                     logger.info(_("由于面板配置, 进行战后恢复."))
                                     shouldRecover = True
