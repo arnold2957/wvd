@@ -879,6 +879,7 @@ def Factory():
                 DeviceShell(target)
             else:
                 Press(CheckIf(scn, target))
+                Sleep(0.2)
         def checkPattern(scn, pattern):
             if pattern.startswith("combatActive"):
                 return StateCombatCheck(scn)
@@ -1041,6 +1042,32 @@ def Factory():
         Combat = "combat"
         Quit = "quit"
 
+    def BagClear_Item():
+        Press([847,1174])
+        Sleep(1)
+        if not CheckIf(ScreenShot(), "itemList"):
+            return
+        for i in range(6):
+            Press([350+(i%3)*200, 1290+(i//3)*70])
+            Sleep(1)
+            while 1:
+                if not Press(CheckIf(ScreenShot(),"itemIcon", [[67,871,94,288]])):
+                    break
+                Press(CheckIf(ScreenShot(),"putinstorage"))
+                Sleep(1)
+        
+        while 1:
+            if Press(CheckIf(ScreenShot(), "close")):
+                Sleep(1)
+            else:
+                break
+    def BagClear_Equipment():
+        Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1))
+        Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1))
+        FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1)
+        Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1))
+        FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+
     def DungeonCompletionCounter():
         nonlocal runtimeContext
         # 如果发生了开箱或者战斗那么+1
@@ -1058,7 +1085,6 @@ def Factory():
             logger.info("{a}{b}".format(a=runtimeContext._IMPORTANTINFO, b=summary_text),extra={"summary": True})
         # 圈数计时器
         runtimeContext._LAPTIME = time.time()
-
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
@@ -2131,6 +2157,7 @@ def Factory():
                         logger.info(_("即将停止脚本..."))
                         break
                 case State.Inn:
+                    # BagClear_Equipment()
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info(_("因为没有遇到战斗或宝箱, 跳过住宿."))
                     elif not setting.ACTIVE_REST:
@@ -2144,6 +2171,7 @@ def Factory():
                         )
                     state = State.EoT
                 case State.EoT:
+                    # BagClear_Item()
                     DungeonCompletionCounter()
                     RestartableSequenceExecution(
                         lambda:StateEoT()
