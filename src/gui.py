@@ -912,6 +912,19 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, textvariable=self.KARMA_ADJUST).grid(row=0, column=3, sticky=tk.W, pady=5)
         ttk.Label(frame_row, text=_("点")).grid(row=0, column=4, sticky=tk.W, pady=5)
 
+        # 每6小时重置队伍
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.reassemble_party_check = ttk.Checkbutton(
+            frame_row,
+            variable=self.RE_ASSEMBLE_PARTY,
+            text=_("每6个小时重新召集酒馆第一个队伍\n以便清理背包和调整站位"),
+            command=self.save_config,
+            style="Custom.TCheckbutton"
+        )
+        self.reassemble_party_check.grid(row=0, column=0, sticky=tk.W)
+
         # ==========================================
         # 分组 4: 战斗
         # ==========================================
@@ -1628,6 +1641,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.AM_switch,
             self.farm_target_category_combo,
             self.reload_strategy_combobox, 
+            self.reassemble_party_check,
             ]
 
         if state == tk.DISABLED:
