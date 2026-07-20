@@ -521,7 +521,7 @@
             ["position","左下",[347,866]],
             ["position","左下",[400,1183]],
             ["chest","左下",[[0,783,480,480],[371,888,127,118]]],
-            ["DOF_quit"]
+            ["position","左下",[133,1241]]
         ],
         "_EOT":[
             ["press","DOF",["EdgeOfTown","input swipe 650 250 650 900"],1],
@@ -609,7 +609,7 @@
         "_TARGETINFOLIST":
         [
             ["chest_auto"],
-            ["position", "左下", [26,1078]]
+            ["position", "左下", [34,1078]]
         ]
     },
 

@@ -30,3 +30,4 @@ screenshotwhenrestart/
 /人物截取/
 /本地化
 *.mo
+/src/.vscode

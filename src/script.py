@@ -755,6 +755,7 @@ def Factory():
     def CheckIf_ReachPosition(screenImage,targetInfo : TargetInfo):
         screenshot = screenImage
         position = targetInfo.roi
+        position = [max(33, min(position[0], 866)), max(33, min(position[1], 1566))]
         cropped = screenshot[position[1]-33:position[1]+33, position[0]-33:position[0]+33]
 
         for i in range(4):
