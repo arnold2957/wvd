@@ -268,21 +268,21 @@
         "_TIPS":"本任务作者[@XX](不出矮人王100意志好个体不改名)\n1. 进入雪地-“教会区域”，设置唯一标记点，位置为X=26, Y=6\n2. 该脚本需要较高练度，特定角色，特定技能，不解决装备，角色和配队导致的不稳定刷取流程。\n3. （可选）查看如何全自动挂机白巨人视频教程，现在马上三连关注该UP：\n【辟邪除妖】XX教你如何全自动无伤带走教会红色白巨人 思路分享 巫术 Wizardry Variants Daphne】 https://www.bilibili.com/video/BV1jqjw6CEWX/"
     },
 
-    "GCN":{
+    "FFXI-2F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]FFXI联动2F",
-        "questName_en_US": "[Chest] FFIX Cave 2F",
+        "questName_en_US": "[Chest] FFXI Cave 2F",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上",[496,447]]
         ],
-        "_preEOTcheck":"GCN/GCN",
+        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["GCN/GCN","input swipe 200 430 50 580"],1],
-            ["press","GCN/GCN-ZONE2",[1,1],1]
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","FFXI/ZONE2",[1,1],1]
         ],
         "_RTT":
         [
@@ -290,6 +290,31 @@
         ],
         "_TIPS":"该任务从王都出发. This quest departs from Capital city."
     },
+
+    "FFXI-2F-elite":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]FFXI联动2F带精英",
+        "questName_en_US": "[Chest] FFXI Cave 2F + Elite",
+        "questCategory": "最新洞窟",
+        "questCategory_en_US": "*WHATS NEW*",
+        "_TARGETINFOLIST":[
+            ["position","右下",[865,917]],
+            ["chest_auto"],
+            ["position","右上",[496,447]]
+        ],
+        "_preEOTcheck":"FFXI/GCN",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","FFXI/ZONE2",[1,1],1]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+        ],
+        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+    },
+
     "HSR-1F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]药师洞1f宝箱",
@@ -782,12 +807,22 @@
         "_TYPE":"quest"
     },
 
-    "FFXI_inf":{
-        "questName":"无限刷怪",
-        "questName_en_US": "inf",
+    "FFXI-Org":{
+        "questName":"[矿石]FFXI挖矿",
+        "questName_en_US": "[Chest] FFXI Org",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
-        "_TYPE":"quest"
+        "_TYPE":"quest",
+        "_preEOTcheck":"FFXI/GCN",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","FFXI/ZONE2",[1,1],1]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+        ]
     }
 
 }

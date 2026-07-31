@@ -1062,21 +1062,25 @@ def Factory():
                 Sleep(1)
             else:
                 break
-    def BagClear_Equipment():
-        period = int(runtimeContext._TOTALTIME // (6 * 3600))
-        if runtimeContext._LAST_BAGCLEAR == period:
-            return
-
+    def reunionParty(partyName = None):
         logger.info(_("必须重新集结队伍..."))
-        RestartableSequenceExecution(
-                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
-                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
-                    lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
-                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1)),
-                    lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
-            )
-        runtimeContext._LAST_BAGCLEAR = period
 
+        if not partyName:
+            RestartableSequenceExecution(
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                )
+        else:
+            RestartableSequenceExecution(
+                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
+                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
+                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
+                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
+                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                            )
     def DungeonCompletionCounter():
         nonlocal runtimeContext
         # 如果发生了开箱或者战斗那么+1
@@ -2177,7 +2181,11 @@ def Factory():
                         break
                 case State.Inn:
                     if setting.RE_ASSEMBLE_PARTY:
-                        BagClear_Equipment()
+                        period = int(runtimeContext._TOTALTIME // (6 * 3600))
+                        if runtimeContext._LAST_BAGCLEAR == period:
+                            return
+                        reunionParty()
+                        runtimeContext._LAST_BAGCLEAR = period
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info(_("因为没有遇到战斗或宝箱, 跳过住宿."))
                     elif not setting.ACTIVE_REST:
@@ -3189,21 +3197,45 @@ def Factory():
                                               TargetInfo("position","右下",[606,1026]),
                                               TargetInfo("stair_fortressGate","左下", [720,1027]),])
                         )
-            case "FFXI_inf":
+            case "FFXI-Org":
+                # reunionParty("FFXI/FFXIStone")
+                resetBag = False
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
-                    if runtimeContext._LAPTIME!= 0:
-                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次无限刷怪. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
-                    runtimeContext._LAPTIME = time.time()
-                    runtimeContext._COUNTERDUNG+=1
-
+                    logger.info("出发!")
                     RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo("stay")])
+                        lambda: StateEoT()
                         )
 
+                    logger.info("前往目标地点...")
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("theRouteToTheDestinationCannotBeFound",[[1,1],"mark_auto","donothing"],0.5)
+                    )
+
+                    while 1:
+                        scn = ScreenShot()
+
+                        if CheckIf(scn, "FFXI/nothingToDig"):
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            logger.info("没东西了, 撤退")
+                            break
+
+                        Press([450,600])
+                        if CheckIf(ScreenShot(),"FFXI/needpickaxe"):
+                            resetBag = True
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            break
+                        Sleep(0.2)
+
+                    if resetBag:
+                        Press(FindCoordsOrElseExecuteFallbackAndWait("OpenWorldMap",[[1,1],"leaveDung","donothing"],1))
+
+                        for info in quest._RTT:
+                            TeleportFromDungeonToCity(*info[2])
+
+                        reunionParty("FFXI/FFXIStone")
+                        resetBag = False
 
         ##########################
         setting._FINISHINGCALLBACK()
