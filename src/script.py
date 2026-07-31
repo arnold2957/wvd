@@ -2074,6 +2074,9 @@ def Factory():
                         restartGame()
                     ########### 不打开地图, 执行自动任务
                     def startAuto():
+                        if targetInfoList[0] and (targetInfoList[0].target =="stay"):
+                            Sleep(2)
+                            return None
                         for tar in ["chest_auto","mark_auto"]:
                             if targetInfoList[0] and (targetInfoList[0].target == tar):                        
                                 lastscreen = ScreenShot()
@@ -3186,6 +3189,22 @@ def Factory():
                                               TargetInfo("position","右下",[606,1026]),
                                               TargetInfo("stair_fortressGate","左下", [720,1027]),])
                         )
+            case "FFXI_inf":
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    if runtimeContext._LAPTIME!= 0:
+                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
+                        logger.info(_("第{a}次无限刷怪. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                                    extra={"summary": True})
+                    runtimeContext._LAPTIME = time.time()
+                    runtimeContext._COUNTERDUNG+=1
+
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([TargetInfo("stay")])
+                        )
+
+
         ##########################
         setting._FINISHINGCALLBACK()
         return
