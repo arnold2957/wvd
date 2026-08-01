@@ -2182,10 +2182,9 @@ def Factory():
                 case State.Inn:
                     if setting.RE_ASSEMBLE_PARTY:
                         period = int(runtimeContext._TOTALTIME // (6 * 3600))
-                        if runtimeContext._LAST_BAGCLEAR == period:
-                            return
-                        reunionParty()
-                        runtimeContext._LAST_BAGCLEAR = period
+                        if runtimeContext._LAST_BAGCLEAR != period:
+                            reunionParty()
+                            runtimeContext._LAST_BAGCLEAR = period
                     if not runtimeContext._MEET_CHEST_OR_COMBAT:
                         logger.info(_("因为没有遇到战斗或宝箱, 跳过住宿."))
                     elif not setting.ACTIVE_REST:

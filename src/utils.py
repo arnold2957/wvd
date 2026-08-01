@@ -213,11 +213,11 @@ def GetOneVarInGeneralConfig(var, default_value):
     if 'GENERAL' in data:
         if var in data['GENERAL']:
             return data['GENERAL'][var]
-    else:
-        return default_value
+
+    return default_value
 ############################################
 localedir = ResourcePath("locale")
-LANGUAGE = GetOneVarInGeneralConfig('LANGUAGE', 'zh_CN')
+LANGUAGE = GetOneVarInGeneralConfig('LANGUAGE', "zh_CN")
 trans = gettext.translation('messages', localedir, languages=[LANGUAGE], fallback=True)
 trans.install()
 ###########################################

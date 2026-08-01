@@ -315,6 +315,25 @@
         "_TIPS":"该任务从王都出发. This quest departs from Capital city."
     },
 
+    "FFXI-5F-elite":{
+        "_TYPE":"dungeon",
+        "questName":"[恶名]FFXI 5F(4精英)王都出发",
+        "questName_en_US": "[Elite+Chest] FFXI 5F",
+        "questCategory": "最新洞窟",
+        "questCategory_en_US": "*WHATS NEW*",
+        "_TARGETINFOLIST":[
+			["position","左下",[80,652]],
+            ["position","左下",[80,1130]],
+            ["position","右下",[820,1130]],
+            ["position","右下",[820,652]]
+        ],
+		"_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
+            ["press","FFXI/zone5",[1,1],1]
+        ]
+    },
+
     "HSR-1F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]药师洞1f宝箱",
