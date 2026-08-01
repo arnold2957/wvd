@@ -327,11 +327,16 @@
             ["position","右下",[820,1130]],
             ["position","右下",[820,652]]
         ],
-		"_EOT":
+        "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
             ["press","FFXI/zone5",[1,1],1]
-        ]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+        ],
+        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
     },
 
     "HSR-1F":{
