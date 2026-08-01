@@ -298,8 +298,9 @@
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
+            ["position","左下",[300,280]],
+            ["position","左下",[670,920]],
             ["position","右下",[865,917]],
-            ["chest_auto"],
             ["position","右上",[496,447]]
         ],
         "_preEOTcheck":"FFXI/GCN",
