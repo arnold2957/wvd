@@ -270,7 +270,7 @@
 
     "FFXI-2F":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]FFXI联动2F",
+        "questName":"[宝箱]FFXI 2F",
         "questName_en_US": "[Chest] FFXI Cave 2F",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
@@ -293,7 +293,7 @@
 
     "FFXI-2F-elite":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]FFXI联动2F带精英",
+        "questName":"[宝箱]FFXI 2F 精英",
         "questName_en_US": "[Chest] FFXI Cave 2F + Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
@@ -315,17 +315,39 @@
         "_TIPS":"该任务从王都出发. This quest departs from Capital city."
     },
 
-    "FFXI-5F-elite":{
+    "FFXI-5F-4Elite":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F(4精英)王都出发",
-        "questName_en_US": "[Elite+Chest] FFXI 5F",
+        "questName":"[恶名]FFXI 5F 4精英",
+        "questName_en_US": "[Elite+Chest] FFXI 5F 4Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
-			["position","左下",[80,652]],
+			["position","左下",[30,652]],
             ["position","左下",[80,1130]],
             ["position","右下",[820,1130]],
-            ["position","右下",[820,652]]
+            ["position","右下",[870,652]]
+        ],
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","FFXI/zone5",[1,1],1]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+        ],
+        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+    },
+
+    "FFXI-5F-2Elite":{
+        "_TYPE":"dungeon",
+        "questName":"[恶名]FFXI 5F 2精英",
+        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
+        "questCategory": "最新洞窟",
+        "questCategory_en_US": "*WHATS NEW*",
+        "_TARGETINFOLIST":[
+			["position","左下",[30,652]],
+            ["position","右下",[870,652]]
         ],
         "_EOT":
         [
