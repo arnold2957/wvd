@@ -270,7 +270,7 @@
 
     "FFXI-2F":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]FFXI 2F",
+        "questName":"[宝箱]FFXI 2F 自动宝箱",
         "questName_en_US": "[Chest] FFXI Cave 2F",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
@@ -293,7 +293,7 @@
 
     "FFXI-2F-elite":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]FFXI 2F 精英",
+        "questName":"[刷怪]FFXI 2F 精英",
         "questName_en_US": "[Chest] FFXI Cave 2F + Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
@@ -326,7 +326,8 @@
 			["position","左下",[30,652]],
             ["position","左下",[80,1130]],
             ["position","右下",[820,1130]],
-            ["position","右下",[870,652]]
+            ["position","右下",[870,652]],
+            ["position","左上",[450,392]]
         ],
         "_EOT":
         [
@@ -348,7 +349,8 @@
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
 			["position","左下",[30,652]],
-            ["position","右下",[870,652]]
+            ["position","右下",[870,652]],
+            ["position","左上",[450,392]]
         ],
         "_EOT":
         [
