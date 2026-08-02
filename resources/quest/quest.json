@@ -286,9 +286,9 @@
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
         ],
-        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
     "FFXI-2F-elite":{
@@ -311,9 +311,9 @@
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
         ],
-        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
     "FFXI-5F-4Elite":{
@@ -336,9 +336,9 @@
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
         ],
-        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
     "FFXI-5F-2Elite":{
@@ -359,9 +359,31 @@
         ],
         "_RTT":
         [
-            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
+            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
         ],
-        "_TIPS":"该任务从王都出发. This quest departs from Capital city."
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+    },
+
+    "FFXI-5F-Elite":{
+        "_TYPE":"dungeon",
+        "questName":"[恶名]FFXI 5F 单恶魔",
+        "questName_en_US": "[Elite+Chest] FFXI 5F Single Elite",
+        "questCategory": "最新洞窟",
+        "questCategory_en_US": "*WHATS NEW*",
+        "_TARGETINFOLIST":[
+			["position","左下",[80,1130]],
+            ["position","左上",[450,392]]
+        ],
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","FFXI/zone5",[1,1],1]
+        ],
+        "_RTT":
+        [
+            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
+        ],
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
     "HSR-1F":{
