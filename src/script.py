@@ -1137,8 +1137,12 @@ def Factory():
         Sleep(1)
         FindCoordsOrElseExecuteFallbackAndWait(["Inn","openworldmap","dungFlag"],[target,press_any_key],1)
     
-    def TeleportFromDungeonToCity(target, swipe, press_any_key = [550,1]):
+    def TeleportFromDungeonToCity(target, swipe=None, press_any_key = [550,1]):
         nonlocal runtimeContext
+        if Path(target).name.startswith("EVENT_"):
+            FindCoordsOrElseExecuteFallbackAndWait("Inn", [[1,1],"worldmapflag","EVENT",target],2)
+            return
+
         FindCoordsOrElseExecuteFallbackAndWait(["dungFlag","worldmapflag","openworldmap","startdownload"],"openworldmap",1)
         scn = ScreenShot()
 
@@ -1320,16 +1324,14 @@ def Factory():
                 # 由于定位流程包含了返回键, 有时会退出到大地图, 因此强制执行RTT流程, 不管是否需要住宿.
                 # if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                 if quest._RTT:
-                    for info in quest._RTT:
-                        TeleportFromDungeonToCity(*info[2])
+                    TeleportFromDungeonToCity(*quest._RTT)
                     return IdentifyState()
                        
             if pos:=(CheckIf(screen,"openworldmap")):
                 if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                     Press(pos)
                     if quest._RTT:
-                        for info in quest._RTT:
-                            TeleportFromDungeonToCity(*info[2])
+                        TeleportFromDungeonToCity(*quest._RTT)
                     return IdentifyState()
                 else:
                     logger.info(_("不满足回城条件, 跳过回城."))
@@ -1474,10 +1476,12 @@ def Factory():
                 return pos
         return None
     def StateInn():
-        if not setting.ACTIVE_ROYALSUITE_REST:
-            FindCoordsOrElseExecuteFallbackAndWait("OK",["Inn","Stay","Economy",[1,1]],2)
-        else:
+        FindCoordsOrElseExecuteFallbackAndWait("Economy", ["Inn","Stay",[1,1]],2)
+        if setting.ACTIVE_ROYALSUITE_REST and CheckIf(ScreenShot(),"royalsuite"):
             FindCoordsOrElseExecuteFallbackAndWait("OK",["Inn","Stay","royalsuite",[1,1]],2)
+        else:
+            FindCoordsOrElseExecuteFallbackAndWait("OK",["Inn","Stay","Economy",[1,1]],2)
+            
         FindCoordsOrElseExecuteFallbackAndWait("Stay",["OK",[299,1464]],2)
         PressReturn()
     def StateEoT():
@@ -1488,6 +1492,8 @@ def Factory():
         def EoTStep(info):
             if info[1]=="intoWorldMap":
                 TeleportFromCityToWorldLocation(*info[2])
+            elif info[1]=="EVENT":
+                FindCoordsOrElseExecuteFallbackAndWait("openworldmap", [[1,1],"EVENT",info[2]],2)
             else:
                 pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
                 if info[0]=="press":
@@ -1604,11 +1610,8 @@ def Factory():
         if Press(CheckIf(screen,"combatSpd")) or Press(CheckIf(screen,"combatSpd_DHI")):
             runtimeContext._COMBATSPD = True
             Sleep(1)
-        # 1. 检查重置标识
-        if setting.RELOAD_STRATEGY_WHEN == _("每场战斗前"):
-            ReloadStrategy()
-
-        # 2. 获取当前策略中的技能设置列表
+  
+        # 1. 获取当前策略中的技能设置列表
         skill_settings = runtimeContext.CURRENT_STRATEGY.get("skill_settings", [])
         aac = False
         if runtimeContext.CURRENT_STRATEGY == {}:
@@ -1625,7 +1628,7 @@ def Factory():
             ActiveAutoCombat()
             return
 
-        # 3. 非全自动模式：点击任意键直到出现“flee”图片
+        # 2. 非全自动模式：点击任意键直到出现“flee”图片
         [pos_x, pos_y] = FindCoordsOrElseExecuteFallbackAndWait(["flee","chestFlag","dungFlag", "someonedead","multipeopledead","RiseAgain"],[1,1],1)
         if (pos_x>=735)and(pos_x<=735+126)and(pos_y>=1158)and(pos_y<=1158+68):
             pass
@@ -1633,7 +1636,7 @@ def Factory():
             logger.debug(_("战斗已结束."))
             return
 
-        # 4. 进行匹配
+        # 3. 进行匹配
         highest_match_rate = 0
         target_skill = None
         scn = ScreenShot()
@@ -1654,13 +1657,13 @@ def Factory():
                         logger.debug(_("最佳 {a}, {b}".format(a=candidate, b=highest_match_rate)))
         logger.debug(f"匹配时间 {time.time() - t}")
 
-        # 5. 判断匹配率是否达标
+        # 4. 判断匹配率是否达标
         if highest_match_rate < 0.80:
             logger.info(_("并未设定该角色的行为, 使用自动战斗."))
             AutoThisChar()
             return
 
-        # 6. 按照技能等级释放技能
+        # 5. 按照技能等级释放技能
         if target_skill.get("skill_var") == _("防御"):
             Press([513,1200])
             Sleep(0.1)
@@ -1669,7 +1672,7 @@ def Factory():
         else:
             SkillLvlSelectAndDoubleCheck(target_skill.get("skill_var"), target_skill.get("skill_lvl"), target_skill.get("target_var"))
 
-        # 9. 释放技能后删除条目
+        # 6. 释放技能后删除条目
         if target_skill in runtimeContext.CURRENT_STRATEGY.get("skill_settings", []):
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
             logger.debug(_("技能已释放，已从当前策略队列中移除。"))
@@ -1945,6 +1948,9 @@ def Factory():
                     break
                 case DungeonState.Dungeon:
                     Press([1,1])
+                    ########### 重置战斗策略
+                    if (runtimeContext._TIME_COMBAT !=0) and (setting.RELOAD_STRATEGY_WHEN == _("每场战斗前")):
+                        ReloadStrategy()
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -3230,8 +3236,8 @@ def Factory():
                     if resetBag:
                         Press(FindCoordsOrElseExecuteFallbackAndWait("OpenWorldMap",[[1,1],"leaveDung","donothing"],1))
 
-                        for info in quest._RTT:
-                            TeleportFromDungeonToCity(*info[2])
+                        
+                        TeleportFromDungeonToCity(*quest._RTT)
 
                         reunionParty("FFXI/FFXIStone")
                         resetBag = False

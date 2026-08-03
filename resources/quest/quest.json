@@ -281,13 +281,10 @@
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
-        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -306,13 +303,10 @@
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
-        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -331,19 +325,16 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
-        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
     "FFXI-5F-2Elite":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 2精英",
+        "questName":"[恶名]FFXI 5F 底部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
@@ -354,15 +345,14 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
-        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
+
+    
 
     "FFXI-5F-Elite":{
         "_TYPE":"dungeon",
@@ -376,13 +366,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["FFXI/City_VNH","input swipe 400 400 500 300",[500,1100]],1]
-        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -421,10 +408,7 @@
             ["press","intoWorldMap",["IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],1],
             ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],1]
-        ],
+        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway."
     },
     "IWO_2":{
@@ -443,10 +427,7 @@
             ["press","intoWorldMap",["IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],1],
             ["press","IWO/IWOB2F",["IWO/IWO",[1,1]],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],1]
-        ],
+        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway."
     },
     "malice-B3F":{
@@ -887,13 +868,10 @@
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 200 430 50 580"],1],
+            ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT":
-        [
-            ["press","intoWorldMap",["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],1]
-        ]
+        "_RTT": ["FFXI/EVENT_VNH"]
     }
 
 }
