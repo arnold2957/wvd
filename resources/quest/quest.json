@@ -871,7 +871,7 @@
             ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["FFXI/EVENT_VNH"]
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     }
 
 }

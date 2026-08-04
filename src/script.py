@@ -3222,21 +3222,26 @@ def Factory():
                         scn = ScreenShot()
 
                         if CheckIf(scn, "FFXI/nothingToDig"):
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
                             logger.info("没东西了, 撤退")
                             break
 
                         Press([450,600])
                         if CheckIf(ScreenShot(),"FFXI/needpickaxe"):
                             resetBag = True
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
                             break
                         Sleep(0.2)
 
                     if resetBag:
-                        Press(FindCoordsOrElseExecuteFallbackAndWait("OpenWorldMap",[[1,1],"leaveDung","donothing"],1))
+                        RestartableSequenceExecution(
+                            lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("OpenWorldMap",[[1,1],"leaveDung","donothing"],1))
+                        )
 
-                        
                         TeleportFromDungeonToCity(*quest._RTT)
 
                         reunionParty("FFXI/FFXIStone")
