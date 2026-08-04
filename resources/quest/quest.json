@@ -871,7 +871,9 @@
             ["press","EVENT","FFXI/EVENT_GCN",1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
+
+        "_TIPS": "请按照如下步骤设置:\n1 购买999999个鹤嘴锄并保存在仓库里\n2 六人队伍脱掉所有装备, 然后尽可能多的携带鹤嘴锄\n3 在王城的工会里新建一个队伍, 并命名为FFXIStone.\n4 前往活动地图2F, 在哈肯正对的矿点前, 打上标记.\n5 确保这是该层唯一的标记.\n6 副本或主城中启动脚本."
     }
 
 }
