@@ -3278,7 +3278,6 @@ def Factory():
                             break
 
                         Sleep(1.5)
-                        scn = ScreenShot()
 
                     if resetBag:
                         RestartableSequenceExecution(
