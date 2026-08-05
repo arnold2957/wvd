@@ -1589,7 +1589,7 @@ def Factory():
                 # 尝试点击next
                 pos = CheckIf(ScreenShot(),"next",[[1,291,898,600]])
                 Press([pos[0],pos[1]+40])
-                
+
                 # 尝试随机点击
                 x0, y0 = 75, 296
                 width, height = 827, 600
@@ -3276,7 +3276,6 @@ def Factory():
                                 if vals["下改"] < 0.8:
                                     logger.info(f"哇 全改!")
                                     counter["全改"]+=1
-                                    return
                                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
                                 file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
                                 logger.info(f"记得把截图发给我. 已保存在{file_path}中.")
