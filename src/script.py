@@ -3257,9 +3257,9 @@ def Factory():
                                 if vals["下改"] < 0.8:
                                     logger.info(f"哇 全改!")
                                     counter["全改"]+=1
-                                logger.info(f"记得把截图发给我. 已保存在{file_path}中.")
                                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
                                 file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
+                                logger.info(f"记得把截图发给我. 已保存在{file_path}中.")
                                 cv2.imwrite(file_path, scn)
 
                         if CheckIf(scn, "FFXI/nothingToDig",[[320,667,423,474]]) or CheckIf(scn, "FFXI/nothingToDig2",[[320,667,423,474]]):
