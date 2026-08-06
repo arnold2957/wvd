@@ -3301,7 +3301,7 @@ def Factory():
                             )
                             break
 
-                        Sleep(1.5)
+                        Sleep(1.7)
 
                     if resetBag:
                         RestartableSequenceExecution(
