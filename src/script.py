@@ -3259,6 +3259,8 @@ def Factory():
                     )
 
                     while 1:
+                        if setting._FORCESTOPING.is_set():
+                            break
                         scn = ScreenShot()
                         Press([450,600])
 
