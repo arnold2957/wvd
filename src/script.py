@@ -593,7 +593,7 @@ def Factory():
                 # 1. 显式指定显示器 ID，避免 screencap 打印多显示器警告
                 process_result = subprocess.run(
                     [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out",
-                    "screencap", "-d", "0"],          # 添加 -d 0 以便跳过模拟器截图警告
+                    "screencap"],          # 添加 -d 0 以便跳过模拟器截图警告
                     capture_output=True,
                     timeout=5
                 )
@@ -623,9 +623,7 @@ def Factory():
                     idx = raw_data.find(marker)
                     if idx == -1:
                         # 找不到合法分隔标志，输出调试信息并报错
-                        logger.error(f"无法识别的截屏数据，头部hex: {raw_data[:32].hex()}")
-                        if raw_data[:8] == b'[Warning':
-                            logger.error("收到日志文本而非图像数据: %s", raw_data[:400])
+                        logger.error(f"无法识别的截屏数据，头部内容: {raw_data[:400]}")
                         raise RuntimeError(_("截图协议解析错误：无法定位图像数据"))
 
                     # 切割掉前缀文本（包括 \n@），继续循环检查剩余数据
