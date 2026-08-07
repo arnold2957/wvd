@@ -332,15 +332,35 @@
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
-    "FFXI-5F-2Elite":{
+    "FFXI-5F-2Elite-mid":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 底部2精英",
+        "questName":"[恶名]FFXI 5F 中部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
 			["position","左下",[30,652]],
             ["position","右下",[870,652]],
+            ["position","左上",[450,392]]
+        ],
+        "_EOT":
+        [
+            ["press","EVENT","FFXI/EVENT_GCN",1],
+            ["press","FFXI/zone5",[1,1],1]
+        ],
+        "_RTT": ["FFXI/EVENT_VNH"],
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+    },
+
+    "FFXI-5F-2Elite-bottom":{
+        "_TYPE":"dungeon",
+        "questName":"[恶名]FFXI 5F 底部2精英",
+        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
+        "questCategory": "最新洞窟",
+        "questCategory_en_US": "*WHATS NEW*",
+        "_TARGETINFOLIST":[
+            ["position","左下",[80,1130]],
+            ["position","右下",[820,1130]],
             ["position","左上",[450,392]]
         ],
         "_EOT":
