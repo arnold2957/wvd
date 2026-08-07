@@ -112,6 +112,7 @@ class RuntimeContext:
     NEED_RECOVER_WHEN_BEGINNING = True
     TASK_STEP_INDEX = 0
     _LAST_BAGCLEAR = 0
+    _SKIP_SCREENSHOT_WARNING = False # 截图返回是否包含错误代码.
 class FarmQuest:
     _TARGETINFOLIST = None
     _EOT = None
@@ -584,16 +585,28 @@ def Factory():
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
+        if "wizardry" not in DeviceShell("dumpsys window | grep mCurrentFocus"):
+            logger.error("游戏未启动!")
+            restartGame(skip_screenshot=True)
+
+        nonlocal runtimeContext
+
         t = time.time()
+        class AppKeepAliveError(Exception):
+            pass
 
         while True:
             try:
                 serial = setting._ADBDEVICE.serial
 
-                # 1. 显式指定显示器 ID，避免 screencap 打印多显示器警告
+                # 1. 根据运行情况选择指令
+                if not runtimeContext._SKIP_SCREENSHOT_WARNING:
+                    cmd = "screencap"
+                else:
+                    cmd = "screencap 2>/dev/null"
                 process_result = subprocess.run(
                     [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out",
-                    "screencap"],          # 添加 -d 0 以便跳过模拟器截图警告
+                    cmd],
                     capture_output=True,
                     timeout=5
                 )
@@ -605,34 +618,34 @@ def Factory():
 
                 raw_data = process_result.stdout
 
-                # 2. 循环检查并剥离可能的文本前缀
-                while True:
-                    if len(raw_data) < 12:
-                        logger.error(_("截图数据不足12字节(无头信息)"))
-                        raise RuntimeError(_("截图数据异常"))
+                
+                if len(raw_data) < 12:
+                    logger.error(_("截图数据不足12字节(无头信息)"))
+                    raise RuntimeError(_("截图数据异常"))
 
                     # 尝试解析宽高
-                    w, h, fmt = struct.unpack("<III", raw_data[:12])
+                w, h, fmt = struct.unpack("<III", raw_data[:12])
 
-                    # 合理性校验（若合法则跳出循环）
-                    if 0 < w <= 16384 and 0 < h <= 16384:
-                        break   # 数据看起来正常，继续后续处理
+                # 2. 合理性校验（若合法则跳出循环）
+                if not (0 < w <= 16384 and 0 < h <= 16384):
+                    # 特殊警告：开启应用保活导致的多显示器提示
+                    if raw_data.startswith(
+                        b'[Warning] Multiple displays were found, but no display id was specified! '
+                        b'Defaulting to the first display found, however this default is not guaranteed '
+                        b'to be consistent across captures. A display id should be specified.\n'
+                    ):
+                        raise AppKeepAliveError("你开启了应用保活, 请关闭.")
 
-                    # 宽高不合法，尝试寻找文本分隔标志 b'\n@'
-                    marker = b'\n@'
-                    idx = raw_data.find(marker)
-                    if idx == -1:
-                        # 找不到合法分隔标志，输出调试信息并报错
+                    if not runtimeContext._SKIP_SCREENSHOT_WARNING:
                         logger.error(f"无法识别的截屏数据，头部内容: {raw_data[:400]}")
-                        raise RuntimeError(_("截图协议解析错误：无法定位图像数据"))
+                        logger.error(f"将在之后截图时跳过所有警告信息.")
+                        runtimeContext._SKIP_SCREENSHOT_WARNING = True
+                        return ScreenShot()
+                    else:
+                        logger.error(f"再次收到非法数据，头部内容: {raw_data[:400]}")
+                        raise RuntimeError("截图数据异常，无法修复")
 
-                    # 切割掉前缀文本（包括 \n@），继续循环检查剩余数据
-                    warning_text = raw_data[:idx + len(marker)]
-                    logger.warning(f"截屏数据前包含文本日志，已跳过: {warning_text[:200]}")
-                    raw_data = raw_data[idx + len(marker):]
-                    # 继续 while 循环，再次检查切割后的数据
-
-                # 3. 后续原始处理（与之前完全一致）
+                # 3. 后续原始处理
                 expected_pixels = w * h * 4
                 pixels_data = raw_data[12:]
 
@@ -652,8 +665,9 @@ def Factory():
                 current_h, current_w = image.shape[:2]
                 if (current_h, current_w) != (1600, 900):
                     if (current_h, current_w) == (900, 1600):
-                        logger.error(_("截图尺寸错误: 当前{a}, 检测为横屏.".format(a=image.shape)))
-                        restartGame(skip_screenshot=True)
+                        logger.debug(_("截图尺寸错误: 当前{a}, 检测为横屏.".format(a=image.shape)))
+                        image = image.transpose(1, 0, 2)
+
                     else:
                         logger.error(_("截图尺寸错误: 期望(1600,900), 实际({a},{b}).".format(
                             a=current_h, b=current_w)))
@@ -671,6 +685,11 @@ def Factory():
                 if isinstance(e, (AttributeError, RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info(_("ADB操作失败/数据错误, 尝试重启ADB或模拟器程序..."))
                     ResetDevice()
+                if isinstance(e, (AppKeepAliveError)):
+                    logger.info(_("你开启了应用保活, 请关闭.\n请在\"设备设置-其他-应用运行\"中关闭."))
+                    setting._FORCESTOPING.set()
+                    return
+
                 Sleep(1)
 
     def _check(screenImage, template, roi = None, outputMatchResult = False):
@@ -993,8 +1012,9 @@ def Factory():
         Sleep(10)
         logs = DeviceShell("logcat -d | grep -i \"unable to initialize.*graphics api\"")
         if logs.strip():
-            logger.error(_("检测到崩溃日志, 关闭模拟器重启.{a}".format(a=logs)))
-            restartGame(skip_screenshot = False, force_restart_EMU = True)
+            logger.error(_("检测到崩溃日志, 暂时不重启模拟器.{a}".format(a=logs)))
+            # restartGame(skip_screenshot = False, force_restart_EMU = True)
+
         raise RestartSignal()
     class RestartSignal(Exception):
         pass
