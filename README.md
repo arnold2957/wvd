@@ -47,6 +47,7 @@ wvdas可以再检测到"再起之火"耗尽后, 立刻将任务变更为"找公�
 - 脚本左上角的"模拟器路径"为:
 	 - MuMu12: Netease\MuMu Player 12\shell\MuMuPlayer.exe
 	 - MuMuX: Netease\MuMu\nx_device\12.0\shell\MuMuNxDevice.exe
+     - MuMu15: Netease\MuMu\nx_device\15.0\shell\MuMuNxDevice.exe
 - 端口号默认为16384. 很罕见的情况下, 可能为5555. 如果两者皆非, 你可从多开管理器里找到具体的模拟器端口.
 - 关闭**网络桥接模式**.
 
