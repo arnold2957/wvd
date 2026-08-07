@@ -586,61 +586,80 @@ def Factory():
     def ScreenShot():
         t = time.time()
 
-        
         while True:
             try:
-                # 获取设备序列号，用于构造 adb 命令
-                serial = setting._ADBDEVICE.serial 
+                serial = setting._ADBDEVICE.serial
 
+                # 1. 显式指定显示器 ID，避免 screencap 打印多显示器警告
                 process_result = subprocess.run(
-                    [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out", "screencap"],
-                    capture_output=True, # 捕获输出
-                    timeout=5            # 设置超时
+                    [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out",
+                    "screencap", "-d", "0"],          # 添加 -d 0 以便跳过模拟器截图警告
+                    capture_output=True,
+                    timeout=5
                 )
-                
+
                 if process_result.stderr:
-                    logger.error(_("截图命令报错: {a}".format(a=process_result.stderr.decode('utf-8', errors='ignore'))))
+                    logger.error(_("截图命令报错: {a}".format(
+                        a=process_result.stderr.decode('utf-8', errors='ignore'))))
                     raise RuntimeError(_("截图命令报错"))
 
                 raw_data = process_result.stdout
-                
-                # 解析头部信息 (前12个字节)
-                if len(raw_data) < 12:
-                    logger.error(_("截图数据不足12字节(无头信息)"))
-                    raise RuntimeError(_("截图数据异常"))
-                
-                # struct.unpack 解析二进制: "<"小端序, "I"无符号整型(4字节)
-                # 前三个整数分别是: 宽度, 高度, 像素格式
-                w, h, fmt = struct.unpack("<III", raw_data[:12])
+
+                # 2. 循环检查并剥离可能的文本前缀
+                while True:
+                    if len(raw_data) < 12:
+                        logger.error(_("截图数据不足12字节(无头信息)"))
+                        raise RuntimeError(_("截图数据异常"))
+
+                    # 尝试解析宽高
+                    w, h, fmt = struct.unpack("<III", raw_data[:12])
+
+                    # 合理性校验（若合法则跳出循环）
+                    if 0 < w <= 16384 and 0 < h <= 16384:
+                        break   # 数据看起来正常，继续后续处理
+
+                    # 宽高不合法，尝试寻找文本分隔标志 b'\n@'
+                    marker = b'\n@'
+                    idx = raw_data.find(marker)
+                    if idx == -1:
+                        # 找不到合法分隔标志，输出调试信息并报错
+                        logger.error(f"无法识别的截屏数据，头部hex: {raw_data[:32].hex()}")
+                        if raw_data[:8] == b'[Warning':
+                            logger.error("收到日志文本而非图像数据: %s", raw_data[:400])
+                        raise RuntimeError(_("截图协议解析错误：无法定位图像数据"))
+
+                    # 切割掉前缀文本（包括 \n@），继续循环检查剩余数据
+                    warning_text = raw_data[:idx + len(marker)]
+                    logger.warning(f"截屏数据前包含文本日志，已跳过: {warning_text[:200]}")
+                    raw_data = raw_data[idx + len(marker):]
+                    # 继续 while 循环，再次检查切割后的数据
+
+                # 3. 后续原始处理（与之前完全一致）
                 expected_pixels = w * h * 4
                 pixels_data = raw_data[12:]
 
                 if len(pixels_data) == expected_pixels:
                     pass
                 elif len(pixels_data) > expected_pixels:
-                    # 通常是多了4个字节的结束符，直接切掉尾部多余的
                     pixels_data = pixels_data[:expected_pixels]
                 else:
-                    logger.error(_("数据长度校验失败: 头部声明 {a}x{b}, 实际收到 {c}, 期望 {d}".format(a=w,b=h,c=len(pixels_data), d=expected_pixels)))
+                    logger.error(_("数据长度校验失败: 头部声明 {a}x{b}x4={d}, 实际收到 {c}.").format(
+                        a=w, b=h, c=len(pixels_data), d=expected_pixels))
                     raise RuntimeError(_("截图数据不完整"))
 
                 image = np.frombuffer(pixels_data, dtype=np.uint8)
                 image = image.reshape((h, w, 4))
                 image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
 
-                # 注意：现在的 image.shape 已经是 (h, w, 3)
                 current_h, current_w = image.shape[:2]
-               
                 if (current_h, current_w) != (1600, 900):
                     if (current_h, current_w) == (900, 1600):
-                        logger.error(_("截图尺寸错误: 当前{a}, 检测为横屏.".format(a=image.shape)))  
-                        # 不能截图, 截图就爆栈了.
+                        logger.error(_("截图尺寸错误: 当前{a}, 检测为横屏.".format(a=image.shape)))
                         restartGame(skip_screenshot=True)
                     else:
-                        logger.error(_("截图尺寸错误: 期望(1600,900), 实际({a},{b}).".format(a=current_h,b=current_w)))
+                        logger.error(_("截图尺寸错误: 期望(1600,900), 实际({a},{b}).".format(
+                            a=current_h, b=current_w)))
                         raise RuntimeError(_("分辨率异常: {a}x{b}".format(a=current_w, b=current_h)))
-
-                # logger.info(f"{time.time()-t}")
 
                 return image
 
@@ -648,13 +667,14 @@ def Factory():
                 logger.warning(_("截图超时 (Subprocess)"))
                 logger.info(_("ADB操作失败, 尝试重启ADB或模拟器程序..."))
                 ResetDevice(force_restart_adb=True)
-                
+
             except Exception as e:
                 logger.debug(_("截图发生异常: {a}".format(a=e)))
                 if isinstance(e, (AttributeError, RuntimeError, ConnectionResetError, cv2.error)):
                     logger.info(_("ADB操作失败/数据错误, 尝试重启ADB或模拟器程序..."))
                     ResetDevice()
-                time.sleep(1)
+                Sleep(1)
+
     def _check(screenImage, template, roi = None, outputMatchResult = False):
         screenshot = screenImage.copy()
         pos = None
