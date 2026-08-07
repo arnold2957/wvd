@@ -872,13 +872,6 @@
         "_TYPE":"quest"
     },
 
-    "retard_tapjoy":{
-        "questName":"mergeBlastNumber",
-        "questCategory": "其他",
-        "questCategory_en_US": "Other",
-        "_TYPE":"quest"
-    },
-
     "FFXI-Org":{
         "questName":"[矿石]FFXI挖矿",
         "questName_en_US": "[Chest] FFXI Org",

@@ -3155,95 +3155,6 @@ def Factory():
                     if setting._FORCESTOPING.is_set():
                         break
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
-            case "retard_tapjoy":
-                def split_image(img):
-                    img_analyze = {}
-                    for i in range(5):
-                        for j in range(7):
-                            cropped = img[(274+114*j):(368+114*j),(174+114*i):(268+114*i)]
-                            img_analyze[i*10+j] = cropped
-                    return img_analyze
-                def smallgame_check(a,b):
-                    result = cv2.matchTemplate(a, b, cv2.TM_CCOEFF_NORMED)
-                    underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
-                    return max_val
-                def shoot(i):
-                    Press([221+114*i,321])
-                ############
-                screen_queue = []
-                empty_img = LoadTemplateImage('smallgame/smallgame_empty')
-                merge_counter = 0
-                start_time = time.time()
-                while 1:
-                    Sleep(1)
-                    img = ScreenShot()
-                    if Press(CheckIf(img,"smallgame/nothanks")):
-                        Sleep(1)
-                        continue
-                    if Press(CheckIf(img,"smallgame/nothanks_y")):
-                        Sleep(1)
-                        continue
-                    if Press(CheckIf(img,"smallgame/nothanks_s")):
-                        Sleep(1)
-                        continue
-                    if Press(CheckIf(img,"smallgame/yes")):
-                        Sleep(1)
-                        continue
-                    if Press(CheckIf(img,"smallgame/play")):
-                        Sleep(1)
-                        continue
-                    screen_queue, if_frozen = GameFrozenCheck(screen_queue,img[274:(274+114*7),174:(174+114*5)],3,0.002)
-                    if if_frozen:
-                        if smallgame_check(img[1150-50:1150+50,800-50:800+50],empty_img[1150-50:1150+50,800-50:800+50]) > 0.9:
-                            Press([800,1150])
-                            Sleep(2)
-                            Press([315,1037])
-                            Sleep(0.5)
-                            shoot(0)
-                            continue
-                    img_analyze = split_image(img)
-
-                    empty_img = LoadTemplateImage('smallgame/smallgame_empty')
-                    img_analyze_empty = split_image(empty_img)
-
-                    depth = [7,7,7,7,7]
-                    for k in img_analyze.keys():
-                        r = smallgame_check(img_analyze[k],img_analyze_empty[k])
-                        if r>0.98:
-                            if k%10 < depth[k//10]:
-                                depth[k//10] = k % 10
-                    
-                    # logger.info(depth)
-
-                    next = img[1178-40:1178+40,450-40:450+40,]
-
-                    send = False
-                    for i in range(5):
-                        if depth[i]!=0:
-                            k = i*10+depth[i]-1
-                            if k in img_analyze:
-                                r = smallgame_check(img_analyze[k],next)
-                                if r >0.95:
-                                    send = True
-                                    break
-                    if send:
-                        logger.info(f"合成{i}")
-                        shoot(i)
-                        merge_counter+=1
-                        cost_time = time.time()-start_time
-                        if merge_counter %20 ==0:
-                            logger.info(f"完成最多{merge_counter}次合并, 用时{cost_time:.2f}s. 平均{cost_time/merge_counter:.2f}秒一次合并.", extra={"summary": True})
-                        continue
-                    for i in range(5):
-                        if depth[i]==0:
-                            logger.info(f"空白{i}")
-                            shoot(i)
-                            continue
-                    
-                    mindeep = depth.index(min(depth))
-                    logger.info(f"摆烂{mindeep}")
-                    shoot(mindeep)
-                    continue
             case "fortress-B8F_trap":
                 while 1:
                     if setting._FORCESTOPING.is_set():
@@ -3352,8 +3263,9 @@ def Factory():
                         RestartableSequenceExecution(
                             lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("OpenWorldMap",[[1,1],"leaveDung","donothing"],1))
                         )
-
-                        TeleportFromDungeonToCity(*quest._RTT)
+                        RestartableSequenceExecution(
+                            lambda: TeleportFromDungeonToCity(*quest._RTT)
+                        )
 
                         reunionParty("FFXI/FFXIStone")
                         resetBag = False
