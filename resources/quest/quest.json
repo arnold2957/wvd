@@ -773,7 +773,7 @@
     },
     "LMG-FT":{
         "_TYPE":"dungeon",
-        "questName":"[骨头]炉壶灵庙(战士骨)",
+        "questName":"[骨头]战士灵庙",
         "questName_en_US": "[Bone] Mausoleum Fighter",
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",

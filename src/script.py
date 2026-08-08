@@ -3177,7 +3177,7 @@ def Factory():
                         )
             case "FFXI-Org":
                 counter = {
-                    "(可能是)全改" : 0,
+                    "全改" : 0,
                     "下改" : 0,
                     "衔尾蛇": 0,
                     "精炼石": 0,
@@ -3213,6 +3213,10 @@ def Factory():
                         scn = ScreenShot()
                         Press([450,600])
 
+                        if TryPressRetry(scn):
+                            Sleep(1)
+                            continue
+                        
                         if CheckIf(scn, "FFXI/receive",[[4,664,890,283]]):
                             vals = {
                                 "特级矿石": CheckHow(scn,"FFXI/org_fine", [[4,664,890,283]]),
@@ -3224,6 +3228,8 @@ def Factory():
                                 "银矿石": CheckHow(scn,"FFXI/org_sliver", [[4,664,890,283]]),
                                 "衔尾蛇": CheckHow(scn,"FFXI/org_ouro", [[4,664,890,283]]),
                                 "下改": CheckHow(scn,"FFXI/org_lesser_full", [[4,664,890,283]]),
+                                "全改": CheckHow(scn,"FFXI/org_full", [[4,664,890,283]]),
+
                             }
                             
                             if vals[best := max(vals, key=vals.get)] > 0.9:
@@ -3234,13 +3240,9 @@ def Factory():
                                 file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
                                 logger.info(f"遇到了一些状况之外的情况. 已保存在{file_path}中.")
                                 cv2.imwrite(file_path, scn)
-                                if (vals["下改"] < 0.8) and (CheckHow(scn,"FFXI/org_full", [[4,664,890,283]]) > 0.9):
-                                    logger.info(f"哇 全改!")
-                                    counter["(可能是)全改"]+=1
-                                else:
-                                    logger.info(f"某些无法判断的东西...")
-                                    counter["某些无法判断的东西"]+=1
 
+                                logger.info(f"某些无法判断的东西...")
+                                counter["某些无法判断的东西"]+=1
 
                         if CheckIf(scn, "FFXI/nothingToDig",[[320,667,423,474]]) or CheckIf(scn, "FFXI/nothingToDig2",[[320,667,423,474]]):
                             logger.info("没东西了, 撤退。")
