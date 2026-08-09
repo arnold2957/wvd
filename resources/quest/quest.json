@@ -271,7 +271,7 @@
     "FFXI-2F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]FFXI 2F 自动宝箱",
-        "questName_en_US": "[Chest] FFXI Cave 2F",
+        "questName_en_US": "[Chest] FFXI 2F Chest",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
@@ -291,7 +291,7 @@
     "FFXI-2F-elite":{
         "_TYPE":"dungeon",
         "questName":"[刷怪]FFXI 2F 精英",
-        "questName_en_US": "[Chest] FFXI Cave 2F + Elite",
+        "questName_en_US": "[Elite] FFXI 2F Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
@@ -313,7 +313,7 @@
     "FFXI-5F-4Elite":{
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 4精英",
-        "questName_en_US": "[Elite+Chest] FFXI 5F 4Elite",
+        "questName_en_US": "[Elite] FFXI 5F 4Elite",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
@@ -335,7 +335,7 @@
     "FFXI-5F-2Elite-mid":{
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 中部2精英",
-        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
+        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Mid",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
@@ -355,7 +355,7 @@
     "FFXI-5F-2Elite-bottom":{
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 底部2精英",
-        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite",
+        "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Bottom",
         "questCategory": "最新洞窟",
         "questCategory_en_US": "*WHATS NEW*",
         "_TARGETINFOLIST":[
@@ -886,7 +886,7 @@
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
 
-        "_TIPS": "请按照如下步骤设置:\n1 购买9999个鹤嘴锄并保存在仓库里\n2 六人队伍脱掉所有装备, 然后尽可能多的携带鹤嘴锄\n3 在王城的工会里新建一个队伍, 并命名为FFXIStone.\n4 前往活动地图2F, 在哈肯正对的矿点前, 打上标记.\n5 确保这是该层唯一的标记.\n6 副本或主城中启动脚本."
+        "_TIPS": "请按照如下步骤设置:\n1 购买9999个鹤嘴锄并保存在仓库里\n2 六人队伍脱掉所有装备, 然后尽可能多的携带鹤嘴锄\n3 在王城的工会里新建一个队伍, 并命名为FFXIStone.\n4 前往活动地图2F, 在哈肯正对的矿点前, 打上标记.\n5 确保这是该层唯一的标记.\n6 副本或主城中启动脚本.\n\nPlease follow these steps to set it up:\n1 Purchase 9,999 pickaxes.\n2 Have your six-person party remove all equipment, then carry as many pickaxes as possible.\n3 Create a new party at the Guild in the Royal City and name it \"FFXIStone\".\n4 Go to the 2nd floor and place a marker at the mining place directly facing Harken.\n5 Ensure this is the only marker on that floor.\n6 Start the script while in the dungeon or the city."
     }
 
 }

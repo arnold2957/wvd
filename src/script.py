@@ -1620,20 +1620,11 @@ def Factory():
             if Press(CheckIf(scn,"OK")):
                 logger.info(_("释放了位于\"{a}\"的全体技能, 技能等级为{b}.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
-            elif pos:=(CheckIf(scn,"next")):
-                Press([pos[0]-15+random.randint(0,30),pos[1]+150+random.randint(0,30)])
+            elif pos:= CheckIf(scn,"next",[[1,291,898,600]]):
+                Press([pos[0],pos[1]+40])
                 logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
             else:
-                repeat = 1
-
-                # 尝试点击next
-                if pos:= CheckIf(ScreenShot(),"next",[[1,291,898,600]]):
-                    Press([pos[0],pos[1]+40])
-                else:
-                    repeat = 2 # 没有点击成功, 我们多加一轮随即点击.
-
-                # 尝试随机点击
-                for t in range(repeat):
+                for t in range(2):
                     x0, y0 = 75, 296
                     width, height = 827, 600
 
@@ -3006,7 +2997,6 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
                     )
-
                     logger.info(_("第5.5步: 击杀风暴六手"))
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B5FWarpedOnesNest","GotoDung",[1,1]],1),
@@ -3211,12 +3201,13 @@ def Factory():
                         if setting._FORCESTOPING.is_set():
                             break
                         scn = ScreenShot()
+                        Sleep(0.2)
                         Press([450,600])
 
                         if TryPressRetry(scn):
                             Sleep(1)
                             continue
-                        
+
                         if CheckIf(scn, "FFXI/receive",[[4,664,890,283]]):
                             vals = {
                                 "特级矿石": CheckHow(scn,"FFXI/org_fine", [[4,664,890,283]]),
