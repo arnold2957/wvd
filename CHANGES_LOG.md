@@ -1,7 +1,7 @@
 **新版本!**
 ==v2.5.4==
 修复了战斗中next无法点击的问题.
-修复了偶发的无法识别到高子数量不足的问题.
+修复了偶发的无法识别到镐子数量不足的问题.
 Fixed an issue where the script failed to launch due to an incorrect English quest name.
 Added English descriptions for the mining quest. Enjoy!
 
