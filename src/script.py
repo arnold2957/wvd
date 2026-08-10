@@ -1620,11 +1620,14 @@ def Factory():
             if Press(CheckIf(scn,"OK")):
                 logger.info(_("释放了位于\"{a}\"的全体技能, 技能等级为{b}.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
-            elif pos:= CheckIf(scn,"next",[[1,291,898,600]]):
-                Press([pos[0],pos[1]+40])
-                logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
             else:
-                for t in range(2):
+                repeat = 2
+                if pos:= CheckIf(scn,"next",[[1,291,898,600]]):
+                    Press([pos[0],pos[1]+50])
+                    logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
+                    repeat = 1
+
+                for t in range(repeat): # 至少保证一轮随机选择
                     x0, y0 = 75, 296
                     width, height = 827, 600
 

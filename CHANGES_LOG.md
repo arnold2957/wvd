@@ -1,15 +1,18 @@
 **新版本!**
-==v2.5.4==
-修复了战斗中next无法点击的问题.
-修复了偶发的无法识别到镐子数量不足的问题.
-Fixed an issue where the script failed to launch due to an incorrect English quest name.
-Added English descriptions for the mining quest. Enjoy!
+==v2.5.5==
+修复了战斗中会卡在next上的问题.
 
 **已知问题**
 重构状态机.
 所有人都恐惧的时候在两个箱子里来回跑.
 
 **历史更新**
+==v2.5.4==
+修复了战斗中next无法点击的问题.
+修复了偶发的无法识别到镐子数量不足的问题.
+Fixed an issue where the script failed to launch due to an incorrect English quest name.
+Added English descriptions for the mining quest. Enjoy!
+
 ==v2.5.3==
 现在可以准确的匹配挖矿任务是否是全改.
 现在挖矿中弹出网络波动的重试可以正确点击继续.
