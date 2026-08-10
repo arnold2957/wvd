@@ -3,7 +3,6 @@ from win10toast import ToastNotifier
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from enum import Enum
-from datetime import datetime
 import os
 import subprocess
 from utils import *
@@ -703,17 +702,15 @@ def Factory():
                 logger.info("{a}".format(a=e))
                 if isinstance(e, (cv2.error)):
                     logger.info(_("cv2异常."))
-                    # timestamp = datetime.now().strftime("cv2_%Y%m%d_%H%M%S")  # 格式：20230825_153045
-                    # file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
-                    # cv2.imwrite(file_path, ScreenShot())
+                    # SaveImage(screenshot,"cv2异常")
                     return None
 
         underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
-            cv2.imwrite("origin.png", search_area)
+            SaveImage(search_area,"origin.png")
             cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            cv2.imwrite("matched.png", search_area)
+            SaveImage(search_area,"matched.png")
 
         if roi is None or len(roi) == 0:
             pos=[max_loc[0] + template.shape[1]//2,
@@ -779,8 +776,8 @@ def Factory():
             bottom =  top + SIZE
             midimg_scn = cropped[top:bottom, left:right]
             miding_ptn = template[top:bottom, left:right]
-            # cv2.imwrite("miding_scn.png", midimg_scn)
-            # cv2.imwrite("miding_ptn.png", miding_ptn)
+            # SaveImage(midimg_scn,"miding_scn.png", )
+            # SaveImage(miding_ptn,"miding_ptn.png")
             gray1 = cv2.cvtColor(midimg_scn, cv2.COLOR_BGR2GRAY)
             gray2 = cv2.cvtColor(miding_ptn, cv2.COLOR_BGR2GRAY)
             mean_diff = cv2.absdiff(gray1, gray2).mean()/255
@@ -987,10 +984,8 @@ def Factory():
 
         # 保存重启前截图作为备份
         if not skip_screenshot:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-            file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
-            cv2.imwrite(file_path, ScreenShot())
-            logger.info(_("重启前截图已保存在{a}中.".format(a=file_path)))
+            logger.info(_("进行重启前截图..."))
+            SaveImage(ScreenShot())
 
         package_name = "jp.co.drecom.wizardry.daphne"
 
@@ -3204,7 +3199,6 @@ def Factory():
                         if setting._FORCESTOPING.is_set():
                             break
                         scn = ScreenShot()
-                        Sleep(0.2)
                         Press([450,600])
 
                         if TryPressRetry(scn):
@@ -3230,10 +3224,8 @@ def Factory():
                                 logger.info(f"获得了{best}!")
                                 counter[best]+=1
                             else:
-                                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # 格式：20230825_153045
-                                file_path = os.path.join(LOGS_FOLDER_NAME, f"{timestamp}.png")
-                                logger.info(f"遇到了一些状况之外的情况. 已保存在{file_path}中.")
-                                cv2.imwrite(file_path, scn)
+                                logger.info(f"遇到了一些状况之外的情况.")
+                                SaveImage(scn)
 
                                 logger.info(f"某些无法判断的东西...")
                                 counter["某些无法判断的东西"]+=1
@@ -3253,7 +3245,7 @@ def Factory():
                             )
                             break
 
-                        Sleep(1.7)
+                        Sleep(1.5)
 
                     if resetBag:
                         RestartableSequenceExecution(

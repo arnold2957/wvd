@@ -13,6 +13,8 @@ import numpy as np
 import glob
 import gettext
 
+from datetime import datetime
+
 # 基础模块包括:
 # LOGGER. 将输入写入到logger.txt文件中.
 # CONFIG. 保存和写入设置.
@@ -188,7 +190,14 @@ def LoadImage(path):
         logger.error(f"加载图片失败: {str(e)}")
         return None
     return img
-
+def SaveImage(scn, name=None):
+    if not name:
+        name = datetime.now().strftime('%H%M%S.%f')[:-3]  # 格式：20230825_153045
+    if not name.endswith(".png"):
+        name = f"{name}.png"
+    file_path = os.path.join(LOGS_FOLDER_NAME, name)
+    logger.info(f"截图已保存在{file_path}中.")
+    cv2.imwrite(file_path, scn)
 ############################################
 CONFIG_FILE = 'config.json'
 def SaveConfigToFile(config_data):
