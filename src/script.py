@@ -1618,7 +1618,7 @@ def Factory():
             else:
                 repeat = 2
                 if pos:= CheckIf(scn,"next",[[1,291,898,600]]):
-                    Press([pos[0],pos[1]+50])
+                    Press([pos[0]+15,pos[1]+50])
                     logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
                     repeat = 1
 
@@ -3195,17 +3195,11 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("theRouteToTheDestinationCannotBeFound",[[1,1],"mark_auto","donothing"],0.5)
                     )
 
-                    while 1:
-                        if setting._FORCESTOPING.is_set():
-                            break
-                        scn = ScreenShot()
-                        Press([450,600])
-
+                    def CheckState(scn):
                         if TryPressRetry(scn):
                             Sleep(1)
-                            continue
-
-                        if CheckIf(scn, "FFXI/receive",[[4,664,890,283]]):
+                            return "retry"
+                        elif CheckIf(scn, "FFXI/receive",[[4,664,890,283]]):
                             vals = {
                                 "特级矿石": CheckHow(scn,"FFXI/org_fine", [[4,664,890,283]]),
                                 "上级矿石": CheckHow(scn,"FFXI/org_high", [[4,664,890,283]]),
@@ -3229,23 +3223,44 @@ def Factory():
 
                                 logger.info(f"某些无法判断的东西...")
                                 counter["某些无法判断的东西"]+=1
-
-                        if CheckIf(scn, "FFXI/nothingToDig",[[320,667,423,474]]) or CheckIf(scn, "FFXI/nothingToDig2",[[320,667,423,474]]):
+                            return "receive"
+                        elif CheckIf(scn, "FFXI/nothingToDig",[[320,667,423,474]]) or CheckIf(scn, "FFXI/nothingToDig2",[[320,667,423,474]]):
                             logger.info("没东西了, 撤退。")
                             RestartableSequenceExecution(
                                 lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
                             )
-                            break
-
-                        if CheckIf(scn,"FFXI/needpickaxe",[[4,664,890,283]]):
-                            resetBag = True
+                            return "end"
+                        elif CheckIf(scn,"FFXI/needpickaxe",[[4,664,890,283]]):
                             logger.info("镐子用完了，回去拿。")
                             RestartableSequenceExecution(
                                 lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
                             )
-                            break
+                            return "pickaxe"
 
+                        return "none"
+
+                    while 1:
+                        if setting._FORCESTOPING.is_set():
+                            break
+                        
+                        result_1 = CheckState(ScreenShot())
+                        Press([450,600])
+                        Sleep(0.5)
+                        result_2 = CheckState(ScreenShot())
+
+                        result = result_1 + " " + result_2
+                        logger.info(f"判断结果{result}")
+
+                        if ("retry" in result) or ("receive" in result):
+                            continue
+                        elif "end" in result:
+                            break
+                        elif "pickaxe" in result:
+                            resetBag = True
+                            break
+                        
                         Sleep(1.5)
+
 
                     if resetBag:
                         RestartableSequenceExecution(
