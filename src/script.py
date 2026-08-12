@@ -3218,23 +3218,13 @@ def Factory():
                                 logger.info(f"获得了{best}!")
                                 counter[best]+=1
                             else:
-                                logger.info(f"遇到了一些状况之外的情况.")
                                 SaveImage(scn)
-
                                 logger.info(f"某些无法判断的东西...")
                                 counter["某些无法判断的东西"]+=1
                             return "receive"
                         elif CheckIf(scn, "FFXI/nothingToDig",[[320,667,423,474]]) or CheckIf(scn, "FFXI/nothingToDig2",[[320,667,423,474]]):
-                            logger.info("没东西了, 撤退。")
-                            RestartableSequenceExecution(
-                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
-                            )
                             return "end"
                         elif CheckIf(scn,"FFXI/needpickaxe",[[4,664,890,283]]):
-                            logger.info("镐子用完了，回去拿。")
-                            RestartableSequenceExecution(
-                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
-                            )
                             return "pickaxe"
 
                         return "none"
@@ -3243,24 +3233,44 @@ def Factory():
                         if setting._FORCESTOPING.is_set():
                             break
                         
-                        result_1 = CheckState(ScreenShot())
-                        Press([450,600])
-                        Sleep(0.5)
-                        result_2 = CheckState(ScreenShot())
-
-                        result = result_1 + " " + result_2
-                        logger.info(f"判断结果{result}")
-
+                        result = CheckState(ScreenShot())
                         if ("retry" in result) or ("receive" in result):
-                            continue
+                            pass
                         elif "end" in result:
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
+                            logger.info(f"点击前截图判断为无矿可挖, 退出副本.")
                             break
                         elif "pickaxe" in result:
                             resetBag = True
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
+                            logger.info(f"点击前截图判断为无镐子可用, 退出副本.")
+                            break
+
+                        Press([450,600])
+                        Sleep(0.5)
+
+                        result = CheckState(ScreenShot())
+                        if ("retry" in result) or ("receive" in result):
+                            continue
+                        elif "end" in result:
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
+                            logger.info(f"点击后截图判断为无矿可挖, 退出副本.")
+                            break
+                        elif "pickaxe" in result:
+                            resetBag = True
+                            RestartableSequenceExecution(
+                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ReturnText",[[1,1],"leaveDung","donothing"],1))
+                            )
+                            logger.info(f"点击后截图判断为无镐子可用, 退出副本.")
                             break
                         
-                        Sleep(1.5)
-
+                        Sleep(2)
 
                     if resetBag:
                         RestartableSequenceExecution(
