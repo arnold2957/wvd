@@ -586,6 +586,7 @@ def Factory():
     def ScreenShot():
         if "wizardry" not in DeviceShell("dumpsys window | grep mCurrentFocus"):
             logger.error("游戏未启动!")
+        
             restartGame(skip_screenshot=True)
 
         nonlocal runtimeContext
@@ -688,6 +689,8 @@ def Factory():
                     logger.info(_("你开启了应用保活, 请关闭.\n请在\"设备设置-其他-应用运行\"中关闭."))
                     setting._FORCESTOPING.set()
                     return
+                if isinstance(e,RestartSignal):
+                    pass # TODO 可能是错的 先这么写
 
                 Sleep(1)
 
@@ -3189,12 +3192,17 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: StateEoT()
                         )
+                    Sleep(2)
 
                     logger.info("前往矿点...")
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("theRouteToTheDestinationCannotBeFound",[[1,1],"mark_auto","donothing"],0.5)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait(["theRouteToTheDestinationCannotBeFound","openworldmap"],[[1,1],"mark_auto","donothing"],0.5)
                     )
-
+                    scn = ScreenShot()
+                    if CheckIf(scn,"openworldmap") or (not CheckIf(scn,"theRouteToTheDestinationCannotBeFound")):
+                        logger.info("看起来遇到了一些错误, 我们重新开始...")
+                        continue
+                    
                     def CheckState(scn):
                         if TryPressRetry(scn):
                             Sleep(1)
