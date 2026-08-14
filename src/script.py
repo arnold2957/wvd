@@ -3199,7 +3199,7 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait(["theRouteToTheDestinationCannotBeFound","openworldmap"],[[1,1],"mark_auto","donothing"],0.5)
                     )
                     scn = ScreenShot()
-                    if CheckIf(scn,"openworldmap") or (not CheckIf(scn,"theRouteToTheDestinationCannotBeFound")):
+                    if CheckIf(scn,"openworldmap"): # 因为theRouteToTheDestinationCannotBeFound是非持续性的, 所以不判断
                         logger.info("看起来遇到了一些错误, 我们重新开始...")
                         continue
                     
