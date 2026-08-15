@@ -1111,11 +1111,11 @@ def Factory():
                 )
         else:
             RestartableSequenceExecution(
-                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
-                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
-                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
-                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
-                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
                             )
     def DungeonCompletionCounter():
         nonlocal runtimeContext
@@ -3199,7 +3199,7 @@ def Factory():
                         lambda: FindCoordsOrElseExecuteFallbackAndWait(["theRouteToTheDestinationCannotBeFound","openworldmap"],[[1,1],"mark_auto","donothing"],0.5)
                     )
                     scn = ScreenShot()
-                    if CheckIf(scn,"openworldmap"): # 因为theRouteToTheDestinationCannotBeFound是非持续性的, 所以不判断
+                    if CheckIf(scn,"openworldmap") or (not CheckIf(scn, "FFXI/org_position",[[692,68,140,140]])): # 因为theRouteToTheDestinationCannotBeFound是非持续性的, 所以不判断, 改为判断小地图
                         logger.info("看起来遇到了一些错误, 我们重新开始...")
                         continue
                     
