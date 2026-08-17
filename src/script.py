@@ -584,10 +584,15 @@ def Factory():
     def Sleep(t=1):
         time.sleep(t)
     def ScreenShot():
-        if "wizardry" not in DeviceShell("dumpsys window | grep mCurrentFocus"):
-            logger.error("游戏未启动!")
-        
-            restartGame(skip_screenshot=True)
+        try:
+            if "wizardry" not in DeviceShell("dumpsys window | grep mCurrentFocus"):
+                logger.error("游戏未启动!")
+            
+                restartGame(skip_screenshot=True)
+        except Exception as e:
+            if isinstance(e,RestartSignal):
+                logger.error("截个图也能遇见崩溃吗...")
+                pass
 
         nonlocal runtimeContext
 
@@ -689,8 +694,6 @@ def Factory():
                     logger.info(_("你开启了应用保活, 请关闭.\n请在\"设备设置-其他-应用运行\"中关闭."))
                     setting._FORCESTOPING.set()
                     return
-                if isinstance(e,RestartSignal):
-                    pass # TODO 可能是错的 先这么写
 
                 Sleep(1)
 
@@ -1103,17 +1106,13 @@ def Factory():
 
         if not partyName:
             RestartableSequenceExecution(
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
                 )
         else:
             RestartableSequenceExecution(
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("PartyManagement",["Edit",[1,1]],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("AdventurerGuild",["PartyManagement",[1,1]],1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
                             )
