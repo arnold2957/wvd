@@ -172,6 +172,10 @@ class SkillConfigPanel(CollapsibleSection):
         self.TARGET_OPTIONS = [_("左上角色"), _("中上角色"), _("右上角色"), _("左下角色"), _("右下角色"), _("中下角色"), _("不可用")]
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
 
+        self.need_reload_var = tk.BooleanVar(value=False)
+        self.need_reload_combat_var = tk.BooleanVar(value=False)
+        self.complete_one_as_all_var = tk.BooleanVar(value=False)
+
         # 用初始化内容构建
         self._setup_body_ui(init_config)
         
@@ -191,6 +195,37 @@ class SkillConfigPanel(CollapsibleSection):
 
             btn_edit = ttk.Button(action_bar, text=_("✎重命名"), command=self.edit_title, width=9.5)
             btn_edit.pack(side=tk.RIGHT, padx=(5, 0))
+
+            # 在“新增角色”下方、分段线之间添加三个 Checkbutton
+            reload_frame = tk.Frame(self.content_frame, background=self.bg_color)
+            reload_frame.pack(fill=tk.X, pady=(2, 0))
+
+            self.reload_check = ttk.Checkbutton(
+                reload_frame,
+                variable=self.need_reload_var,
+                text=_("该策略需要在进入地下城时进行重置."),
+                command=self.on_config_change if self.on_config_change else None,
+                style="Custom.TCheckbutton"
+            )
+            self.reload_check.pack(anchor=tk.W, padx=5)
+
+            self.reload_combat_check = ttk.Checkbutton(
+                reload_frame,
+                variable=self.need_reload_combat_var,
+                text=_("[高级]该策略需要在战斗开始前进行重置.\n确保你了解\"重复上一次\"功能, 否则请勿开启."),
+                command=self.on_config_change if self.on_config_change else None,
+                style="Custom.TCheckbutton"
+            )
+            self.reload_combat_check.pack(anchor=tk.W, padx=5, pady=(2, 0))
+
+            self.complete_one_as_all_check = ttk.Checkbutton(
+                reload_frame,
+                variable=self.complete_one_as_all_var,
+                text=_("[高级]该策略释放任一即视为完成."),
+                command=self.on_config_change if self.on_config_change else None,
+                style="Custom.TCheckbutton"
+            )
+            self.complete_one_as_all_check.pack(anchor=tk.W, padx=5, pady=(2, 0))
 
             ttk.Separator(self.content_frame, orient='horizontal').pack(fill='x', pady=2)
 
@@ -214,7 +249,15 @@ class SkillConfigPanel(CollapsibleSection):
             if 'group_name' in init_config:
                 self.label.config(text=init_config['group_name'])
             
-            # 3. 创建新的自定义行
+            # 3. 设置本面板的“额外重置”开关
+            if 'need_reload_when_dungeon_begins' in init_config:
+                self.need_reload_var.set(bool(init_config['need_reload_when_dungeon_begins']))
+            if 'need_reload_when_combat_begins' in init_config:
+                self.need_reload_combat_var.set(bool(init_config['need_reload_when_combat_begins']))
+            if 'complete_one_as_all' in init_config:
+                self.complete_one_as_all_var.set(bool(init_config['complete_one_as_all']))
+
+            # 4. 创建新的自定义行
             if 'skill_settings' in init_config:
                 skill_settings = init_config['skill_settings']
                 
@@ -391,9 +434,12 @@ class SkillConfigPanel(CollapsibleSection):
             }
             skill_settings.append(item)
         
-        # 返回指定格式，不包含默认行
+        # 返回指定格式，包含“额外重置”开关、“战斗aoe”开关和“释放任一即视为完成”开关
         return {
             'group_name': self.label.cget("text"),
+            'need_reload_when_dungeon_begins': self.need_reload_var.get(),
+            'need_reload_when_combat_begins': self.need_reload_combat_var.get(),
+            'complete_one_as_all': self.complete_one_as_all_var.get(),
             'skill_settings': skill_settings
         }
 ############################################
@@ -468,7 +514,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         # --- ttk Style ---
         self.style = ttk.Style()
-        self.style.configure("custom.TCheckbutton")
+        self.style.configure("Custom.TCheckbutton",background="#FFFFFF")
         self.style.map("Custom.TCheckbutton",
             foreground=[("disabled selected", "#8CB7DF"),("disabled", "#A0A0A0"), ("selected", "#196FBF")])
         self.style.configure("BoldFont.TCheckbutton", font=("微软雅黑", 9,"bold"))
@@ -1172,17 +1218,6 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(container, text=_("战斗方案会在每次重启游戏, 以及任意角色死亡后重置."), width=20, anchor=tk.W).grid(row=row_counter, column=0, sticky=tk.EW)
 
         row_counter += 1
-        frame_row = ttk.Frame(container)
-        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
-
-        ttk.Label(frame_row, text=_("你也可以增加额外的重置:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.reload_strategy_combobox = ttk.Combobox(frame_row, textvariable=self.RELOAD_STRATEGY_WHEN,
-                                                     values=[_("不需要"), _("每场战斗前"), _("每次副本开始")],
-                                                     state="readonly", width=12)
-        self.reload_strategy_combobox.grid(row=0, column=1, sticky=tk.W, pady=5)
-        self.reload_strategy_combobox.bind("<<ComboboxSelected>>", lambda e: self.save_config())
-
-        row_counter += 1
         self.strategy_panels = {}  # 改为字典 {panel: name}
 
         def save_strategy():
@@ -1640,9 +1675,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.official_org_website_1,
             self.AM_switch,
             self.farm_target_category_combo,
-            self.reload_strategy_combobox, 
             self.reassemble_party_check,
-            ]
+        ]
 
         if state == tk.DISABLED:
             self.farm_target_combo.configure(state="disabled")

@@ -43,29 +43,28 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": _("全自动战斗"),
                                                                         "skill_settings": []
                                                                     },]],
-            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY", tk.StringVar, _("全自动战斗")],
-            ["GENERAL",   "RELOAD_STRATEGY_WHEN",     tk.StringVar, _("不需要")],
-            ["GENERAL",   "LANGUAGE",                 tk.StringVar, "zh_CN"],
-            ["GENERAL",   "WEBSITE_ORG_TIME",         tk.StringVar, None],
-            ["GENERAL",   "AM_REFRESH_TIME",          tk.StringVar, None],
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar, _("全自动战斗")],
+            ["GENERAL",   "LANGUAGE",                               tk.StringVar, "zh_CN"],
+            ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar, None],
+            ["GENERAL",   "AM_REFRESH_TIME",                        tk.StringVar, None],
 
-            ["TEMPLATE",   "TASK_POINT_STRATEGY",     dict,          {}],
-            ["TEMPLATE",   "QUICK_DISARM_CHEST",      tk.BooleanVar, False],
-            ["TEMPLATE",   "WHO_WILL_OPEN_IT",        tk.IntVar,     0],
-            ["TEMPLATE",   "SKIP_COMBAT_RECOVER",     tk.BooleanVar, False],
-            ["TEMPLATE",   "SKIP_CHEST_RECOVER",      tk.BooleanVar, False],
-            ["TEMPLATE",   "RECOVER_WHEN_BEGINNING",  tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_REST",             tk.BooleanVar, True],
-            ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",  tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_TRIUMPH",          tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",    tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_BEG_MONEY",        tk.BooleanVar, True],
-            ["TEMPLATE",   "MAX_TRY_LIMIT",           tk.IntVar,     25],
-            ["TEMPLATE",   "MAX_CRASH_LIMIT",         tk.IntVar,     10],
-            ["TEMPLATE",   "REST_INTERVEL",           tk.IntVar,     1],
-            ["TEMPLATE",   "ACTIVE_CSC",              tk.BooleanVar, True],
-            ["TEMPLATE",   "BYPASS_THE_WALL",         tk.BooleanVar, False],
-            ["TEMPLATE",   "RE_ASSEMBLE_PARTY",       tk.BooleanVar, False],
+            ["TEMPLATE",   "TASK_POINT_STRATEGY",                   dict,          {}],
+            ["TEMPLATE",   "QUICK_DISARM_CHEST",                    tk.BooleanVar, False],
+            ["TEMPLATE",   "WHO_WILL_OPEN_IT",                      tk.IntVar,     0],
+            ["TEMPLATE",   "SKIP_COMBAT_RECOVER",                   tk.BooleanVar, False],
+            ["TEMPLATE",   "SKIP_CHEST_RECOVER",                    tk.BooleanVar, False],
+            ["TEMPLATE",   "RECOVER_WHEN_BEGINNING",                tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_REST",                           tk.BooleanVar, True],
+            ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",                tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_TRIUMPH",                        tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",                  tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_BEG_MONEY",                      tk.BooleanVar, True],
+            ["TEMPLATE",   "MAX_TRY_LIMIT",                         tk.IntVar,     25],
+            ["TEMPLATE",   "MAX_CRASH_LIMIT",                       tk.IntVar,     10],
+            ["TEMPLATE",   "REST_INTERVEL",                         tk.IntVar,     1],
+            ["TEMPLATE",   "ACTIVE_CSC",                            tk.BooleanVar, True],
+            ["TEMPLATE",   "BYPASS_THE_WALL",                       tk.BooleanVar, False],
+            ["TEMPLATE",   "RE_ASSEMBLE_PARTY",                     tk.BooleanVar, False],
             ]
 class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
@@ -1552,7 +1551,7 @@ def Factory():
     def StateCombat():
         if runtimeContext._TIME_COMBAT==0:
             runtimeContext._TIME_COMBAT = time.time()
-        # 内部函数：复制策略到 runtime.CURRENT_STRATEGY
+        
         def AutoThisChar():
             Press([850,1100])
             Sleep(0.5)
@@ -1729,6 +1728,10 @@ def Factory():
         if target_skill in runtimeContext.CURRENT_STRATEGY.get("skill_settings", []):
             runtimeContext.CURRENT_STRATEGY["skill_settings"].remove(target_skill)
             logger.debug(_("技能已释放，已从当前策略队列中移除。"))
+
+            if runtimeContext.CURRENT_STRATEGY.get("complete_one_as_all", False) == True:
+                logger.info("由于面板设置, 在完成了任一技能后清空当前策略.")
+                runtimeContext.CURRENT_STRATEGY["skill_settings"].clear()
 
         return
     def StateMap_FindSwipeClick(targetInfo : TargetInfo):
@@ -1963,11 +1966,16 @@ def Factory():
             logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi}")
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
+
+            if setting.TASK_POINT_STRATEGY.get("overall_strategy", "") == _("自定义任务点策略"):
+                logger.info(f"由于面板设置, 切换到新任务点对应的策略.")
+                ReloadStrategy()
             return
         
         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
 
-        if setting.RELOAD_STRATEGY_WHEN == _("每次副本开始"):
+        if runtimeContext.CURRENT_STRATEGY.get("need_reload_when_dungeon_begins", False) == True:
+            logger.info("由于面板设置, 在进入副本时重置了战斗策略.")
             ReloadStrategy()
         
         ##############################################
@@ -2002,9 +2010,11 @@ def Factory():
                 case DungeonState.Dungeon:
                     Press([1,1])
                     ########### 重置战斗策略
-                    if (runtimeContext._TIME_COMBAT !=0) and (setting.RELOAD_STRATEGY_WHEN == _("每场战斗前")):
-                        logger.error("暂时取消了对于\"每场战斗前重置\"的支持. 请打开游戏内角色面板中的\"重复上一次\"设置.")
-                        # ReloadStrategy()
+                    if (runtimeContext._TIME_COMBAT !=0) \
+                        and (runtimeContext.CURRENT_STRATEGY.get("need_reload_when_combat_begins", False) == True):
+
+                        logger.error("由于面板设置, 在战斗开始前重置了战斗策略.")
+                        ReloadStrategy()
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
