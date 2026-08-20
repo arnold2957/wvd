@@ -2003,7 +2003,8 @@ def Factory():
                     Press([1,1])
                     ########### 重置战斗策略
                     if (runtimeContext._TIME_COMBAT !=0) and (setting.RELOAD_STRATEGY_WHEN == _("每场战斗前")):
-                        ReloadStrategy()
+                        logger.error("暂时取消了对于\"每场战斗前重置\"的支持. 请打开游戏内角色面板中的\"重复上一次\"设置.")
+                        # ReloadStrategy()
                     ########### TIMER
                     if (runtimeContext._TIME_CHEST !=0) or (runtimeContext._TIME_COMBAT!=0):
                         spend_on_chest = 0
@@ -3224,6 +3225,9 @@ def Factory():
                             if vals[best := max(vals, key=vals.get)] > 0.9:
                                 logger.info(f"获得了{best}!")
                                 counter[best]+=1
+                                if best == "全改":
+                                    logger.info("哇, 全改! 赶快截图保存下吧.")
+                                    SaveImage(scn)
                             else:
                                 SaveImage(scn)
                                 logger.info(f"某些无法判断的东西...")
