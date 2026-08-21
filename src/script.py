@@ -51,8 +51,8 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "TASK_POINT_STRATEGY",                   dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",                    tk.BooleanVar, False],
             ["TEMPLATE",   "WHO_WILL_OPEN_IT",                      tk.IntVar,     0],
-            ["TEMPLATE",   "SKIP_COMBAT_RECOVER",                   tk.BooleanVar, False],
-            ["TEMPLATE",   "SKIP_CHEST_RECOVER",                    tk.BooleanVar, False],
+            ["TEMPLATE",   "DO_COMBAT_RECOVER",                     tk.BooleanVar, True],
+            ["TEMPLATE",   "DO_CHEST_RECOVER",                      tk.BooleanVar, True],
             ["TEMPLATE",   "RECOVER_WHEN_BEGINNING",                tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_REST",                           tk.BooleanVar, True],
             ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",                tk.BooleanVar, False],
@@ -2042,7 +2042,7 @@ def Factory():
                         runtimeContext._COUNTERCHEST+=1
                         needRecoverBecauseChest = False
                         runtimeContext._MEET_CHEST_OR_COMBAT = True
-                        if not setting.SKIP_CHEST_RECOVER:
+                        if setting.DO_CHEST_RECOVER:
                             logger.info(_("由于面板配置, 进行开启宝箱后恢复."))
                             shouldRecover = True
                         else:
@@ -2051,7 +2051,7 @@ def Factory():
                         runtimeContext._COUNTERCOMBAT+=1
                         needRecoverBecauseCombat = False
                         runtimeContext._MEET_CHEST_OR_COMBAT = True
-                        if (not setting.SKIP_COMBAT_RECOVER):
+                        if (setting.DO_COMBAT_RECOVER):
                             logger.info(_("由于面板配置, 进行战后恢复."))
                             shouldRecover = True
                         else:
@@ -2547,7 +2547,7 @@ def Factory():
                                 runtimeContext._COUNTERCHEST+=1
                                 needRecoverBecauseChest = False
                                 runtimeContext._MEET_CHEST_OR_COMBAT = True
-                                if not setting.SKIP_CHEST_RECOVER:
+                                if setting.DO_CHEST_RECOVER:
                                     logger.info(_("由于面板配置, 进行开启宝箱后恢复."))
                                     shouldRecover = True
                                 else:
@@ -2556,7 +2556,7 @@ def Factory():
                                 runtimeContext._COUNTERCOMBAT+=1
                                 needRecoverBecauseCombat = False
                                 runtimeContext._MEET_CHEST_OR_COMBAT = True
-                                if (not setting.SKIP_COMBAT_RECOVER):
+                                if setting.DO_COMBAT_RECOVER:
                                     logger.info(_("由于面板配置, 进行战后恢复."))
                                     shouldRecover = True
                                 else:

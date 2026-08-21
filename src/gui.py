@@ -205,7 +205,7 @@ class SkillConfigPanel(CollapsibleSection):
                 variable=self.need_reload_var,
                 text=_("该策略需要在进入地下城时进行重置."),
                 command=self.on_config_change if self.on_config_change else None,
-                style="Custom.TCheckbutton"
+                style="CombatStrategy.TCheckbutton"
             )
             self.reload_check.pack(anchor=tk.W, padx=5)
 
@@ -214,7 +214,7 @@ class SkillConfigPanel(CollapsibleSection):
                 variable=self.need_reload_combat_var,
                 text=_("[高级]该策略需要在战斗开始前进行重置.\n确保你了解\"重复上一次\"功能, 否则请勿开启."),
                 command=self.on_config_change if self.on_config_change else None,
-                style="Custom.TCheckbutton"
+                style="CombatStrategy.TCheckbutton"
             )
             self.reload_combat_check.pack(anchor=tk.W, padx=5, pady=(2, 0))
 
@@ -223,7 +223,7 @@ class SkillConfigPanel(CollapsibleSection):
                 variable=self.complete_one_as_all_var,
                 text=_("[高级]该策略释放任一即视为完成."),
                 command=self.on_config_change if self.on_config_change else None,
-                style="Custom.TCheckbutton"
+                style="CombatStrategy.TCheckbutton"
             )
             self.complete_one_as_all_check.pack(anchor=tk.W, padx=5, pady=(2, 0))
 
@@ -514,8 +514,11 @@ class ConfigPanelApp(tk.Toplevel):
 
         # --- ttk Style ---
         self.style = ttk.Style()
-        self.style.configure("Custom.TCheckbutton",background="#FFFFFF")
-        self.style.map("Custom.TCheckbutton",
+        self.style.configure("Default.TCheckbutton")
+        self.style.map("Default.TCheckbutton",
+            foreground=[("disabled selected", "#8CB7DF"),("disabled", "#A0A0A0"), ("selected", "#196FBF")])
+        self.style.configure("CombatStrategy.TCheckbutton",background = "#FFFFFF")
+        self.style.map("CombatStrategy.TCheckbutton",
             foreground=[("disabled selected", "#8CB7DF"),("disabled", "#A0A0A0"), ("selected", "#196FBF")])
         self.style.configure("BoldFont.TCheckbutton", font=("微软雅黑", 9,"bold"))
         self.style.configure("LargeFont.TCheckbutton", font=("微软雅黑", 12,"bold"))
@@ -886,28 +889,28 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, text=" | ").grid(row=0, column=2, sticky=tk.W, pady=5)
 
         self.random_chest_check = ttk.Checkbutton(frame_row, text=_("快速开箱"), variable=self.QUICK_DISARM_CHEST,
-                                                  command=self.save_config, style="Custom.TCheckbutton")
+                                                  command=self.save_config, style="Default.TCheckbutton")
         self.random_chest_check.grid(row=0, column=3, sticky=tk.W, pady=5)
 
         # 跳过恢复
         row_counter += 1
         row_recover = tk.Frame(container)
         row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
-        self.skip_recover_check = ttk.Checkbutton(row_recover, text=_("跳过战后恢复"), variable=self.SKIP_COMBAT_RECOVER,
-                                                  command=self.save_config, style="Custom.TCheckbutton")
+        self.skip_recover_check = ttk.Checkbutton(row_recover, text=_("在战斗结束后进行恢复."), variable=self.DO_COMBAT_RECOVER,
+                                                  command=self.save_config, style="Default.TCheckbutton")
         self.skip_recover_check.grid(row=0, column=0)
         row_counter += 1
         row_recover = tk.Frame(container)
         row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
-        self.skip_chest_recover_check = ttk.Checkbutton(row_recover, text=_("跳过开箱后恢复"), variable=self.SKIP_CHEST_RECOVER,
-                                                        command=self.save_config, style="Custom.TCheckbutton")
+        self.skip_chest_recover_check = ttk.Checkbutton(row_recover, text=_("在开箱后进行恢复."), variable=self.DO_CHEST_RECOVER,
+                                                        command=self.save_config, style="Default.TCheckbutton")
         self.skip_chest_recover_check.grid(row=0, column=0)
 
         # 特殊恢复
         row_counter += 1
         row_recover = tk.Frame(container)
         row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
-        self.recover_when_beginning_check = ttk.Checkbutton(row_recover, text=_("刚进入地下城时恢复一次."), variable=self.RECOVER_WHEN_BEGINNING, command=self.save_config, style="Custom.TCheckbutton")
+        self.recover_when_beginning_check = ttk.Checkbutton(row_recover, text=_("在进入地下城时进行恢复."), variable=self.RECOVER_WHEN_BEGINNING, command=self.save_config, style="Default.TCheckbutton")
         self.recover_when_beginning_check.grid(row=0, column=0)
 
         # 休息设置
@@ -918,7 +921,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.updateACTIVE_REST_state()
             self.save_config()
         self.active_rest_check = ttk.Checkbutton(frame_row, variable=self.ACTIVE_REST, text=_("启用旅店休息"),
-                                                 command=checkcommand, style="Custom.TCheckbutton")
+                                                 command=checkcommand, style="Default.TCheckbutton")
         self.active_rest_check.grid(row=0, column=0)
         ttk.Label(frame_row, text=_(" | 完成")).grid(row=0, column=1, sticky=tk.W, pady=5)
         self.rest_intervel_entry = ttk.Entry(frame_row, textvariable=self.REST_INTERVEL, validate="key",
@@ -967,7 +970,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.RE_ASSEMBLE_PARTY,
             text=_("每6个小时重新召集酒馆第一个队伍\n以便清理背包和调整站位"),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.reassemble_party_check.grid(row=0, column=0, sticky=tk.W)
 
@@ -1444,7 +1447,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.ACTIVE_BEG_MONEY,
             text=_("没有火的时候自动找王女要钱"),
             command=self.save_config, # 如果这里需要特定逻辑，可以改回 checkcommand
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.active_beg_money.grid(row=0, column=0, sticky=tk.W)
 
@@ -1457,7 +1460,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.ACTIVE_ROYALSUITE_REST,
             text=_("住豪华房"),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.active_royalsuite_rest.grid(row=0, column=0, sticky=tk.W)
 
@@ -1470,7 +1473,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.ACTIVE_TRIUMPH,
             text=_("跳跃到第三章结局\"凯旋\""),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.active_triumph.grid(row=0, column=0, sticky=tk.W)
 
@@ -1483,7 +1486,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.ACTIVE_BEAUTIFUL_ORE,
             text=_("跳跃到第四章结局\"美丽矿石的真相\""),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.active_beautiful_ore.grid(row=0, column=0, sticky=tk.W)
 
@@ -1496,7 +1499,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.ACTIVE_CSC,
             text=_("尝试调整因果"),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.active_csc.grid(row=0, column=0, sticky=tk.W)
 
@@ -1509,7 +1512,7 @@ class ConfigPanelApp(tk.Toplevel):
             variable=self.BYPASS_THE_WALL,
             text=_("重启后尝试绕过空气墙"),
             command=self.save_config,
-            style="Custom.TCheckbutton"
+            style="Default.TCheckbutton"
         )
         self.bypass_the_wall.grid(row=0, column=0, sticky=tk.W)
 
