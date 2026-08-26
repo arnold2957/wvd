@@ -1624,13 +1624,11 @@ def Factory():
                     repeat = 1
 
                 for t in range(repeat): # 至少保证一轮随机选择
-                    x0, y0 = 75, 296
-                    width, height = 827, 600
-
-                    cols = 4
+                    x0, y0 = 0, 560
+                    cols = 8
                     rows = 3
-                    cell_w = width / cols
-                    cell_h = height / rows
+                    cell_w = 110
+                    cell_h = 110
 
                     for row in range(rows):
                         for col in range(cols):
