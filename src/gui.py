@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox,simpledialog
 import os
-import logging
 from script import *
 from auto_updater import *
 from utils import *
 import webbrowser
 from datetime import datetime, date
+
 ############################################
 def BLOCK_WHEEL(event):
     # 向上查找第一个 Canvas 类型的控件
@@ -486,9 +486,6 @@ class ConfigPanelApp(tk.Toplevel):
         self.TITLE = _("WvDAS 巫术daphne自动刷怪 v%s @德德Dellyla(B站)") % version
         self.INTRODUCTION = _("遇到问题? 请访问:\n%s \n或加入Q群: 922497356.") % self.URL
 
-        RegisterQueueHandler()
-        LOG_LISTENER_MGR.start()
-
         super().__init__(master_controller)
         self.controller = master_controller
         self.msg_queue = msg_queue
@@ -539,7 +536,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         logger.info("**********************************")
         logger.info(_("当前版本: %s") % version)
-        logger.info(self.INTRODUCTION, extra={"summary": True})
+        logger.info(self.INTRODUCTION, summary=True)  # 修改：使用 summary=True 替代 extra={"summary": True}
         logger.info("**********************************")
         
         if self.LAST_VERSION.get() != version:
@@ -599,29 +596,46 @@ class ConfigPanelApp(tk.Toplevel):
         SaveConfigToFile(new_config)
 
     def create_widgets(self):
-        scrolled_text_formatter = logging.Formatter('%(message)s')
+        # ===== 日志显示区域（使用 loguru sink） =====
         self.log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg='#ffffff',bd=2,relief=tk.FLAT, width = 34, height = 30)
         self.log_display.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.scrolled_text_handler = ScrolledTextHandler(self.log_display)
-        self.scrolled_text_handler.setLevel(logging.INFO)
-        self.scrolled_text_handler.setFormatter(scrolled_text_formatter)
-        logger.addHandler(self.scrolled_text_handler)
-
 
         self.summary_log_display = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.DISABLED, bg="#C6DBF4",bd=2, width = 34, )
         self.summary_log_display.grid(row=1, column=1, pady=5)
-        self.summary_text_handler = ScrolledTextHandler(self.summary_log_display)
-        self.summary_text_handler.setLevel(logging.INFO)
-        self.summary_text_handler.setFormatter(scrolled_text_formatter)
-        self.summary_text_handler.addFilter(SummaryLogFilter())
-        original_emit = self.summary_text_handler.emit
-        def new_emit(record):
+
+        # 定义 sink 函数（直接操作 Tkinter 控件，loguru 的 enqueue=True 会保证消息按队列顺序传递）
+        def log_sink(message):
+            self.log_display.configure(state='normal')
+            self.log_display.insert(tk.END, message)
+            self.log_display.see(tk.END)
+            self.log_display.configure(state='disabled')
+
+        def summary_sink(message):
             self.summary_log_display.configure(state='normal')
             self.summary_log_display.delete(1.0, tk.END)
+            self.summary_log_display.insert(tk.END, message)
             self.summary_log_display.configure(state='disabled')
-            original_emit(record)
-        self.summary_text_handler.emit = new_emit
-        logger.addHandler(self.summary_text_handler)
+
+        # 从基础模块导入 summary_filter（已在 script 中定义）
+        # 如果未导入，可在此处定义：
+        # def summary_filter(record):
+        #     return record["extra"].get("summary", False)
+
+        # 添加普通日志 sink
+        self._log_handler_id = logger.add(
+            log_sink,
+            level="INFO",
+            format="{message}",
+            enqueue=True,
+        )
+        # 添加摘要日志 sink，使用 filter 仅显示 summary=True 的记录
+        self._summary_handler_id = logger.add(
+            summary_sink,
+            level="INFO",
+            filter=summary_filter,
+            format="{message}",
+            enqueue=True,
+        )
 
         self.main_frame = ttk.Frame(self, padding="10")
         self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
