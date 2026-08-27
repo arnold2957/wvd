@@ -616,11 +616,6 @@ class ConfigPanelApp(tk.Toplevel):
             self.summary_log_display.insert(tk.END, message)
             self.summary_log_display.configure(state='disabled')
 
-        # 从基础模块导入 summary_filter（已在 script 中定义）
-        # 如果未导入，可在此处定义：
-        # def summary_filter(record):
-        #     return record["extra"].get("summary", False)
-
         # 添加普通日志 sink
         self._log_handler_id = logger.add(
             log_sink,

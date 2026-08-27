@@ -1127,7 +1127,7 @@ def Factory():
                 summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
             if runtimeContext._COUNTERCOMBAT > 0:
                 summary_text += _("累计战斗{a}次.战斗平均用时{b}秒.".format(a=runtimeContext._COUNTERCOMBAT, b=round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)))
-            logger.info("{a}{b}".format(a=runtimeContext._IMPORTANTINFO, b=summary_text),extra={"summary": True})
+            logger.info("{a}{b}".format(a=runtimeContext._IMPORTANTINFO, b=summary_text),summary=True)
         # 圈数计时器
         runtimeContext._LAPTIME = time.time()
 
@@ -1402,7 +1402,7 @@ def Factory():
                         setting._MSGQUEUE.put(("turn_to_7000G",""))
                         raise SystemExit
                     else:
-                        logger.info(_("看起来你没有选择找王女要钱. 那么就等两个小时吧."), extra={"summary": True})
+                        logger.info(_("看起来你没有选择找王女要钱. 那么就等两个小时吧."), summary=True)
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
@@ -2353,7 +2353,7 @@ def Factory():
                         )
                     costtime = time.time()-starttime
                     logger.info(_("第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps.".format(a=runtimeContext._COUNTERDUNG, b=costtime, c=7000/costtime)),
-                                extra={"summary": True})
+                                summary=True)
             case "fordraig":
                 quest._SPECIALDIALOGOPTION = ["fordraig/thedagger","fordraig/InsertTheDagger"]
                 while 1:
@@ -2422,7 +2422,7 @@ def Factory():
 
                     costtime = time.time()-starttime
                     logger.info(_("第{a}次\"鸟剑\"完成. 该次花费时间{b:.2f}.".format(a=runtimeContext._COUNTERDUNG, b=costtime)),
-                            extra={"summary": True})
+                            summary=True)
             case "repelEnemyForces":
                 if not setting.ACTIVE_REST:
                     logger.info(_("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1."))
@@ -2488,7 +2488,7 @@ def Factory():
                     )
                     counter+=1
                     logger.info(_("第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒.".format(a=counter, b=setting.REST_INTERVEL, c=counter*setting.REST_INTERVEL*2), c=(time.time()-t)),
-                                    extra={"summary": True})
+                                    summary=True)
             case "darkLight":
                 gameFrozen_StateNoneScreenHistory = []
                 dungState = None
@@ -2621,7 +2621,7 @@ def Factory():
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
                         logger.info(_("第{a}次三牛完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
+                                    summary=True)
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
 
@@ -2684,7 +2684,7 @@ def Factory():
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
                         logger.info(_("第{a}次忍洞完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
+                                    summary=True)
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
@@ -2751,7 +2751,7 @@ def Factory():
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
                         logger.info(_("第{a}次约定之剑完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
+                                    summary=True)
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
@@ -2839,7 +2839,7 @@ def Factory():
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
                         logger.info(_("第{a}次巨人完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
+                                    summary=True)
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
 
@@ -2941,7 +2941,7 @@ def Factory():
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            extra={"summary": True})
+                            summary=True)
             case "Scorpionesses_plus_6_hands":
                 total_time = 0
                 while 1:
@@ -3040,7 +3040,7 @@ def Factory():
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            extra={"summary": True})
+                            summary=True)
             case "steeltrail":
                 total_time = 0
                 while 1:
@@ -3075,7 +3075,7 @@ def Factory():
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"钢试炼\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            extra={"summary": True})
+                            summary=True)
             case "jier":
                 total_time = 0
                 while 1:
@@ -3139,7 +3139,7 @@ def Factory():
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"悬赏:吉尔\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            extra={"summary": True})
+                            summary=True)
             case "lovesleep":
                 logger.info(_("开始睡觉."))
                 t = time.time()
@@ -3151,7 +3151,7 @@ def Factory():
                             )
                     if setting._FORCESTOPING.is_set():
                         break
-                    logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),extra={"summary": True})
+                    logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),summary=True)
             case "fortress-B8F_trap":
                 while 1:
                     if setting._FORCESTOPING.is_set():
@@ -3159,7 +3159,7 @@ def Factory():
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
                         logger.info(_("第{a}次要塞小精灵完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    extra={"summary": True})
+                                    summary=True)
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
 
@@ -3305,7 +3305,7 @@ def Factory():
                         if v>0:
                             output_str += f"{k}:{v}个,"
                     output_str += f"\n累计用时:{(time.time()-start_time):.2f}."
-                    logger.info(output_str,extra={"summary": True})
+                    logger.info(output_str,summary=True)
         ##########################
         setting._FINISHINGCALLBACK()
         return
