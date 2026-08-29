@@ -1392,7 +1392,7 @@ def Factory():
                         Press(CheckIf(screen,"bondmate_close",[[277,751,330,600]]))
                         if quest._SPECIALDIALOGOPTION_CALLBACK != None:
                             logger.info("由于触发了特殊对话, 使用了回调函数.")
-                            quest._SPECIALDIALOGOPTION_CALLBACK()
+                            quest._SPECIALDIALOGOPTION_CALLBACK(option)
                         return IdentifyState()
 
             if counter>=4:
@@ -3301,6 +3301,8 @@ def Factory():
                     output_str += f"\n累计用时:{(time.time()-start_time):.2f}."
                     logger.info(output_str,summary=True)
             case "sandman":
+                sandman_complete = False
+                
                 setting.RE_ASSEMBLE_PARTY = False
                 setting.BYPASS_THE_WALL = False
                 counter = 0
@@ -3312,44 +3314,45 @@ def Factory():
                 quest._SPECIALDIALOGOPTION = ["sandman/sandman_1",
                                               "sandman/sandman_2",
                                               "sandman/sandman_bondmate"]
-                def callback():
+                def callback(option):
                     nonlocal sandman_complete
-                    sandman_complete = True
+                    if option == "sandman/sandman_bondmate":
+                        sandman_complete = True
+                    return
                 quest._SPECIALDIALOGOPTION_CALLBACK = callback
                 quest._TARGETINFOLIST = [TargetInfo("position","左下",[133,814]),
                                          TargetInfo("position","左下",[238,1076]),
                                          TargetInfo("position","左下",[450,924]),
-                                         TargetInfo("harken","左下")]
+                                         TargetInfo("harken2","左下")]
 
+                
                 while 1:
-                    sandman_complete = False
                     RestartableSequenceExecution(    
-                        lambda: CursedWheelTimeLeap(target="requestToRescueTheDuke",
-                                                    chapter = "cursedwheel_impregnableFortress")
+                        lambda: StateEoT()
                         )
-                    Sleep(10)
-                    RestartableSequenceExecution(    
-                        lambda: StateInn()
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon(quest._TARGETINFOLIST)
                         )
-                    RestartableSequenceExecution(    
-                        lambda: CursedWheelTimeLeap(target="Triumph",
-                                                    chapter = "cursedwheel_impregnableFortress")
-                        )
-                    while 1:
-                        RestartableSequenceExecution(    
-                            lambda: StateEoT()
-                            )
+                    if sandman_complete:
+                        sandman_complete = False
                         RestartableSequenceExecution(
-                            lambda: StateDungeon(quest._TARGETINFOLIST)
+                            lambda: StateInn()
                             )
-                        if sandman_complete:
-                            RestartableSequenceExecution(
-                                lambda: StateInn()
-                                )
-                            sandman_complete = False
-                            counter+=1
-                            logger.info(f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",summary = True)
-                            break
+                        RestartableSequenceExecution(    
+                            lambda: CursedWheelTimeLeap(target="requestToRescueTheDuke",
+                                                        chapter = "cursedwheel_impregnableFortress")
+                            )
+                        Sleep(10)
+                        RestartableSequenceExecution(    
+                            lambda: StateInn()
+                            )
+                        RestartableSequenceExecution(    
+                            lambda: CursedWheelTimeLeap(target="Triumph",
+                                                        chapter = "cursedwheel_impregnableFortress")
+                            )
+                        counter+=1
+                        logger.info(f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",summary = True)
+                        break
         ##########################
         setting._FINISHINGCALLBACK()
         return
