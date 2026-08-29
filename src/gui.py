@@ -543,7 +543,7 @@ class ConfigPanelApp(tk.Toplevel):
             ShowChangesLogWindow()
             self.LAST_VERSION.set(version)
             self.save_config()
-    
+
     def save_config(self):
         # karma
         if self.KARMA_ADJUST.get().isdigit():
@@ -663,12 +663,23 @@ class ConfigPanelApp(tk.Toplevel):
         
         def selectADB_PATH():
             path = filedialog.askopenfilename(
-                title=_("选择ADB执行文件"),
+                title=_("选择可执行文件"),
                 filetypes=[("Executable", "*.exe"), ("All files", "*.*")]
             )
             if path:
                 self.EMU_PATH.set(path)
                 self.save_config()
+
+                if emu_path:=self.EMU_PATH.get():
+                    path_check = False
+                    if emu_path.endswith(r"nx_device/12.0/shell/MuMuNxDevice.exe"):
+                        path_check = True
+                    if emu_path.endswith(r"nx_device/15.0/shell/MuMuNxDevice.exe"):
+                        path_check = True
+                    if emu_path.endswith(r"MuMu Player 12/shell/MuMuPlayer.exe"):
+                        path_check = True
+                    if not path_check:
+                        logger.error("\n\n警告: 设置的模拟器路径可能不正确.\n如果你遇到无法启动模拟器, 请尝试重新设置路径.\n\n")
 
         self.adb_path_change_button = ttk.Button(
             frame_row, text=_("修改"), command=selectADB_PATH, width=5
