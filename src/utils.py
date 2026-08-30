@@ -169,6 +169,25 @@ def SaveImage(scn, name=None):
     logger.info(f"截图已保存在{file_path}中.")
     cv2.imwrite(file_path, scn)
 
+def CleanupOldImages(days=3):
+    """删除 logs 文件夹中超过指定天数的截图（.png）"""
+    import time
+    import glob
+
+    now = time.time()
+    cutoff = now - days * 86400  # 3 天前的秒数
+
+    pattern = os.path.join(LOGS_FOLDER_NAME, "*.png")
+    for filepath in glob.glob(pattern):
+        try:
+            mtime = os.path.getmtime(filepath)
+            if mtime < cutoff:
+                os.remove(filepath)
+                logger.debug(f"已删除过期截图: {filepath}")
+        except Exception as e:
+            logger.error(f"删除过期截图失败 {filepath}: {e}")
+
+CleanupOldImages()
 ############################################
 CONFIG_FILE = 'config.json'
 def SaveConfigToFile(config_data):
@@ -390,3 +409,132 @@ class Tooltip:
         if self.tooltip_window:
             self.tooltip_window.destroy()
             self.tooltip_window = None
+###########################################
+def StateCombat_DetectArrow(screenshot):
+    """
+    边缘分数采用膨胀-腐蚀边界卷积，并在归一化图上应用阈值。
+    """
+    # ---------- 0. 参数设定 ----------
+    mask1 = LoadTemplateImage("spellskill/arrow/mask1") # 箭头内部区域
+    if mask1.ndim == 3:
+        mask1 = cv2.cvtColor(mask1, cv2.COLOR_BGR2GRAY)
+    mask2 = LoadTemplateImage("spellskill/arrow/mask2") # 非箭头区域, 近似看作背景
+    if mask2.ndim == 3:
+        mask2 = cv2.cvtColor(mask2, cv2.COLOR_BGR2GRAY)
+    mask3 = LoadTemplateImage("spellskill/arrow/mask3") # 边缘
+    if mask3.ndim == 3:
+        mask3 = cv2.cvtColor(mask3, cv2.COLOR_BGR2GRAY)
+
+    edge_thresh_norm=200     # 归一化后阈值（0~255）
+    color_score_thresh=0.6
+    iou_thresh=0.3
+
+    # ---------- 1. 计算梯度幅度 ----------
+    if screenshot.ndim == 3:
+        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = screenshot
+    grad_x = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+    grad_y = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
+    grad_mag = cv2.magnitude(grad_x, grad_y)
+
+    # ---------- 2. 构建膨胀-腐蚀边界核 ----------
+    kernel = np.ones((3, 3), np.uint8)
+    # 注意：这里对 mask3 进行膨胀-腐蚀，而不是直接用 mask3
+    boundary = (cv2.dilate(mask3, kernel) - cv2.erode(mask3, kernel)) > 0
+    boundary = boundary.astype(np.float32)
+    boundary_count = boundary.sum()
+    if boundary_count == 0:
+        raise ValueError("膨胀-腐蚀后边界为空，请检查 mask3")
+
+    # ---------- 3. 计算边缘强度图 ----------
+    edge_sum = cv2.filter2D(grad_mag, cv2.CV_32F, boundary,
+                            borderType=cv2.BORDER_REPLICATE)
+    edge_map = edge_sum / boundary_count   # 原始平均梯度
+
+    # ---------- 4. 归一化并阈值化 ----------
+    edge_norm = cv2.normalize(edge_map, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    _, high_edge_mask = cv2.threshold(edge_norm, edge_thresh_norm, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(high_edge_mask, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+
+    # ---------- 5. 提取候选中心（质心） ----------
+    candidate_centers = []
+    for cnt in contours:
+        M = cv2.moments(cnt)
+        if M["m00"] != 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+        else:
+            x, y, w, h = cv2.boundingRect(cnt)
+            cx, cy = x + w // 2, y + h // 2
+        # 从原始边缘强度图中获取该点的分数
+        edge_score = float(edge_map[cy, cx])
+        candidate_centers.append((cx, cy, edge_score))
+
+    # ---------- 6. 颜色匹配验证 ----------
+    m1 = (mask1 > 127).astype(np.float32)
+    m2 = (mask2 > 127).astype(np.float32)
+    # N1, N2 = m1.sum(), m2.sum()
+    H_k, W_k = mask1.shape
+    half_h, half_w = H_k // 2, W_k // 2
+    img_float = screenshot.astype(np.float32)
+    H_img, W_img = img_float.shape[:2]
+
+    candidates = []
+    for cx, cy, edge_score in candidate_centers:
+        x0 = cx - half_w
+        y0 = cy - half_h
+        if x0 < 0 or y0 < 0 or x0 + W_k > W_img or y0 + H_k > H_img:
+            continue
+
+        roi = img_float[y0:y0+H_k, x0:x0+W_k]
+        bg_mean = roi[m2 > 0.5].mean(axis=0)
+        pred_mean = 0.7 * bg_mean + 100.0 # 该公式是由数据拟合而来
+        actual_mean = roi[m1 > 0.5].mean(axis=0)
+        mae = float(np.mean(np.abs(actual_mean - pred_mean)))
+        color_score = 1.0 / (1.0 + mae / 50.0)
+
+        if color_score >= color_score_thresh:
+            edge_norm = min(edge_score / 300.0, 1.0)
+            total = edge_norm + color_score
+            candidates.append((x0, y0, W_k, H_k, edge_score, color_score,
+                            edge_norm, total))
+
+    # ---------- 7. 非极大值抑制 ----------
+    if iou_thresh > 0 and candidates:
+        candidates.sort(key=lambda c: c[7], reverse=True)
+        keep = []
+        while candidates:
+            best = candidates.pop(0)
+            keep.append(best)
+            bx, by, bw, bh = best[0], best[1], best[2], best[3]
+            filtered = []
+            for c in candidates:
+                x, y, w_, h_ = c[0], c[1], c[2], c[3]
+                ix1, iy1 = max(bx, x), max(by, y)
+                ix2, iy2 = min(bx+bw, x+w_), min(by+bh, y+h_)
+                if ix2 <= ix1 or iy2 <= iy1:
+                    filtered.append(c)
+                else:
+                    inter = (ix2-ix1)*(iy2-iy1)
+                    union = bw*bh + w_*h_ - inter
+                    if inter/union < iou_thresh:
+                        filtered.append(c)
+            candidates = filtered
+        final_candidates = keep
+    else:
+        final_candidates = candidates
+    
+    final_candidates = sorted(final_candidates, key=lambda c: c[7], reverse=True)
+
+    # ---------- 8. 绘制结果 ----------
+    result_img = screenshot.copy()
+    for x0, y0, w, h, edge_score, color_score, edge_norm, total in final_candidates:
+        cv2.rectangle(result_img, (x0, y0), (x0 + w, y0 + h), (0, 255, 0), 2)
+        cv2.putText(result_img, f"En:{edge_norm:.2f}", (x0, y0 - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        cv2.putText(result_img, f"C:{color_score:.2f}", (x0, y0 + h + 15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+    return result_img, final_candidates

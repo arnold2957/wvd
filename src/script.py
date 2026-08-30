@@ -1620,13 +1620,18 @@ def Factory():
                 logger.info(_("释放了位于\"{a}\"的全体技能, 技能等级为{b}.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
             else:
-                repeat = 2
-                if pos:= CheckIf(scn,"next",[[1,291,898,600]]):
-                    Press([pos[0]+15,pos[1]+50])
-                    logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 选择next作为敌方目标.".format(a=skillPos, b=skilllvl)))
-                    repeat = 1
-
-                for t in range(repeat): # 至少保证一轮随机选择
+                result_image, candidates = StateCombat_DetectArrow(CutRoI(scn,[[0,161,900,763]]))
+                
+                if candidates:
+                    SaveImage(result_image)
+                    for index, (x, y, w, h, es, cs, en,ts) in enumerate(candidates):
+                        if index >= 3: # 只点前三
+                            break
+                        for i in range(5):
+                            Press([x+23,y+23+161+i*15]) # +23因为xy是左上角的坐标. +161因为CutRoU.
+                            Sleep(0.05)
+                        logger.info(f"点击箭头 #{index+1}: 位于({x},{y}), 总分{ts:.3f}(边缘{en:.3f}, 颜色{cs:.3f})")
+                else:
                     x0, y0 = 0, 560
                     cols = 8
                     rows = 3
@@ -1642,7 +1647,7 @@ def Factory():
                             Press([x, y])
                             Sleep(0.05)
 
-                logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标.".format(a=skillPos, b=skilllvl)))
+                    logger.info(_("释放了位于\"{a}\"的单体技能, 技能等级为{b}. 随机选择敌方目标.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
 
             # 资源不足
