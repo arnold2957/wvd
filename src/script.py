@@ -1936,7 +1936,8 @@ def Factory():
                 return DungeonState.Combat
             
             TryPressRetry(scn)
-    def StateDungeon(targetInfoList : list[TargetInfo]):
+    def StateDungeon(originalTargetInfoList : list[TargetInfo]):
+        targetInfoList = copy.deepcopy(originalTargetInfoList)
         gameFrozen_StateNoneScreenHistory = []
         gameFrozen_StateMapCounter = 0
         GAMEFROZEN_STATEMAPLIMIT = 20+20*len(targetInfoList)
@@ -2136,7 +2137,7 @@ def Factory():
                         if targetInfoList[0] and (targetInfoList[0].target =="stay"):
                             Sleep(2)
                             return None
-                        for tar in ["chest_auto","mark_auto", "quit_dungeon"]:
+                        for tar in ["chest_auto","mark_auto", "dungFlag"]:
                             if targetInfoList[0] and (targetInfoList[0].target == tar):                        
                                 lastscreen = ScreenShot()
                                 if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
@@ -2189,6 +2190,7 @@ def Factory():
                             pass
                         case "WRONGFLOOR":
                             targetInfoList.insert(0, TargetInfo("dungFlag")) # dungFlag也就是退出地下城按钮
+                            # targetInfoList是复制的临时变量, 也就是每次退出stateDungeon就会重置, 因此可以放心修改.
 
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info(_("地下城目标完成. 地下城状态结束.(仅限任务模式.)"))

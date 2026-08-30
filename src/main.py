@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '2.7.1' 
+__version__ = '2.7.2' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
