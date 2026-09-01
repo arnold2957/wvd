@@ -1,7 +1,7 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/2.7.4",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/2.7.4/wvd_2.7.4.zip",
-  "md5": "e473407cf4d6ff3f05ba3fbdf812b0f0",
-  "release_date": "2026-08-30 11:54:47",
-  "version": "2.7.4"
+  "release_date": "2026-09-01 02:45:37",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/2.7.5/wvd_2.7.5.zip",
+  "version": "2.7.5",
+  "md5": "2ecb49bdb8f501b5a0c3d8dde851c2b6",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/2.7.5"
 }
