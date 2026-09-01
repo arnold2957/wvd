@@ -1620,17 +1620,17 @@ def Factory():
                 logger.info(_("释放了位于\"{a}\"的全体技能, 技能等级为{b}.".format(a=skillPos, b=skilllvl)))
                 Sleep(2)
             else:
-                result_image, candidates = StateCombat_DetectArrow(CutRoI(scn,[[0,161,900,763]]))
+                candidates,result_image = StateCombat_DetectArrow(CutRoI(scn,[[0,61,900,863]]))
                 
-                if candidates:
+                if candidates is not None:
                     SaveImage(result_image)
-                    for index, (x, y, w, h, es, cs, en,ts) in enumerate(candidates):
+                    for index, (x, y, score, label) in enumerate(candidates):
                         if index >= 3: # 只点前三
                             break
                         for i in range(5):
-                            Press([x+23,y+23+161+i*15]) # +23因为xy是左上角的坐标. +161因为CutRoU.
+                            Press([x,y+161+i*15]) # +161因为CutRoI.
                             Sleep(0.05)
-                        logger.info(f"点击箭头 #{index+1}: 位于({x},{y}), 总分{ts:.3f}(边缘{en:.3f}, 颜色{cs:.3f})")
+                        logger.info(f"点击箭头 #{index+1}: 位于({x},{y}), 总分{score:.3f}, 通道{label}.")
                 else:
                     x0, y0 = 0, 560
                     cols = 8

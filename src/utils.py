@@ -410,131 +410,127 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 ###########################################
+# MASK1 = LoadTemplateImage("spellskill/arrow/mask1") # 箭头内部区域
+# if MASK1.ndim == 3:
+#     MASK1 = cv2.cvtColor(MASK1, cv2.COLOR_BGR2GRAY)
+# MASK2 = LoadTemplateImage("spellskill/arrow/mask2") # 非箭头区域, 近似看作背景
+# if MASK2.ndim == 3:
+#     MASK2 = cv2.cvtColor(MASK2, cv2.COLOR_BGR2GRAY)
+MASK3 = LoadTemplateImage("spellskill/arrow/mask3") # 边缘
+if MASK3.ndim == 3:
+    MASK3 = cv2.cvtColor(MASK3, cv2.COLOR_BGR2GRAY)
+    MASK3 = MASK3.astype(np.float32) / 255.0
+    
 def StateCombat_DetectArrow(screenshot):
     """
-    边缘分数采用膨胀-腐蚀边界卷积，并在归一化图上应用阈值。
+    使用手绘三角形模板匹配检测图像中的三角形区域。
+
+    参数:
+        mask3: 灰度模板图像（白色内部，黑色外部），用于提取边缘方向场
+        screenshot: BGR彩色测试图像
+        threshold: 归一化响应的阈值，范围[0,1]，默认0.5
+
+    返回:
+        results: 去重后的检测结果列表，每个元素为 (center_x, center_y, score, channel_label)
+        marked_img: 在原图上标记了所有检测框的图像
     """
-    # ---------- 0. 参数设定 ----------
-    mask1 = LoadTemplateImage("spellskill/arrow/mask1") # 箭头内部区域
-    if mask1.ndim == 3:
-        mask1 = cv2.cvtColor(mask1, cv2.COLOR_BGR2GRAY)
-    mask2 = LoadTemplateImage("spellskill/arrow/mask2") # 非箭头区域, 近似看作背景
-    if mask2.ndim == 3:
-        mask2 = cv2.cvtColor(mask2, cv2.COLOR_BGR2GRAY)
-    mask3 = LoadTemplateImage("spellskill/arrow/mask3") # 边缘
-    if mask3.ndim == 3:
-        mask3 = cv2.cvtColor(mask3, cv2.COLOR_BGR2GRAY)
 
-    edge_thresh_norm=200     # 归一化后阈值（0~255）
-    color_score_thresh=0.6
-    iou_thresh=0.3
+    threshold = 0.5
 
-    # ---------- 1. 计算梯度幅度 ----------
-    if screenshot.ndim == 3:
-        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = screenshot
-    grad_x = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
-    grad_y = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
-    grad_mag = cv2.magnitude(grad_x, grad_y)
+    # ---------- 模板方向场 ----------
+    gx_t = cv2.Sobel(MASK3, cv2.CV_32F, 1, 0, ksize=3)
+    gy_t = cv2.Sobel(MASK3, cv2.CV_32F, 0, 1, ksize=3)
+    mag_t = np.sqrt(gx_t**2 + gy_t**2) + 1e-6
+    gx_t /= mag_t
+    gy_t /= mag_t
 
-    # ---------- 2. 构建膨胀-腐蚀边界核 ----------
-    kernel = np.ones((3, 3), np.uint8)
-    # 注意：这里对 mask3 进行膨胀-腐蚀，而不是直接用 mask3
-    boundary = (cv2.dilate(mask3, kernel) - cv2.erode(mask3, kernel)) > 0
-    boundary = boundary.astype(np.float32)
-    boundary_count = boundary.sum()
-    if boundary_count == 0:
-        raise ValueError("膨胀-腐蚀后边界为空，请检查 mask3")
+    mask_h, mask_w = MASK3.shape[:2]
+    dedup_dist = 0.5 * min(mask_h, mask_w)   # 去重距离阈值（模板短边一半）
 
-    # ---------- 3. 计算边缘强度图 ----------
-    edge_sum = cv2.filter2D(grad_mag, cv2.CV_32F, boundary,
-                            borderType=cv2.BORDER_REPLICATE)
-    edge_map = edge_sum / boundary_count   # 原始平均梯度
+    # ---------- 准备测试通道：灰度和R通道 ----------
+    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    _, _, r_channel = cv2.split(screenshot)   # BGR顺序，R是第三个
+    channel_data = [('Grey', gray), ('R', r_channel)]
 
-    # ---------- 4. 归一化并阈值化 ----------
-    edge_norm = cv2.normalize(edge_map, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    _, high_edge_mask = cv2.threshold(edge_norm, edge_thresh_norm, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(high_edge_mask, cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
+    all_detections = []   # 存储所有通道的检测结果（字典形式）
 
-    # ---------- 5. 提取候选中心（质心） ----------
-    candidate_centers = []
-    for cnt in contours:
-        M = cv2.moments(cnt)
-        if M["m00"] != 0:
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-        else:
-            x, y, w, h = cv2.boundingRect(cnt)
-            cx, cy = x + w // 2, y + h // 2
-        # 从原始边缘强度图中获取该点的分数
-        edge_score = float(edge_map[cy, cx])
-        candidate_centers.append((cx, cy, edge_score))
+    for label, ch in channel_data:
+        # 高斯模糊（抑制噪声，使梯度方向稳定）
+        blurred = cv2.GaussianBlur(ch, (5, 5), 0)
 
-    # ---------- 6. 颜色匹配验证 ----------
-    m1 = (mask1 > 127).astype(np.float32)
-    m2 = (mask2 > 127).astype(np.float32)
-    # N1, N2 = m1.sum(), m2.sum()
-    H_k, W_k = mask1.shape
-    half_h, half_w = H_k // 2, W_k // 2
-    img_float = screenshot.astype(np.float32)
-    H_img, W_img = img_float.shape[:2]
+        # 计算梯度
+        gx = cv2.Sobel(blurred, cv2.CV_32F, 1, 0, ksize=3)
+        gy = cv2.Sobel(blurred, cv2.CV_32F, 0, 1, ksize=3)
 
-    candidates = []
-    for cx, cy, edge_score in candidate_centers:
-        x0 = cx - half_w
-        y0 = cy - half_h
-        if x0 < 0 or y0 < 0 or x0 + W_k > W_img or y0 + H_k > H_img:
+        # 方向内积响应
+        resp_x = cv2.filter2D(gx, -1, gx_t, borderType=cv2.BORDER_CONSTANT)
+        resp_y = cv2.filter2D(gy, -1, gy_t, borderType=cv2.BORDER_CONSTANT)
+        response = resp_x + resp_y
+
+        # 按该通道最大响应归一化
+        max_val = response.max()
+        if max_val <= 0:
             continue
+        norm_response = response / max_val
 
-        roi = img_float[y0:y0+H_k, x0:x0+W_k]
-        bg_mean = roi[m2 > 0.5].mean(axis=0)
-        pred_mean = 0.7 * bg_mean + 100.0 # 该公式是由数据拟合而来
-        actual_mean = roi[m1 > 0.5].mean(axis=0)
-        mae = float(np.mean(np.abs(actual_mean - pred_mean)))
-        color_score = 1.0 / (1.0 + mae / 50.0)
+        # 阈值过滤
+        binary = (norm_response >= threshold).astype(np.uint8) * 255
 
-        if color_score >= color_score_thresh:
-            edge_norm = min(edge_score / 300.0, 1.0)
-            total = edge_norm + color_score
-            candidates.append((x0, y0, W_k, H_k, edge_score, color_score,
-                            edge_norm, total))
+        # 查找轮廓
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # ---------- 7. 非极大值抑制 ----------
-    if iou_thresh > 0 and candidates:
-        candidates.sort(key=lambda c: c[7], reverse=True)
-        keep = []
-        while candidates:
-            best = candidates.pop(0)
-            keep.append(best)
-            bx, by, bw, bh = best[0], best[1], best[2], best[3]
-            filtered = []
-            for c in candidates:
-                x, y, w_, h_ = c[0], c[1], c[2], c[3]
-                ix1, iy1 = max(bx, x), max(by, y)
-                ix2, iy2 = min(bx+bw, x+w_), min(by+bh, y+h_)
-                if ix2 <= ix1 or iy2 <= iy1:
-                    filtered.append(c)
-                else:
-                    inter = (ix2-ix1)*(iy2-iy1)
-                    union = bw*bh + w_*h_ - inter
-                    if inter/union < iou_thresh:
-                        filtered.append(c)
-            candidates = filtered
-        final_candidates = keep
-    else:
-        final_candidates = candidates
-    
-    final_candidates = sorted(final_candidates, key=lambda c: c[7], reverse=True)
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < 10:   # 过滤小面积噪声
+                continue
 
-    # ---------- 8. 绘制结果 ----------
-    result_img = screenshot.copy()
-    for x0, y0, w, h, edge_score, color_score, edge_norm, total in final_candidates:
-        cv2.rectangle(result_img, (x0, y0), (x0 + w, y0 + h), (0, 255, 0), 2)
-        cv2.putText(result_img, f"En:{edge_norm:.2f}", (x0, y0 - 8),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-        cv2.putText(result_img, f"C:{color_score:.2f}", (x0, y0 + h + 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            x, y, w, h = cv2.boundingRect(cnt)
+            center_x = x + w // 2
+            center_y = y + h // 2
 
-    return result_img, final_candidates
+            # 取该矩形区域内最大归一化响应作为得分
+            roi = norm_response[y:y+h, x:x+w]
+            score = roi.max()
+
+            # 用字典保存检测信息
+            all_detections.append({
+                'center': (center_x, center_y),
+                'score': score,
+                'label': label,
+                'bbox': (x, y, w, h)
+            })
+
+    # 按得分降序排序
+    all_detections.sort(key=lambda d: d['score'], reverse=True)
+
+    # 去重（基于中心距离的非极大值抑制）
+    kept_detections = []
+    for det in all_detections:
+        cx, cy = det['center']
+        duplicate = False
+        for kept in kept_detections:
+            kx, ky = kept['center']
+            if (cx - kx) ** 2 + (cy - ky) ** 2 < dedup_dist ** 2:
+                duplicate = True
+                break
+        if not duplicate:
+            kept_detections.append(det)
+
+    # ---------- 在原图上标记结果 ----------
+    marked_img = screenshot.copy()
+    for det in kept_detections:
+        x, y, w, h = det['bbox']
+        score = det['score']
+        label = det['label']
+        cv2.rectangle(marked_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        text = f'{label}:{score:.2f}'
+        cv2.putText(marked_img, text, (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+    # 转换为要求的输出格式（元组列表）
+    results = [(det['center'][0], det['center'][1], det['score'], det['label']) for det in kept_detections]
+
+    return results, marked_img
+
+
+# EOF
