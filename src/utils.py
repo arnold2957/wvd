@@ -312,6 +312,25 @@ def _build_quest_data():
 
 QUEST_DATA = _build_quest_data()
 
+QUEST_CATEGORY_ORDER = {
+    "最新任务": 0,
+    "WHATS NEW": 0,
+    "主线前三章" : 3,
+    "Chapter 1,2 and 3":3,
+    "主线第四章": 4,
+    "Chapter 4": 4,
+    "任务洞窟": 10,
+    "Request Caves": 10,
+    "矿石" : 20,
+    "Ore": 20,
+    "月常": 30,
+    "Monthly Requests": 30,
+    "FFXI联动": 11,
+    "FFXI Cave": 11,
+    "其他": 999,
+    "Other": 999
+    }
+
 def BuildQuestReflection():
     try:
         data = QUEST_DATA
@@ -325,6 +344,12 @@ def BuildQuestReflection():
             seen_names.add(quest_name)
             category = quest_info.get(f"questCategory_{LANGUAGE}", quest_info["questCategory"])
             quest_reflect_map.setdefault(category, {})[quest_name] = quest_code
+
+        sorted_categories = sorted(
+            quest_reflect_map.keys(),
+            key=lambda c: (QUEST_CATEGORY_ORDER.get(c, float('inf')), c)
+        )
+        quest_reflect_map = {cat: quest_reflect_map[cat] for cat in sorted_categories}
         
         return quest_reflect_map
     except KeyError as e:

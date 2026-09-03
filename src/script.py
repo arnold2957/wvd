@@ -3360,6 +3360,54 @@ def Factory():
                         counter+=1
                         logger.info(f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",summary = True)
                         break
+            case "fishing":
+                t = time.time()
+                total_time = 0
+                fish = 0
+                failed_fishing = 0
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    scn = ScreenShot()
+                    if TryPressRetry(scn):
+                        logger.info("网络故障, 重试中......")
+                        Sleep(1)
+                        continue
+
+                    if CheckIf(scn, "fishing/cast"):
+                        for i in range(5):
+                            DeviceShell(f"input swipe 50 1200 850 1200 100")
+                        for i in range(2):
+                            DeviceShell(f"input swipe 850 1200 50 1200 100")
+                        Sleep(1)
+                        DeviceShell(f"input swipe 400 1200 450 1250 2250")
+                        logger.info("下杆!")
+                        t = time.time()
+                        Sleep(2)
+                        continue
+
+                    if pos:=CheckIf(scn, "fishing/striking"):
+                        if time.time()-t>180:
+                            logger.info("3分钟了还没钓到, 重来吧.")
+                            failed_fishing += 1
+                            Press(pos)
+                            Sleep(5)
+                        DeviceShell(f"input swipe 450 700 450 50 100")
+                        Sleep(2.5) # 拉杆动画大约2秒动作和0.2秒冷却
+                        continue
+
+                    if Press(CheckIf(scn, "fishing/CloseFishInfo")):
+                        fish += 1
+                        total_time = total_time + time.time() - t
+                        t = 0
+                        logger.info(f"已完成钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{total_time:.2f}秒.", summary = True)
+                        Sleep(5)
+                        continue
+
+                    for i in range(20):
+                        DeviceShell(f"input swipe 250 1200 850 1200 100")
+                    
         ##########################
         setting._FINISHINGCALLBACK()
         return

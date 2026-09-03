@@ -272,8 +272,8 @@
         "_TYPE":"dungeon",
         "questName":"[宝箱]FFXI 2F 自动宝箱",
         "questName_en_US": "[Chest] FFXI 2F Chest",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上",[496,447]]
@@ -292,8 +292,8 @@
         "_TYPE":"dungeon",
         "questName":"[刷怪]FFXI 2F 精英",
         "questName_en_US": "[Elite] FFXI 2F Elite",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
             ["position","左下",[300,280]],
             ["position","左下",[670,920]],
@@ -314,8 +314,8 @@
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 4精英",
         "questName_en_US": "[Elite] FFXI 5F 4Elite",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
 			["position","左下",[30,652]],
             ["position","左下",[80,1130]],
@@ -336,8 +336,8 @@
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 中部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Mid",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
 			["position","左下",[30,652]],
             ["position","右下",[870,652]],
@@ -356,8 +356,8 @@
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 底部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Bottom",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
             ["position","左下",[80,1130]],
             ["position","右下",[820,1130]],
@@ -376,8 +376,8 @@
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 左侧2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Left",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
 			["position","左下",[30,652]],
             ["position","左下",[80,1130]],
@@ -398,8 +398,8 @@
         "_TYPE":"dungeon",
         "questName":"[恶名]FFXI 5F 单恶魔",
         "questName_en_US": "[Elite+Chest] FFXI 5F Single Elite",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TARGETINFOLIST":[
 			["position","左下",[80,1130]],
             ["position","左上",[450,392]]
@@ -895,8 +895,8 @@
     "FFXI-Org":{
         "questName":"[矿石]FFXI挖矿",
         "questName_en_US": "[Chest] FFXI Org",
-        "questCategory": "最新洞窟",
-        "questCategory_en_US": "*WHATS NEW*",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_TYPE":"quest",
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
@@ -914,6 +914,14 @@
         "questCategory": "主线前三章",
         "questCategory_en_US": "Chapter 1,2 and 3",
         "_TYPE":"quest"
+    },
+    "fishing":{
+        "questName":"钓鱼(测试)",
+        "questName_en_US": "Fishing(test)",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
+        "_TYPE":"quest",
+        "_TIPS": "目前尚未支持回城拿鱼饵等功能, 请在下杆界面开启本任务.\nFeatures such as returning to town to fetch bait are not yet supported; please start this task from the fishing interface."
     }
 
 }
