@@ -3366,7 +3366,9 @@ def Factory():
                 total_time = 0
                 fish = 0
                 failed_fishing = 0
+                tick = 0
                 while 1:
+                    tick += 1
                     if setting._FORCESTOPING.is_set():
                         break
 
@@ -3382,20 +3384,28 @@ def Factory():
                         for i in range(2):
                             DeviceShell(f"input swipe 850 1200 50 1200 100")
                         Sleep(1)
-                        DeviceShell(f"input swipe 400 1200 450 1250 2250")
                         logger.info("下杆!")
+                        DeviceShell(f"input swipe 400 1200 450 1250 2250")
                         t = time.time()
-                        Sleep(2)
+                        Sleep(10)
                         continue
 
                     if pos:=CheckIf(scn, "fishing/striking"):
-                        if time.time()-t>180:
-                            logger.info("3分钟了还没钓到, 重来吧.")
+                        if time.time()-t>300:
+                            logger.info("5分钟了还没钓到, 重来吧.")
                             failed_fishing += 1
                             Press(pos)
                             Sleep(5)
-                        DeviceShell(f"input swipe 450 700 450 50 100")
-                        Sleep(2.5) # 拉杆动画大约2秒动作和0.2秒冷却
+                        fishbobber, img = Fishing_DetectBobber(CutRoI(scn,[[250,500,400,400]]))
+                        logger.debug(fishbobber)
+                        if fishbobber == []:
+                            logger.info("拉杆!")
+                            DeviceShell(f"input swipe 450 700 450 50 100")
+                            Sleep(3) # 拉杆动画大约2秒动作和0.2秒冷却
+                        else:
+                            if tick % 15 == 0:
+                                logger.info("等待着猎物...")
+                            Sleep(1)
                         continue
 
                     if Press(CheckIf(scn, "fishing/CloseFishInfo")):
@@ -3407,8 +3417,9 @@ def Factory():
                         Sleep(5)
                         continue
 
-                    for i in range(20):
+                    for i in range(40):
                         DeviceShell(f"input swipe 250 1200 850 1200 100")
+                        
                     
         ##########################
         setting._FINISHINGCALLBACK()

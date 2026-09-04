@@ -435,12 +435,6 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 ###########################################
-# MASK1 = LoadTemplateImage("spellskill/arrow/mask1") # 箭头内部区域
-# if MASK1.ndim == 3:
-#     MASK1 = cv2.cvtColor(MASK1, cv2.COLOR_BGR2GRAY)
-# MASK2 = LoadTemplateImage("spellskill/arrow/mask2") # 非箭头区域, 近似看作背景
-# if MASK2.ndim == 3:
-#     MASK2 = cv2.cvtColor(MASK2, cv2.COLOR_BGR2GRAY)
 MASK3 = LoadTemplateImage("spellskill/arrow/mask3") # 边缘
 if MASK3.ndim == 3:
     MASK3 = cv2.cvtColor(MASK3, cv2.COLOR_BGR2GRAY)
@@ -557,5 +551,87 @@ def StateCombat_DetectArrow(screenshot):
 
     return results, marked_img
 
+##############
+BOBBER = LoadTemplateImage("fishing/bobber") # 边缘
+if BOBBER.ndim == 3:
+    BOBBER = cv2.cvtColor(BOBBER, cv2.COLOR_BGR2GRAY)
+
+def Fishing_DetectBobber(screenshot):
+    # 参数
+    threshold=0.5
+
+    # 模板方向场
+    mask_float = BOBBER.astype(np.float32) / 255.0
+    gx_t = cv2.Sobel(mask_float, cv2.CV_32F, 1, 0, ksize=3)
+    gy_t = cv2.Sobel(mask_float, cv2.CV_32F, 0, 1, ksize=3)
+    mag_t = np.sqrt(gx_t**2 + gy_t**2) + 1e-6
+    gx_t, gy_t = gx_t / mag_t, gy_t / mag_t
+
+    side = min(BOBBER.shape[:2])
+    dedup_dist = 0.5 * side
+
+    # R通道缩放
+    r_channel = screenshot[:, :, 2].astype(np.float32)
+    r_scaled = np.clip((r_channel - 14.0) * (255.0 / 86.0), 0, 255).astype(np.uint8)
+
+    # 方向场响应
+    blurred = cv2.GaussianBlur(r_scaled, (5, 5), 0)
+    gx = cv2.Sobel(blurred, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(blurred, cv2.CV_32F, 0, 1, ksize=3)
+    resp = (cv2.filter2D(gx, -1, gx_t, borderType=cv2.BORDER_CONSTANT) +
+            cv2.filter2D(gy, -1, gy_t, borderType=cv2.BORDER_CONSTANT))
+
+    max_resp = resp.max()
+    if max_resp <= 0:
+        return [], r_scaled.copy()
+
+    norm_resp = resp / max_resp
+    binary = (norm_resp >= threshold).astype(np.uint8) * 255
+
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    detections = []
+    for cnt in contours:
+        if cv2.contourArea(cnt) < 10:
+            continue
+        x, y, w, h = cv2.boundingRect(cnt)
+        cx, cy = x + w // 2, y + h // 2
+        score = norm_resp[y:y+h, x:x+w].max()
+        detections.append({'center': (cx, cy), 'score': float(score), 'bbox': (x, y, w, h)})
+
+    detections.sort(key=lambda d: d['score'], reverse=True)
+    kept = []
+    for det in detections:
+        if not any((det['center'][0]-k['center'][0])**2 + (det['center'][1]-k['center'][1])**2 < dedup_dist**2 for k in kept):
+            kept.append(det)
+
+    # 模板匹配得分与过滤
+    final = []
+    for det in kept:
+        cx, cy = det['center']
+        x1, y1 = max(cx - side//2, 0), max(cy - side//2, 0)
+        x2 = min(cx + side//2, screenshot.shape[1]-1)
+        y2 = min(cy + side//2, screenshot.shape[0]-1)
+        roi = r_scaled[y1:y2, x1:x2]
+        tmpl = cv2.resize(BOBBER, (roi.shape[1], roi.shape[0]))
+        match_score = float((cv2.matchTemplate(roi, tmpl, cv2.TM_CCOEFF_NORMED)[0][0] + 1.0) / 2.0)
+        det['match_score'] = match_score
+        if det['score'] >= 0.9 and match_score >= 0.8:
+            final.append(det)
+
+    # 标记
+    marked = r_scaled.copy()
+    for det in final:
+        cx, cy = det['center']
+        x1, y1 = max(cx - side//2, 0), max(cy - side//2, 0)
+        x2 = min(cx + side//2, marked.shape[1]-1)
+        y2 = min(cy + side//2, marked.shape[0]-1)
+        cv2.rectangle(marked, (x1, y1), (x2, y2), 255, 2)
+        cv2.putText(marked, f'DF:{det["score"]:.2f}', (x1, y1-5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1)
+        cv2.putText(marked, f'MA:{det["match_score"]:.2f}', (x1, y1-20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1)
+
+    return [(d['center'][0], d['center'][1], d['score'], d['match_score']) for d in final], marked
 
 # EOF
