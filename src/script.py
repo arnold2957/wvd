@@ -3361,6 +3361,7 @@ def Factory():
                         logger.info(f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",summary = True)
                         break
             case "fishing":
+                start_time = time.time()
                 t = time.time()
                 total_time = 0
                 fish = 0
@@ -3401,7 +3402,8 @@ def Factory():
                         fish += 1
                         total_time = total_time + time.time() - t
                         t = 0
-                        logger.info(f"已完成钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{total_time:.2f}秒.", summary = True)
+                        logger.info(f"已完成钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{total_time/fish:.2f}秒.", summary = True)
+                        SaveImage(scn=scn)
                         Sleep(5)
                         continue
 
