@@ -169,25 +169,32 @@ def SaveImage(scn, name=None):
     logger.info(f"截图已保存在{file_path}中.")
     cv2.imwrite(file_path, scn)
 
-def CleanupOldImages(days=3):
-    """删除 logs 文件夹中超过指定天数的截图（.png）"""
+def CleanupOldLogFiles(days=3):
+    """删除 logs 文件夹中超过指定天数的日志文件（.txt 和 .png）"""
     import time
     import glob
 
     now = time.time()
     cutoff = now - days * 86400  # 3 天前的秒数
 
-    pattern = os.path.join(LOGS_FOLDER_NAME, "*.png")
-    for filepath in glob.glob(pattern):
-        try:
-            mtime = os.path.getmtime(filepath)
-            if mtime < cutoff:
-                os.remove(filepath)
-                logger.debug(f"已删除过期截图: {filepath}")
-        except Exception as e:
-            logger.error(f"删除过期截图失败 {filepath}: {e}")
+    # 需要清理的文件模式
+    patterns = [
+        os.path.join(LOGS_FOLDER_NAME, "*.png"),        # 截图
+        os.path.join(LOGS_FOLDER_NAME, "log_*.txt")     # 日志文件
+    ]
 
-CleanupOldImages()
+    for pattern in patterns:
+        for filepath in glob.glob(pattern):
+            try:
+                mtime = os.path.getmtime(filepath)
+                if mtime < cutoff:
+                    os.remove(filepath)
+                    logger.debug(f"已删除过期文件: {filepath}")
+            except Exception as e:
+                logger.error(f"删除过期文件失败 {filepath}: {e}")
+
+# 调用处也需修改
+CleanupOldLogFiles()
 ############################################
 CONFIG_FILE = 'config.json'
 def SaveConfigToFile(config_data):

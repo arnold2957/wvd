@@ -128,7 +128,7 @@
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R5","input swipe 650 250 650 900",1]
+            ["press","DH-R6","input swipe 650 250 650 900",1]
         ]
     },
 
@@ -923,5 +923,4 @@
         "_TYPE":"quest",
         "_TIPS": "目前尚未支持回城拿鱼饵等功能, 请在下杆界面开启本任务.\nFeatures such as returning to town to fetch bait are not yet supported; please start this task from the fishing interface."
     }
-
 }

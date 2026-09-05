@@ -3367,18 +3367,101 @@ def Factory():
                 fish = 0
                 failed_fishing = 0
                 tick = 0
+                ################
+                fishinfo = {
+                    "small":{
+                        "鲈鱼": 0,
+                        "雅罗": 0,
+                        "鲶鱼": 0,
+                        "鳟鱼": 0,
+                        "鳗鱼": 0,
+                        "杂鱼": 0,
+                        "未收录":0},
+                    "average":{
+                        "鲈鱼": 0,
+                        "雅罗": 0,
+                        "鲶鱼": 0,
+                        "鳟鱼": 0,
+                        "鳗鱼": 0,
+                        "杂鱼": 0,
+                        "未收录": 0},
+                    }
+                def CollectFishInfo(scn):
+                    nonlocal fishinfo
+                    vals = {
+                            "鲈鱼": CheckHow(scn,"fishing/鲈鱼", [[0,1100,900,150]]),
+                            "雅罗": CheckHow(scn,"fishing/雅罗", [[0,1100,900,150]]),
+                            "鲶鱼": CheckHow(scn,"fishing/鲶鱼", [[0,1100,900,150]]),
+                            "鳟鱼": CheckHow(scn,"fishing/鳟鱼", [[0,1100,900,150]]),
+                            "鳗鱼": CheckHow(scn,"fishing/鳗鱼", [[0,1100,900,150]]),
+                            "杂鱼": CheckHow(scn,"fishing/杂鱼", [[0,1100,900,150]]),
+                        }
+                    if CheckIf(scn, "fish/size_small"):
+                        if vals[best := max(vals, key=vals.get)] > 0.9:
+                            logger.info(f"获得了{best}(小)!")
+                            fishinfo["small"][best]+=1
+                        else:
+                            logger.info(f"某些无法判断的东西...")
+                            fishinfo["small"]["未收录"]+=1
+                    if CheckIf(scn, "fish/size_average"):
+                        if vals[best := max(vals, key=vals.get)] > 0.9:
+                            logger.info(f"获得了{best}(普通)!")
+                            fishinfo["average"][best]+=1
+                        else:
+                            logger.info(f"某些无法判断的东西...")
+                            fishinfo["average"]["未收录"]+=1
+                    ################       
+                    size_label = {
+                        "small": "小",
+                        "average": "普通",
+                    }
+
+                    fish_order = ["鲈鱼", "雅罗", "鲶鱼", "鳟鱼", "鳗鱼", "杂鱼", "未收录"]
+
+                    parts = []
+
+                    for fish in fish_order:
+                        for size in ("average", "small"):  # 普通在前，小在后
+                            count = fishinfo.get(size, {}).get(fish, 0)
+                            if count:
+                                parts.append(f"{fish}({size_label[size]}){count}条")
+
+                    if parts:
+                        return ", ".join(parts) + "."
+                ################
                 while 1:
                     tick += 1
                     if setting._FORCESTOPING.is_set():
                         break
 
                     scn = ScreenShot()
-                    if TryPressRetry(scn):
+                    if TryPressRetry(scn) or Press(CheckIf(scn,"totitle")):
                         logger.info("网络故障, 重试中......")
                         Sleep(1)
                         continue
 
                     if CheckIf(scn, "fishing/cast"):
+                        if CheckIf(scn,"fishing/nobait",[[530,1469,120,120]]):
+                            logger.info("没有鱼饵了...")
+                            FindCoordsOrElseExecuteFallbackAndWait("returnToTown",[[1,1],"fishing/quit","dungFlag","ReturnText"],3)
+                            FindCoordsOrElseExecuteFallbackAndWait("ItemList",[860,1150],1)
+                            pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
+                            FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
+                            pos = CheckIf(ScreenShot(),"fishing/baitbox")
+                            for i in range(70):
+                                Press(pos)
+                                Sleep(0.5)
+                            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+                            quest._EOT = [
+                                ["press","DH",["EdgeOfTown",[1,1]],1],
+                                ["press","DH-R6","input swipe 650 250 650 900",1]
+                            ]
+                            StateEoT()
+                            StateDungeon([TargetInfo("position","右上",[339,555])])
+                            Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
+                            logger.info("换鱼饵结束.")
+                            Sleep(10)
+
                         for i in range(5):
                             DeviceShell(f"input swipe 50 1200 850 1200 100")
                         for i in range(2):
@@ -3412,14 +3495,18 @@ def Factory():
                         fish += 1
                         total_time = total_time + time.time() - t
                         t = 0
-                        logger.info(f"已完成钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{total_time/fish:.2f}秒.", summary = True)
+                        info = CollectFishInfo(scn)
+                        logger.info(f"已完成钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{total_time/fish:.2f}秒.\n{info}", summary = True)
                         SaveImage(scn=scn)
                         Sleep(5)
                         continue
 
+                    Press([250,1200])
                     for i in range(40):
                         DeviceShell(f"input swipe 250 1200 850 1200 100")
-                        
+            case "test":
+                Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
+                
                     
         ##########################
         setting._FINISHINGCALLBACK()
