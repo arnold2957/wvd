@@ -3396,14 +3396,14 @@ def Factory():
                             "鳗鱼": CheckHow(scn,"fishing/鳗鱼", [[0,1100,900,150]]),
                             "杂鱼": CheckHow(scn,"fishing/杂鱼", [[0,1100,900,150]]),
                         }
-                    if CheckIf(scn, "fish/size_small"):
+                    if CheckIf(scn, "fishing/size_small"):
                         if vals[best := max(vals, key=vals.get)] > 0.9:
                             logger.info(f"获得了{best}(小)!")
                             fishinfo["small"][best]+=1
                         else:
                             logger.info(f"某些无法判断的东西...")
                             fishinfo["small"]["未收录"]+=1
-                    if CheckIf(scn, "fish/size_average"):
+                    if CheckIf(scn, "fishing/size_average"):
                         if vals[best := max(vals, key=vals.get)] > 0.9:
                             logger.info(f"获得了{best}(普通)!")
                             fishinfo["average"][best]+=1
