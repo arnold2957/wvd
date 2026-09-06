@@ -3398,14 +3398,14 @@ def Factory():
                         }
                     if CheckIf(scn, "fishing/size_small"):
                         if vals[best := max(vals, key=vals.get)] > 0.9:
-                            logger.info(f"获得了{best}(小)!")
+                            logger.info(f"获得了小{best}!")
                             fishinfo["small"][best]+=1
                         else:
                             logger.info(f"某些无法判断的东西...")
                             fishinfo["small"]["未收录"]+=1
                     if CheckIf(scn, "fishing/size_average"):
                         if vals[best := max(vals, key=vals.get)] > 0.9:
-                            logger.info(f"获得了{best}(普通)!")
+                            logger.info(f"获得了普通{best}!")
                             fishinfo["average"][best]+=1
                         else:
                             logger.info(f"某些无法判断的东西...")
@@ -3424,7 +3424,7 @@ def Factory():
                         for size in ("average", "small"):  # 普通在前，小在后
                             count = fishinfo.get(size, {}).get(fish, 0)
                             if count:
-                                parts.append(f"{fish}({size_label[size]}){count}条")
+                                parts.append(f"{size_label[size]}{fish} {count}条")
 
                     if parts:
                         return ", ".join(parts) + "."
@@ -3442,25 +3442,43 @@ def Factory():
 
                     if CheckIf(scn, "fishing/cast"):
                         if CheckIf(scn,"fishing/nobait",[[530,1469,120,120]]):
-                            logger.info("没有鱼饵了...")
-                            FindCoordsOrElseExecuteFallbackAndWait("returnToTown",[[1,1],"fishing/quit","dungFlag","ReturnText"],3)
-                            FindCoordsOrElseExecuteFallbackAndWait("ItemList",[860,1150],1)
-                            pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
-                            FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
-                            pos = CheckIf(ScreenShot(),"fishing/baitbox")
-                            for i in range(70):
-                                Press(pos)
-                                Sleep(0.5)
-                            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
-                            quest._EOT = [
-                                ["press","DH",["EdgeOfTown",[1,1]],1],
-                                ["press","DH-R6","input swipe 650 250 650 900",1]
-                            ]
-                            StateEoT()
-                            StateDungeon([TargetInfo("position","右上",[339,555])])
-                            Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
-                            logger.info("换鱼饵结束.")
-                            Sleep(10)
+                            nobait = CheckHow(scn,"fishing/nobait",[[530,1469,120,120]])
+                            eightbait = CheckHow(scn,"fishing/8bait",[[530,1469,120,120]])
+                            if nobait > eightbait:
+                                logger.info("没有鱼饵了...")
+                                RestartableSequenceExecution(
+                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit",],1)
+                                    )
+                                RestartableSequenceExecution(
+                                    lambda: StateDungeon([TargetInfo("harken","右上",None)])
+                                    )
+                                def refillBait():
+                                    FindCoordsOrElseExecuteFallbackAndWait("ItemList",[860,1150],1)
+                                    pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
+                                    FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
+                                    pos = CheckIf(ScreenShot(),"fishing/baitbox")
+                                    for i in range(70):
+                                        Press(pos)
+                                        Sleep(0.5)
+                                    FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+                                RestartableSequenceExecution(
+                                    lambda: refillBait()
+                                    )
+                                quest._EOT = [
+                                    ["press","DH",["EdgeOfTown",[1,1]],1],
+                                    ["press","DH-R6","input swipe 650 250 650 900",1]
+                                ]
+                                RestartableSequenceExecution(
+                                    lambda: StateEoT()
+                                    )
+                                RestartableSequenceExecution(
+                                    lambda: StateDungeon([TargetInfo("position","右上",[339,555])])
+                                    )
+                                RestartableSequenceExecution(
+                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
+                                    )
+                                logger.info("换鱼饵结束.")
+                                Sleep(10)
 
                         for i in range(5):
                             DeviceShell(f"input swipe 50 1200 850 1200 100")
