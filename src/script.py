@@ -3468,7 +3468,7 @@ def Factory():
                             DeviceShell(f"input swipe 850 1200 50 1200 100")
                         Sleep(1)
                         logger.info("下杆!")
-                        DeviceShell(f"input swipe 400 1200 450 1250 2250")
+                        DeviceShell(f"input swipe 400 1200 450 1250 4000")
                         t = time.time()
                         Sleep(10)
                         continue
@@ -3479,7 +3479,8 @@ def Factory():
                             failed_fishing += 1
                             Press(pos)
                             Sleep(5)
-                        fishbobber, img = Fishing_DetectBobber(CutRoI(scn,[[250,500,400,400]]))
+                        fishbobber, img = Fishing_DetectBobber(CutRoI(scn,[[250,500,400,600]]))
+                        # SaveImage(img)
                         logger.debug(fishbobber)
                         if fishbobber == []:
                             logger.info("拉杆!")
