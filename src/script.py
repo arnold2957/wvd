@@ -3368,63 +3368,43 @@ def Factory():
                 failed_fishing = 0
                 tick = 0
                 ################
-                fishinfo = {
-                    "small":{
-                        "鲈鱼": 0,
-                        "雅罗": 0,
-                        "鲶鱼": 0,
-                        "鳟鱼": 0,
-                        "鳗鱼": 0,
-                        "杂鱼": 0,
-                        "未收录":0},
-                    "average":{
-                        "鲈鱼": 0,
-                        "雅罗": 0,
-                        "鲶鱼": 0,
-                        "鳟鱼": 0,
-                        "鳗鱼": 0,
-                        "杂鱼": 0,
-                        "未收录": 0},
-                    }
+                fishinfo = {}
                 def CollectFishInfo(scn):
                     nonlocal fishinfo
-                    vals = {
+                    vals_size = {
+                            "小": CheckHow(scn,"fishing/size_small"),
+                            "普通": CheckHow(scn,"fishing/size_average"),
+                            "大": CheckHow(scn,"fishing/size_large"),
+                            }
+                    vals_category = {
                             "鲈鱼": CheckHow(scn,"fishing/鲈鱼", [[0,1100,900,150]]),
                             "雅罗": CheckHow(scn,"fishing/雅罗", [[0,1100,900,150]]),
                             "鲶鱼": CheckHow(scn,"fishing/鲶鱼", [[0,1100,900,150]]),
                             "鳟鱼": CheckHow(scn,"fishing/鳟鱼", [[0,1100,900,150]]),
                             "鳗鱼": CheckHow(scn,"fishing/鳗鱼", [[0,1100,900,150]]),
+                            "三文鱼": CheckHow(scn,"fishing/三文鱼", [[0,1100,900,150]]),
                             "杂鱼": CheckHow(scn,"fishing/杂鱼", [[0,1100,900,150]]),
                         }
-                    if CheckIf(scn, "fishing/size_small"):
-                        if vals[best := max(vals, key=vals.get)] > 0.9:
-                            logger.info(f"获得了小{best}!")
-                            fishinfo["small"][best]+=1
+                    if vals_size[match_size:=max(vals_size,key=vals_size.get)] > 0.9:
+                        if vals_category[best := max(vals_category, key=vals_category.get)] > 0.9:
+                            logger.info(f"获得了{match_size}{best}!")
+                            fishinfo.setdefault(match_size, {}).setdefault(best, 0)
+                            fishinfo[match_size][best]+=1
                         else:
                             logger.info(f"某些无法判断的东西...")
-                            fishinfo["small"]["未收录"]+=1
-                    if CheckIf(scn, "fishing/size_average"):
-                        if vals[best := max(vals, key=vals.get)] > 0.9:
-                            logger.info(f"获得了普通{best}!")
-                            fishinfo["average"][best]+=1
-                        else:
-                            logger.info(f"某些无法判断的东西...")
-                            fishinfo["average"]["未收录"]+=1
+                            fishinfo.setdefault(match_size, {}).setdefault("未收录", 0)
+                            fishinfo[match_size]["未收录"]+=1
                     ################       
-                    size_label = {
-                        "small": "小",
-                        "average": "普通",
-                    }
 
-                    fish_order = ["鲈鱼", "雅罗", "鲶鱼", "鳟鱼", "鳗鱼", "杂鱼", "未收录"]
+                    fish_order = list(vals_category.keys()) + ["未收录"]
 
                     parts = []
 
                     for fish in fish_order:
-                        for size in ("average", "small"):  # 普通在前，小在后
+                        for size in ("大", "普通", "小"):  # 普通在前，小在后
                             count = fishinfo.get(size, {}).get(fish, 0)
                             if count:
-                                parts.append(f"{size_label[size]}{fish} {count}条")
+                                parts.append(f"{size}{fish} {count}条")
 
                     if parts:
                         return ", ".join(parts) + "."
@@ -3450,10 +3430,12 @@ def Factory():
                                     lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit",],1)
                                     )
                                 RestartableSequenceExecution(
-                                    lambda: StateDungeon([TargetInfo("harken","右上",None)])
+                                    lambda: StateDungeon([TargetInfo("position","右上",[818,928])])
                                     )
                                 def refillBait():
-                                    FindCoordsOrElseExecuteFallbackAndWait("ItemList",[860,1150],1)
+                                    if CheckIf(ScreenShot(),"intoWorldMap"):
+                                        Press([50,1535])
+                                    FindCoordsOrElseExecuteFallbackAndWait("ItemList",[[860,1150]],1)
                                     pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
                                     FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
                                     pos = CheckIf(ScreenShot(),"fishing/baitbox")
