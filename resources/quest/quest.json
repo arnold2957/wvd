@@ -916,8 +916,16 @@
         "_TYPE":"quest"
     },
     "fishing":{
-        "questName":"钓鱼(测试)",
-        "questName_en_US": "Fishing(test)",
+        "questName":"钓鱼(测试)-近端",
+        "questName_en_US": "Fishing(test) - close",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
+        "_TYPE":"quest",
+        "_TIPS": "目前尚未支持回城拿鱼饵等功能, 请在下杆界面开启本任务.\nFeatures such as returning to town to fetch bait are not yet supported; please start this task from the fishing interface."
+    },
+    "fishing2":{
+        "questName":"钓鱼(测试)-远端",
+        "questName_en_US": "Fishing(test)2 - far",
         "questCategory": "最新任务",
         "questCategory_en_US": "WHATS NEW",
         "_TYPE":"quest",
