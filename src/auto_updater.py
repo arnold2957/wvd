@@ -224,12 +224,6 @@ xcopy /E /Y /Q "{unpack_dir}\\*" "."
 
 REM 启动新版本程序
 start "" "{os.path.basename(sys.argv[0])}"
-
-REM 清理临时文件
-rmdir /S /Q "__update_temp__"
-
-REM 删除自身
-del "%~f0"
     """
             with open("_update_restart.bat", "w") as f:
                 f.write(script)

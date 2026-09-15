@@ -192,8 +192,38 @@ def CleanupOldLogFiles(days=3):
                     logger.debug(f"已删除过期文件: {filepath}")
             except Exception as e:
                 logger.error(f"删除过期文件失败 {filepath}: {e}")
+def CleanupUpdateTempFiles():
+    """删除程序目录的 _update_restart.bat 和 __update_temp__ 文件夹"""
+    import sys
+    import shutil
 
-# 调用处也需修改
+    # 获取程序所在目录（兼容 PyInstaller 打包后的 exe 和普通脚本运行）
+    if getattr(sys, "frozen", False):
+        base_dir = os.path.dirname(sys.executable)     # 打包成 exe 时
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))  # 源码运行时
+
+    # 需要清理的目标
+    bat_path  = os.path.join(base_dir, "_update_restart.bat")
+    temp_dir  = os.path.join(base_dir, "__update_temp__")
+
+    # 1. 删除 _update_restart.bat
+    if os.path.isfile(bat_path):
+        try:
+            os.remove(bat_path)
+            logger.debug(f"已删除更新脚本: {bat_path}")
+        except Exception as e:
+            logger.error(f"删除更新脚本失败 {bat_path}: {e}")
+
+    # 2. 删除 __update_temp__ 文件夹（含其内容）
+    if os.path.isdir(temp_dir):
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=False)
+            logger.debug(f"已删除更新临时目录: {temp_dir}")
+        except Exception as e:
+            logger.error(f"删除更新临时目录失败 {temp_dir}: {e}")
+
+CleanupUpdateTempFiles()
 CleanupOldLogFiles()
 ############################################
 CONFIG_FILE = 'config.json'
