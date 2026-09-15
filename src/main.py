@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '2.8.0' 
+__version__ = '2.8.7' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -46,7 +46,7 @@ class AppController(tk.Tk):
         else:
             # print("调度器：上一个检查/下载任务尚未完成，跳过本次检查。")
             None
-        self.after(3600000, self.schedule_periodic_update_check)
+        self.after(1000, self.schedule_periodic_update_check)
 
     def check_queue(self):
         """处理来自AutoUpdater和其他服务的消息"""
