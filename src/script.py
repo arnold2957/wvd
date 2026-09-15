@@ -1,5 +1,4 @@
 from ppadb.client import Client as AdbClient
-from win10toast import ToastNotifier
 from enum import Enum
 import os
 import subprocess
@@ -519,7 +518,6 @@ def CutRoI(screenshot, roi):
     return main_img
 ##################################################################
 def Factory():
-    toaster = ToastNotifier()
     setting =  None
     quest = None
     runtimeContext = RuntimeContext()
@@ -1591,21 +1589,21 @@ def Factory():
             # 设置等级
             Sleep(1)
             scn = ScreenShot()
-            has_lv_1 = (CheckIf(scn,f"spellskill\skillLvl\lv1")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv1"))
+            has_lv_1 = (CheckIf(scn,rf"spellskill\skillLvl\lv1")) or (CheckIf(scn,rf"spellskill\skillLvl\s_lv1"))
             if (not has_lv_1):
                 if (skilllvl>=2):
                     logger.error(_("错误: 设定了高于1级的技能, 但并未检测到技能等级.\n 使用默认技能."))
             else:
                 if skilllvl!=1:
-                    has_lv_x = (CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")) or (CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}"))
+                    has_lv_x = (CheckIf(scn,rf"spellskill\skillLvl\lv{skilllvl}")) or (CheckIf(scn,rf"spellskill\skillLvl\s_lv{skilllvl}"))
                 else:
                     has_lv_x = has_lv_1
 
                 if not has_lv_x:
                     skilllvl = 1
                     logger.error(_("错误: 未检测到目标等级\n 使用1级技能."))
-                if not Press(CheckIf(scn,f"spellskill\skillLvl\lv{skilllvl}")):
-                    if not Press(CheckIf(scn,f"spellskill\skillLvl\s_lv{skilllvl}")):
+                if not Press(CheckIf(scn,rf"spellskill\skillLvl\lv{skilllvl}")):
+                    if not Press(CheckIf(scn,rf"spellskill\skillLvl\s_lv{skilllvl}")):
                         logger.error(_("错误: 我认为不可能发生这种情况. 请务必告诉我."))
 
             # 辅助技能
