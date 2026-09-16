@@ -100,7 +100,7 @@ class AutoUpdater():
     def check_for_updates(self):
         """执行更新检查逻辑"""
         update_url = f"https://{self.github_user}.github.io/{self.github_repo}/release.json"
-        logger.info(update_url)
+        # logger.info(update_url)
         try:
             req = Request(update_url, headers={'Cache-Control': 'no-cache'})
             with urlopen(req, timeout=10) as response:
