@@ -1761,7 +1761,7 @@ def Factory():
                 targetPos = CheckIf_ReachPosition(scn,targetInfo)
             elif target in ['harken','Bharken']:
                 targetPos = CheckIf_harkenStair(scn,targetInfo)
-            elif target.startswith("stair"):
+            elif os.path.basename(os.path.normpath(target)).startswith("stair"):
                 logger.info(_("当前目标: 楼梯{a}".format(a=target)))
                 targetPos = CheckIf_throughStair(scn,targetInfo)
             else:
@@ -1804,7 +1804,7 @@ def Factory():
         return dungState
     def StateMapSearch(targetInfo):
         normalPlace = ["harken","chest","leaveDung","position","Bharken"]
-        target = targetInfo.target
+        target = os.path.basename(os.path.normpath(targetInfo.target))
         # 地图已经打开.
         map = ScreenShot()
 
@@ -1952,7 +1952,7 @@ def Factory():
         nonlocal runtimeContext
         runtimeContext.TASK_STEP_INDEX = 0
         def TargetPointComplete():
-            logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi}")
+            logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi if targetInfoList[0].target!="chest" else ""}")
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
 

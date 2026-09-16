@@ -101,6 +101,7 @@
         "questName_en_US": "[Farm] Snow R4",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_R4",
         "_TARGETINFOLIST":[
             ["position","右上",[500,610]],
             ["position","右上",[445,290]],
@@ -119,6 +120,7 @@
         "questName_en_US": "[Farm] Snow R6",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_R6",
         "_TARGETINFOLIST":[
             ["stair_DH_R6","右上",[286,236]],
             ["position","右下",[72,972]],
@@ -138,6 +140,7 @@
         "questName_en_US": "[Farm] Snow R7 right part",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_R7",
         "_TARGETINFOLIST":[
             ["position","右下",[770,600]],
             ["position","右下",[770,1190]],
@@ -161,6 +164,7 @@
         "questName_en_US": "[Farm] Snow R7 whole",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_R7",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["harken", "右上",null]
@@ -223,6 +227,7 @@
         "questName_en_US": "[Chest] Snow Church upper",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_CG",
         "_TARGETINFOLIST":[
             ["chest","左上",null],
             ["chest","右上",null],
@@ -241,6 +246,7 @@
         "questName_en_US": "[Chest] Snow Church whole",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_CG",
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上", [816,710]],
@@ -258,6 +264,7 @@
         "questName_en_US": "[Chest]Snow Church Giant[@XX] ",
         "questCategory": "主线第四章",
         "questCategory_en_US": "Chapter 4",
+        "_FloorCheck": "stair_DH_CG",
         "_TARGETINFOLIST":[
             ["Mark_auto"]
         ],
@@ -284,7 +291,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -306,9 +313,32 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
+
+    "FFXI-4f":{
+        "_TYPE":"dungeon",
+        "questName":"[宝箱]FFXI 4F",
+        "questName_en_US": "[Elite] FFXI 4F",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "**WHAT'S NEW**",
+        "_TARGETINFOLIST":[
+            ["FFXI/stair_zone4","左上",[719,237]],
+            ["chest_auto"],
+            ["FFXI/stair_zone3","右下",[608,1241]],
+            ["position","左上",[347,340]]
+        ],
+        "_preEOTcheck":"FFXI/GCN",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
+            ["press","FFXI/ZONE3",[1,1],1]
+        ],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+    },
+
 
     "FFXI-5F-4Elite":{
         "_TYPE":"dungeon",
@@ -328,7 +358,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -348,7 +378,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -368,7 +398,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -388,7 +418,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
@@ -409,7 +439,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input - swipe 400 400 500 300",[500,1100]],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
     },
 
