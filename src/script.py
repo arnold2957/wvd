@@ -1,3 +1,5 @@
+
+from ppadb.client import Client as AdbClient
 from utils import *
 from enum import Enum
 import os
@@ -8,7 +10,6 @@ from pathlib import Path
 import numpy as np
 import copy
 import struct
-from ppadb.client import Client as AdbClient
 
 DUNGEON_TARGETS = BuildQuestReflection()
 
@@ -1952,7 +1953,7 @@ def Factory():
         nonlocal runtimeContext
         runtimeContext.TASK_STEP_INDEX = 0
         def TargetPointComplete():
-            logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi if targetInfoList[0].target!="chest" else ""}")
+            logger.info(f"任务点完成: {targetInfoList[0].target} {targetInfoList[0].roi if targetInfoList[0].target!='chest' else ''}")
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
 

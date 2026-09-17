@@ -5,4 +5,3 @@ pyinstaller
 win10toast
 loguru
 babel
-aiofiles==24.1.0
