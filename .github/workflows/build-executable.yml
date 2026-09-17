@@ -172,6 +172,13 @@ jobs:
     # RELEASE BUILD
     # ============================================================
 
+    - name: Diagnose - try import script directly
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        cd src
+        python -c "import script; print('script import OK')"
+      
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir `
