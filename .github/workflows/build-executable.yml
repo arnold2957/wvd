@@ -51,6 +51,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller
 
+    - name: Dump pip list (debug)
+      run: |
+        python --version
+        pip freeze
+
     - name: Compile translation catalogs
       run: |
         python -m babel.messages.frontend compile -d locale -D messages
