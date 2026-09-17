@@ -51,34 +51,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller
 
-    - name: Dump pip list (debug)
-      run: |
-        python --version
-        pip freeze
-
     - name: Compile translation catalogs
       run: |
         python -m babel.messages.frontend compile -d locale -D messages
 
-    - name: Build with PyInstaller (DEBUG)
-      shell: pwsh
+    - name: Build with PyInstaller
       run: |
-        pyinstaller --console --onedir --add-data "resources;resources/" --add-data "locale;locale/" src/main.py -n wvd_debug
-
-    - name: Run debug exe to capture error
-      shell: pwsh
-      continue-on-error: true
-      run: |
-        # 用 Start-Process + 超时，避免 GUI 卡住 CI
-        $p = Start-Process -FilePath ".\dist\wvd_debug\wvd_debug.exe" -NoNewWindow -PassThru -RedirectStandardOutput out.txt -RedirectStandardError err.txt
-        if (-not $p.WaitForExit(20000)) {
-          Write-Host "=== Process still running after 20s, killing it ==="
-          $p.Kill()
-        }
-        Write-Host "=== STDOUT ==="
-        Get-Content out.txt -ErrorAction SilentlyContinue
-        Write-Host "=== STDERR ==="
-        Get-Content err.txt -ErrorAction SilentlyContinue
+        pyinstaller --onedir `
+          --paths=src `
+          --add-data "resources;resources/" `
+          --add-data "locale;locale/" `
+          src/main.py -n wvd
+        Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP
       shell: pwsh
