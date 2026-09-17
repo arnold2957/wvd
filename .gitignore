@@ -2,6 +2,7 @@
 *.spec
 build/
 dist/
+.venv
 
 # 临时文件
 __pycache__/
@@ -14,7 +15,6 @@ run.bat
 run.vbs
 src/test.py
 src/chest.py
-虚拟环境创建.bat
 screenshotwhenrestart/
 
 /src/ssc - 副本.png

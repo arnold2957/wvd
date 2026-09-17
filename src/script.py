@@ -1,14 +1,14 @@
-from ppadb.client import Client as AdbClient
+from utils import *
 from enum import Enum
 import os
 import subprocess
-from utils import *
 import random
 from threading import Thread,Event
 from pathlib import Path
 import numpy as np
 import copy
 import struct
+from ppadb.client import Client as AdbClient
 
 DUNGEON_TARGETS = BuildQuestReflection()
 
@@ -1621,7 +1621,7 @@ def Factory():
                 candidates,result_image = StateCombat_DetectArrow(CutRoI(scn,[[0,61,900,863]]))
                 
                 if candidates is not None:
-                    SaveImage(result_image)
+                    # SaveImage(result_image)
                     for index, (x, y, score, label) in enumerate(candidates):
                         if index >= 3: # 只点前三
                             break
