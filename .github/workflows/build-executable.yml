@@ -23,7 +23,6 @@ jobs:
           exit 1
         }
 
-        # SemVer-compliant regex to find versions like '1.2.3' or '1.2.3-beta.1'
         $match = Select-String -Path $filePath -Pattern '__version__\s*=\s*[''"](\d+\.\d+\.\d+(-[a-zA-Z0-9.-]*)?)[''"]'
         
         if ($match -and $match.Matches.Groups.Count -gt 1) {
@@ -40,7 +39,6 @@ jobs:
           exit 1
         }
 
-    # The following steps will now always run for every push to master.
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -56,21 +54,98 @@ jobs:
         python -m babel.messages.frontend compile -d locale -D messages
 
     # ============================================================
-    # DEBUG BUILD: console version, run it to capture stderr
-    # This step does not affect the release artifact below.
+    # DEBUG SECTION - all steps here use continue-on-error
+    # so the release flow is not blocked.
     # ============================================================
-    - name: Build debug exe (console)
+
+    - name: DEBUG - Dump environment
       shell: pwsh
+      continue-on-error: true
       run: |
-        pyinstaller --console --onedir `
+        Write-Host "===== Python version ====="
+        python --version
+        Write-Host ""
+        Write-Host "===== pip freeze ====="
+        pip freeze
+        Write-Host ""
+        Write-Host "===== Project tree (depth 2) ====="
+        Get-ChildItem -Recurse -Depth 2 -Force |
+          Where-Object { $_.FullName -notmatch '\\\.git\\' -and $_.FullName -notmatch '\\\.venv\\' } |
+          Select-Object FullName
+
+    - name: DEBUG - Show src file heads
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        Write-Host "===== src/gui.py (first 30 lines) ====="
+        Get-Content ".\src\gui.py" -TotalCount 30 -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "===== src/script.py (first 30 lines) ====="
+        Get-Content ".\src\script.py" -TotalCount 30 -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "===== src/main.py (first 15 lines) ====="
+        Get-Content ".\src\main.py" -TotalCount 15 -ErrorAction SilentlyContinue
+        Write-Host ""
+        Write-Host "===== src/utils.py (first 15 lines) ====="
+        Get-Content ".\src\utils.py" -TotalCount 15 -ErrorAction SilentlyContinue
+
+    - name: DEBUG - Build console exe with verbose logging
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        pyinstaller --console --onedir --log-level DEBUG `
           --paths=src `
           --collect-submodules=ppadb `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
-          src/main.py -n wvd_debug
-        Write-Host "Debug build completed."
+          src/main.py -n wvd_debug 2>&1 | Tee-Object -FilePath build_debug.log
+        Write-Host "Debug build completed (exit code $LASTEXITCODE)."
 
-    - name: Run debug exe to capture error
+    - name: DEBUG - Dump warn file
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        $warn = ".\build\wvd_debug\warn-wvd_debug.txt"
+        if (-not (Test-Path $warn)) {
+          Write-Host "=== warn file not found: $warn ==="
+          exit 0
+        }
+        Write-Host "===== Full warn file ====="
+        Get-Content $warn
+
+    - name: DEBUG - Grep build log for script/ppadb
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        if (-not (Test-Path ".\build_debug.log")) {
+          Write-Host "=== build_debug.log not found ==="
+          exit 0
+        }
+        Write-Host "===== Lines mentioning script / ppadb / utils / adb ====="
+        Select-String -Path ".\build_debug.log" -Pattern "script|ppadb|utils|adb" |
+          ForEach-Object { $_.Line }
+
+    - name: DEBUG - List dist contents
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        Write-Host "===== dist\wvd_debug top-level ====="
+        Get-ChildItem ".\dist\wvd_debug" -ErrorAction SilentlyContinue |
+          Select-Object Name, Length
+        Write-Host ""
+        Write-Host "===== Search for 'script' files in dist ====="
+        Get-ChildItem ".\dist\wvd_debug" -Recurse -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -match "script|utils|ppadb" } |
+          Select-Object FullName
+        Write-Host ""
+        Write-Host "===== Search inside _internal (if onedir) ====="
+        if (Test-Path ".\dist\wvd_debug\_internal") {
+          Get-ChildItem ".\dist\wvd_debug\_internal" -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "script|utils|ppadb" } |
+            Select-Object FullName
+        }
+
+    - name: DEBUG - Run console exe and capture output
       shell: pwsh
       continue-on-error: true
       run: |
@@ -86,14 +161,17 @@ jobs:
           $p.Kill()
         }
         Write-Host "=== Exit code: $($p.ExitCode) ==="
-        Write-Host "=== STDOUT ==="
+        Write-Host ""
+        Write-Host "===== STDOUT ====="
         Get-Content out.txt -ErrorAction SilentlyContinue
-        Write-Host "=== STDERR ==="
+        Write-Host ""
+        Write-Host "===== STDERR ====="
         Get-Content err.txt -ErrorAction SilentlyContinue
 
     # ============================================================
-    # RELEASE BUILD: normal build for the published artifact
+    # RELEASE BUILD
     # ============================================================
+
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir `
@@ -108,7 +186,6 @@ jobs:
       shell: pwsh
       run: |
         $version = "${{ steps.extract-version.outputs.version }}"
-        # Copy changelog into the build directory before zipping
         Copy-Item -Path './CHANGES_LOG.md' -Destination './dist/wvd/' -Force
         Compress-Archive -Path ./dist/wvd/* -DestinationPath "./dist/wvd_$version.zip" -Force
         Get-ChildItem "dist/wvd_$version.zip"
@@ -126,11 +203,9 @@ jobs:
         
         $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss" -AsUTC
 
-        # 生成 release_notes.md (用于 GitHub Release)
         $releaseContent = "**Version**: {0}`n**MD5**: ``{1}```n**Build Date**: {2}" -f $version, $md5, $date
         $releaseContent | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
-        # 生成 release.json (用于 GitHub Pages)
         $releaseData = @{
           version = $version
           md5 = $md5
@@ -139,7 +214,6 @@ jobs:
           release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
         } | ConvertTo-Json
 
-        # 创建 gh-pages 目录并保存文件
         New-Item -ItemType Directory -Path gh-pages -Force
         $releaseData | Out-File -FilePath gh-pages/release.json -Encoding utf8
 
@@ -169,12 +243,10 @@ jobs:
             prerelease: true
           });
 
-    # This step will only run for stable (non-prerelease) versions
     - name: Deploy to GitHub Pages
       if: ${{ steps.extract-version.outputs.is_prerelease == 'false' }}
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./gh-pages
-        # This will overwrite the existing release.json with the new one
         keep_files: false
