@@ -59,6 +59,7 @@ jobs:
       run: |
         pyinstaller --onedir `
           --paths=src `
+          --collect-submodules=ppadb `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
           src/main.py -n wvd
