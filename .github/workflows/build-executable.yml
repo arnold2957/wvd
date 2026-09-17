@@ -55,9 +55,53 @@ jobs:
       run: |
         python -m babel.messages.frontend compile -d locale -D messages
 
+    # ============================================================
+    # DEBUG BUILD: console version, run it to capture stderr
+    # This step does not affect the release artifact below.
+    # ============================================================
+    - name: Build debug exe (console)
+      shell: pwsh
+      run: |
+        pyinstaller --console --onedir `
+          --paths=src `
+          --collect-submodules=ppadb `
+          --add-data "resources;resources/" `
+          --add-data "locale;locale/" `
+          src/main.py -n wvd_debug
+        Write-Host "Debug build completed."
+
+    - name: Run debug exe to capture error
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        $exe = ".\dist\wvd_debug\wvd_debug.exe"
+        if (-not (Test-Path $exe)) {
+          Write-Host "=== EXE not found: $exe ==="
+          exit 0
+        }
+        $p = Start-Process -FilePath $exe -NoNewWindow -PassThru `
+             -RedirectStandardOutput out.txt -RedirectStandardError err.txt
+        if (-not $p.WaitForExit(20000)) {
+          Write-Host "=== Process still running after 20s, killing it ==="
+          $p.Kill()
+        }
+        Write-Host "=== Exit code: $($p.ExitCode) ==="
+        Write-Host "=== STDOUT ==="
+        Get-Content out.txt -ErrorAction SilentlyContinue
+        Write-Host "=== STDERR ==="
+        Get-Content err.txt -ErrorAction SilentlyContinue
+
+    # ============================================================
+    # RELEASE BUILD: normal build for the published artifact
+    # ============================================================
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --add-data "resources;resources/" --add-data "locale;locale/" src/main.py -n wvd
+        pyinstaller --onedir `
+          --paths=src `
+          --collect-submodules=ppadb `
+          --add-data "resources;resources/" `
+          --add-data "locale;locale/" `
+          src/main.py -n wvd
         Write-Host "Build completed successfully."
 
     - name: Compress build artifact to ZIP
