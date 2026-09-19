@@ -931,7 +931,7 @@
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","EVENT","FFXI/EVENT_GCN",1],
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],

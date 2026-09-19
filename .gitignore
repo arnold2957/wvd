@@ -27,6 +27,7 @@ screenshotwhenrestart/
 /src/logs/
 /热力图
 /图像检测
+/中文图片
 /人物截取/
 /本地化
 *.mo
