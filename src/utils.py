@@ -255,9 +255,11 @@ def GetOneVarInGeneralConfig(var, default_value):
     return default_value
 
 ############################################
+LANGUAGE_SCRIPT = GetOneVarInGeneralConfig('LANGUAGE_SCRIPT', 'zh_CN')
+LANGUAGE_GAME = GetOneVarInGeneralConfig('LANGUAGE_GAME', 'en_US')
+
 localedir = ResourcePath("locale")
-LANGUAGE = GetOneVarInGeneralConfig('LANGUAGE', "zh_CN")
-trans = gettext.translation('messages', localedir, languages=[LANGUAGE], fallback=True)
+trans = gettext.translation('messages', localedir, languages=[LANGUAGE_SCRIPT], fallback=True)
 trans.install()
 _ = trans.gettext
 
@@ -375,11 +377,11 @@ def BuildQuestReflection():
         seen_names = set()
         
         for quest_code, quest_info in data.items():
-            quest_name = quest_info.get(f"questName_{LANGUAGE}", quest_info["questName"])
+            quest_name = quest_info.get(f"questName_{LANGUAGE_SCRIPT}", quest_info["questName"])
             if quest_name in seen_names:
                 raise ValueError(f"Duplicate questName found: '{quest_name}'")
             seen_names.add(quest_name)
-            category = quest_info.get(f"questCategory_{LANGUAGE}", quest_info["questCategory"])
+            category = quest_info.get(f"questCategory_{LANGUAGE_SCRIPT}", quest_info["questCategory"])
             quest_reflect_map.setdefault(category, {})[quest_name] = quest_code
 
         sorted_categories = sorted(
@@ -399,32 +401,46 @@ def BuildQuestReflection():
         raise FileNotFoundError(f"{e}")
 
 ###########################################
-IMAGE_FOLDER = fr'resources/images/'
+IMAGE_FOLDER = fr'resources/images'
+
+def GetImageLanguageCandidates():
+    candidates = []
+    for lang in (LANGUAGE_GAME, 'common'): #, 'en_US'):
+        if lang and lang not in candidates:
+            candidates.append(lang)
+    return candidates
+
 def LoadTemplateImage(shortPathOfTarget):
     logger.debug(f"加载图片: {shortPathOfTarget}")
     image_filename = f"{shortPathOfTarget}.png"
+    candidates = GetImageLanguageCandidates()
 
-    resource_path = ResourcePath(os.path.join(IMAGE_FOLDER, image_filename))
-    try:
-        return LoadImage(resource_path)
-    except (FileNotFoundError, OSError, Exception) as e:
-        logger.debug(f"资源路径未找到 {image_filename}: {e}，尝试 mod 目录")
-
-    mod_path = os.path.join('mod', image_filename)
-    if os.path.isfile(mod_path):
-        return LoadImage(mod_path)
+    for lang in candidates:
+        resource_path = ResourcePath(os.path.join(IMAGE_FOLDER, lang, image_filename))
+        if os.path.isfile(resource_path):
+            if (lang != LANGUAGE_GAME) and (lang != 'common'):
+                logger.warning(f"图片 {shortPathOfTarget} 在语言 '{lang}' 下找到，但在当前语言 '{LANGUAGE_GAME}' 下未找到。")
+            img = LoadImage(resource_path)
+            if img is not None:
+                return img
 
     raise FileNotFoundError(f"图片 {shortPathOfTarget} 不可用")
 
-def reflectImage(folder):
-    pattern = os.path.join(IMAGE_FOLDER, folder, '*.png')
+def reflectImage(folder, lang=LANGUAGE_GAME):
+    pattern = os.path.join(IMAGE_FOLDER, lang, folder, '*.png')
     full_pattern = ResourcePath(pattern)
     png_files = glob.glob(full_pattern)
     img = sorted([os.path.splitext(os.path.basename(f))[0] for f in png_files])
     return img
 
+# 只扫描当前语言目录: resources/images/{LANGUAGE}/dialogueChoices/*.png
 DIALOG_OPTION_IMAGE_LIST = reflectImage('dialogueChoices')
-CHAR_LIST = sorted(list({img.split('_')[0] for img in reflectImage(os.path.join('spellskill', 'char'))}))
+
+# 只扫描 common 目录: resources/images/common/spellskill/char/*.png
+CHAR_LIST = sorted(list({
+    img.split('_')[0]
+    for img in reflectImage(os.path.join('spellskill', 'char'), lang='common')
+}))
 
 ###########################################
 class Tooltip:

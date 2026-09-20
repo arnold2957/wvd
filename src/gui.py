@@ -743,6 +743,60 @@ class ConfigPanelApp(tk.Toplevel):
         self.button_save_emu_index = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
         self.button_save_emu_index.grid(row=0, column=2)
 
+        # --- GUI语言 ---
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        
+        ttk.Label(frame_row, text=_("本脚本的语言:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        
+        self.lang_gui_combobox = ttk.Combobox(
+            frame_row, 
+            textvariable=self.LANGUAGE_SCRIPT, 
+            values=["zh_CN", "en_US"], 
+            state="readonly", 
+            width=10
+        )
+        self.lang_gui_combobox.grid(row=0, column=1, padx=(0, 5), sticky=tk.W)
+        
+        def on_gui_lang_change(event=None):
+            self.save_config()
+            from tkinter import messagebox
+            messagebox.showinfo(_("提示"), _("GUI语言设置已保存，请重启脚本后生效。"))
+
+        self.lang_gui_combobox.bind("<<ComboboxSelected>>", on_gui_lang_change)
+        
+        self.button_save_gui_lang = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
+        self.button_save_gui_lang.grid(row=0, column=2, sticky=tk.W)
+
+
+        # --- 游戏语言 ---
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        
+        ttk.Label(frame_row, text=_("游戏内的语言:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        
+        self.lang_game_combobox = ttk.Combobox(
+            frame_row, 
+            textvariable=self.LANGUAGE_GAME, 
+            values=["zh_CN", "en_US"], # 请根据你脚本实际支持的游戏语言修改这里的值
+            state="readonly", 
+            width=10
+        )
+        self.lang_game_combobox.grid(row=0, column=1, padx=(0, 5), sticky=tk.W)
+        
+        def on_game_lang_change(event=None):
+            self.save_config()
+            from tkinter import messagebox
+            # 游戏语言通常影响OCR或图像识别，可能不需要重启GUI，但需要提醒用户
+            messagebox.showinfo(_("提示"), _("游戏语言设置已保存。\n请确保模拟器内的游戏语言与此设置一致，建议重启脚本以加载对应的识别库。"))
+
+        self.lang_game_combobox.bind("<<ComboboxSelected>>", on_game_lang_change)
+        
+        self.button_save_game_lang = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
+        self.button_save_game_lang.grid(row=0, column=2, sticky=tk.W)
+
 
         # ==========================================
         # 分组 2: 目标
@@ -1699,6 +1753,10 @@ class ConfigPanelApp(tk.Toplevel):
             self.AM_switch,
             self.farm_target_category_combo,
             self.reassemble_party_check,
+            self.lang_game_combobox,
+            self.lang_gui_combobox,
+            self.button_save_emu_index,
+            self.button_save_gui_lang
         ]
 
         if state == tk.DISABLED:

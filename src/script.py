@@ -42,7 +42,8 @@ CONFIG_VAR_LIST = [
                                                                         "skill_settings": []
                                                                     },]],
             ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar, _("全自动战斗")],
-            ["GENERAL",   "LANGUAGE",                               tk.StringVar, "zh_CN"],
+            ["GENERAL",   "LANGUAGE_SCRIPT",                        tk.StringVar, "zh_CN"],
+            ["GENERAL",   "LANGUAGE_GAME",                          tk.StringVar, "en_US"],
             ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar, None],
             ["GENERAL",   "AM_REFRESH_TIME",                        tk.StringVar, None],
 
@@ -1161,7 +1162,11 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
-        pos = FindCoordsOrElseExecuteFallbackAndWait([target,"openworldmap"],[swipe,press_any_key],1)
+        pos = FindCoordsOrElseExecuteFallbackAndWait([target,"openworldmap", "dungflag"],[swipe,press_any_key],1)
+
+        if CheckIf(scn:=ScreenShot(), "dungflag"):
+            # 在特别罕见的情况下会出现这种情况. 已经在副本里了 直接结束.
+            return
 
         # 现在已经确保了可以看见target, 那么确保可以点击成功
         Sleep(1)
@@ -1555,15 +1560,15 @@ def Factory():
             runtimeContext._TIME_COMBAT = time.time()
         
         def AutoThisChar():
-            Press([850,1100])
+            Press([850,1090])
             Sleep(0.5)
-            Press([850,1100])
+            Press([850,1090])
             Sleep(2)
             return
         def ActiveAutoCombat():
             scn = ScreenShot()
             if CheckIf(scn,"spellskill/CombatAutoDisable",[[842, 1124-42, 35, 13]]):
-                Press([850,1100])
+                Press([850,1090])
             Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl, supportTarget):
