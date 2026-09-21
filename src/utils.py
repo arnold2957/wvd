@@ -442,6 +442,7 @@ CHAR_LIST = sorted(list({
     for img in reflectImage(os.path.join('spellskill', 'char'), lang='common')
 }))
 
+CHAR_DISPLAY_TO_ID = {_(c): c for c in CHAR_LIST}
 ###########################################
 class Tooltip:
     def __init__(self, widget, text):

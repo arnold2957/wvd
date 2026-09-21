@@ -1707,9 +1707,12 @@ def Factory():
             role_var = skill.get("role_var")
             if not role_var:  # 如果 role_var 为空则跳过
                 continue
-            for candidate in [role_var, role_var + "_sp", role_var + "_alt"]:
+            base_id = role_var if role_var in CHAR_LIST else CHAR_DISPLAY_TO_ID.get(role_var)
+            if not base_id:
+                continue
+            for candidate in [base_id, base_id + "_sp", base_id + "_alt"]:
                 # 构造图片完整路径并检查是否存在
-                img_path = os.path.join(IMAGE_FOLDER, "spellskill", "char", f"{candidate}.png")
+                img_path = os.path.join(IMAGE_FOLDER, "common","spellskill", "char", f"{candidate}.png")
                 full_path = ResourcePath(img_path)
                 if os.path.exists(full_path):
                     match_rate = CheckHow(scn, f"spellskill/char/{candidate}", [[87,55,73,51]])

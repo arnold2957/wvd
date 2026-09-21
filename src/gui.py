@@ -167,7 +167,7 @@ class SkillConfigPanel(CollapsibleSection):
         self.default_row_data = {}
         
         # 常量
-        self.ROLE_LIST = CHAR_LIST
+        self.ROLE_DISPLAY_LIST = list(CHAR_DISPLAY_TO_ID.keys())
         self.SKILL_OPTIONS = [_("左上技能"), _("右上技能"), _("左下技能"), _("右下技能"), _("防御")]
         self.TARGET_OPTIONS = [_("左上角色"), _("中上角色"), _("右上角色"), _("左下角色"), _("右下角色"), _("中下角色"), _("不可用")]
         self.SKILL_LVL = [1, 2, 3, 4, 5, 6, 7]
@@ -270,10 +270,10 @@ class SkillConfigPanel(CollapsibleSection):
                     
                     # 设置配置值
                     role = setting.get('role_var', '')
-                    if role in self.ROLE_LIST:
-                        row_data['role_var'].set(role)
+                    if role in CHAR_LIST:
+                        row_data['role_var'].set(_(role))
                     else:
-                        row_data['role_var'].set(self.ROLE_LIST[0])
+                        row_data['role_var'].set(self.ROLE_DISPLAY_LIST[0])
                         
                     row_data['skill_var'].set(setting.get('skill_var', _("左上技能")))
                     row_data['target_var'].set(setting.get('target_var', _('低生命值')))
@@ -342,8 +342,10 @@ class SkillConfigPanel(CollapsibleSection):
             role_var.set(_("默认"))
             role_cb = ttk.Combobox(row_frame, textvariable=role_var, width=8, state="disabled")
         else:
-            role_var.set(self.ROLE_LIST[0])
-            role_cb = ttk.Combobox(row_frame, textvariable=role_var, values=self.ROLE_LIST, width=8, state="readonly")
+            role_var.set(self.ROLE_DISPLAY_LIST[0])
+            role_cb = ttk.Combobox(row_frame, textvariable=role_var,
+                           values=self.ROLE_DISPLAY_LIST,
+                           width=8, state="readonly")
         role_cb.grid(row=0, column=0, padx=(0, 5), sticky=tk.W)
 
         skill_cb = ttk.Combobox(row_frame, textvariable=skill_var, values=self.SKILL_OPTIONS, width=7, state="readonly")
@@ -426,7 +428,7 @@ class SkillConfigPanel(CollapsibleSection):
         # 只添加自定义行，不包含默认行
         for row in self.custom_rows_data:
             item = {
-                'role_var': row['role_var'].get(),
+                'role_var': CHAR_DISPLAY_TO_ID.get(row['role_var'].get(), row['role_var'].get()), 
                 'skill_var': row['skill_var'].get(),
                 'target_var': row['target_var'].get(),
                 'freq_var': row['freq_var'].get(),
