@@ -1136,7 +1136,7 @@ def Factory():
         nonlocal runtimeContext
         FindCoordsOrElseExecuteFallbackAndWait(["intoWorldMap","dungFlag","worldmapflag","openworldmap"],["startdownload","closePartyInfo","closePartyInfo_fortress","closePartyInfo_waterway",[1,1]],1)
         
-        if CheckIf(scn:=ScreenShot(), "dungflag"):
+        if CheckIf(scn:=ScreenShot(), "dungFlag",[[833-50, 287-50,100,100]]):
             # 如果已经在副本里了 直接结束.
             # 因为该函数预设了是从城市开始的.
             return
@@ -1379,7 +1379,7 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait(["Inn","dungFlag"],[city,[1,1]],1)
                     if CheckIf(scn:=ScreenShot(),"Inn"):
                         return State.Inn,DungeonState.Quit, screen
-                    elif CheckIf(scn,"dungFlag"):
+                    elif CheckIf(scn,"dungFlag",[[833-50, 287-50,100,100]]):
                         return State.Dungeon,None, screen
 
             if (CheckIf(screen,"Inn")):
@@ -1567,8 +1567,24 @@ def Factory():
             return
         def ActiveAutoCombat():
             scn = ScreenShot()
-            if CheckIf(scn,"spellskill/CombatAutoDisable",[[842, 1124-42, 35, 13]]):
-                Press([850,1090])
+
+            roi = CutRoI(scn, [[842, 1124 - 42, 35, 13]])
+
+            # 分别计算与两张模板的匹配度
+            score_enable = CheckHow(roi, "spellskill/CombatAutoEnable")
+            score_disable   = CheckHow(roi, "spellskill/CombatAutoDisable")
+
+            logger.debug(f"自动战斗图标匹配: enable={score_enable:.4f}, disable={score_disable:.4f}")
+
+            # 谁高就是谁
+            if score_enable > score_disable:
+                # 黄色图 —— 假设为自动战斗已开启
+                logger.debug("自动战斗已开启（黄色图标）")
+            else:
+                # 灰白图 —— 自动战斗禁用，点击开启
+                logger.debug("自动战斗未开启（灰白图标），点击开启")
+                Press([850, 1090])
+
             Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl, supportTarget):
@@ -1819,7 +1835,7 @@ def Factory():
 
         if CheckIf(map,"tooPoorToReadTheMap"):
             logger.info(_("在暴风雪中."))
-            Press(CheckIf(map,"dungFlag"))
+            Press(CheckIf(map,"dungFlag",[[833-50, 287-50,100,100]]))
             return StateMoving_CheckStop(),"FAIL"
     
         if not CheckIf(map,"mapFlag"):
@@ -1939,7 +1955,7 @@ def Factory():
             
             # 在图像识别的时候保持截图是最新的
             scn = ScreenShot()
-            if CheckIf(scn,"dungFlag"):
+            if CheckIf(scn,"dungFlag",[[833-50, 287-50,100,100]]):
                 return DungeonState.Dungeon
             if CheckIf(scn, "ambush"):
                 logger.info("开箱子然后遇到怪物还是善恶, 你这什么运气啊.")
@@ -2069,7 +2085,7 @@ def Factory():
                         while 1:
                             counter_trychar += 1
                             scn=ScreenShot()
-                            if (CheckIf(scn,"dungflag") and not CheckIf(scn,"mapFlag")) and (counter_trychar <=30):
+                            if (CheckIf(scn,"dungFlag",[[833-50, 287-50,100,100]]) and not CheckIf(scn,"mapFlag")) and (counter_trychar <=30):
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(2)
                                 continue
