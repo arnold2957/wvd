@@ -1406,7 +1406,7 @@ def Factory():
                     return IdentifyState()
                 if Press(CheckIf(screen, "sandman_recover")):
                     return IdentifyState()
-                if (CheckIf(screen,"cursedWheel_timeLeap")):
+                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap")):
                     if (setting.ACTIVE_BEG_MONEY):
                         setting._MSGQUEUE.put(("turn_to_7000G",""))
                         raise SystemExit
