@@ -714,9 +714,9 @@ def Factory():
         underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
-            SaveImage(search_area,"origin.png")
+            SaveImage(search_area,prefix = "origin")
             cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            SaveImage(search_area,"matched.png")
+            SaveImage(search_area,prefix = "matched")
 
         if roi is None or len(roi) == 0:
             pos=[max_loc[0] + template.shape[1]//2,
@@ -889,12 +889,12 @@ def Factory():
             pos = [roi[0][0] + cx, roi[0][1] + cy]
 
         if outputresult:
-            SaveImage(search_area,"origin.png")
+            SaveImage(search_area,prefix = "origin")
             marked = search_area.copy()
             cv2.rectangle(marked, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(marked, f'{score:.2f}', (x, y - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            SaveImage(marked,"matched.png")
+            SaveImage(marked,prefix = "matched")
 
         return pos, score
     
@@ -902,7 +902,7 @@ def Factory():
         pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult)
 
         if (not max_val) or (max_val < 0.8):
-            logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val*100)))
+            logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val)))
             return None
         else:
             logger.debug(_("样式匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget, b=max_val*100,c=pos)))
@@ -1452,7 +1452,7 @@ def Factory():
                     return IdentifyState()
                 if Press(CheckIf(screen, "sandman_recover")):
                     return IdentifyState()
-                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]])):
+                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]],True)):
                     if (setting.ACTIVE_DIGGING):
                         setting._MSGQUEUE.put(("turn_to_dig",""))
                         raise SystemExit
@@ -1895,7 +1895,7 @@ def Factory():
             return None,"FAIL" # 发生了其他错误
 
         if quest._FloorCheck is not None:
-            if not CheckShapeIf(map,quest._FloorCheck):
+            if not CheckShapeIf(map,quest._FloorCheck, None, True):
                 logger.error("楼层错误.")
                 return None, "WRONGFLOOR"
 
@@ -2141,7 +2141,7 @@ def Factory():
                                 Press([36+(counter_trychar%3)*286,1425])
                                 Sleep(2)
                                 continue
-                            elif CheckIf(scn:=ScreenShot(),"trait"):
+                            elif CheckIf(scn:=ScreenShot(),"trait",[[20, 1282, 141, 98]]):
                                 if CheckIf(scn,"story", [[676,800,220,108]]):
                                     Press([725,850])
                                 else:

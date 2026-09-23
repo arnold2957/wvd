@@ -160,11 +160,13 @@ def LoadImage(path):
         return None
     return img
 
-def SaveImage(scn, name=None):
+def SaveImage(scn, name=None, prefix = None):
     if not name:
         name = datetime.now().strftime('%H%M%S.%f')[:-3]
     if not name.endswith(".png"):
         name = f"{name}.png"
+    if prefix:
+        name = f"{prefix}_{name}"
     file_path = os.path.join(LOGS_FOLDER_NAME, name)
     logger.info(f"截图已保存在{file_path}中.")
     cv2.imwrite(file_path, scn)
