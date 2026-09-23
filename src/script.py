@@ -863,52 +863,6 @@ def Factory():
                 logger.info(_("哈肯搜索, 已找到哈肯."))
                 return pos
             return None
-
-    def _checkshape(screenImage, temp, roi=None, outputresult=False, name = None):
-        screenshot = screenImage.copy()
-        search_area = CutRoI(screenshot, roi)
-
-        if search_area.ndim == 3:
-            channel = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
-        else:
-            channel = search_area
-
-        kept, _ = checkShape(channel, temp)
-
-        if not kept:
-            if outputresult:
-                SaveImage(search_area,prefix = f"checkshape_{name}_")
-            return (None, None)
-
-        best = max(kept, key=lambda d: d['score'])
-        score = float(best['score'])
-        cx, cy = best['center']
-        x, y, w, h = best['bbox']
-
-        if roi is None or len(roi) == 0:
-            pos = [cx, cy]
-        else:
-            pos = [roi[0][0] + cx, roi[0][1] + cy]
-
-        if outputresult:
-            SaveImage(search_area,prefix = f"checkshape_{name}_origin")
-            marked = search_area.copy()
-            cv2.rectangle(marked, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(marked, f'{score:.2f}', (x, y - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            SaveImage(marked,prefix = f"checkshape_{name}_matched")
-
-        return pos, score
-    
-    def CheckShapeIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult, shortPathOfTarget)
-
-        if (not max_val) or (max_val < 0.8):
-            logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val)))
-            return None
-        else:
-            logger.debug(_("样式匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget, b=max_val*100,c=pos)))
-            return pos
       
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
@@ -1365,7 +1319,7 @@ def Factory():
                 ("mapFlag",       DungeonState.Map),
                 ]
             for pattern, state in identifyConfig:
-                if CheckIf(screen, pattern, None, True):
+                if CheckIf(screen, pattern):
                     return State.Dungeon, state, screen
                 
             if StateCombatCheck(screen):
@@ -1882,7 +1836,7 @@ def Factory():
             lastscreen = screen
         return dungState
     def StateMapSearch(targetInfo):
-        normalPlace = ["harken","chest","leaveDung","position","Bharken"]
+        normalPlace = ["harken","chest","position","Bharken"]
         target = os.path.basename(os.path.normpath(targetInfo.target))
         # 地图已经打开.
         map = ScreenShot()
@@ -1897,7 +1851,7 @@ def Factory():
             return None,"FAIL" # 发生了其他错误
 
         if quest._FloorCheck is not None:
-            if not CheckShapeIf(map,quest._FloorCheck, None, True):
+            if not CheckIf(map,quest._FloorCheck):
                 logger.error("楼层错误.")
                 return None, "WRONGFLOOR"
 
@@ -2219,7 +2173,7 @@ def Factory():
                         if targetInfoList[0] and (targetInfoList[0].target =="stay"):
                             Sleep(2)
                             return None
-                        for tar in ["chest_auto","mark_auto", "dungFlag"]:
+                        for tar in ["chest_auto","mark_auto", "leaveDung"]:
                             if targetInfoList[0] and (targetInfoList[0].target == tar):                        
                                 lastscreen = ScreenShot()
                                 if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
@@ -2271,7 +2225,7 @@ def Factory():
                         case "FAIL":
                             pass
                         case "WRONGFLOOR":
-                            targetInfoList.insert(0, TargetInfo("dungFlag"))
+                            targetInfoList.insert(0, TargetInfo("leaveDung"))
                             # targetInfoList是复制的临时变量, 也就是每次退出stateDungeon就会重置, 因此可以放心修改.
                             # 由于错误楼层可以确信是在哈肯面前, 所以可以直接退出.
 
@@ -3501,7 +3455,7 @@ def Factory():
                         return ", ".join(parts) + "."
                 def refillBait(): # 从钓鱼界面退出并回城并更换鱼饵.
                     Press([516, 1529])
-                    if CheckShapeIf(ScreenShot(),"fishing/nobaitinbag",[[121, 1081, 100, 100]]):
+                    if CheckIf(ScreenShot(),"fishing/nobaitinbag",[[121, 1081, 100, 100]]):
                         logger.info("真的没有了.")
                         RestartableSequenceExecution(
                             lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit","return",],1)
