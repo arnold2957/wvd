@@ -489,203 +489,159 @@ class Tooltip:
             self.tooltip_window.destroy()
             self.tooltip_window = None
 ###########################################
-MASK3 = LoadTemplateImage("spellskill/arrow/mask3") # 边缘
-if MASK3.ndim == 3:
-    MASK3 = cv2.cvtColor(MASK3, cv2.COLOR_BGR2GRAY)
-    MASK3 = MASK3.astype(np.float32) / 255.0
-    
-def StateCombat_DetectArrow(screenshot):
-    """
-    使用手绘三角形模板匹配检测图像中的三角形区域。
+SHAPE_TEMPLATE = {}
+def registerTemplate(path, to_gray=True):
+    img = LoadTemplateImage(path)
 
-    参数:
-        mask3: 灰度模板图像（白色内部，黑色外部），用于提取边缘方向场
-        screenshot: BGR彩色测试图像
-        threshold: 归一化响应的阈值，范围[0,1]，默认0.5
+    if to_gray and img.ndim == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    返回:
-        results: 去重后的检测结果列表，每个元素为 (center_x, center_y, score, channel_label)
-        marked_img: 在原图上标记了所有检测框的图像
-    """
+    if img.dtype == np.uint8:
+        gray = img
+    else:
+        img = img.astype(np.float32)
+        if img.max() <= 1.0:
+            img = img * 255.0
+        gray = np.clip(img, 0, 255).astype(np.uint8)
+    tmpl_f = gray.astype(np.float32) / 255.0
 
-    threshold = 0.5
+    gx_t = cv2.Sobel(tmpl_f, cv2.CV_32F, 1, 0, ksize=3)
+    gy_t = cv2.Sobel(tmpl_f, cv2.CV_32F, 0, 1, ksize=3)
+    mag = np.sqrt(gx_t ** 2 + gy_t ** 2) + 1e-6
 
-    # ---------- 模板方向场 ----------
-    gx_t = cv2.Sobel(MASK3, cv2.CV_32F, 1, 0, ksize=3)
-    gy_t = cv2.Sobel(MASK3, cv2.CV_32F, 0, 1, ksize=3)
-    mag_t = np.sqrt(gx_t**2 + gy_t**2) + 1e-6
-    gx_t /= mag_t
-    gy_t /= mag_t
+    SHAPE_TEMPLATE[path] = {
+        'gray':  gray,
+        'gx_t':  gx_t / mag,
+        'gy_t':  gy_t / mag,
+        'side':  min(gray.shape[:2]),
+        'shape': gray.shape[:2],
+        'src':   img,
+    }
+    return SHAPE_TEMPLATE[path]
+def loadShapeTemplate(name):
+    if name in SHAPE_TEMPLATE:
+        return SHAPE_TEMPLATE[name]
+    else:
+        return registerTemplate(name)
+def checkShape(channel, tmpl_name,
+               threshold=0.5, min_area=10.0, dedup_dist=None):
+    t = loadShapeTemplate(tmpl_name)
+    gx_t, gy_t = t['gx_t'], t['gy_t']
 
-    mask_h, mask_w = MASK3.shape[:2]
-    dedup_dist = 0.5 * min(mask_h, mask_w)   # 去重距离阈值（模板短边一半）
+    if dedup_dist is None:
+        dedup_dist = 0.5 * t['side']
 
-    # ---------- 准备测试通道：灰度和R通道 ----------
-    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-    _, _, r_channel = cv2.split(screenshot)   # BGR顺序，R是第三个
-    channel_data = [('Grey', gray), ('R', r_channel)]
-
-    all_detections = []   # 存储所有通道的检测结果（字典形式）
-
-    for label, ch in channel_data:
-        # 高斯模糊（抑制噪声，使梯度方向稳定）
-        blurred = cv2.GaussianBlur(ch, (5, 5), 0)
-
-        # 计算梯度
-        gx = cv2.Sobel(blurred, cv2.CV_32F, 1, 0, ksize=3)
-        gy = cv2.Sobel(blurred, cv2.CV_32F, 0, 1, ksize=3)
-
-        # 方向内积响应
-        resp_x = cv2.filter2D(gx, -1, gx_t, borderType=cv2.BORDER_CONSTANT)
-        resp_y = cv2.filter2D(gy, -1, gy_t, borderType=cv2.BORDER_CONSTANT)
-        response = resp_x + resp_y
-
-        # 按该通道最大响应归一化
-        max_val = response.max()
-        if max_val <= 0:
-            continue
-        norm_response = response / max_val
-
-        # 阈值过滤
-        binary = (norm_response >= threshold).astype(np.uint8) * 255
-
-        # 查找轮廓
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area < 10:   # 过滤小面积噪声
-                continue
-
-            x, y, w, h = cv2.boundingRect(cnt)
-            center_x = x + w // 2
-            center_y = y + h // 2
-
-            # 取该矩形区域内最大归一化响应作为得分
-            roi = norm_response[y:y+h, x:x+w]
-            score = roi.max()
-
-            # 用字典保存检测信息
-            all_detections.append({
-                'center': (center_x, center_y),
-                'score': score,
-                'label': label,
-                'bbox': (x, y, w, h)
-            })
-
-    # 按得分降序排序
-    all_detections.sort(key=lambda d: d['score'], reverse=True)
-
-    # 去重（基于中心距离的非极大值抑制）
-    kept_detections = []
-    for det in all_detections:
-        cx, cy = det['center']
-        duplicate = False
-        for kept in kept_detections:
-            kx, ky = kept['center']
-            if (cx - kx) ** 2 + (cy - ky) ** 2 < dedup_dist ** 2:
-                duplicate = True
-                break
-        if not duplicate:
-            kept_detections.append(det)
-
-    # ---------- 在原图上标记结果 ----------
-    marked_img = screenshot.copy()
-    for det in kept_detections:
-        x, y, w, h = det['bbox']
-        score = det['score']
-        label = det['label']
-        cv2.rectangle(marked_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        text = f'{label}:{score:.2f}'
-        cv2.putText(marked_img, text, (x, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-
-    # 转换为要求的输出格式（元组列表）
-    results = [(det['center'][0], det['center'][1], det['score'], det['label']) for det in kept_detections]
-
-    return results, marked_img
-
-##############
-BOBBER = LoadTemplateImage("fishing/bobber") # 边缘
-if BOBBER.ndim == 3:
-    BOBBER = cv2.cvtColor(BOBBER, cv2.COLOR_BGR2GRAY)
-
-def Fishing_DetectBobber(screenshot):
-    # 参数
-    threshold=0.5
-
-    # 模板方向场
-    mask_float = BOBBER.astype(np.float32) / 255.0
-    gx_t = cv2.Sobel(mask_float, cv2.CV_32F, 1, 0, ksize=3)
-    gy_t = cv2.Sobel(mask_float, cv2.CV_32F, 0, 1, ksize=3)
-    mag_t = np.sqrt(gx_t**2 + gy_t**2) + 1e-6
-    gx_t, gy_t = gx_t / mag_t, gy_t / mag_t
-
-    side = min(BOBBER.shape[:2])
-    dedup_dist = 0.5 * side
-
-    # R通道缩放
-    r_channel = screenshot[:, :, 2].astype(np.float32)
-    r_scaled = np.clip((r_channel - 14.0) * (255.0 / 86.0), 0, 255).astype(np.uint8)
-
-    # 方向场响应
-    blurred = cv2.GaussianBlur(r_scaled, (5, 5), 0)
+    blurred = cv2.GaussianBlur(channel, (5, 5), 0)
     gx = cv2.Sobel(blurred, cv2.CV_32F, 1, 0, ksize=3)
     gy = cv2.Sobel(blurred, cv2.CV_32F, 0, 1, ksize=3)
+
     resp = (cv2.filter2D(gx, -1, gx_t, borderType=cv2.BORDER_CONSTANT) +
             cv2.filter2D(gy, -1, gy_t, borderType=cv2.BORDER_CONSTANT))
 
-    max_resp = resp.max()
-    if max_resp <= 0:
-        return [], r_scaled.copy()
+    max_val = resp.max()
+    if max_val <= 0:
+        return [], None
 
-    norm_resp = resp / max_resp
+    norm_resp = resp / max_val
     binary = (norm_resp >= threshold).astype(np.uint8) * 255
-
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     detections = []
     for cnt in contours:
-        if cv2.contourArea(cnt) < 10:
+        if cv2.contourArea(cnt) < min_area:
             continue
         x, y, w, h = cv2.boundingRect(cnt)
         cx, cy = x + w // 2, y + h // 2
-        score = norm_resp[y:y+h, x:x+w].max()
-        detections.append({'center': (cx, cy), 'score': float(score), 'bbox': (x, y, w, h)})
+        score = float(norm_resp[y:y + h, x:x + w].max())
+        detections.append({'center': (cx, cy), 'score': score, 'bbox': (x, y, w, h)})
 
     detections.sort(key=lambda d: d['score'], reverse=True)
     kept = []
     for det in detections:
-        if not any((det['center'][0]-k['center'][0])**2 + (det['center'][1]-k['center'][1])**2 < dedup_dist**2 for k in kept):
+        cx, cy = det['center']
+        if not any((cx - k['center'][0]) ** 2 + (cy - k['center'][1]) ** 2 < dedup_dist ** 2
+                   for k in kept):
             kept.append(det)
 
-    # 模板匹配得分与过滤
+    return kept, norm_resp
+
+def StateCombat_DetectArrow(screenshot):
+    t = loadShapeTemplate("spellskill/arrow/mask3")
+    dedup_dist = 0.5 * t['side']
+
+    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    r_channel = screenshot[:, :, 2]
+    channel_data = [('Grey', gray), ('R', r_channel)]
+
+    all_detections = []
+    for label, ch in channel_data:
+        dets, _ = checkShape(ch, "spellskill/arrow/mask3",
+                             threshold=0.5, min_area=10,
+                             dedup_dist=dedup_dist)
+        for d in dets:
+            d['label'] = label
+            all_detections.append(d)
+
+    all_detections.sort(key=lambda d: d['score'], reverse=True)
+    kept = []
+    for det in all_detections:
+        cx, cy = det['center']
+        if not any((cx - k['center'][0]) ** 2 + (cy - k['center'][1]) ** 2 < dedup_dist ** 2
+                   for k in kept):
+            kept.append(det)
+
+    marked_img = screenshot.copy()
+    for det in kept:
+        x, y, w, h = det['bbox']
+        cv2.rectangle(marked_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(marked_img, f'{det["label"]}:{det["score"]:.2f}', (x, y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+    results = [(d['center'][0], d['center'][1], d['score'], d['label']) for d in kept]
+    return results, marked_img
+def Fishing_DetectBobber(screenshot):
+    t = loadShapeTemplate("fishing/bobber")
+    bobber = t['gray']
+    side = t['side']
+
+    r_channel = screenshot[:, :, 2].astype(np.float32)
+    r_scaled = np.clip((r_channel - 14.0) * (255.0 / 86.0), 0, 255).astype(np.uint8)
+
+    kept, _ = checkShape(r_scaled, "fishing/bobber",
+                         threshold=0.5, min_area=10,
+                         dedup_dist=0.5 * side)
+
+    H, W = screenshot.shape[:2]
     final = []
     for det in kept:
         cx, cy = det['center']
-        x1, y1 = max(cx - side//2, 0), max(cy - side//2, 0)
-        x2 = min(cx + side//2, screenshot.shape[1]-1)
-        y2 = min(cy + side//2, screenshot.shape[0]-1)
+        x1, y1 = max(cx - side // 2, 0), max(cy - side // 2, 0)
+        x2 = min(cx + side // 2, W - 1)
+        y2 = min(cy + side // 2, H - 1)
         roi = r_scaled[y1:y2, x1:x2]
-        tmpl = cv2.resize(BOBBER, (roi.shape[1], roi.shape[0]))
-        match_score = float((cv2.matchTemplate(roi, tmpl, cv2.TM_CCOEFF_NORMED)[0][0] + 1.0) / 2.0)
+        if roi.size == 0:
+            continue
+        tmpl = cv2.resize(bobber, (roi.shape[1], roi.shape[0]))
+        match_score = float(
+            (cv2.matchTemplate(roi, tmpl, cv2.TM_CCOEFF_NORMED)[0][0] + 1.0) / 2.0
+        )
         det['match_score'] = match_score
         if det['score'] >= 0.9 and match_score >= 0.8:
             final.append(det)
 
-    # 标记
     marked = r_scaled.copy()
     for det in final:
         cx, cy = det['center']
-        x1, y1 = max(cx - side//2, 0), max(cy - side//2, 0)
-        x2 = min(cx + side//2, marked.shape[1]-1)
-        y2 = min(cy + side//2, marked.shape[0]-1)
+        x1, y1 = max(cx - side // 2, 0), max(cy - side // 2, 0)
+        x2 = min(cx + side // 2, marked.shape[1] - 1)
+        y2 = min(cy + side // 2, marked.shape[0] - 1)
         cv2.rectangle(marked, (x1, y1), (x2, y2), 255, 2)
-        cv2.putText(marked, f'DF:{det["score"]:.2f}', (x1, y1-5),
+        cv2.putText(marked, f'DF:{det["score"]:.2f}', (x1, y1 - 5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1)
-        cv2.putText(marked, f'MA:{det["match_score"]:.2f}', (x1, y1-20),
+        cv2.putText(marked, f'MA:{det["match_score"]:.2f}', (x1, y1 - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1)
 
-    return [(d['center'][0], d['center'][1], d['score'], d['match_score']) for d in final], marked
+    return [(d['center'][0], d['center'][1], d['score'], d['match_score'])
+            for d in final], marked
 
 # EOF

@@ -57,7 +57,9 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",                tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_TRIUMPH",                        tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",                  tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_BEG_MONEY",                      tk.BooleanVar, True],
+            ["TEMPLATE",   "ACTIVE_FISHING",                      tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_DIGGING",                      tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_BEG_MONEY",                      tk.BooleanVar, False],
             ["TEMPLATE",   "MAX_TRY_LIMIT",                         tk.IntVar,     25],
             ["TEMPLATE",   "MAX_CRASH_LIMIT",                       tk.IntVar,     10],
             ["TEMPLATE",   "REST_INTERVEL",                         tk.IntVar,     1],
@@ -861,7 +863,51 @@ def Factory():
                 logger.info(_("哈肯搜索, 已找到哈肯."))
                 return pos
             return None
-            
+
+    def _checkshape(screenImage, temp, roi=None, outputresult=False):
+        screenshot = screenImage.copy()
+        search_area = CutRoI(screenshot, roi)
+
+        if search_area.ndim == 3:
+            channel = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+        else:
+            channel = search_area
+
+        kept, _ = checkShape(channel, temp)
+
+        if not kept:
+            return (None, None)
+
+        best = max(kept, key=lambda d: d['score'])
+        score = float(best['score'])
+        cx, cy = best['center']
+        x, y, w, h = best['bbox']
+
+        if roi is None or len(roi) == 0:
+            pos = [cx, cy]
+        else:
+            pos = [roi[0][0] + cx, roi[0][1] + cy]
+
+        if outputresult:
+            SaveImage(search_area,"origin.png")
+            marked = search_area.copy()
+            cv2.rectangle(marked, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(marked, f'{score:.2f}', (x, y - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            SaveImage(marked,"matched.png")
+
+        return pos, score
+    
+    def CheckShapeIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
+        pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult)
+
+        if max_val < 0.8:
+            logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val*100)))
+            return None
+        else:
+            logger.debug(_("样式匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget, b=max_val*100,c=pos)))
+            return pos
+      
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
         template =  LoadTemplateImage(f"fastforward_off")
@@ -1216,7 +1262,7 @@ def Factory():
         logger.info(_("开始时间跳跃, 本次跳跃目标:{a}".format(a=target)))
 
         # 调整条目以找到跳跃目标
-        FindCoordsOrElseExecuteFallbackAndWait("cursedWheelTitle",["cursedWheel","ruins","startdownload",[1,1]],1)
+        FindCoordsOrElseExecuteFallbackAndWait(["cursedWheelTitle","accept_death_cursedWheel_timeLeap"],["cursedWheel","ruins","startdownload",[1,1]],1)
         Sleep(2)
         if Press(CheckIf(ScreenShot(),target)):
             Sleep(2)
@@ -1406,12 +1452,18 @@ def Factory():
                     return IdentifyState()
                 if Press(CheckIf(screen, "sandman_recover")):
                     return IdentifyState()
-                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap")):
-                    if (setting.ACTIVE_BEG_MONEY):
+                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]])):
+                    if (setting.ACTIVE_DIGGING):
+                        setting._MSGQUEUE.put(("turn_to_dig",""))
+                        raise SystemExit
+                    elif (setting.ACTIVE_BEG_MONEY):
                         setting._MSGQUEUE.put(("turn_to_7000G",""))
                         raise SystemExit
+                    elif (setting.ACTIVE_FISHING):
+                        setting._MSGQUEUE.put(("turn_to_fishing",""))
+                        raise SystemExit
                     else:
-                        logger.info(_("看起来你没有选择找王女要钱. 那么就等两个小时吧."), summary=True)
+                        logger.info(_("看起来你没有选择任何0火的替代选项. 那么就等两个小时吧."), summary=True)
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
@@ -1843,7 +1895,7 @@ def Factory():
             return None,"FAIL" # 发生了其他错误
 
         if quest._FloorCheck is not None:
-            if not CheckIf(map,quest._FloorCheck):
+            if not CheckShapeIf(map,quest._FloorCheck):
                 logger.error("楼层错误.")
                 return None, "WRONGFLOOR"
 
@@ -2217,8 +2269,9 @@ def Factory():
                         case "FAIL":
                             pass
                         case "WRONGFLOOR":
-                            targetInfoList.insert(0, TargetInfo("dungFlag")) # dungFlag也就是退出地下城按钮
+                            targetInfoList.insert(0, TargetInfo("dungFlag"))
                             # targetInfoList是复制的临时变量, 也就是每次退出stateDungeon就会重置, 因此可以放心修改.
+                            # 由于错误楼层可以确信是在哈肯面前, 所以可以直接退出.
 
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info(_("地下城目标完成. 地下城状态结束.(仅限任务模式.)"))
@@ -3218,6 +3271,19 @@ def Factory():
                 while 1:
                     if setting._FORCESTOPING.is_set():
                         break
+
+                    if CheckIf(scn, "accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]]):
+                        if setting.ACTIVE_TRIUMPH == True:
+                            RestartableSequenceExecution(    
+                                lambda: CursedWheelTimeLeap(chapter="cursedwheel_impregnableFortress", target="Triumph")
+                            )
+                        else:
+                            RestartableSequenceExecution(    
+                                lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre")
+                            )
+                        Sleep(30)
+                        continue
+                    
                     logger.info("进本!")
                     RestartableSequenceExecution(
                         lambda: StateEoT()
@@ -3431,6 +3497,51 @@ def Factory():
 
                     if parts:
                         return ", ".join(parts) + "."
+                def refillBait(): # 从钓鱼界面退出并回城并更换鱼饵.
+                    Press([516, 1529])
+                    if CheckShapeIf(ScreenShot(),"fishing/nobaitinbag",[[121, 1081, 100, 100]]):
+                        logger.info("真的没有了.")
+                        RestartableSequenceExecution(
+                            lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit","return",],1)
+                            )
+                        RestartableSequenceExecution(
+                            lambda: StateDungeon([TargetInfo("position","右上",[818,928])])
+                            )
+                        if CheckIf(ScreenShot(),"intoWorldMap"):
+                            Press([50,1535])
+                        FindCoordsOrElseExecuteFallbackAndWait("ItemList",[[860,1150]],1)
+                        pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
+                        FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
+                        pos = CheckIf(ScreenShot(),"fishing/baitbox")
+                        for i in range(70):
+                            Press(pos)
+                            Sleep(0.5)
+                        FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+
+                        RestartableSequenceExecution(
+                            lambda: goToFishing()
+                            )
+
+                        logger.info("换鱼饵结束.")
+                        Sleep(10)
+                    else:
+                        logger.info("鱼饵还有, 不需要更换.")
+                        Press([196, 1153])
+                        FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","return",3)
+                def goToFishing():
+                    quest._EOT = [
+                        ["press","DH",["EdgeOfTown",[1,1]],1],
+                        ["press","DH-R6","input swipe 650 250 650 900",1]
+                    ]
+                    RestartableSequenceExecution(
+                        lambda: StateEoT()
+                        )
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([TargetInfo("position","右上",[339,555])])
+                        )
+                    RestartableSequenceExecution(
+                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
+                        )
                 ################
                 while 1:
                     tick += 1
@@ -3443,6 +3554,21 @@ def Factory():
                         Sleep(1)
                         continue
 
+                    if CheckIf(scn, "Inn"):
+                        RestartableSequenceExecution(
+                            lambda: goToFishing()
+                            )
+                        continue
+
+                    if CheckIf(scn, "accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]]):
+                        RestartableSequenceExecution(    
+                            lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre")
+                        )
+                        Sleep(30)
+                        TeleportFromCityToWorldLocation("City_DHI", "input swipe 54 1346 302 1571")
+                        Sleep(3)
+                        continue
+
                     if CheckIf(scn, "fishing/cast"):
                         if CheckIf(scn,"fishing/nobait",[[530,1469,120,120]]):
                             nobait = CheckHow(scn,"fishing/nobait",[[530,1469,120,120]])
@@ -3450,40 +3576,9 @@ def Factory():
                             if nobait > eightbait:
                                 logger.info("没有鱼饵了...")
                                 RestartableSequenceExecution(
-                                    lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit",],1)
-                                    )
-                                RestartableSequenceExecution(
-                                    lambda: StateDungeon([TargetInfo("position","右上",[818,928])])
-                                    )
-                                def refillBait():
-                                    if CheckIf(ScreenShot(),"intoWorldMap"):
-                                        Press([50,1535])
-                                    FindCoordsOrElseExecuteFallbackAndWait("ItemList",[[860,1150]],1)
-                                    pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
-                                    FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
-                                    pos = CheckIf(ScreenShot(),"fishing/baitbox")
-                                    for i in range(70):
-                                        Press(pos)
-                                        Sleep(0.5)
-                                    FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
-                                RestartableSequenceExecution(
                                     lambda: refillBait()
                                     )
-                                quest._EOT = [
-                                    ["press","DH",["EdgeOfTown",[1,1]],1],
-                                    ["press","DH-R6","input swipe 650 250 650 900",1]
-                                ]
-                                RestartableSequenceExecution(
-                                    lambda: StateEoT()
-                                    )
-                                RestartableSequenceExecution(
-                                    lambda: StateDungeon([TargetInfo("position","右上",[339,555])])
-                                    )
-                                RestartableSequenceExecution(
-                                    lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
-                                    )
-                                logger.info("换鱼饵结束.")
-                                Sleep(10)
+                                continue
 
                         for i in range(5):
                             DeviceShell(f"input swipe 50 1200 850 1200 100")
@@ -3528,152 +3623,8 @@ def Factory():
                     Press([250,1200])
                     for i in range(40):
                         DeviceShell(f"input swipe 250 1200 850 1200 100")
-            case "fishing2":
-                            start_time = time.time()
-                            t = time.time()
-                            total_time = 0
-                            fish = 0
-                            failed_fishing = 0
-                            tick = 0
-                            ################
-                            fishinfo = {}
-                            def CollectFishInfo(scn):
-                                nonlocal fishinfo
-                                vals_size = {
-                                        "小": CheckHow(scn,"fishing/size_small"),
-                                        "普通": CheckHow(scn,"fishing/size_average"),
-                                        "大": CheckHow(scn,"fishing/size_large"),
-                                        }
-                                vals_category = {
-                                        "鲈鱼": CheckHow(scn,"fishing/鲈鱼", [[0,1100,900,150]]),
-                                        "雅罗": CheckHow(scn,"fishing/雅罗", [[0,1100,900,150]]),
-                                        "鲶鱼": CheckHow(scn,"fishing/鲶鱼", [[0,1100,900,150]]),
-                                        "鳟鱼": CheckHow(scn,"fishing/鳟鱼", [[0,1100,900,150]]),
-                                        "鳗鱼": CheckHow(scn,"fishing/鳗鱼", [[0,1100,900,150]]),
-                                        "三文鱼": CheckHow(scn,"fishing/三文鱼", [[0,1100,900,150]]),
-                                        "杂鱼": CheckHow(scn,"fishing/杂鱼", [[0,1100,900,150]]),
-                                    }
-                                if vals_size[match_size:=max(vals_size,key=vals_size.get)] > 0.9:
-                                    if vals_category[best := max(vals_category, key=vals_category.get)] > 0.9:
-                                        logger.info(f"获得了{match_size}{best}!")
-                                        fishinfo.setdefault(match_size, {}).setdefault(best, 0)
-                                        fishinfo[match_size][best]+=1
-                                    else:
-                                        logger.info(f"某些无法判断的东西...")
-                                        fishinfo.setdefault(match_size, {}).setdefault("未收录", 0)
-                                        fishinfo[match_size]["未收录"]+=1
-                                ################       
-            
-                                fish_order = list(vals_category.keys()) + ["未收录"]
-            
-                                parts = []
-            
-                                for fish in fish_order:
-                                    for size in ("大", "普通", "小"):  # 普通在前，小在后
-                                        count = fishinfo.get(size, {}).get(fish, 0)
-                                        if count:
-                                            parts.append(f"{size}{fish} {count}条")
-            
-                                if parts:
-                                    return ", ".join(parts) + "."
-                            ################
-                            while 1:
-                                tick += 1
-                                if setting._FORCESTOPING.is_set():
-                                    break
-            
-                                scn = ScreenShot()
-                                if TryPressRetry(scn) or Press(CheckIf(scn,"totitle")):
-                                    logger.info("网络故障, 重试中......")
-                                    Sleep(1)
-                                    continue
-            
-                                if CheckIf(scn, "fishing/cast"):
-                                    if CheckIf(scn,"fishing/nobait",[[530,1469,120,120]]):
-                                        nobait = CheckHow(scn,"fishing/nobait",[[530,1469,120,120]])
-                                        eightbait = CheckHow(scn,"fishing/8bait",[[530,1469,120,120]])
-                                        if nobait > eightbait:
-                                            logger.info("没有鱼饵了...")
-                                            RestartableSequenceExecution(
-                                                lambda: FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["fishing/quit",],1)
-                                                )
-                                            RestartableSequenceExecution(
-                                                lambda: StateDungeon([TargetInfo("position","右上",[818,928])])
-                                                )
-                                            def refillBait():
-                                                if CheckIf(ScreenShot(),"intoWorldMap"):
-                                                    Press([50,1535])
-                                                FindCoordsOrElseExecuteFallbackAndWait("ItemList",[[860,1150]],1)
-                                                pos = FindCoordsOrElseExecuteFallbackAndWait("fishing/iconbait",[[135,1294],[660,1200]],1)
-                                                FindCoordsOrElseExecuteFallbackAndWait("whowillyougiveitto",["transfer",[pos[0]+750-111,pos[1]]],1)
-                                                pos = CheckIf(ScreenShot(),"fishing/baitbox")
-                                                for i in range(70):
-                                                    Press(pos)
-                                                    Sleep(0.5)
-                                                FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
-                                            RestartableSequenceExecution(
-                                                lambda: refillBait()
-                                                )
-                                            quest._EOT = [
-                                                ["press","DH",["EdgeOfTown",[1,1]],1],
-                                                ["press","DH-R6","input swipe 650 250 650 900",1]
-                                            ]
-                                            RestartableSequenceExecution(
-                                                lambda: StateEoT()
-                                                )
-                                            RestartableSequenceExecution(
-                                                lambda: StateDungeon([TargetInfo("position","右上",[339,555])])
-                                                )
-                                            RestartableSequenceExecution(
-                                                lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("fishing/startfishing",["mapFlag", "input swipe 450 900 450 600", [450,500]],1))
-                                                )
-                                            logger.info("换鱼饵结束.")
-                                            Sleep(10)
-            
-                                    for i in range(5):
-                                        DeviceShell(f"input swipe 50 1200 850 1200 100")
-                                    for i in range(2):
-                                        DeviceShell(f"input swipe 850 1200 50 1200 100")
-                                    Sleep(1)
-                                    logger.info("下杆!")
-                                    DeviceShell(f"input swipe 400 1200 450 1250 2250")
-                                    t = time.time()
-                                    Sleep(10)
-                                    continue
-            
-                                if pos:=CheckIf(scn, "fishing/striking"):
-                                    if time.time()-t>300:
-                                        logger.info("5分钟了还没钓到, 重来吧.")
-                                        failed_fishing += 1
-                                        Press(pos)
-                                        Sleep(5)
-                                    fishbobber, img = Fishing_DetectBobber(CutRoI(scn,[[250,500,400,600]]))
-                                    # SaveImage(img)
-                                    logger.debug(fishbobber)
-                                    if fishbobber == []:
-                                        logger.info("拉杆!")
-                                        DeviceShell(f"input swipe 450 700 450 50 100")
-                                        Sleep(3) # 拉杆动画大约2秒动作和0.2秒冷却
-                                    else:
-                                        if tick % 15 == 0:
-                                            logger.info("等待着猎物...")
-                                        Sleep(1)
-                                    continue
-            
-                                if Press(CheckIf(scn, "fishing/CloseFishInfo")):
-                                    fish += 1
-                                    total_time = total_time + time.time() - t
-                                    t = 0
-                                    info = CollectFishInfo(scn)
-                                    logger.info(f"已完成远端钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{(time.time()-start_time)/fish:.2f}秒.\n{info}", summary = True)
-                                    SaveImage(scn=scn)
-                                    Sleep(5)
-                                    continue
-            
-                                Press([250,1200])
-                                for i in range(40):
-                                    DeviceShell(f"input swipe 250 1200 850 1200 100")
             case "test":
+                TeleportFromCityToWorldLocation("City_DHI", "input swipe 54 1346 302 1571")
                 pass
                 
                     

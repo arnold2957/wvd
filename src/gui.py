@@ -1515,17 +1515,45 @@ class ConfigPanelApp(tk.Toplevel):
         container = self.section_advanced.content_frame
         row_counter = 0
 
-        # 1. 自动要钱
+        # 1. 0火
+        # 挖矿
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_digging = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_DIGGING,
+            text=_("当没有再起之火的时候, 尝试挖矿."),
+            command=self.save_config,
+            style="Default.TCheckbutton"
+        )
+        self.active_digging.grid(row=0, column=0, sticky=tk.W)
+
+
+        # 刷钱
+        row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
         self.active_beg_money = ttk.Checkbutton(
             frame_row,
             variable=self.ACTIVE_BEG_MONEY,
-            text=_("没有火的时候自动找王女要钱"),
+            text=_("当没有再起之火的时候, 尝试刷钱."),
             command=self.save_config, # 如果这里需要特定逻辑，可以改回 checkcommand
             style="Default.TCheckbutton"
         )
         self.active_beg_money.grid(row=0, column=0, sticky=tk.W)
+
+        # 钓鱼
+        row_counter += 1
+        frame_row = ttk.Frame(container)
+        frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+        self.active_fishing = ttk.Checkbutton(
+            frame_row,
+            variable=self.ACTIVE_FISHING,
+            text=_("当没有再起之火的时候, 尝试钓鱼."),
+            command=self.save_config,
+            style="Default.TCheckbutton"
+        )
+        self.active_fishing.grid(row=0, column=0, sticky=tk.W)
 
         # 2. 豪华房
         row_counter += 1
@@ -1740,6 +1768,8 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_beautiful_ore,
             self.active_royalsuite_rest,
             self.active_beg_money,
+            self.active_digging,
+            self.active_fishing,
             self.task_specific_config_check,
             self.button_save_adb_port,
             self.button_save_emu_index,
@@ -1758,7 +1788,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.lang_game_combobox,
             self.lang_gui_combobox,
             self.button_save_emu_index,
-            self.button_save_gui_lang
+            self.button_save_gui_lang,
         ]
 
         if state == tk.DISABLED:
@@ -1812,3 +1842,23 @@ class ConfigPanelApp(tk.Toplevel):
         text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以找公主要钱.\n\n赞美公主殿下!\n") % summary
         turn_to_7000G_label = ttk.Label(self, text = text)
         turn_to_7000G_label.grid(row=0, column=0,)
+
+    def turn_to_fishing(self):
+        self.summary_log_display.config(bg="#66ffcc" )
+        self.main_frame.grid_remove()
+        summary = self.summary_log_display.get("1.0", "end-1c")
+        if self.INTRODUCTION in summary:
+            summary = _("唔, 看起来一次成功的地下城都没有完成.")
+        text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去钓鱼.\n\n事已至此, 先钓鱼吧.\n") % summary
+        turn_to_fishing_label = ttk.Label(self, text = text)
+        turn_to_fishing_label.grid(row=0, column=0,)
+
+    def turn_to_dig(self):
+        self.summary_log_display.config(bg="#fff0cd" )
+        self.main_frame.grid_remove()
+        summary = self.summary_log_display.get("1.0", "end-1c")
+        if self.INTRODUCTION in summary:
+            summary = _("唔, 看起来一次成功的地下城都没有完成.")
+        text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去挖矿.\n\n只要能有全改, 管他什么方法呢.\n") % summary
+        turn_to_dig_label = ttk.Label(self, text = text)
+        turn_to_dig_label.grid(row=0, column=0,)

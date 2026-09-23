@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '2.8.17' 
+__version__ = '2.9.0' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -83,6 +83,32 @@ class AppController(tk.Tk):
                             break
                     if self.main_window:
                         self.main_window.turn_to_7000G()
+
+                case 'turn_to_fishing':
+                    logger.info('开始钓鱼...')
+                    self.quest_setting.FARM_TARGET = "fishing"
+                    self.quest_setting._COUNTERDUNG = 0
+                    while 1:
+                        if not self.quest_threading.is_alive():
+                            Farm = Factory()
+                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                            self.quest_threading.start()
+                            break
+                    if self.main_window:
+                        self.main_window.turn_to_fishing()
+
+                case 'turn_to_dig':
+                    logger.info('开始挖矿...')
+                    self.quest_setting.FARM_TARGET = "ffxi-org"
+                    self.quest_setting._COUNTERDUNG = 0
+                    while 1:
+                        if not self.quest_threading.is_alive():
+                            Farm = Factory()
+                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                            self.quest_threading.start()
+                            break
+                    if self.main_window:
+                        self.main_window.turn_to_dig()
 
                 case 'update_available':
                     # 在面板上显示提示
