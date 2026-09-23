@@ -697,7 +697,7 @@ def Factory():
 
                 Sleep(1)
 
-    def _check(screenImage, template, roi = None, outputMatchResult = False):
+    def _check(screenImage, template, roi = None, outputMatchResult = False, shortPathOfTarget = None):
         screenshot = screenImage.copy()
         pos = None
         search_area = CutRoI(screenshot, roi)
@@ -714,9 +714,9 @@ def Factory():
         underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
         if outputMatchResult:
-            SaveImage(search_area,prefix = "origin")
+            SaveImage(search_area,prefix = f"check_origin_{shortPathOfTarget}")
             cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
-            SaveImage(search_area,prefix = "matched")
+            SaveImage(search_area,prefix = f"check_matched_{shortPathOfTarget}")
 
         if roi is None or len(roi) == 0:
             pos=[max_loc[0] + template.shape[1]//2,
@@ -726,7 +726,7 @@ def Factory():
                  roi[0][1] + max_loc[1] + template.shape[0]//2]
         return pos,max_val
     def CheckIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult)
+        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult,shortPathOfTarget)
 
         if max_val < 0.8:
             logger.debug(_("匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val*100)))
@@ -735,7 +735,7 @@ def Factory():
             logger.debug(_("匹配成功: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget, b=max_val*100,c=pos)))
             return pos
     def CheckHow(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult)
+        pos, max_val = _check(screenImage, LoadTemplateImage(shortPathOfTarget), roi, outputMatchResult,shortPathOfTarget)
 
         logger.debug(_("匹配检测: {a}的匹配程度为{b:.2f}%, 位于{c}.".format(a=shortPathOfTarget,b=max_val*100, c=pos)))
         return max_val
@@ -864,7 +864,7 @@ def Factory():
                 return pos
             return None
 
-    def _checkshape(screenImage, temp, roi=None, outputresult=False):
+    def _checkshape(screenImage, temp, roi=None, outputresult=False, name = None):
         screenshot = screenImage.copy()
         search_area = CutRoI(screenshot, roi)
 
@@ -876,6 +876,8 @@ def Factory():
         kept, _ = checkShape(channel, temp)
 
         if not kept:
+            if outputresult:
+                SaveImage(search_area,prefix = f"checkshape_{name}_")
             return (None, None)
 
         best = max(kept, key=lambda d: d['score'])
@@ -889,17 +891,17 @@ def Factory():
             pos = [roi[0][0] + cx, roi[0][1] + cy]
 
         if outputresult:
-            SaveImage(search_area,prefix = "origin")
+            SaveImage(search_area,prefix = f"checkshape_{name}_origin")
             marked = search_area.copy()
             cv2.rectangle(marked, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(marked, f'{score:.2f}', (x, y - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            SaveImage(marked,prefix = "matched")
+            SaveImage(marked,prefix = f"checkshape_{name}_matched")
 
         return pos, score
     
     def CheckShapeIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
-        pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult)
+        pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult, shortPathOfTarget)
 
         if (not max_val) or (max_val < 0.8):
             logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val)))
