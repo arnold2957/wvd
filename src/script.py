@@ -901,7 +901,7 @@ def Factory():
     def CheckShapeIf(screenImage, shortPathOfTarget, roi = None, outputMatchResult = False):
         pos, max_val = _checkshape(screenImage, shortPathOfTarget, roi, outputMatchResult)
 
-        if max_val < 0.8:
+        if (not max_val) or (max_val < 0.8):
             logger.debug(_("样式匹配失败: {a}的匹配程度为{b:.2f}%, 不足阈值.".format(a=shortPathOfTarget, b=max_val*100)))
             return None
         else:
