@@ -1365,7 +1365,7 @@ def Factory():
                 ("mapFlag",       DungeonState.Map),
                 ]
             for pattern, state in identifyConfig:
-                if CheckIf(screen, pattern):
+                if CheckIf(screen, pattern, None, True):
                     return State.Dungeon, state, screen
                 
             if StateCombatCheck(screen):
