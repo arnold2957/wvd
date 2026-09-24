@@ -699,6 +699,9 @@ def Factory():
 
     def _check(screenImage, template, roi = None, outputMatchResult = False, shortPathOfTarget = None):
         screenshot = screenImage.copy()
+        if (screenshot is None) or (screenshot.size == 0) or (bool(np.all(screenshot == screenshot[0, 0]))):
+            logger.debug(_("截图数据无效"))
+            return None, 0
         pos = None
         search_area = CutRoI(screenshot, roi)
         try:
@@ -709,7 +712,7 @@ def Factory():
                 if isinstance(e, (cv2.error)):
                     logger.info(_("cv2异常."))
                     # SaveImage(screenshot,"cv2异常")
-                    return None
+                    return None, 0
 
         underscore, max_val, underscore, max_loc = cv2.minMaxLoc(result)
 
@@ -863,7 +866,51 @@ def Factory():
                 logger.info(_("哈肯搜索, 已找到哈肯."))
                 return pos
             return None
-      
+
+    def CheckFloorName(screenImage, template, errorThreshold = 0.15):
+        """
+        检查 screen 固定区域(150, 65, 600, 50)的楼层名是否与 template 匹配。
+        - template 尺寸必须与 RoI 一致(600x50), 否则直接判定失败。
+        - 灰度 -> 二值化(Otsu) -> 统计不同像素数。
+        - 错误率超过 errorThreshold(默认 15%)判定失败。
+        """
+        screenshot = screenImage.copy()
+        if (screenshot is None) or (screenshot.size == 0) or (bool(np.all(screenshot == screenshot[0, 0]))):
+            logger.error(_("截图数据无效, 跳过楼层检测."))
+            return True
+
+        # 固定 RoI: x=150, y=65, w=600, h=50
+        search_area = CutRoI(screenshot, [(150, 65, 600, 50)])
+
+        # template 尺寸必须与 RoI 一致
+        if template is None or search_area.shape[:2] != template.shape[:2]:
+            logger.error(_("模板尺寸与RoI不一致: RoI={a}, template={b}, 跳过楼层检测".format(
+                a=search_area.shape[:2],
+                b=(template.shape[:2] if template is not None else None))))
+            return True
+
+        # 灰度化
+        screen_gray   = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY) if search_area.ndim == 3 else search_area
+        template_gray = cv2.cvtColor(template,    cv2.COLOR_BGR2GRAY) if template.ndim    == 3 else template
+
+        # 二值化(Otsu 自动阈值)
+        _, screen_bin   = cv2.threshold(screen_gray,   0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # 统计不同像素数量
+        diff = int(np.count_nonzero(screen_bin != template_bin))
+        error_rate = diff / screen_bin.size
+
+        if error_rate > errorThreshold:
+            logger.info(_("楼层名匹配失败: 错误率{b:.2f}%, 超过阈值{c:.0f}%.".format(
+                b = error_rate * 100,
+                c = errorThreshold * 100)))
+            return False
+
+        logger.debug(_("楼层名匹配成功: 错误率{b:.2f}%.".format(b = error_rate * 100)))
+        return True
+
+    
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
         template =  LoadTemplateImage(f"fastforward_off")
@@ -1851,7 +1898,7 @@ def Factory():
             return None,"FAIL" # 发生了其他错误
 
         if quest._FloorCheck is not None:
-            if not CheckIf(map,quest._FloorCheck):
+            if not CheckFloorName(map,quest._FloorCheck):
                 logger.error("楼层错误.")
                 return None, "WRONGFLOOR"
 

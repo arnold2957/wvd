@@ -326,8 +326,7 @@
         "_TARGETINFOLIST":[
             ["FFXI/stair_zone4","左上",[719,237]],
             ["chest_auto"],
-            ["FFXI/stair_zone3","右下",[608,1241]],
-            ["position","左上",[347,340]]
+            ["leaveDung"]
         ],
         "_preEOTcheck":"FFXI/GCN",
         "_EOT":
