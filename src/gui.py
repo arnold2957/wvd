@@ -538,6 +538,7 @@ class ConfigPanelApp(tk.Toplevel):
 
         logger.info("**********************************")
         logger.info(_("当前版本: %s") % version)
+        logger.info(_("当前游戏语言: {0}".format(LANGUAGE_GAME)))
         logger.info(self.INTRODUCTION, summary=True)  # 修改：使用 summary=True 替代 extra={"summary": True}
         logger.info("**********************************")
         
