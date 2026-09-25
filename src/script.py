@@ -880,7 +880,7 @@ def Factory():
             return True
 
         # 固定 RoI: x=150, y=65, w=600, h=50
-        search_area = CutRoI(screenshot, [(150, 65, 600, 50)])
+        search_area = CutRoI(screenshot, [[150, 65, 600, 50]])
 
         template = LoadTemplateImage(template_name)
 

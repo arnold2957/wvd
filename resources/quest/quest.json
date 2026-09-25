@@ -232,7 +232,7 @@
             ["chest","左上",null],
             ["chest","右上",null],
             ["position","右上", [816,710]],
-            ["Bharken", "右上","stair_DH_Church"]
+            ["Bharken", "右上","stair_DH_CG"]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
@@ -250,7 +250,7 @@
         "_TARGETINFOLIST":[
             ["chest_auto"],
             ["position","右上", [816,710]],
-            ["Bharken", "右上","stair_DH_Church"]
+            ["Bharken", "右上","stair_DH_CG"]
         ],
         "_EOT":[
             ["press","DH",["EdgeOfTown",[1,1]],1],
