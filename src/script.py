@@ -867,7 +867,7 @@ def Factory():
                 return pos
             return None
 
-    def CheckFloorName(screenImage, template, errorThreshold = 0.15):
+    def CheckFloorName(screenImage, template_name, errorThreshold = 0.15):
         """
         检查 screen 固定区域(150, 65, 600, 50)的楼层名是否与 template 匹配。
         - template 尺寸必须与 RoI 一致(600x50), 否则直接判定失败。
@@ -882,6 +882,8 @@ def Factory():
         # 固定 RoI: x=150, y=65, w=600, h=50
         search_area = CutRoI(screenshot, [(150, 65, 600, 50)])
 
+        template = LoadTemplateImage(template_name)
+
         # template 尺寸必须与 RoI 一致
         if template is None or search_area.shape[:2] != template.shape[:2]:
             logger.error(_("模板尺寸与RoI不一致: RoI={a}, template={b}, 跳过楼层检测".format(
@@ -894,8 +896,8 @@ def Factory():
         template_gray = cv2.cvtColor(template,    cv2.COLOR_BGR2GRAY) if template.ndim    == 3 else template
 
         # 二值化(Otsu 自动阈值)
-        _, screen_bin   = cv2.threshold(screen_gray,   0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        _, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        not_use, screen_bin   = cv2.threshold(screen_gray,   0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        not_use, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         # 统计不同像素数量
         diff = int(np.count_nonzero(screen_bin != template_bin))
@@ -1455,7 +1457,7 @@ def Factory():
                     return IdentifyState()
                 if Press(CheckIf(screen, "sandman_recover")):
                     return IdentifyState()
-                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]],True)):
+                if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]])):
                     if (setting.ACTIVE_DIGGING):
                         setting._MSGQUEUE.put(("turn_to_dig",""))
                         raise SystemExit
