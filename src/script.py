@@ -867,12 +867,13 @@ def Factory():
                 return pos
             return None
 
-    def CheckFloorName(screenImage, template_name, errorThreshold = 0.15):
+    def CheckFloorName(screenImage, template_name, errorThreshold=0.15):
         """
         检查 screen 固定区域(150, 65, 600, 50)的楼层名是否与 template 匹配。
         - template 尺寸必须与 RoI 一致(600x50), 否则直接判定失败。
         - 灰度 -> 二值化(Otsu) -> 统计不同像素数。
         - 错误率超过 errorThreshold(默认 15%)判定失败。
+        - template_name 可以是 str, 也可以是 [str]; 列表时匹配任一即通过。
         """
         screenshot = screenImage.copy()
         if (screenshot is None) or (screenshot.size == 0) or (bool(np.all(screenshot == screenshot[0, 0]))):
@@ -882,36 +883,60 @@ def Factory():
         # 固定 RoI: x=150, y=65, w=600, h=50
         search_area = CutRoI(screenshot, [[150, 65, 600, 50]])
 
-        template = LoadTemplateImage(template_name)
+        # 统一成列表处理
+        if isinstance(template_name, str):
+            template_names = [template_name]
+        else:
+            template_names = list(template_name)
 
-        # template 尺寸必须与 RoI 一致
-        if template is None or search_area.shape[:2] != template.shape[:2]:
-            logger.error(_("模板尺寸与RoI不一致: RoI={a}, template={b}, 跳过楼层检测".format(
-                a=search_area.shape[:2],
-                b=(template.shape[:2] if template is not None else None))))
+        if not template_names:
+            logger.error(_("模板名列表为空, 跳过楼层检测."))
             return True
 
-        # 灰度化
-        screen_gray   = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY) if search_area.ndim == 3 else search_area
-        template_gray = cv2.cvtColor(template,    cv2.COLOR_BGR2GRAY) if template.ndim    == 3 else template
+        # 灰度化 RoI(只需一次)
+        screen_gray = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY) if search_area.ndim == 3 else search_area
 
-        # 二值化(Otsu 自动阈值)
-        not_use, screen_bin   = cv2.threshold(screen_gray,   0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        not_use, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # 二值化 RoI(Otsu 自动阈值, 只需一次)
+        not_use, screen_bin = cv2.threshold(screen_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # 统计不同像素数量
-        diff = int(np.count_nonzero(screen_bin != template_bin))
-        error_rate = diff / screen_bin.size
+        best_rate = 1.0
+        best_name = None
 
-        if error_rate > errorThreshold:
-            logger.info(_("楼层名匹配失败: 错误率{b:.2f}%, 超过阈值{c:.0f}%.".format(
-                b = error_rate * 100,
-                c = errorThreshold * 100)))
-            return False
+        for name in template_names:
+            template = LoadTemplateImage(name)
 
-        logger.debug(_("楼层名匹配成功: 错误率{b:.2f}%.".format(b = error_rate * 100)))
-        return True
+            # template 尺寸必须与 RoI 一致
+            if template is None or search_area.shape[:2] != template.shape[:2]:
+                logger.error(_("模板[{n}]尺寸与RoI不一致: RoI={a}, template={b}, 跳过该模板".format(
+                    n=name,
+                    a=search_area.shape[:2],
+                    b=(template.shape[:2] if template is not None else None))))
+                continue
 
+            template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) if template.ndim == 3 else template
+            not_use, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            diff = int(np.count_nonzero(screen_bin != template_bin))
+            error_rate = diff / screen_bin.size
+
+            if error_rate < best_rate:
+                best_rate = error_rate
+                best_name = name
+
+            if error_rate <= errorThreshold:
+                logger.debug(_("楼层名匹配成功: 模板[{n}], 错误率{r:.2f}%.".format(
+                    n=name, r=error_rate * 100)))
+                return True
+
+        # 全部未通过
+        if best_name is None:
+            logger.info(_("楼层名匹配失败: 所有模板均因尺寸不一致被跳过."))
+        else:
+            logger.info(_("楼层名匹配失败: 最佳模板[{n}], 错误率{r:.2f}%, 超过阈值{c:.0f}%.".format(
+                n=best_name,
+                r=best_rate * 100,
+                c=errorThreshold * 100)))
+        return False
     
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
@@ -3277,7 +3302,7 @@ def Factory():
                     if setting._FORCESTOPING.is_set():
                         break
 
-                    if CheckIf(scn, "accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]]):
+                    if CheckIf(ScreenShot(), "accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]]):
                         if setting.ACTIVE_TRIUMPH == True:
                             RestartableSequenceExecution(    
                                 lambda: CursedWheelTimeLeap(chapter="cursedwheel_impregnableFortress", target="Triumph")

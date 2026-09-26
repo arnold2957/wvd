@@ -323,6 +323,7 @@
         "questName_en_US": "[Elite] FFXI 4F",
         "questCategory": "最新任务",
         "questCategory_en_US": "**WHAT'S NEW**",
+        "_FloorCheck": ["FFXI/stair_zone4","FFXI/stair_zone3"],
         "_TARGETINFOLIST":[
             ["FFXI/stair_zone4","左上",[719,237]],
             ["chest_auto"],
