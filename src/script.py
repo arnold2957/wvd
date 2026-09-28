@@ -3439,6 +3439,7 @@ def Factory():
                             ]
                 quest._SPECIALDIALOGOPTION = ["sandman/sandman_1",
                                               "sandman/sandman_2",
+                                              "sandman/sandman_3",
                                               "sandman/sandman_bondmate"]
                 def callback(option):
                     nonlocal sandman_complete

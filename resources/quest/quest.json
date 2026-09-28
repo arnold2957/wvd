@@ -326,7 +326,7 @@
         "_FloorCheck": ["FFXI/stair_zone4","FFXI/stair_zone3"],
         "_TARGETINFOLIST":[
             ["FFXI/stair_zone4","左上",[719,237]],
-            ["chest_auto"],
+            ["chest","右下",[[20, 893, 709, 329],[635, 1052, 66, 54],[29, 1004, 67, 46]]],
             ["leaveDung"]
         ],
         "_preEOTcheck":"FFXI/GCN",
