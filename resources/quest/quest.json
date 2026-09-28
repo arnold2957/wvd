@@ -882,14 +882,6 @@
         "_TYPE":"quest"
     },
 
-    "jier":{
-        "questName":"[悬赏]吉尔",
-        "questName_en_US": "[Bounty] Jhael",
-        "questCategory": "月常",
-        "questCategory_en_US": "Monthly Requests",
-        "_TYPE":"quest"
-    },
-
     "Scorpionesses":{
         "questName":"[悬赏]蝎女",
         "questName_en_US": "[Bounty] Scorps.",
