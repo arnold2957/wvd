@@ -2249,7 +2249,7 @@ def Factory():
                             Sleep(2)
                             return None
                         
-                        if targetInfoList[0] and (tar:=targetInfoList[0].target in ["chest_auto","mark_auto", "leaveDung"]):
+                        if targetInfoList[0] and ((tar:=targetInfoList[0].target) in ["chest_auto","mark_auto", "leaveDung"]):
                             lastscreen = ScreenShot()
                             if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
                                 Press(CheckIf(lastscreen,"mapflag"))
