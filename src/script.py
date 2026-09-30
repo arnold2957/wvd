@@ -937,6 +937,7 @@ def Factory():
                 n=best_name,
                 r=best_rate * 100,
                 c=errorThreshold * 100)))
+            SaveImage(search_area,prefix="failed_floor_check")
         return False
     
     def CheckIf_fastForwardOff(screenImage):
@@ -3392,6 +3393,9 @@ def Factory():
 
                 
                 while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+                    
                     RestartableSequenceExecution(    
                         lambda: StateEoT()
                         )
