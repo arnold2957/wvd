@@ -3388,7 +3388,7 @@ def Factory():
                 quest._TARGETINFOLIST = [TargetInfo("position","左下",[133,814]),
                                          TargetInfo("position","左下",[238,1076]),
                                          TargetInfo("position","左下",[450,924]),
-                                         TargetInfo("harken2","左下")]
+                                         TargetInfo("leaveDung")]
 
                 
                 while 1:
