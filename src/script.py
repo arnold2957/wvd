@@ -57,8 +57,8 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",                tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_TRIUMPH",                        tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEAUTIFUL_ORE",                  tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_FISHING",                      tk.BooleanVar, False],
-            ["TEMPLATE",   "ACTIVE_DIGGING",                      tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_FISHING",                        tk.BooleanVar, False],
+            ["TEMPLATE",   "ACTIVE_DIGGING",                        tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_BEG_MONEY",                      tk.BooleanVar, False],
             ["TEMPLATE",   "MAX_TRY_LIMIT",                         tk.IntVar,     25],
             ["TEMPLATE",   "MAX_CRASH_LIMIT",                       tk.IntVar,     10],
@@ -66,6 +66,7 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "ACTIVE_CSC",                            tk.BooleanVar, True],
             ["TEMPLATE",   "BYPASS_THE_WALL",                       tk.BooleanVar, False],
             ["TEMPLATE",   "RE_ASSEMBLE_PARTY",                     tk.BooleanVar, False],
+            ["TEMPLATE",   "RE_ASSEMBLE_PARTY_INTERVAL",            tk.IntVar,     6],
             ]
 class FarmConfig:
     for attr_name, var_type, var_config_name, var_default_value in CONFIG_VAR_LIST:
@@ -1420,7 +1421,7 @@ def Factory():
                         ((runtimeContext._COUNTERDUNG - 1) % (max(setting.REST_INTERVEL, 1)) == 0)              # 每隔 REST_INTERVEL 次触发
                     ) or (
                         setting.RE_ASSEMBLE_PARTY and                       # 重新集结队伍
-                        (int(runtimeContext._TOTALTIME // (6 * 3600)) != runtimeContext._LAST_BAGCLEAR)         # 每 6 小时清包检查
+                        (int(runtimeContext._TOTALTIME // (setting.RE_ASSEMBLE_PARTY_INTERVAL * 3600)) != runtimeContext._LAST_BAGCLEAR)         # 每 RE_ASSEMBLE_PARTY_INTERVAL 小时清包检查
                     ):
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
                     return State.Inn,DungeonState.Quit, screen
@@ -3399,6 +3400,9 @@ def Factory():
                         )
                     if sandman_complete:
                         sandman_complete = False
+                        RestartableSequenceExecution(
+                            lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+                            )
                         RestartableSequenceExecution(
                             lambda: StateInn()
                             )

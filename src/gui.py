@@ -533,7 +533,8 @@ class ConfigPanelApp(tk.Toplevel):
 
         # --- 创建组件 ---
         self.create_widgets()
-        self.updateACTIVE_REST_state() # 初始化时更新旅店住宿entry.
+        self.updateACTIVE_REST_state()
+        self.updateRE_ASSEMBLE_PARTY_state()
         
 
         logger.info("**********************************")
@@ -733,8 +734,8 @@ class ConfigPanelApp(tk.Toplevel):
                                         '%P'),
                                         width=15)
         self.adb_port_entry.grid(row=0, column=3)
-        self.button_save_adb_port = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_adb_port.grid(row=0, column=4)
+        self.adb_port_entry.bind("<FocusOut>", lambda e: self.save_config())
+        self.adb_port_entry.bind("<Return>", lambda e: self.save_config())
         row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
@@ -743,8 +744,8 @@ class ConfigPanelApp(tk.Toplevel):
         self.emu_index_entry = ttk.Entry(frame_row, textvariable=self.EMU_INDEX, validate="key",
                                          validatecommand=(vcmd_non_neg, '%P'), width=5)
         self.emu_index_entry.grid(row=0, column=1)
-        self.button_save_emu_index = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_emu_index.grid(row=0, column=2)
+        self.emu_index_entry.bind("<FocusOut>", lambda e: self.save_config())
+        self.emu_index_entry.bind("<Return>", lambda e: self.save_config())
 
         # --- GUI语言 ---
         row_counter += 1
@@ -768,10 +769,6 @@ class ConfigPanelApp(tk.Toplevel):
             messagebox.showinfo(_("提示"), _("GUI语言设置已保存，请重启脚本后生效。"))
 
         self.lang_gui_combobox.bind("<<ComboboxSelected>>", on_gui_lang_change)
-        
-        self.button_save_gui_lang = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_gui_lang.grid(row=0, column=2, sticky=tk.W)
-
 
         # --- 游戏语言 ---
         row_counter += 1
@@ -796,10 +793,6 @@ class ConfigPanelApp(tk.Toplevel):
             messagebox.showinfo(_("提示"), _("游戏语言设置已保存。\n请确保模拟器内的游戏语言与此设置一致，建议重启脚本以加载对应的识别库。"))
 
         self.lang_game_combobox.bind("<<ComboboxSelected>>", on_game_lang_change)
-        
-        self.button_save_game_lang = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_game_lang.grid(row=0, column=2, sticky=tk.W)
-
 
         # ==========================================
         # 分组 2: 目标
@@ -1005,8 +998,8 @@ class ConfigPanelApp(tk.Toplevel):
                                              validatecommand=(vcmd_non_neg, '%P'), width=2)
         self.rest_intervel_entry.grid(row=0, column=2)
         ttk.Label(frame_row, text=_("次后休息.")).grid(row=0, column=3, sticky=tk.W, pady=5)
-        self.button_save_rest_intervel = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=4)
-        self.button_save_rest_intervel.grid(row=0, column=4)
+        self.rest_intervel_entry.bind("<FocusOut>", lambda e: self.save_config())
+        self.rest_intervel_entry.bind("<Return>", lambda e: self.save_config())
 
         # 善恶设置
         row_counter += 1
@@ -1038,18 +1031,51 @@ class ConfigPanelApp(tk.Toplevel):
         ttk.Label(frame_row, textvariable=self.KARMA_ADJUST).grid(row=0, column=3, sticky=tk.W, pady=5)
         ttk.Label(frame_row, text=_("点")).grid(row=0, column=4, sticky=tk.W, pady=5)
 
-        # 每6小时重置队伍
+# 每X小时重置队伍
         row_counter += 1
         frame_row = ttk.Frame(container)
         frame_row.grid(row=row_counter, column=0, sticky="ew", pady=2)
+
+        def clamp_reassemble_interval(event=None):
+            """失焦或回车时，把 RE_ASSEMBLE_PARTY_INTERVAL 自动钳制到 [1, 12]。"""
+            try:
+                value = int(self.RE_ASSEMBLE_PARTY_INTERVAL.get())
+            except (tk.TclError, ValueError):
+                value = 6  # 输入为空或非法时回退到默认值
+            new_value = max(1, min(12, value))
+            if new_value != value:
+                logger.error(_("时长设置超过范围, 自动调整到合理区间."))
+            self.RE_ASSEMBLE_PARTY_INTERVAL.set(new_value)
+            self.save_config()
+
+        def reassemble_checkcommand():
+            self.updateRE_ASSEMBLE_PARTY_state()
+            self.save_config()
+
         self.reassemble_party_check = ttk.Checkbutton(
             frame_row,
             variable=self.RE_ASSEMBLE_PARTY,
-            text=_("每6个小时重新召集酒馆第一个队伍\n以便清理背包和调整站位"),
-            command=self.save_config,
+            text=_("启用定时重置队伍"),
+            command=reassemble_checkcommand,
             style="Default.TCheckbutton"
         )
         self.reassemble_party_check.grid(row=0, column=0, sticky=tk.W)
+
+        ttk.Label(frame_row, text=_(" | 每")).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+        self.reassemble_interval_entry = ttk.Entry(
+            frame_row,
+            textvariable=self.RE_ASSEMBLE_PARTY_INTERVAL,
+            width=2
+        )
+        self.reassemble_interval_entry.grid(row=0, column=2)
+        self.reassemble_interval_entry.bind("<FocusOut>", clamp_reassemble_interval)
+        self.reassemble_interval_entry.bind("<Return>", clamp_reassemble_interval)
+
+        ttk.Label(
+            frame_row,
+            text=_("小时重新召集酒馆第一个队伍\n以便清理背包和调整站位")
+        ).grid(row=0, column=3, sticky=tk.W, pady=5)
 
         # ==========================================
         # 分组 4: 战斗
@@ -1624,6 +1650,7 @@ class ConfigPanelApp(tk.Toplevel):
         # 5. 最大尝试次数
         def validate_focusout(P,limit,w):
             if P == "" or (P.isdigit() and int(P) >= int(limit)):
+                self.save_config()
                 return True
             else:
                 logger.info(_("尝试次数不能低于{a}次.".format(a=limit)))
@@ -1642,8 +1669,6 @@ class ConfigPanelApp(tk.Toplevel):
             width=3)
         self.max_try_limit_entry.grid(row=0, column=0)
         self.restart_game_label = ttk.Label(frame_row, text=_("次定位失败后重启游戏.")).grid(row=0, column=1, sticky=tk.W, pady=5)
-        self.button_save_max_try_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_max_try_limit.grid(row=0, column=2)
 
         row_counter += 1
         frame_row = ttk.Frame(container)
@@ -1657,9 +1682,6 @@ class ConfigPanelApp(tk.Toplevel):
             width=3)
         self.max_crash_limit_entry.grid(row=0, column=0)
         self.restart_emu_label = ttk.Label(frame_row, text=_("次重启游戏后重启模拟器.")).grid(row=0, column=1, sticky=tk.W, pady=5)
-        self.button_save_max_crash_limit = ttk.Button(frame_row, text=_("保存"), command=self.save_config, width=5)
-        self.button_save_max_crash_limit.grid(row=0, column=2)
-        
 
         ###################################################################
         # 分割线
@@ -1746,10 +1768,14 @@ class ConfigPanelApp(tk.Toplevel):
     def updateACTIVE_REST_state(self):
         if self.ACTIVE_REST.get():
             self.rest_intervel_entry.config(state="normal")
-            self.button_save_rest_intervel.config(state="normal")
         else:
             self.rest_intervel_entry.config(state="disable")
-            self.button_save_rest_intervel.config(state="disable")
+
+    def updateRE_ASSEMBLE_PARTY_state(self):
+        if self.RE_ASSEMBLE_PARTY.get():
+            self.reassemble_interval_entry.config(state="normal")
+        else:
+            self.reassemble_interval_entry.config(state="disable")
 
     def set_controls_state(self, state):
         Button_and_Entry = [
@@ -1761,7 +1787,6 @@ class ConfigPanelApp(tk.Toplevel):
             self.recover_when_beginning_check,
             self.active_rest_check,
             self.rest_intervel_entry,
-            self.button_save_rest_intervel,
             self.karma_adjust_combobox,
             self.adb_port_entry,
             self.emu_index_entry,
@@ -1772,15 +1797,11 @@ class ConfigPanelApp(tk.Toplevel):
             self.active_digging,
             self.active_fishing,
             self.task_specific_config_check,
-            self.button_save_adb_port,
-            self.button_save_emu_index,
             self.delete_task_specific_config_button,
             self.active_csc,
             self.bypass_the_wall,
             self.max_try_limit_entry,
-            self.button_save_max_try_limit,
             self.max_crash_limit_entry,
-            self.button_save_max_crash_limit,
             self.official_org_website_2,
             self.official_org_website_1,
             self.AM_switch,
@@ -1788,8 +1809,6 @@ class ConfigPanelApp(tk.Toplevel):
             self.reassemble_party_check,
             self.lang_game_combobox,
             self.lang_gui_combobox,
-            self.button_save_emu_index,
-            self.button_save_gui_lang,
         ]
 
         if state == tk.DISABLED:
