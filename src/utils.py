@@ -405,6 +405,14 @@ def BuildQuestReflection():
 ###########################################
 IMAGE_FOLDER = fr'resources/images'
 
+def GetModPath(relative_path):
+    """获取 mod 文件夹下的绝对路径。mod 位于程序根目录（exe 旁边或项目根目录）"""
+    if getattr(sys, "frozen", False):
+        base_dir = os.path.dirname(sys.executable)          # 打包后 exe 所在目录
+    else:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # 源码运行时项目根目录
+    return os.path.join(base_dir, "mod", relative_path)
+
 def GetImageLanguageCandidates():
     candidates = []
     for lang in (LANGUAGE_GAME, 'common'): #, 'en_US'):
@@ -423,6 +431,18 @@ def LoadTemplateImage(shortPathOfTarget):
             if (lang != LANGUAGE_GAME) and (lang != 'common'):
                 logger.warning(f"图片 {shortPathOfTarget} 在语言 '{lang}' 下找到，但在当前语言 '{LANGUAGE_GAME}' 下未找到。")
             img = LoadImage(resource_path)
+            if img is not None:
+                return img
+
+    mod_candidates = [
+        os.path.join("images", image_filename),  # mod/images/...
+        image_filename,                          # mod/...
+    ]
+    for rel in mod_candidates:
+        mod_path = GetModPath(rel)
+        if os.path.isfile(mod_path):
+            logger.debug(f"在 mod 中找到图片: {mod_path}")
+            img = LoadImage(mod_path)
             if img is not None:
                 return img
 

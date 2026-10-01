@@ -987,72 +987,73 @@ def Factory():
         time_str = datetime.now().strftime("%Y%m%d-%H%M%S") 
         runtimeContext._IMPORTANTINFO = " {a} {b}\n{c}".format(a = time_str, b=str, c=runtimeContext._IMPORTANTINFO)
     ##################################################################
-    def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback,waitTime):
-        # fallback可以是坐标[x,y]或者字符串. 当为字符串的时候, 视为图片地址
-        def pressTarget(target):
-            if target.lower() == "return":
-                PressReturn()
-            elif target.startswith("input swipe"):
-                DeviceShell(target)
-            else:
-                Press(CheckIf(scn, target))
-                Sleep(0.2)
-        def checkPattern(scn, pattern):
-            if pattern.startswith("combatActive"):
-                return StateCombatCheck(scn)
-            else:
-                return CheckIf(scn,pattern)
+    def _is_coord(x):
+        return (isinstance(x, (list, tuple))
+                and len(x) == 2
+                and all(isinstance(v, (int, float)) for v in x))
+    def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback, waitTime):
+        for not_used in range(setting.MAX_TRY_LIMIT):
+            if setting._FORCESTOPING.is_set():
+                return None
+            
+            scn = ScreenShot()
 
-        while True:
-            for underscore in range(setting.MAX_TRY_LIMIT):
-                if setting._FORCESTOPING.is_set():
-                    return None
-                scn = ScreenShot()
-                if isinstance(targetPattern, (list, tuple)):
-                    for pattern in targetPattern:
-                        if p:=checkPattern(scn, pattern):
-                            return p
+            # FindCoords
+            patterns = targetPattern if isinstance(targetPattern, (list, tuple)) else (targetPattern,)
+            for pattern in patterns:
+                if pattern.startswith("combatActive"):
+                    p = StateCombatCheck(scn)
                 else:
-                    if p:=checkPattern(scn,targetPattern):
-                        return p # FindCoords
-                # OrElse
-                if TryPressRetry(scn):
-                    Sleep(1)
-                    continue
-                if Press(CheckIf_fastForwardOff(scn)):
-                    Sleep(1)
-                    continue
-                
-                if fallback: # Execute
-                    if isinstance(fallback, (list, tuple)):
-                        if (len(fallback) == 2) and all(isinstance(x, (int, float)) for x in fallback):
-                            Press(fallback)
-                        else:
-                            for p in fallback:
-                                if isinstance(p, str):
-                                    pressTarget(p)
-                                elif isinstance(p, (list, tuple)) and len(p) == 2:
-                                    t = time.time()
-                                    Press(p)
-                                    if (waittime:=(time.time()-t)) < 0.1:
-                                        Sleep(0.1-waittime)
-                                else:
-                                    logger.debug(_("错误: 非法的目标{a}.".format(a=p)))
-                                    setting._FORCESTOPING.set()
-                                    return None
-                    else:
-                        if isinstance(fallback, str):
-                            pressTarget(fallback)
-                        else:
-                            logger.debug(_("错误: 非法的目标."))
-                            setting._FORCESTOPING.set()
-                            return None
-                Sleep(waitTime) # and wait
+                    p = CheckIf(scn, pattern)
+                if p:
+                    return p
 
-            logger.info(_("{a}次截图依旧没有找到目标{b}, 疑似卡死. 重启游戏.".format(a=setting.MAX_TRY_LIMIT, b=targetPattern)))
-            Sleep()
-            restartGame()
-            return None # restartGame会抛出异常 所以直接返回none就行了
+            # OrElse
+            if TryPressRetry(scn):
+                Sleep(1)
+                continue
+            if Press(CheckIf_fastForwardOff(scn)):
+                Sleep(1)
+                continue
+
+            # Execute fallback
+            if fallback:
+                if isinstance(fallback, str) or _is_coord(fallback):
+                    actions = [fallback]
+                elif isinstance(fallback, (list, tuple)):
+                    actions = list(fallback)
+                else:
+                    logger.error(_("错误: 非法的目标."))
+                    setting._FORCESTOPING.set()
+                    return None
+
+                for p in actions:
+                    if isinstance(p, str):
+                        if p.lower() == "return":
+                            PressReturn()
+                        elif p.startswith("input swipe"):
+                            DeviceShell(p)
+                        else:
+                            Press(CheckIf(scn, p))
+                            Sleep(0.2)
+                    elif _is_coord(p):
+                        t = time.time()
+                        Press(p)
+                        if (waittime := time.time() - t) < 0.1:
+                            Sleep(0.1 - waittime)
+                    else:
+                        logger.error(_("错误: 非法的目标{a}.".format(a=p)))
+                        setting._FORCESTOPING.set()
+                        return None
+                    
+            # And Wait
+            Sleep(waitTime)
+
+        logger.info(_("{a}次截图依旧没有找到目标{b}, 疑似卡死. 重启游戏.".format(
+            a=setting.MAX_TRY_LIMIT, b=targetPattern)))
+        Sleep(1)
+        restartGame()
+        return None
     def restartGame(skip_screenshot = False, force_restart_EMU = False):
         nonlocal runtimeContext
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
@@ -1630,9 +1631,10 @@ def Factory():
         if last[1] == "intoWorldMap":
             TeleportFromCityToWorldLocation(*last[2])
         else:
+            fb = [last[2], [1, 1]] if (isinstance(last[2], str) or _is_coord(last[2])) else [*last[2], [1, 1]]
             RestartableSequenceExecution(
-                lambda: FindCoordsOrElseExecuteFallbackAndWait(
-                    ["dungFlag", "GotoDung", last[1]], [last[2], [1, 1]], 1
+                lambda fb=fb, last=last: FindCoordsOrElseExecuteFallbackAndWait(
+                    ["dungFlag", "GotoDung", last[1]], fb, 1
                 )
             )
         Press(CheckIf(ScreenShot(), quest._EOT[-1][1]))
@@ -3018,7 +3020,8 @@ def Factory():
                     logger.info(_("第四步: 悬赏揭榜"))
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("Bounties",["guild","guildRequest","input swipe 600 1400 300 1400",[1,1]],1)),
+                        lambda:Sleep(2),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","close","input swipe 600 1400 300 1400",[1,1]],1)),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
                         )
 
@@ -3036,7 +3039,7 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
                     )
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","Bounties",[1,1]],1))
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
@@ -3099,7 +3102,8 @@ def Factory():
                     logger.info(_("第四步: 悬赏揭榜"))
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("Bounties",["guild","guildRequest","input swipe 600 1400 300 1400",[1,1]],1)),
+                        lambda:Sleep(2),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","input swipe 600 1400 300 1400",[1,1]],1)),
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
                         )
 
@@ -3128,14 +3132,14 @@ def Factory():
                     
                     logger.info(_("第六步: 提交悬赏"))
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","Bounties",[1,1]],1))
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
                         )
                     
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","Bounties",[1,1]],1))
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
@@ -3502,12 +3506,13 @@ def Factory():
                         Sleep(10)
                     else:
                         logger.info("鱼饵还有, 不需要更换.")
+                        Sleep(2)
                         Press([196, 1153])
+                        Sleep(2)
                         FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","return",3)
                 def goToFishing():
                     quest._EOT = [
-                        ["press","DH",["EdgeOfTown",[1,1]],1],
-                        ["press","DH-R6","input swipe 650 250 650 900",1]
+                        ["press","DH-R6",["EdgeOfTown","DH","input swipe 650 250 650 900"],1]
                     ]
                     RestartableSequenceExecution(
                         lambda: StateEoT()
