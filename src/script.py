@@ -3554,7 +3554,8 @@ def Factory():
                         if CheckIf(scn,"fishing/nobait",[[530,1469,120,120]]):
                             nobait = CheckHow(scn,"fishing/nobait",[[530,1469,120,120]])
                             eightbait = CheckHow(scn,"fishing/8bait",[[530,1469,120,120]])
-                            if nobait > eightbait:
+                            ninebait = CheckHow(scn,"fishing/9bait",[[530,1469,120,120]])
+                            if (nobait > eightbait) and (nobait > ninebait):
                                 logger.info("没有鱼饵了...")
                                 RestartableSequenceExecution(
                                     lambda: refillBait()
