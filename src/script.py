@@ -719,7 +719,7 @@ def Factory():
 
         if outputMatchResult:
             SaveImage(search_area,prefix = f"check_origin_{shortPathOfTarget}")
-            cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 2)
+            cv2.rectangle(search_area, max_loc, (max_loc[0] + template.shape[1], max_loc[1] + template.shape[0]), (0, 255, 0), 1)
             SaveImage(search_area,prefix = f"check_matched_{shortPathOfTarget}")
 
         if roi is None or len(roi) == 0:

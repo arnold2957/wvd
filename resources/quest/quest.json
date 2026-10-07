@@ -663,24 +663,6 @@
         ]
     },
 
-    "DOE":{
-        "_TYPE":"dungeon",
-        "questName":"[矿石]土洞(中/次)",
-        "questName_en_US": "[Ore] Den of Earth",
-        "questCategory": "矿石",
-        "questCategory_en_US": "Ore",
-        "_EOT":[
-            ["press","DOE",["EdgeOfTown",[1,1]],1],
-            ["press","DOEB1F",[1,1],1]
-        ],
-        "_TARGETINFOLIST":
-        [
-            ["position", "右下", [713,1027]],
-            ["chest","右下",[[421,768,479,480]]],
-            ["DOE_quit"]
-        ]
-    },
-
     "DOF": {
         "_TYPE":"dungeon",
         "questName":"[矿石]火洞(特/中/次)",

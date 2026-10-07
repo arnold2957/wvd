@@ -38,6 +38,8 @@ class ImageAnnotatorApp:
         
         self.create_widgets()
 
+        self.root.after(0, lambda: self.refresh_list(auto_select_first=True))
+
     def create_widgets(self):
         # 1. 顶部地址栏
         top_frame = tk.Frame(self.root, bd=2, relief=tk.SOLID)
@@ -146,13 +148,18 @@ class ImageAnnotatorApp:
             self.folder_path.set(folder_selected)
             self.load_image_list()
 
-    def refresh_list(self):
+    def refresh_list(self, auto_select_first=False):
         if not self.folder_path.get():
             return
         self.load_image_list()
         if self.current_selection_index != -1 and self.current_selection_index < self.listbox.size():
             self.listbox.selection_set(self.current_selection_index)
             self.listbox.see(self.current_selection_index)
+            self.on_image_select(None)
+        # 启动时自动刷新还没有选中项, 则默认选中最新的一张 (列表按修改时间倒序)
+        elif auto_select_first and self.listbox.size() > 0:
+            self.listbox.selection_set(0)
+            self.listbox.see(0)
             self.on_image_select(None)
 
     def load_image_list(self):
