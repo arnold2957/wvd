@@ -2335,7 +2335,7 @@ def Factory():
 
                     if (targetInfoList==None) or (targetInfoList == []):
                         logger.info(_("地下城目标完成. 地下城状态结束.(仅限任务模式.)"))
-                        break
+                        return True
                 case DungeonState.Chest:
                     needRecoverBecauseChest = True
                     dungState = StateChest()
@@ -2401,13 +2401,14 @@ def Factory():
                         )
                     state = State.EoT
                 case State.EoT:
-                    DungeonCompletionCounter()
                     RestartableSequenceExecution(
                         lambda:StateEoT()
                         )
                     state = State.Dungeon
                 case State.Dungeon:
                     # 首次进入地下城
+                    DungeonCompletionCounter()
+                    logger.info(_("创建任务点列表."))
                     targetInfoList = quest._TARGETINFOLIST.copy()
                     RestartableSequenceExecution(
                         lambda: StateDungeon(targetInfoList)
