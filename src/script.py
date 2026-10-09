@@ -53,6 +53,7 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "DO_COMBAT_RECOVER",                     tk.BooleanVar, True],
             ["TEMPLATE",   "DO_CHEST_RECOVER",                      tk.BooleanVar, True],
             ["TEMPLATE",   "RECOVER_WHEN_BEGINNING",                tk.BooleanVar, False],
+            ["TEMPLATE",   "RECOVER_AFTER_REST",                    tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_REST",                           tk.BooleanVar, True],
             ["TEMPLATE",   "ACTIVE_ROYALSUITE_REST",                tk.BooleanVar, False],
             ["TEMPLATE",   "ACTIVE_TRIUMPH",                        tk.BooleanVar, False],
@@ -103,6 +104,7 @@ class RuntimeContext:
     _MAXRETRYLIMIT = 20
     _ACTIVESPELLSEQUENCE = None
     _RECOVERAFTERREZ = False
+    NEED_RECOVER_WHEN_REST = False
     _ZOOMWORLDMAP = False
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
@@ -121,6 +123,8 @@ class FarmQuest:
     _SPECIALDIALOGOPTION = None
     _SPECIALDIALOGOPTION_CALLBACK = None
     _SPECIALFORCESTOPINGSYMBOL = None
+    _SPECIALJUNK = None
+    _SPECIALJUNK_CALLBACK = None
     _TYPE = None
     _RTT = None # Return To Town, 回程时执行的流程
     _TIPS = None
@@ -1372,6 +1376,15 @@ def Factory():
         ReloadStrategy()
 
         return 
+    def ChangeQuest(target):
+        """切换到任务 target.
+
+        target: 目标任务名, 即 FARM_TARGET(例如 "7000G" / "fishing" / "ffxi-org", 或某个地下城任务名).
+        本函数不返回: 抛出 SystemExit 结束当前任务线程, 由 main.py 以新目标重新启动任务.
+        """
+        logger.info(_("准备切换到任务\"{a}\".".format(a=target)), summary=True)
+        setting._MSGQUEUE.put(("switch_quest", target))
+        raise SystemExit
     def IdentifyState():
         nonlocal setting # 修改因果
         counter = 0
@@ -1487,14 +1500,11 @@ def Factory():
                     return IdentifyState()
                 if (CheckIf(screen,"accept_death_cursedWheel_timeLeap",[[334, 1372, 231, 78]])):
                     if (setting.ACTIVE_DIGGING):
-                        setting._MSGQUEUE.put(("turn_to_dig",""))
-                        raise SystemExit
+                        ChangeQuest("ffxi-org")
                     elif (setting.ACTIVE_BEG_MONEY):
-                        setting._MSGQUEUE.put(("turn_to_7000G",""))
-                        raise SystemExit
+                        ChangeQuest("7000G")
                     elif (setting.ACTIVE_FISHING):
-                        setting._MSGQUEUE.put(("turn_to_fishing",""))
-                        raise SystemExit
+                        ChangeQuest("fishing")
                     else:
                         logger.info(_("看起来你没有选择任何0火的替代选项. 那么就等两个小时吧."), summary=True)
                         Sleep(7300)
@@ -1607,9 +1617,10 @@ def Factory():
             FindCoordsOrElseExecuteFallbackAndWait("OK",["Inn","Stay","royalsuite",[1,1]],2)
         else:
             FindCoordsOrElseExecuteFallbackAndWait("OK",["Inn","Stay","Economy",[1,1]],2)
-            
+        
         FindCoordsOrElseExecuteFallbackAndWait("Stay",["OK",[299,1464]],2)
         PressReturn()
+        runtimeContext.NEED_RECOVER_WHEN_REST = True
     def StateEoT():
         runtimeContext._RESUMEAVAILABLE = False
         if quest._preEOTcheck:
@@ -1975,7 +1986,7 @@ def Factory():
         if runtimeContext._TIME_CHEST==0:
             runtimeContext._TIME_CHEST = time.time()
         
-        if setting.QUICK_DISARM_CHEST:
+        if (not quest._SPECIALJUNK) and setting.QUICK_DISARM_CHEST:
             if Press(CheckIf(ScreenShot(),"chestFlag")):
                 Sleep(1)
                 whowillopenit = setting.WHO_WILL_OPEN_IT - 1
@@ -1996,7 +2007,7 @@ def Factory():
         while 1:
             FindCoordsOrElseExecuteFallbackAndWait(
                 ["dungFlag","combatActive","chestOpening","whowillopenit","RiseAgain", "ambush"],
-                [[1,1],[1,1],"chestFlag"],
+                [[1,1],"chestFlag"],
                 1)
             scn = ScreenShot()
 
@@ -2028,13 +2039,23 @@ def Factory():
 
             if CheckIf(scn,"chestOpening"):
                 Sleep(1)
-                # if setting._SMARTDISARMCHEST:
-                #     ChestOpen()
-                FindCoordsOrElseExecuteFallbackAndWait(
-                    ["dungFlag","combatActive","chestFlag","RiseAgain"], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
-                    [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
-                    1)
-            
+                if quest._SPECIALJUNK:
+                    FindCoordsOrElseExecuteFallbackAndWait(
+                        ["dungFlag","combatActive","chestFlag","RiseAgain",quest._SPECIALJUNK], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                        [disarm],
+                        2)
+                    if CheckIf(ScreenShot(),quest._SPECIALJUNK):
+                        FindCoordsOrElseExecuteFallbackAndWait(
+                            ["dungFlag","combatActive","chestFlag","RiseAgain"], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                            [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
+                            1)
+                        ChangeQuest(quest._SPECIALJUNK_CALLBACK)
+                else:
+                    FindCoordsOrElseExecuteFallbackAndWait(
+                        ["dungFlag","combatActive","chestFlag","RiseAgain"], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                        [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
+                        1)
+
             if CheckIf(scn,"RiseAgain"):
                 RiseAgainReset(reason = "chest")
                 return None
@@ -2161,6 +2182,10 @@ def Factory():
                         shouldRecover = True
                         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = False
                         logger.info(_("由于面板配置, 在刚进入地下城时进行恢复."))
+                    if setting.RECOVER_AFTER_REST and runtimeContext.NEED_RECOVER_WHEN_REST:
+                        shouldRecover = True
+                        runtimeContext.NEED_RECOVER_WHEN_REST = False
+                        logger.info(_("由于面板配置, 在休息后进行恢复."))
                     if runtimeContext._RECOVERAFTERREZ == True:
                         shouldRecover = True
                         runtimeContext._RECOVERAFTERREZ = False

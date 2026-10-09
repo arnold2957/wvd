@@ -34,7 +34,42 @@
         ]
     },
 
+    "shiphold-find":{
+        "_TYPE":"dungeon",
+        "questName":"[妖精]水路船一(前导任务)",
+        "questName_en_US": "[Faerie] Waterway Ship 1 (Lead)",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
+        "_TARGETINFOLIST":[
+            ["mark_auto"],
+            ["leaveDung"]
+        ],
+        "_EOT":[
+            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
+            ["press","shiphold",[1,1],1]
+        ],
+        "_SPECIALJUNK":"fairy",
+        "_SPECIALJUNK_CALLBACK":"shiphold-fairy",
+        "_TIPS":"注意: 请在 船一, x=5, y=22处打上标记, 并确保这是船一的唯一标记.\n\n本任务是前导任务: 重复进入水路船一并直到妖精出现.\n成功捕捉到获得了妖精杂物后, 脚本会自动切换到\"[妖精]水路船一(后续任务)\"并开始循环刷取, 之后不再回到本任务.\n请在启动前按后续任务的需求把面板配置调好, 包括但不限于\"禁止回城\", \"全自动战斗\", 或者对后续任务使用\"任务定制的配置文件\".\n\nNote: place a marker at x=5, y=22 in Ship 1, and make sure it is the only marker there.\nThis is the lead task: keep re-entering Waterway Ship 1 until the Faerie appears.\nOnce the Faerie item is obtained, the script automatically switches to \"[Faerie] Waterway Ship 1 (After)\" and starts the farming loop; it will not come back to this task.\nBefore starting, set up the panel for the follow-up task, including but not limited to \"no return to town\", \"Full Auto\", or a task-specific config file for the follow-up task."
+    },
 
+    "shiphold-fairy":{
+        "_TYPE":"dungeon",
+        "questName":"[妖精]水路船一(后续任务)",
+        "questName_en_US": "[Faerie] Waterway Ship 1 (After)",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
+        "_TARGETINFOLIST":[
+            ["stair_lounge","左上",[292,394]],
+            ["stair_shiphold","左上",[292,394]],
+            ["position","左下",[236, 1130]]
+        ],
+        "_EOT":[
+            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
+            ["press","shiphold",[1,1],1]
+        ],
+        "_TIPS":"本任务是后续任务, 负责循环刷取.\n通常由\"[妖精]水路船一(前导任务)\"触发一次后自动切换过来, 也可以直接启动本任务.\n\nThis is the follow-up task and performs the farming loop.\nIt is normally entered automatically after the lead task triggers once, but can also be started directly."
+    },
 
     "fortress-B1F":{
         "_TYPE":"dungeon",
@@ -77,7 +112,7 @@
         "questName_en_US": "[Faerie] Fortress Zone 8 Trap",
         "questCategory": "主线前三章",
         "questCategory_en_US": "Chapter 1,2 and 3",
-        "_TIPS":"要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n然后不停刷新8f门口两个怪, 确保其中之一是3小恶魔+1小精灵.\n然后在该位置打上标记.\n然后开启脚本."
+        "_TIPS":"要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n然后不停刷新8f门口两个怪, 确保其中之一是3小恶魔+1小精灵.\n然后在该位置打上标记.\n然后开启脚本.\n\nPreparation for farming Faeries in Fortress Zone 8:\nSince this party does not return to town, Ninja, Rogue and Masked One, plus a physical spear/bow and Princess or Sheliri as healer, are recommended.\nIn \"Settings\" > \"Auto-Moving\", turn off all options.\nThen keep resetting the two enemies at the Zone 8 entrance until one of them is 3 Imps + 1 Faerie.\nThen place a marker at that spot.\nThen start the script."
     },
     	
     "fortress-10F":{
@@ -274,7 +309,7 @@
             ["press","DH",["EdgeOfTown",[1,1]],1],
             ["press","DH-Church","input swipe 650 900 650 250",1]
         ],
-        "_TIPS":"本任务作者[@XX](不出矮人王100意志好个体不改名)\n1. 进入雪地-“教会区域”，设置唯一标记点，位置为X=26, Y=6\n2. 该脚本需要较高练度，特定角色，特定技能，不解决装备，角色和配队导致的不稳定刷取流程。\n3. （可选）查看如何全自动挂机白巨人视频教程，现在马上三连关注该UP：\n【辟邪除妖】XX教你如何全自动无伤带走教会红色白巨人 思路分享 巫术 Wizardry Variants Daphne】 https://www.bilibili.com/video/BV1jqjw6CEWX/"
+        "_TIPS":"本任务作者[@XX](不出矮人王100意志好个体不改名)\n1. 进入雪地-“教会区域”，设置唯一标记点，位置为X=26, Y=6\n2. 该脚本需要较高练度，特定角色，特定技能，不解决装备，角色和配队导致的不稳定刷取流程。\n3. （可选）查看如何全自动挂机白巨人视频教程，现在马上三连关注该UP：\n【辟邪除妖】XX教你如何全自动无伤带走教会红色白巨人 思路分享 巫术 Wizardry Variants Daphne】 https://www.bilibili.com/video/BV1jqjw6CEWX/\n\nAuthor: [@XX]\n1. Go to the DeepSnow Hinterland. - \"Church area\" and set a single marker at X=26, Y=6.\n2. This script requires high investment plus specific characters and skills; it does not fix unstable runs caused by equipment, characters or party composition.\n3. (Optional) Video tutorial on fully automatic Giant farming (in Chinese): https://www.bilibili.com/video/BV1jqjw6CEWX/"
     },
 
     "FFXI-2F":{
@@ -293,8 +328,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-2F-elite":{
@@ -315,16 +349,15 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE2",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-4f":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]FFXI 4F",
         "questName_en_US": "[Elite] FFXI 4F",
-        "questCategory": "最新任务",
-        "questCategory_en_US": "**WHAT'S NEW**",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
         "_FloorCheck": ["FFXI/stair_zone4","FFXI/stair_zone3"],
         "_TARGETINFOLIST":[
             ["FFXI/stair_zone4","左上",[719,237]],
@@ -337,8 +370,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/ZONE3",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
 
@@ -360,8 +392,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-mid":{
@@ -380,8 +411,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-bottom":{
@@ -400,8 +430,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-left":{
@@ -420,8 +449,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     
@@ -441,8 +469,7 @@
             ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
             ["press","FFXI/zone5",[1,1],1]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "HSR-1F":{
@@ -461,7 +488,7 @@
             ["press","intoWorldMap",["HSR/HSR","input swipe 400 400 500 500"],1],
             ["press","HSR/AGMM1F",[1,1],1]
         ],
-        "_TIPS":"该任务从第四章出发. This quest departs from Deepsnow Hinterlands."
+        "_TIPS":"该任务从第四章出发.\nThis quest departs from Chapter 4, Deepsnow Hinterlands."
     },
 
     "IWO":{
@@ -481,7 +508,7 @@
             ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
         ],
         "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
-        "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway."
+        "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
     },
     "IWO_2":{
         "_TYPE":"dungeon",
@@ -500,7 +527,7 @@
             ["press","IWO/IWOB2F",["IWO/IWO",[1,1]],1]
         ],
         "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
-        "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway."
+        "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
     },
     "malice-B3F":{
         "_TYPE":"dungeon",
@@ -838,7 +865,7 @@
         "questName_en_US": "[Equip.] Semi-Auto Demon",
         "questCategory": "其他",
         "questCategory_en_US": "Other",
-        "_TIPS":"启动脚本时, 如果位于副本内, 会自动退出副本. 然后该脚本会尝试重置并进入离别大恶魔所在房间后停止.\n固定跳跃到第四章结尾.",
+        "_TIPS":"启动脚本时, 如果位于副本内, 会自动退出副本. 然后该脚本会尝试重置并进入离别大恶魔所在房间后停止.\n固定跳跃到第四章结尾.\n\nWhen the script starts, if you are inside the dungeon it will leave automatically. The script then tries to reset and enter the room of the Separation Demon, then stops.\nIt always time-leaps to the end of Chapter 4.",
         "_TYPE":"quest"
     },
 
@@ -912,7 +939,7 @@
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
 
-        "_TIPS": "请按照如下步骤设置:\n1 购买9999个鹤嘴锄并保存在仓库里\n2 六人队伍脱掉所有装备, 然后尽可能多的携带鹤嘴锄\n3 在王城的工会里新建一个队伍, 并命名为FFXIStone.\n4 前往活动地图2F, 在哈肯正对的矿点前, 打上标记.\n5 确保这是该层唯一的标记.\n6 副本或主城中启动脚本.\n\nPlease follow these steps to set it up:\n1 Purchase 9,999 pickaxes.\n2 Have your six-person party remove all equipment, then carry as many pickaxes as possible.\n3 Create a new party at the Guild in the Royal City and name it \"FFXIStone\".\n4 Go to the 2nd floor and place a marker at the mining place directly facing Harken.\n5 Ensure this is the only marker on that floor.\n6 Start the script while in the dungeon or the city."
+        "_TIPS": "请按照如下步骤设置:\n1 购买9999个鹤嘴锄并保存在仓库里\n2 六人队伍脱掉所有装备, 然后尽可能多的携带鹤嘴锄\n3 在王城的工会里新建一个队伍, 并命名为FFXIStone.\n4 前往活动地图2F, 在哈肯正对的矿点前, 打上标记.\n5 确保这是该层唯一的标记.\n6 副本或主城中启动脚本.\n\nPlease follow these steps to set it up:\n1 Purchase 9,999 pickaxes and keep them in storage.\n2 Have your six-person party remove all equipment, then carry as many pickaxes as possible.\n3 Create a new party at the Guild in the Royal Capital and name it \"FFXIStone\".\n4 Go to the 2F event map and place a marker in front of the mining spot directly facing Harken.\n5 Ensure this is the only marker on that floor.\n6 Start the script from inside the dungeon or the city."
     },
     "sandman":{
         "questName":"[缘]沙人",
@@ -927,7 +954,7 @@
         "questCategory": "最新任务",
         "questCategory_en_US": "WHATS NEW",
         "_TYPE":"quest",
-        "_TIPS": "目前尚未支持回城拿鱼饵等功能, 请在下杆界面开启本任务.\nFeatures such as returning to town to fetch bait are not yet supported; please start this task from the fishing interface."
+        "_TIPS": "目前已支持回城拿鱼饵等功能.\n但请注意:\n只会拿去仓库中存在的鱼饵, 脚本不会购买鱼饵.\n目前只支持从主城和钓鱼界面启动. 其他界面无法使用.\n\nReturning to town to fetch bait is now supported.\nNote the following:\nOnly bait already in storage is used; the script will not buy bait.\nThis task can currently only be started from the main city or the fishing interface; other screens will not work."
     },
     "test":
     {

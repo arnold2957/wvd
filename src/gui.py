@@ -482,6 +482,32 @@ def LoadConfig(specific = 'ALL'):
 
     return result_config
 ############################################
+class TipsDialog(tk.Toplevel):
+    """任务提示弹窗.
+
+    去掉了标题栏的默认关闭按钮: 标题栏的 X 和 Alt+F4 都走 WM_DELETE_WINDOW,
+    这里把它吞掉, 因此只能点"我了解了"关闭.
+    """
+    def __init__(self, parent, tips, title = None):
+        super().__init__(parent)
+        self.title(title or _("任务提示"))
+        self.resizable(False, False)
+        self.transient(parent)
+
+        # 用 Label 显示, 窗口随文本长度自适应; wraplength 控制过长行的折行宽度.
+        ttk.Label(self, text=tips, justify="left", wraplength=560).grid(row=0, column=0, padx=10, pady=(10, 6))
+
+        ttk.Button(self, text=_("我了解了"), command=self.destroy).grid(row=1, column=0, pady=(0, 10))
+
+        # 删除默认关闭按钮: 标题栏的 X 与 Alt+F4 都被忽略.
+        self.protocol("WM_DELETE_WINDOW", lambda: None)
+
+        self.update_idletasks()
+        self.geometry(f"+{parent.winfo_rootx() + (parent.winfo_width()  - self.winfo_width())  // 2}"
+                      f"+{parent.winfo_rooty() + (parent.winfo_height() - self.winfo_height()) // 2}")
+        self.grab_set()
+        self.focus_set()
+############################################
 class ConfigPanelApp(tk.Toplevel):
     def __init__(self, master_controller, version, msg_queue):
         self.URL = "https://github.com/arnold2957/wvd"
@@ -983,6 +1009,12 @@ class ConfigPanelApp(tk.Toplevel):
         self.recover_when_beginning_check = ttk.Checkbutton(row_recover, text=_("在进入地下城时进行恢复."), variable=self.RECOVER_WHEN_BEGINNING, command=self.save_config, style="Default.TCheckbutton")
         self.recover_when_beginning_check.grid(row=0, column=0)
 
+        row_counter += 1
+        row_recover = tk.Frame(container)
+        row_recover.grid(row=row_counter, column=0, columnspan=2, sticky=tk.W, pady=2)
+        self.recover_after_rest_check = ttk.Checkbutton(row_recover, text=_("在住宿后首次进入地下城时进行恢复."), variable=self.RECOVER_AFTER_REST, command=self.save_config, style="Default.TCheckbutton")
+        self.recover_after_rest_check.grid(row=0, column=0, sticky=tk.W)
+
         # 休息设置
         row_counter += 1
         frame_row = ttk.Frame(container)
@@ -1278,6 +1310,7 @@ class ConfigPanelApp(tk.Toplevel):
                 return
             if tip := LoadQuest(task_name)._TIPS:
                 logger.info(f"\n\n########### TIPS #############\n\n{tip}\n\n##############################")
+                TipsDialog(self, tip)
         def update_combat_strategy_combobox_values():
             if not hasattr(self, 'task_point_comboboxes') or not self.task_point_comboboxes:
                 return
@@ -1785,6 +1818,7 @@ class ConfigPanelApp(tk.Toplevel):
             self.skip_recover_check,
             self.skip_chest_recover_check,
             self.recover_when_beginning_check,
+            self.recover_after_rest_check,
             self.active_rest_check,
             self.rest_intervel_entry,
             self.karma_adjust_combobox,
@@ -1853,32 +1887,21 @@ class ConfigPanelApp(tk.Toplevel):
 
         self.quest_active = False
 
-    def turn_to_7000G(self):
-        self.summary_log_display.config(bg="#F4C6DB" )
+    def turn_to_quest(self, target):
+        """任务切换后在界面上显示提示."""
+        # 各任务的提示配色与文案. text 为 None 表示只改颜色, 不显示额外文案.
+        switch_notice = {
+            "7000G":    ("#F4C6DB", _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以找公主要钱.\n\n赞美公主殿下!\n")),
+            "fishing":  ("#66ffcc", _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去钓鱼.\n\n事已至此, 先钓鱼吧.\n")),
+            "ffxi-org": ("#fff0cd", _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去挖矿.\n\n只要能有全改, 管他什么方法呢.\n")),
+            "default":  ("#66ccff", None),
+        }
+        bg, text_template = switch_notice.get(target, switch_notice["default"])
+        self.summary_log_display.config(bg=bg)
+        if text_template is None:
+            return
         self.main_frame.grid_remove()
         summary = self.summary_log_display.get("1.0", "end-1c")
         if self.INTRODUCTION in summary:
             summary = _("唔, 看起来一次成功的地下城都没有完成.")
-        text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以找公主要钱.\n\n赞美公主殿下!\n") % summary
-        turn_to_7000G_label = ttk.Label(self, text = text)
-        turn_to_7000G_label.grid(row=0, column=0,)
-
-    def turn_to_fishing(self):
-        self.summary_log_display.config(bg="#66ffcc" )
-        self.main_frame.grid_remove()
-        summary = self.summary_log_display.get("1.0", "end-1c")
-        if self.INTRODUCTION in summary:
-            summary = _("唔, 看起来一次成功的地下城都没有完成.")
-        text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去钓鱼.\n\n事已至此, 先钓鱼吧.\n") % summary
-        turn_to_fishing_label = ttk.Label(self, text = text)
-        turn_to_fishing_label.grid(row=0, column=0,)
-
-    def turn_to_dig(self):
-        self.summary_log_display.config(bg="#fff0cd" )
-        self.main_frame.grid_remove()
-        summary = self.summary_log_display.get("1.0", "end-1c")
-        if self.INTRODUCTION in summary:
-            summary = _("唔, 看起来一次成功的地下城都没有完成.")
-        text = _("你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去挖矿.\n\n只要能有全改, 管他什么方法呢.\n") % summary
-        turn_to_dig_label = ttk.Label(self, text = text)
-        turn_to_dig_label.grid(row=0, column=0,)
+        ttk.Label(self, text = text_template % summary).grid(row=0, column=0,)

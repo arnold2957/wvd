@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '2.9.15' 
+__version__ = '2.9.16' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -48,6 +48,22 @@ class AppController(tk.Tk):
             None
         self.after(1000000, self.schedule_periodic_update_check)
 
+    def switch_quest(self, target):
+        """把当前任务切换为 target(FARM_TARGET), 并重启任务线程."""
+        quest_name = QUEST_DATA.get(target, {}).get("questName", target)
+        logger.info(f'切换任务到"{quest_name}"({target})...')
+        self.quest_setting.FARM_TARGET = target
+        self.quest_setting.FARM_TARGET_TEXT = quest_name
+        self.quest_setting._COUNTERDUNG = 0
+        while 1:
+            if not self.quest_threading.is_alive():
+                Farm = Factory()
+                self.quest_threading = Thread(target=Farm, args=(self.quest_setting,))
+                self.quest_threading.start()
+                break
+        if self.main_window:
+            self.main_window.turn_to_quest(target)
+
     def check_queue(self):
         """处理来自AutoUpdater和其他服务的消息"""
         try:
@@ -71,44 +87,8 @@ class AppController(tk.Tk):
                         if hasattr(self.quest_setting, '_FORCESTOPING'):
                             self.quest_setting._FORCESTOPING.set()
                 
-                case 'turn_to_7000G':
-                    logger.info('开始要钱...')
-                    self.quest_setting.FARM_TARGET = "7000G"
-                    self.quest_setting._COUNTERDUNG = 0
-                    while 1:
-                        if not self.quest_threading.is_alive():
-                            Farm = Factory()
-                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
-                            self.quest_threading.start()
-                            break
-                    if self.main_window:
-                        self.main_window.turn_to_7000G()
-
-                case 'turn_to_fishing':
-                    logger.info('开始钓鱼...')
-                    self.quest_setting.FARM_TARGET = "fishing"
-                    self.quest_setting._COUNTERDUNG = 0
-                    while 1:
-                        if not self.quest_threading.is_alive():
-                            Farm = Factory()
-                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
-                            self.quest_threading.start()
-                            break
-                    if self.main_window:
-                        self.main_window.turn_to_fishing()
-
-                case 'turn_to_dig':
-                    logger.info('开始挖矿...')
-                    self.quest_setting.FARM_TARGET = "ffxi-org"
-                    self.quest_setting._COUNTERDUNG = 0
-                    while 1:
-                        if not self.quest_threading.is_alive():
-                            Farm = Factory()
-                            self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
-                            self.quest_threading.start()
-                            break
-                    if self.main_window:
-                        self.main_window.turn_to_dig()
+                case 'switch_quest':
+                    self.switch_quest(value)
 
                 case 'update_available':
                     # 在面板上显示提示
