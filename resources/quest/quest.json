@@ -50,7 +50,7 @@
         ],
         "_SPECIALJUNK":"fairy",
         "_SPECIALJUNK_CALLBACK":"shiphold-fairy",
-        "_TIPS":"注意: 请在 船一, x=4, y=25处打上标记, 并确保这是船一的唯一标记.\n\n本任务是前导任务: 重复进入水路船一并直到妖精出现.\n成功捕捉到获得了妖精杂物后, 脚本会自动切换到\"[妖精]水路船一(后续任务)\"并开始循环刷取, 之后不再回到本任务.\n请在启动前按后续任务的需求把面板配置调好, 包括但不限于\"禁止回城\", \"全自动战斗\", 或者对后续任务使用\"任务定制的配置文件\".\n\nNote: place a marker at x=5, y=22 in Ship 1, and make sure it is the only marker there.\nThis is the lead task: keep re-entering Waterway Ship 1 until the Faerie appears.\nOnce the Faerie item is obtained, the script automatically switches to \"[Faerie] Waterway Ship 1 (After)\" and starts the farming loop; it will not come back to this task.\nBefore starting, set up the panel for the follow-up task, including but not limited to \"no return to town\", \"Full Auto\", or a task-specific config file for the follow-up task."
+        "_TIPS":"注意: 请在 船一, x=4, y=25处打上标记, 并确保这是船一的唯一标记.\n\n本任务是前导任务: 重复进入水路船一并直到妖精出现.\n成功捕捉到获得了妖精杂物后, 脚本会自动切换到\"[妖精]水路船一(后续任务)\"并开始循环刷取, 之后不再回到本任务.\n请在启动前按后续任务的需求把面板配置调好, 包括但不限于\"禁止回城\", \"全自动战斗\", 或者对后续任务使用\"任务定制的配置文件\".\n\nNote: place a marker at x=4, y=25 in Ship 1, and make sure it is the only marker there.\nThis is the lead task: keep re-entering Waterway Ship 1 until the Faerie appears.\nOnce the Faerie item is obtained, the script automatically switches to \"[Faerie] Waterway Ship 1 (After)\" and starts the farming loop; it will not come back to this task.\nBefore starting, set up the panel for the follow-up task, including but not limited to \"no return to town\", \"Full Auto\", or a task-specific config file for the follow-up task."
     },
 
     "shiphold-fairy":{
