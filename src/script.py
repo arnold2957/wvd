@@ -2026,8 +2026,11 @@ def Factory():
                     else:
                         Press(pos)
                         Sleep(1.5)
-                        # if not setting._SMARTDISARMCHEST:
-                        for underscore in range(8):
+                        if quest._SPECIALJUNK:
+                            disarm_time = 1
+                        else:
+                            disarm_time = 8
+                        for underscore in range(disarm_time):
                             t = time.time()
                             Press(disarm)
                             if time.time()-t<0.3:
@@ -2041,18 +2044,18 @@ def Factory():
                 Sleep(1)
                 if quest._SPECIALJUNK:
                     FindCoordsOrElseExecuteFallbackAndWait(
-                        ["dungFlag","combatActive","chestFlag","RiseAgain",quest._SPECIALJUNK], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                        ["dungFlag","combatActive","chestFlag","RiseAgain",quest._SPECIALJUNK], 
                         [disarm],
                         2)
                     if CheckIf(ScreenShot(),quest._SPECIALJUNK):
                         FindCoordsOrElseExecuteFallbackAndWait(
-                            ["dungFlag","combatActive","chestFlag","RiseAgain"], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                            ["dungFlag","combatActive","chestFlag","RiseAgain"],
                             [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
                             1)
                         ChangeQuest(quest._SPECIALJUNK_CALLBACK)
                 else:
                     FindCoordsOrElseExecuteFallbackAndWait(
-                        ["dungFlag","combatActive","chestFlag","RiseAgain"], # 如果这个fallback重启了, 战斗箱子会直接消失, 固有箱子会是chestFlag
+                        ["dungFlag","combatActive","chestFlag","RiseAgain"],
                         [disarm,disarm,disarm,disarm,disarm,disarm,disarm,disarm],
                         1)
 
