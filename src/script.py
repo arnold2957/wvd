@@ -3231,26 +3231,6 @@ def Factory():
                     if setting._FORCESTOPING.is_set():
                         break
                     logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),summary=True)
-            case "fortress-B8F_trap":
-                while 1:
-                    if setting._FORCESTOPING.is_set():
-                        break
-                    if runtimeContext._LAPTIME!= 0:
-                        runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次要塞小精灵完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    summary=True)
-                    runtimeContext._LAPTIME = time.time()
-                    runtimeContext._COUNTERDUNG+=1
-
-                    RestartableSequenceExecution(
-                        lambda: StateDungeon([TargetInfo("stair_fortress1f","左上",[720,395]),
-                                              TargetInfo("mark_auto"),
-                                              TargetInfo("position","右下",[712,972]),
-                                              TargetInfo("position","右下",[500,1080]),
-                                              TargetInfo("position","右下",[765,918]),
-                                              TargetInfo("position","右下",[606,1026]),
-                                              TargetInfo("stair_fortressGate","左下", [720,1027]),])
-                        )
             case "FFXI-Org":
                 counter = {
                     "全改" : 0,

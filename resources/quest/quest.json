@@ -91,30 +91,45 @@
 
     "fortress-B8F_entrance":{
         "_TYPE":"dungeon",
-        "questName":"[妖精]要塞八层门口",
-        "questName_en_US": "[Faerie] Fortress Zone 8",
-        "questCategory": "主线前三章",
-        "questCategory_en_US": "Chapter 1,2 and 3",
+        "questName":"[妖精]要塞八层门口(前导任务)",
+        "questName_en_US": "[Faerie] Fortress Zone 8 (Lead)",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
         "_TARGETINFOLIST":[
             ["stair_fortress1f","左上",[720,395]],
             ["position","左下",[453,865]],
-            ["position","右下",[500,918]],
             ["stair_fortressGate","左下", [720,1027]],
             ["position","左下",[720,1241]]
         ],
         "_EOT":[
             ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
             ["press","fortressEntrance","input swipe 650 250 650 900",1]
-        ]
+        ],
+        "_SPECIALJUNK":"fairy",
+        "_SPECIALJUNK_CALLBACK":"fortress-B8F_trap",
+        "_TIPS":"本任务是前导任务: 反复刷要塞八层门口的两个怪并开箱, 直到开箱检测到\"妖精\"杂物.\n一旦检测到, 脚本会自动切换到\"[妖精]要塞八层陷阱\"并开始循环刷取, 之后不再回到本任务.\n启动前的具体准备(队伍/自动移动/标记)请按照后续任务\"[妖精]要塞八层陷阱\"的说明.\n\nNote: THIS QUEST IS NOT AVAILABLE FOR NOW.\n\nThis is the lead task: keep farming the two enemies at the Fortress Zone 8 entrance and opening chests until a \"Faerie\" junk item is detected.\nOnce detected, the script automatically switches to \"[Faerie] Fortress Zone 8 Trap\" and starts the farming loop; it will not come back to this task.\nFor the required preparation (party, Auto-Moving, marker), follow the instructions of the follow-up task \"[Faerie] Fortress Zone 8 Trap\"."
     },
 
     "fortress-B8F_trap":{
-        "_TYPE":"quest",
-        "questName":"[妖精]要塞八层陷阱",
-        "questName_en_US": "[Faerie] Fortress Zone 8 Trap",
-        "questCategory": "主线前三章",
-        "questCategory_en_US": "Chapter 1,2 and 3",
-        "_TIPS":"要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n然后不停刷新8f门口两个怪, 确保其中之一是3小恶魔+1小精灵.\n然后在该位置打上标记.\n然后开启脚本.\n\nPreparation for farming Faeries in Fortress Zone 8:\nSince this party does not return to town, Ninja, Rogue and Masked One, plus a physical spear/bow and Princess or Sheliri as healer, are recommended.\nIn \"Settings\" > \"Auto-Moving\", turn off all options.\nThen keep resetting the two enemies at the Zone 8 entrance until one of them is 3 Imps + 1 Faerie.\nThen place a marker at that spot.\nThen start the script."
+        "_TYPE":"dungeon",
+        "questName":"[妖精]要塞八层陷阱(后续任务)",
+        "questName_en_US": "[Faerie] Fortress Zone 8 Trap (After)",
+        "questCategory": "最新任务",
+        "questCategory_en_US": "WHATS NEW",
+        "_TARGETINFOLIST":[
+            ["stair_fortress1f","左上",[720,395]],
+            ["position","左下",[453,865]],
+            ["position","右下",[712,972]],
+            ["position","右下",[500,1080]],
+            ["position","右下",[765,918]],
+            ["position","右下",[606,1026]],
+            ["stair_fortressGate","左下", [720,1027]]
+        ],
+        "_EOT":[
+            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
+            ["press","fortressEntrance","input swipe 650 250 650 900",1]
+        ],
+        "_TIPS":"本任务是后续任务, 负责循环刷取: 反复刷门口的两只怪物和陷阱房的怪物.\n通常由\"[妖精]要塞八层门口\"检测到妖精杂物后自动切换过来, 也可以直接启动本任务.\n\n要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n\nThis is the follow-up task and performs the farming loop: repeatedly farm the two enemies at the entrance and the enemies in the trap room.\nIt is normally entered automatically after \"[Faerie] Fortress Zone 8\" detects the Faerie junk, but can also be started directly.\n\nPreparation for farming Faeries in Fortress Zone 8:\nSince this party does not return to town, Ninja, Rogue and Masked One, plus a physical spear/bow and Princess or Sheliri as healer, are recommended.\nIn \"Settings\" > \"Auto-Moving\", turn off all options."
     },
     	
     "fortress-10F":{
@@ -544,7 +559,7 @@
         "_TARGETINFOLIST":
         [
             ["position","右上",[715,290]],
-            ["harken2",null,null]
+            ["position","右上",[449, 928]]
         ]
     },
     "fordraig-B3F":{
