@@ -329,6 +329,29 @@
         "_TIPS":"本任务作者[@XX](不出矮人王100意志好个体不改名)\n1. 进入雪地-“教会区域”，设置唯一标记点，位置为X=26, Y=6\n2. 该脚本需要较高练度，特定角色，特定技能，不解决装备，角色和配队导致的不稳定刷取流程。\n3. （可选）查看如何全自动挂机白巨人视频教程，现在马上三连关注该UP：\n【辟邪除妖】XX教你如何全自动无伤带走教会红色白巨人 思路分享 巫术 Wizardry Variants Daphne】 https://www.bilibili.com/video/BV1jqjw6CEWX/\n\nAuthor: [@XX]\n1. Go to the DeepSnow Hinterland. - \"Church area\" and set a single marker at X=26, Y=6.\n2. This script requires high investment plus specific characters and skills; it does not fix unstable runs caused by equipment, characters or party composition.\n3. (Optional) Video tutorial on fully automatic Giant farming (in Chinese): https://www.bilibili.com/video/BV1jqjw6CEWX/"
     },
 
+    
+    "FFXI-1F-elite":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]FFXI 1F 精英",
+        "questName_en_US": "[Elite] FFXI 1F Elite",
+        "questCategory": "FFXI联动",
+        "questCategory_en_US": "FFXI Cave",
+        "_TARGETINFOLIST":[
+            ["position","左上",[30,300]],
+            ["position","左上",[350,880]],
+            ["position","右上",[870,300]],
+            ["leaveDung"]
+        ],
+        "_preEOTcheck":"FFXI/GCN",
+        "_EOT":
+        [
+            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
+            ["press","FFXI/ZONE1",[1,1],1]
+        ],
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
+        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+    },
+    
     "FFXI-2F":{
         "_TYPE":"dungeon",
         "questName":"[宝箱]FFXI 2F 自动宝箱",

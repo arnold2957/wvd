@@ -109,6 +109,7 @@ class RuntimeContext:
     _CRASHCOUNTER = 0
     _IMPORTANTINFO = ""
     _RESUMEAVAILABLE = False
+    _RESUMERE_TRY_COUNTER = 0 # 连续点击resume的次数, 多次点击会重启游戏.
     _BYPASSAFTERRESTART = True
     CURRENT_STRATEGY = {}
     NEED_RECOVER_WHEN_BEGINNING = True
@@ -872,12 +873,15 @@ def Factory():
                 return pos
             return None
 
-    def CheckFloorName(screenImage, template_name, errorThreshold=0.15):
+    def CheckFloorName(screenImage, template_name, errorThreshold=0.075):
         """
         检查 screen 固定区域(150, 65, 600, 50)的楼层名是否与 template 匹配。
-        - template 尺寸必须与 RoI 一致(600x50), 否则直接判定失败。
-        - 灰度 -> 二值化(Otsu) -> 统计不同像素数。
-        - 错误率超过 errorThreshold(默认 15%)判定失败。
+        - template 尺寸必须与 RoI 一致(600x50), 否则直接跳过。
+        - 对每个模板做两次比较(取误差率较小者):
+            * 缩放前: 模板原图 -> 灰度 -> Otsu 二值化 -> 与 RoI 逐像素比较。
+            * 缩放后: 模板宽度 600->613(高度不变) -> 左删6列、右删7列
+                    -> 灰度 -> Otsu 二值化 -> 与 RoI 逐像素比较。
+        - 误差率 <= errorThreshold(默认 7.5%) 判定通过。
         - template_name 可以是 str, 也可以是 [str]; 列表时匹配任一即通过。
         """
         screenshot = screenImage.copy()
@@ -904,8 +908,14 @@ def Factory():
         # 二值化 RoI(Otsu 自动阈值, 只需一次)
         not_use, screen_bin = cv2.threshold(screen_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
+        # ---- 缩放参数 ----
+        NEW_WIDTH = 613             # 放大后的宽度
+        CROP_LEFT = 6               # 左边删掉的列数
+        CROP_RIGHT = 7              # 右边删掉的列数
+
         best_rate = 1.0
         best_name = None
+        best_stage = None           # "缩放前" 或 "缩放后"
 
         for name in template_names:
             template = LoadTemplateImage(name)
@@ -918,32 +928,62 @@ def Factory():
                     b=(template.shape[:2] if template is not None else None))))
                 continue
 
+            # ---------- 第一次比较: 缩放前 ----------
             template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) if template.ndim == 3 else template
             not_use, template_bin = cv2.threshold(template_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-            diff = int(np.count_nonzero(screen_bin != template_bin))
-            error_rate = diff / screen_bin.size
+            h = min(screen_bin.shape[0], template_bin.shape[0])
+            w = min(screen_bin.shape[1], template_bin.shape[1])
+            a = screen_bin[:h, :w]
+            b = template_bin[:h, :w]
+            rate_before = int(np.count_nonzero(a != b)) / a.size
 
-            if error_rate < best_rate:
-                best_rate = error_rate
+            # ---------- 第二次比较: 缩放后 ----------
+            th, tw = template.shape[:2]
+            scaled = cv2.resize(template, (NEW_WIDTH, th), interpolation=cv2.INTER_LINEAR)
+            scaled = scaled[:, CROP_LEFT:NEW_WIDTH - CROP_RIGHT]      # 左删6、右删7 -> 600 宽
+            scaled_gray = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY) if scaled.ndim == 3 else scaled
+            not_use, scaled_bin = cv2.threshold(scaled_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+            h2 = min(screen_bin.shape[0], scaled_bin.shape[0])
+            w2 = min(screen_bin.shape[1], scaled_bin.shape[1])
+            a2 = screen_bin[:h2, :w2]
+            b2 = scaled_bin[:h2, :w2]
+            rate_after = int(np.count_nonzero(a2 != b2)) / a2.size
+
+            # 取两次中误差更小的
+            if rate_after < rate_before:
+                name_best_rate = rate_after
+                name_best_stage = "缩放后"
+            else:
+                name_best_rate = rate_before
+                name_best_stage = "缩放前"
+
+            # 记录全局最佳(便于失败时打日志)
+            if name_best_rate < best_rate:
+                best_rate = name_best_rate
                 best_name = name
+                best_stage = name_best_stage
 
-            if error_rate <= errorThreshold:
-                logger.debug(_("楼层名匹配成功: 模板[{n}], 错误率{r:.2f}%.".format(
-                    n=name, r=error_rate * 100)))
+            # 只要有一个模板通过即可
+            if name_best_rate <= errorThreshold:
+                logger.debug(_("楼层名匹配成功: 模板[{n}], 阶段[{s}], 错误率{r:.2f}%.".format(
+                    n=name, s=name_best_stage, r=name_best_rate * 100)))
                 return True
 
         # 全部未通过
         if best_name is None:
             logger.info(_("楼层名匹配失败: 所有模板均因尺寸不一致被跳过."))
         else:
-            logger.info(_("楼层名匹配失败: 最佳模板[{n}], 错误率{r:.2f}%, 超过阈值{c:.0f}%.".format(
+            logger.info(_("楼层名匹配失败: 最佳模板[{n}], 阶段[{s}], 错误率{r:.2f}%, 超过阈值{c:.0f}%.".format(
                 n=best_name,
+                s=best_stage,
                 r=best_rate * 100,
                 c=errorThreshold * 100)))
-            SaveImage(search_area,prefix="failed_floor_check")
+            SaveImage(search_area, prefix="failed_floor_check")
+            SaveImage(screenshot, prefix="failed_floor_check_full")
+
         return False
-    
     def CheckIf_fastForwardOff(screenImage):
         position = [240,1490]
         template =  LoadTemplateImage(f"fastforward_off")
@@ -2091,6 +2131,7 @@ def Factory():
 
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
+            runtimeContext._RESUMERE_TRY_COUNTER = 0 # 已完成一个地图目标, 重置resume连点计数.
 
             if setting.TASK_POINT_STRATEGY.get("overall_strategy", "") == _("自定义任务点策略"):
                 logger.info(f"由于面板设置, 切换到新任务点对应的策略.")
@@ -2098,6 +2139,7 @@ def Factory():
             return
         
         runtimeContext.NEED_RECOVER_WHEN_BEGINNING = True
+        runtimeContext._RESUMERE_TRY_COUNTER = 0 # 刚进入地下城, 重置resume连点计数.
 
         if runtimeContext.CURRENT_STRATEGY.get("need_reload_when_dungeon_begins", False) == True:
             logger.info("由于面板设置, 在进入副本时重置了战斗策略.")
@@ -2238,9 +2280,16 @@ def Factory():
                             runtimeContext._BYPASSAFTERRESTART = True
                     ########### 尝试resume
                     not_moving = False
-                    if runtimeContext._RESUMEAVAILABLE and Press(CheckIf(ScreenShot(),"resume")):
+                    if runtimeContext._RESUMEAVAILABLE and (resumePos := CheckIf(ScreenShot(),"resume")):
+                        runtimeContext._RESUMERE_TRY_COUNTER += 1
+                        if runtimeContext._RESUMERE_TRY_COUNTER > 10:
+                            logger.info(_("连续点击resume超过10次, 疑似卡住. 重启游戏."))
+                            restartGame()
                         logger.info(_("resume可用. 使用resume."))
+                        Press(resumePos)
                         lastscreen = ScreenShot()
+                        
+                        # resume的移动状态检测
                         for counter in range(30):
                             Sleep(3)
                             underscore, dungState,screen = IdentifyState()
