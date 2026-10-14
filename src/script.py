@@ -3249,14 +3249,11 @@ def Factory():
                     )
 
                     pos = CheckIf(ScreenShot(),"Steel")
-                    Press([pos[0]+306,pos[1]+258])
+                    Press([pos[0]+366,pos[1]+258])
                     
-                    quest._SPECIALDIALOGOPTION = ["ready","noneed", "quit"]
+                    quest._SPECIALDIALOGOPTION = ["ready","noneed"]
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("position","左上",[131,769]),
-                                    TargetInfo("position","左上",[827,447]),
-                                    TargetInfo("position","左上",[131,769]),
-                                    TargetInfo("position","左下",[719,1080]),
+                        lambda:StateDungeon([TargetInfo("mark_auto"),
                                     ])
                                   )
                     
