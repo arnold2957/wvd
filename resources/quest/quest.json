@@ -96,7 +96,7 @@
         "questCategory": "最新任务",
         "questCategory_en_US": "WHATS NEW",
         "_TARGETINFOLIST":[
-            ["stair_fortress1f","左上",[720,395]],
+            ["mark_auto"],
             ["position","左下",[453,865]],
             ["stair_fortressGate","左下", [720,1027]],
             ["position","左下",[720,1241]]
