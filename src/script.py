@@ -3100,7 +3100,7 @@ def Factory():
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
                         lambda:Sleep(2),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","close","input swipe 600 1400 300 1400",[1,1]],1)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
                         )
 
                     logger.info(_("第五步: 击杀蝎女"))
@@ -3120,7 +3120,7 @@ def Factory():
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
                         )
                     
                     logger.info(_("第七步: 休息"))
@@ -3182,7 +3182,7 @@ def Factory():
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
                         lambda:Sleep(2),
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","input swipe 600 1400 300 1400",[1,1]],1)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
                         )
 
                     logger.info(_("第五步: 击杀蝎女"))
@@ -3213,14 +3213,14 @@ def Factory():
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
                         )
                     
                     RestartableSequenceExecution(
                         lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
                         )
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return",[1,1]],1)
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
                         )
                     
                     logger.info(_("第七步: 休息"))
