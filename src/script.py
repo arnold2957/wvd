@@ -1225,18 +1225,15 @@ def Factory():
     def reunionParty(partyName = None):
         logger.info(_("必须重新集结队伍..."))
 
-        if not partyName:
-            RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
-                )
-        else:
-            RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
-                        lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
-                            )
+        party_name = partyName if partyName else [137,290]
+
+        RestartableSequenceExecution(
+            lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
+            lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[party_name,"AssembleParty"],1)),
+            lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("Exit", None, 1)),
+            lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+        )
+
     def DungeonCompletionCounter():
         nonlocal runtimeContext
         # 如果发生了开箱或者战斗那么+1
