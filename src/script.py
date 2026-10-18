@@ -1229,13 +1229,13 @@ def Factory():
             RestartableSequenceExecution(
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[[137,290],"AssembleParty"],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave"],1)
                 )
         else:
             RestartableSequenceExecution(
                         lambda: FindCoordsOrElseExecuteFallbackAndWait("PartyManagementTitle",["PartyManagement","Edit","guild",[1,1]],1),
                         lambda: Press(FindCoordsOrElseExecuteFallbackAndWait("ok",[partyName,"AssembleParty"],1)),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave"],1)
                             )
     def DungeonCompletionCounter():
         nonlocal runtimeContext
@@ -2406,11 +2406,11 @@ def Factory():
         Sleep(2)
         pos = FindCoordsOrElseExecuteFallbackAndWait(request,["input swipe 150 200 150 250",[1,1]],1)
         if not CheckIf(ScreenShot(),"request_accepted",[[0,pos[1]-200,900,pos[1]+200]]):
-            FindCoordsOrElseExecuteFallbackAndWait(["Inn","guildRequest"],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],"return",[1,1]],1)
-            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+            FindCoordsOrElseExecuteFallbackAndWait(["Inn","guildRequest"],[[pos[0]+pressbias[0],pos[1]+pressbias[1]],"return","leave",[1,1]],1)
+            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave",[1,1]],1)
         else:
             logger.info(_("奇怪, 任务怎么已经接了."))
-            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave",[1,1]],1)
 
     def DungeonFarm():
         nonlocal runtimeContext
@@ -2905,8 +2905,7 @@ def Factory():
                             else:
                                 Press([pos[0]+300,pos[1]+150])
                                 break
-                        FindCoordsOrElseExecuteFallbackAndWait("guildRequest",[1,1],1)
-                        PressReturn()
+                        FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["leave",[1,1]],1)
                     RestartableSequenceExecution(
                         lambda: logger.info(_("第三步: 领取任务")),
                         lambda: stepThree()
@@ -2962,7 +2961,7 @@ def Factory():
                     RestartableSequenceExecution(
                         lambda: logger.info(_("第四步: 领取任务")),
                         lambda: FindCoordsOrElseExecuteFallbackAndWait(["COS/Okay","guildRequest"],["guild",[1,1]],1),
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["COS/Okay","return",[1,1]],1),
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["COS/Okay","return","leave",[1,1]],1),
                         lambda: StateInn(),
                         )
                     
@@ -3019,7 +3018,7 @@ def Factory():
                         lambda: StateDungeon(cosback2f)
                         )
                     Press(FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1)) # 回城
-                    FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
+                    FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave",[1,1]],1)
                     
                 pass
             case "gaintKiller":

@@ -614,7 +614,7 @@
         ],
         "_preEOTcheck":"SSC/SSC",
         "_EOT":[
-            ["press","intoWorldMap",["SSC/SSC","input swipe 700 500 600 600"],1]
+            ["press","intoWorldMap",["SSC/SSC","input swipe 827 1187 527 1421"],1]
         ]
     },
 
