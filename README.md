@@ -562,8 +562,8 @@ wvdas 是一款面向手游《Wizardry Variants Daphne》（巫术 Variants Daph
 | `_TYPE` | 是 | `dungeon` 或 `quest` |
 | `questName` | 至少一项 | 中文任务名 |
 | `questName_en_US` | 至少一项 | 英文任务名 |
-| `questCategory` | 否 | 自定义任务会统一归入“Custom Requests” |
-| `questCategory_en_US` | 否 | 自定义任务会统一归入“自定义” |
+| `questCategory` | 否 | 自定义任务会统一归入“自定义” |
+| `questCategory_en_US` | 否 | 自定义任务会统一归入“Custom Requests” |
 | `_TARGETINFOLIST` | 地下城任务必填 | 任务点列表 |
 | `_EOT` | 地下城任务通常需要 | 从城镇进入地下城的流程 |
 | `_RTT` | 否 | 从地下城返回城镇的流程 |
