@@ -2121,8 +2121,8 @@ def Factory():
         GAMEFROZEN_STATEMAPLIMIT = 20+20*len(targetInfoList)
         dungState = None
         shouldRecover = False
-        needRecoverBecauseCombat = False
-        needRecoverBecauseChest = False
+        pendingCombatEvent = False
+        pendingChestEvent = False
 
         nonlocal runtimeContext
         runtimeContext.TASK_STEP_INDEX = 0
@@ -2131,7 +2131,6 @@ def Factory():
 
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
-            runtimeContext._RESUMERE_TRY_COUNTER = 0 # 已完成一个地图目标, 重置resume连点计数.
 
             if setting.TASK_POINT_STRATEGY.get("overall_strategy", "") == _("自定义任务点策略"):
                 logger.info(f"由于面板设置, 切换到新任务点对应的策略.")
@@ -2204,19 +2203,22 @@ def Factory():
                             runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
                             runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
                     ########### RECOVER
-                    if needRecoverBecauseChest:
-                        logger.info(_("进行开启宝箱后的恢复."))
+                    if pendingChestEvent:
+                        logger.info(_("处理已完成的宝箱事件."))
                         runtimeContext._COUNTERCHEST+=1
-                        needRecoverBecauseChest = False
+                        runtimeContext._RESUMERE_TRY_COUNTER = 0 # 完成宝箱后重置resume连点计数.
+                        pendingChestEvent = False
                         runtimeContext._MEET_CHEST_OR_COMBAT = True
                         if setting.DO_CHEST_RECOVER:
                             logger.info(_("由于面板配置, 进行开启宝箱后恢复."))
                             shouldRecover = True
                         else:
                             logger.info(_("由于面板配置, 跳过了开启宝箱后恢复."))
-                    if needRecoverBecauseCombat:
+                    if pendingCombatEvent:
+                        logger.info(_("处理已完成的战斗事件."))
                         runtimeContext._COUNTERCOMBAT+=1
-                        needRecoverBecauseCombat = False
+                        runtimeContext._RESUMERE_TRY_COUNTER = 0 # 完成战斗后重置resume连点计数.
+                        pendingCombatEvent = False
                         runtimeContext._MEET_CHEST_OR_COMBAT = True
                         if (setting.DO_COMBAT_RECOVER):
                             logger.info(_("由于面板配置, 进行战后恢复."))
@@ -2282,8 +2284,8 @@ def Factory():
                     not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and (resumePos := CheckIf(ScreenShot(),"resume")):
                         runtimeContext._RESUMERE_TRY_COUNTER += 1
-                        if runtimeContext._RESUMERE_TRY_COUNTER > 20:
-                            logger.info(_("连续点击resume超过20次, 疑似卡住. 重启游戏."))
+                        if runtimeContext._RESUMERE_TRY_COUNTER > 5:
+                            logger.info(_("连续点击resume超过5次, 疑似卡住. 重启游戏."))
                             restartGame()
                         logger.info(_("resume可用. 使用resume."))
                         Press(resumePos)
@@ -2389,10 +2391,10 @@ def Factory():
                         logger.info(_("地下城目标完成. 地下城状态结束.(仅限任务模式.)"))
                         return True
                 case DungeonState.Chest:
-                    needRecoverBecauseChest = True
+                    pendingChestEvent = True
                     dungState = StateChest()
                 case DungeonState.Combat:
-                    needRecoverBecauseCombat =True
+                    pendingCombatEvent =True
                     StateCombat()
                     dungState = None
     def StateAcceptRequest(request: str, pressbias:list = [0,0]):
@@ -2683,8 +2685,8 @@ def Factory():
                 gameFrozen_StateNoneScreenHistory = []
                 dungState = None
                 shouldRecover = False
-                needRecoverBecauseCombat = False
-                needRecoverBecauseChest = False
+                pendingCombatEvent = False
+                pendingChestEvent = False
                 while 1:
                     underscore, dungState,underscore = IdentifyState()
                     logger.info(dungState)
@@ -2728,19 +2730,20 @@ def Factory():
                                     runtimeContext._TIME_COMBAT_TOTAL = runtimeContext._TIME_COMBAT_TOTAL + spend_on_combat
                                     runtimeContext._TIME_CHEST_TOTAL = runtimeContext._TIME_CHEST_TOTAL + spend_on_chest
                             ########### RECOVER
-                            if needRecoverBecauseChest:
-                                logger.info(_("进行开启宝箱后的恢复."))
+                            if pendingChestEvent:
+                                logger.info(_("处理已完成的宝箱事件."))
                                 runtimeContext._COUNTERCHEST+=1
-                                needRecoverBecauseChest = False
+                                pendingChestEvent = False
                                 runtimeContext._MEET_CHEST_OR_COMBAT = True
                                 if setting.DO_CHEST_RECOVER:
                                     logger.info(_("由于面板配置, 进行开启宝箱后恢复."))
                                     shouldRecover = True
                                 else:
                                     logger.info(_("由于面板配置, 跳过了开启宝箱后恢复."))
-                            if needRecoverBecauseCombat:
+                            if pendingCombatEvent:
+                                logger.info(_("处理已完成的战斗事件."))
                                 runtimeContext._COUNTERCOMBAT+=1
-                                needRecoverBecauseCombat = False
+                                pendingCombatEvent = False
                                 runtimeContext._MEET_CHEST_OR_COMBAT = True
                                 if setting.DO_COMBAT_RECOVER:
                                     logger.info(_("由于面板配置, 进行战后恢复."))
@@ -2774,10 +2777,10 @@ def Factory():
                             ########### light the dark light
                             Press(FindCoordsOrElseExecuteFallbackAndWait("darklight_lightIt","darkLight",1))
                         case DungeonState.Chest:
-                            needRecoverBecauseChest = True
+                            pendingChestEvent = True
                             dungState = StateChest()
                         case DungeonState.Combat:
-                            needRecoverBecauseCombat =True
+                            pendingCombatEvent =True
                             StateCombat()
                             dungState = None
             case "manualSepDemon":
