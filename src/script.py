@@ -2282,8 +2282,8 @@ def Factory():
                     not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and (resumePos := CheckIf(ScreenShot(),"resume")):
                         runtimeContext._RESUMERE_TRY_COUNTER += 1
-                        if runtimeContext._RESUMERE_TRY_COUNTER > 10:
-                            logger.info(_("连续点击resume超过10次, 疑似卡住. 重启游戏."))
+                        if runtimeContext._RESUMERE_TRY_COUNTER > 20:
+                            logger.info(_("连续点击resume超过20次, 疑似卡住. 重启游戏."))
                             restartGame()
                         logger.info(_("resume可用. 使用resume."))
                         Press(resumePos)

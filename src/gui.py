@@ -709,7 +709,10 @@ class ConfigPanelApp(tk.Toplevel):
                     if emu_path.endswith(r"MuMu Player 12/shell/MuMuPlayer.exe"):
                         path_check = True
                     if not path_check:
-                        logger.error("\n\n警告: 设置的模拟器路径可能不正确.\n如果你遇到无法启动模拟器, 请尝试重新设置路径.\n\n")
+                        messagebox.showwarning(
+                            _("警告"),
+                            _("设置的模拟器路径可能不正确。\n如果你遇到无法启动模拟器，请尝试重新设置路径。")
+                        )
 
         self.adb_path_change_button = ttk.Button(
             frame_row, text=_("修改"), command=selectADB_PATH, width=5
