@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '3.0.2' 
+__version__ = '3.0.3' 
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -138,7 +138,7 @@ class AppController(tk.Tk):
                     )
                     
                     if sys.platform == "win32":
-                        subprocess.Popen([script_path], shell=True)
+                        subprocess.Popen([script_path], shell=True, creationflags=CREATE_NO_WINDOW)
                     else:
                         os.system(script_path)
                     

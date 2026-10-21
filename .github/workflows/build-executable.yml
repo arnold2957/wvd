@@ -55,7 +55,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir `
+        pyinstaller --onedir --noconsole `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
           src/main.py -n wvd

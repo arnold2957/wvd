@@ -4,6 +4,7 @@ import json
 import os
 import copy
 import sys
+import subprocess
 import cv2
 import time
 import numpy as np
@@ -19,6 +20,9 @@ from datetime import datetime
 # TOOLTIP. 鼠标悬停时的提示.
 
 ############################################
+# Windows 下隐藏子进程的控制台窗口, 避免打包为 --noconsole 后闪现 cmd 黑框.
+CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
 LOGS_FOLDER_NAME = "logs"
 os.makedirs(LOGS_FOLDER_NAME, exist_ok=True)
 

@@ -206,7 +206,7 @@ def LoadQuest(farmtarget):
 ##################################################################
 def CMDLine(cmd):
     logger.debug(_("执行cmd命令: %s") % cmd)
-    result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding="utf-8")
+    result = subprocess.run(cmd,shell=True, capture_output=True, text=True, timeout=10,encoding="utf-8", creationflags=CREATE_NO_WINDOW)
     
     stdout = (result.stdout or '').strip()
     stderr = (result.stderr or '').strip()
@@ -237,8 +237,9 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
         result = subprocess.run(
             "tasklist /FO CSV /NH | findstr \"MuMuNxDevice.exe MuMuPlayer.exe\"",
             shell=True,
-            capture_output=True, 
-            text=True
+            capture_output=True,
+            text=True,
+            creationflags=CREATE_NO_WINDOW
         )
         result_str = result.stdout.strip()
         logger.debug(result_str)
@@ -262,27 +263,30 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
             # Windows 系统使用 taskkill 命令
             if os.name == "nt":
                 subprocess.run(
-                    f"taskkill /f /im adb.exe", 
+                    f"taskkill /f /im adb.exe",
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    check=False  # 不检查命令是否成功（进程可能不存在）
+                    check=False,  # 不检查命令是否成功（进程可能不存在）
+                    creationflags=CREATE_NO_WINDOW
                 )
                 time.sleep(1)
                 subprocess.run(
-                    f"taskkill /f /im HD-Adb.exe", 
+                    f"taskkill /f /im HD-Adb.exe",
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    check=False  # 不检查命令是否成功（进程可能不存在）
+                    check=False,  # 不检查命令是否成功（进程可能不存在）
+                    creationflags=CREATE_NO_WINDOW
                 )
             else:
                 subprocess.run(
-                    f"pkill -f {adb_path}", 
+                    f"pkill -f {adb_path}",
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    check=False
+                    check=False,
+                    creationflags=CREATE_NO_WINDOW
                 )
             logger.info(_("已尝试终止adb"))
         except Exception as e:
@@ -297,55 +301,61 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
                 if runtimeContext._RUNNING_EMU_PID:
                     logger.info(_("使用已知进程号{a}关闭模拟器...").format(a=runtimeContext._RUNNING_EMU_PID))
                     subprocess.run(
-                        f"taskkill /IM /pid {runtimeContext._RUNNING_EMU_PID}", 
+                        f"taskkill /IM /pid {runtimeContext._RUNNING_EMU_PID}",
                         shell=True,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
+                        check=False,  # 不检查命令是否成功（进程可能不存在）
+                        creationflags=CREATE_NO_WINDOW
                     )
                     time.sleep(1)
                     subprocess.run(
-                        f"taskkill /F /IM MuMuVMMHeadless.exe", 
+                        f"taskkill /F /IM MuMuVMMHeadless.exe",
                         shell=True,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
+                        check=False,  # 不检查命令是否成功（进程可能不存在）
+                        creationflags=CREATE_NO_WINDOW
                     )
                     time.sleep(1)
                 else:
                     logger.info(_("模拟器uid未知, 全杀了."))
                     subprocess.run(
-                        f"taskkill /f /im {emulator_name}", 
+                        f"taskkill /f /im {emulator_name}",
                         shell=True,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
+                        check=False,  # 不检查命令是否成功（进程可能不存在）
+                        creationflags=CREATE_NO_WINDOW
                     )
                     time.sleep(1)
                     subprocess.run(
-                        f"taskkill /f /im {emulator_SVC}", 
+                        f"taskkill /f /im {emulator_SVC}",
                         shell=True,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
-                        check=False  # 不检查命令是否成功（进程可能不存在）
+                        check=False,  # 不检查命令是否成功（进程可能不存在）
+                        creationflags=CREATE_NO_WINDOW
                     )
                     time.sleep(1)
 
             # Unix/Linux 系统使用 pkill 命令
             else:
                 subprocess.run(
-                    f"pkill -f {emulator_name}", 
+                    f"pkill -f {emulator_name}",
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    check=False
+                    check=False,
+                    creationflags=CREATE_NO_WINDOW
                 )
                 subprocess.run(
-                    f"pkill -f {emulator_headless}", 
+                    f"pkill -f {emulator_headless}",
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    check=False
+                    check=False,
+                    creationflags=CREATE_NO_WINDOW
                 )
             logger.info(_("已尝试终止模拟器进程: {a}".format(a=emulator_name)))
         except Exception as e:
@@ -370,9 +380,10 @@ def CheckAndRecoverDevice(setting : FarmConfig, runtimeContext: RuntimeContext, 
             subprocess.Popen(
                 cmd, 
                 shell=True,
-                stdout=subprocess.DEVNULL, 
+                stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                cwd=os.path.dirname(hd_player_path))
+                cwd=os.path.dirname(hd_player_path),
+                creationflags=CREATE_NO_WINDOW)
 
             # 延时
             time.sleep(5)
@@ -619,7 +630,8 @@ def Factory():
                     [GetADBPathFromEmuPath(setting.EMU_PATH), "-s", serial, "exec-out",
                     cmd],
                     capture_output=True,
-                    timeout=5
+                    timeout=5,
+                    creationflags=CREATE_NO_WINDOW
                 )
 
                 if process_result.stderr:
@@ -1035,12 +1047,14 @@ def Factory():
         return (isinstance(x, (list, tuple))
                 and len(x) == 2
                 and all(isinstance(v, (int, float)) for v in x))
-    def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback, waitTime):
+    def FindCoordsOrElseExecuteFallbackAndWait(targetPattern, fallback, waitTime, SAVEIMAGE = False):
         for not_used in range(setting.MAX_TRY_LIMIT):
             if setting._FORCESTOPING.is_set():
                 return None
             
             scn = ScreenShot()
+            if SAVEIMAGE:
+                SaveImage(scn, prefix="FCOEEFnW")
 
             # FindCoords
             patterns = targetPattern if isinstance(targetPattern, (list, tuple)) else (targetPattern,)
@@ -3536,6 +3550,15 @@ def Factory():
                         return ", ".join(parts) + "."
                 def refillBait(): # 从钓鱼界面退出并回城并更换鱼饵.
                     Press([516, 1529])
+                    Sleep(2)
+                    # bait_area = CutRoI(ScreenShot(), [[121, 1081, 100, 100]])
+                    # bait_template = LoadTemplateImage("fishing/nobaitinbag")
+                    # bait_area_gray = cv2.cvtColor(bait_area, cv2.COLOR_BGR2GRAY) if bait_area.ndim == 3 else bait_area
+                    # bait_template_gray = cv2.cvtColor(bait_template, cv2.COLOR_BGR2GRAY) if bait_template.ndim == 3 else bait_template
+                    # bait_result = cv2.matchTemplate(bait_area_gray, bait_template_gray, cv2.TM_CCOEFF_NORMED)
+                    # _, bait_max_val, _, _ = cv2.minMaxLoc(bait_result)
+                    # logger.info(f"鱼饵对比结果: {bait_max_val:.2f}")
+                    # if bait_max_val >= 0.8:
                     if CheckIf(ScreenShot(),"fishing/nobaitinbag",[[121, 1081, 100, 100]]):
                         logger.info("真的没有了.")
                         RestartableSequenceExecution(

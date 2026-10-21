@@ -126,6 +126,14 @@ class ImageAnnotatorApp:
         self.tip_copy_center = tk.Label(right_bottom_frame, text="", fg="green", font=("Arial", 9))
         self.tip_copy_center.pack(pady=(0, 10))
 
+        # 拖动位移（起点 -> 终点）
+        tk.Label(right_bottom_frame, text="拖动位移 (x1,y1,x2,y2):").pack(pady=(5, 0))
+        self.drag_entry = tk.Entry(right_bottom_frame, state='readonly', bg="white", fg="black")
+        self.drag_entry.pack(fill=tk.X, padx=10, pady=5)
+        tk.Button(right_bottom_frame, text="复制拖动位移", command=self.copy_drag).pack(fill=tk.X, padx=10)
+        self.tip_copy_drag = tk.Label(right_bottom_frame, text="", fg="green", font=("Arial", 9))
+        self.tip_copy_drag.pack(pady=(0, 10))
+
         # 启动Windows画图
         tk.Button(right_bottom_frame, text="启动Windows画图", command=self.open_ms_paint, bg="#e1e1e1").pack(fill=tk.X, padx=10, pady=(20, 10))
 
@@ -239,6 +247,7 @@ class ImageAnnotatorApp:
         self.center_entry.config(state='normal')
         self.center_entry.delete(0, tk.END)
         self.center_entry.config(state='readonly')
+        self.set_drag_entry(None)
         if self.rect_id:
             self.canvas.delete(self.rect_id)
             self.rect_id = None
@@ -282,18 +291,27 @@ class ImageAnnotatorApp:
         canvas_y1 = min(self.start_y, end_y)
         canvas_x2 = max(self.start_x, end_x)
         canvas_y2 = max(self.start_y, end_y)
-        
+
         orig_x1 = int((canvas_x1 - self.img_x_offset) / self.scale)
         orig_y1 = int((canvas_y1 - self.img_y_offset) / self.scale)
         orig_x2 = int((canvas_x2 - self.img_x_offset) / self.scale)
         orig_y2 = int((canvas_y2 - self.img_y_offset) / self.scale)
-        
+
+        # 拖动位移：保留拖动方向，起点为按下位置，终点为松开位置
+        drag_x1 = int((self.start_x - self.img_x_offset) / self.scale)
+        drag_y1 = int((self.start_y - self.img_y_offset) / self.scale)
+        drag_x2 = int((end_x - self.img_x_offset) / self.scale)
+        drag_y2 = int((end_y - self.img_y_offset) / self.scale)
+        drag = (drag_x1, drag_y1, drag_x2, drag_y2)
+
         w = orig_x2 - orig_x1
         h = orig_y2 - orig_y1
-        
+
         if w > 0 and h > 0:
-            self.update_selection_data(orig_x1, orig_y1, w, h)
+            self.update_selection_data(orig_x1, orig_y1, w, h, drag)
         else:
+            # 纯水平/垂直拖动也能得到位移数据
+            self.set_drag_entry(drag)
             if self.rect_id:
                 self.canvas.delete(self.rect_id)
                 self.rect_id = None
@@ -301,21 +319,32 @@ class ImageAnnotatorApp:
         self.start_x = None
         self.start_y = None
 
-    def update_selection_data(self, x, y, w, h):
+    def update_selection_data(self, x, y, w, h, drag=None):
         self.bbox = (x, y, w, h)
-        
+
         self.bbox_entry.config(state='normal')
         self.bbox_entry.delete(0, tk.END)
         self.bbox_entry.insert(0, f"{x}, {y}, {w}, {h}")
         self.bbox_entry.config(state='readonly')
-        
+
         cx, cy = x + w // 2, y + h // 2
         self.center_entry.config(state='normal')
         self.center_entry.delete(0, tk.END)
         self.center_entry.insert(0, f"{cx}, {cy}")
         self.center_entry.config(state='readonly')
-        
+
+        # 坐标输入框选时没有拖动方向, 起终点取矩形左上角与右下角
+        self.set_drag_entry(drag if drag is not None else (x, y, x + w, y + h))
+
         self.clear_all_tips()
+
+    def set_drag_entry(self, coords=None):
+        """更新拖动位移输入框, coords 为 (x1, y1, x2, y2), None 表示清空."""
+        self.drag_entry.config(state='normal')
+        self.drag_entry.delete(0, tk.END)
+        if coords:
+            self.drag_entry.insert(0, ", ".join(map(str, coords)))
+        self.drag_entry.config(state='readonly')
 
     def handle_click(self, canvas_x, canvas_y):
         if not self.current_image:
@@ -339,6 +368,9 @@ class ImageAnnotatorApp:
         self.center_entry.delete(0, tk.END)
         self.center_entry.insert(0, f"{orig_x}, {orig_y}")
         self.center_entry.config(state='readonly')
+
+        # 单击不是拖动, 清空拖动位移
+        self.set_drag_entry(None)
 
     def select_by_coords(self):
         if not self.current_image:
@@ -391,6 +423,7 @@ class ImageAnnotatorApp:
         self.tip_copy_img.config(text="")
         self.tip_copy_bbox.config(text="")
         self.tip_copy_center.config(text="")
+        self.tip_copy_drag.config(text="")
 
     def copy_text_to_clipboard(self, text, tip_label):
         self.root.clipboard_clear()
@@ -411,6 +444,13 @@ class ImageAnnotatorApp:
             messagebox.showwarning("提示", "请先点击图片或框选范围")
             return
         self.copy_text_to_clipboard(text, self.tip_copy_center)
+
+    def copy_drag(self):
+        text = self.drag_entry.get()
+        if not text:
+            messagebox.showwarning("提示", "请先拖动选择范围")
+            return
+        self.copy_text_to_clipboard(text, self.tip_copy_drag)
 
     def copy_cropped_image(self):
         x, y, w, h = self.bbox
