@@ -2298,8 +2298,8 @@ def Factory():
                     not_moving = False
                     if runtimeContext._RESUMEAVAILABLE and (resumePos := CheckIf(ScreenShot(),"resume")):
                         runtimeContext._RESUMERE_TRY_COUNTER += 1
-                        if runtimeContext._RESUMERE_TRY_COUNTER > 5:
-                            logger.info(_("连续点击resume超过5次, 疑似卡住. 重启游戏."))
+                        if runtimeContext._RESUMERE_TRY_COUNTER > 20:
+                            logger.info(_("连续点击resume超过20次, 疑似卡住. 重启游戏."))
                             restartGame()
                         logger.info(_("resume可用. 使用resume."))
                         Press(resumePos)
@@ -3248,6 +3248,61 @@ def Factory():
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
                     logger.info(_("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                            summary=True)
+            case "FloralHoney":
+                total_time = 0
+                while 1:
+                    if setting._FORCESTOPING.is_set():
+                        break
+
+                    starttime = time.time()
+                    runtimeContext._COUNTERDUNG += 1
+
+                    logger.info(_("第一步: 时空跳跃..."))
+                    RestartableSequenceExecution(
+                        lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre")
+                        )
+                    Sleep(10)
+
+                    logger.info(_("第二步: 前往第四章主城..."))
+                    RestartableSequenceExecution(
+                        lambda: TeleportFromCityToWorldLocation("City_DHI","input swipe 54 1346 302 1571"),
+                        )
+
+                    logger.info(_("第三步: 接取悬赏..."))
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                        lambda:Sleep(2),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","close","input swipe 600 1400 300 1400",[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
+                        )
+
+                    logger.info(_("第四步: 前往第四章7F, 9F, 并抵达9F目标位置..."))
+                    quest._EOT = [
+                        ["press","DH",["EdgeOfTown",[1,1]],1],
+                        ["press","DH-R7","input swipe 650 900 650 250",1]
+                    ]
+                    RestartableSequenceExecution(
+                        lambda: StateEoT()
+                        )
+                    quest._SPECIALDIALOGOPTION = ["FloralHoney/floral","FloralHoney/pay"]
+                    RestartableSequenceExecution(
+                        lambda: StateDungeon([
+                            TargetInfo("stair_DH_R9","左上",[559, 714]),
+                            TargetInfo("position","左下",[184, 922]),
+                            TargetInfo("stair_DH_R7","右下",[334, 1236]),
+                            ])
+                        )
+
+                    logger.info(_("第五步: 退出副本..."))
+                    RestartableSequenceExecution(
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returnText","return","leaveDung","returntotown","blessing",[1,1],],2)
+                        )
+
+
+                    costtime = time.time()-starttime
+                    total_time = total_time + costtime
+                    logger.info(_("第{a}次\"华蜜\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
                             summary=True)
             case "steeltrail":
                 total_time = 0

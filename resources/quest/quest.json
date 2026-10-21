@@ -958,6 +958,14 @@
         "_TYPE":"quest"
     },
 
+    "FloralHoney":{
+        "questName":"[药]华蜜",
+        "questName_en_US": "[Draught & Elixir] Floral Honey",
+        "questCategory": "其他",
+        "questCategory_en_US": "Other",
+        "_TYPE":"quest"
+    },
+
     "gaintKiller":{
         "questName":"[刷怪]要塞7f刷巨人",
         "questName_en_US": "[Farm] Fortress Zone 7 Giant",

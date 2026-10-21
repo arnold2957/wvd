@@ -1,9 +1,8 @@
 **新版本!**
-==v3.0.3==
-Faerie Quest is available now in the English Language.
-修复了钓鱼鱼饵不足时无法更换鱼饵的问题.
-修复了中文版无法挖矿的问题. 注意, 中文版的矿石鉴别缺乏图片, 因此鉴别目前不可用.
-删除了cmd的黑色窗口.
+==v3.0.4==
+修复了要塞10f无法进入的问题.
+大幅度增加了resume失败判定需要的点击次数.
+新增了刷华蜜的任务, 在"其他"分类下. 强力破若透, 蓝色品质, 5分钟一瓶, 先到先得! 目前仅限中文版本.
 
 
 **已知问题**
@@ -11,6 +10,12 @@ Faerie Quest is available now in the English Language.
 ########
 
 **历史更新**
+==v3.0.3==
+Faerie Quest is available now in the English Language.
+修复了钓鱼鱼饵不足时无法更换鱼饵的问题.
+修复了中文版无法挖矿的问题. 注意, 中文版的矿石鉴别缺乏图片, 因此鉴别目前不可用.
+删除了cmd的黑色窗口.
+
 ==v3.0.2==
 现在会在完成了宝箱和战斗后重置resume计数.
 优化了中文版的大地图检测标识.
