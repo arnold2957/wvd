@@ -885,7 +885,7 @@ def Factory():
                 return pos
             return None
 
-    def CheckFloorName(screenImage, template_name, errorThreshold=0.075):
+    def CheckFloorName(screenImage, template_name, errorThreshold=0.1):
         """
         检查 screen 固定区域(150, 65, 600, 50)的楼层名是否与 template 匹配。
         - template 尺寸必须与 RoI 一致(600x50), 否则直接跳过。
@@ -1677,34 +1677,34 @@ def Factory():
         runtimeContext.NEED_RECOVER_WHEN_REST = True
     def StateEoT():
         runtimeContext._RESUMEAVAILABLE = False
+
         if quest._preEOTcheck:
             Press(CheckIf(ScreenShot(),quest._preEOTcheck))
 
-        def EoTStep(info):
-            if info[1]=="intoWorldMap":
-                TeleportFromCityToWorldLocation(*info[2])
-            elif info[1]=="EVENT":
-                FindCoordsOrElseExecuteFallbackAndWait(["openworldmap","dungFlag"], [[1,1],"EVENT",info[2]],2)
-            else:
-                pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
-                if info[0]=="press":
-                    Press(pos)
-        for info in quest._EOT[:-1]:
-            RestartableSequenceExecution(lambda i=info: EoTStep(i))
+        def mainEoT():
+            has_teleport = bool(quest._EOT) and quest._EOT[0][1] == "intoWorldMap"
+            if has_teleport:
+                TeleportFromCityToWorldLocation(*quest._EOT[0][2])
 
-        last = quest._EOT[-1]
-        if last[1] == "intoWorldMap":
-            TeleportFromCityToWorldLocation(*last[2])
-        else:
-            fb = [last[2], [1, 1]] if (isinstance(last[2], str) or _is_coord(last[2])) else [*last[2], [1, 1]]
-            RestartableSequenceExecution(
-                lambda fb=fb, last=last: FindCoordsOrElseExecuteFallbackAndWait(
-                    ["dungFlag", "GotoDung", last[1]], fb, 1
-                )
+            restartable_quest = quest._EOT[1:] if has_teleport else quest._EOT
+            for info in restartable_quest[:-1]:
+                if info[1]=="EVENT":
+                    FindCoordsOrElseExecuteFallbackAndWait(["openworldmap","dungFlag"], [[1,1],"EVENT",info[2]],2)
+                else:
+                    pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
+                    if info[0]=="press":
+                        Press(pos)
+
+            last = restartable_quest[-1]
+            fallback = [last[2], [1, 1]] if (isinstance(last[2], str) or _is_coord(last[2])) else [*last[2], [1, 1]]
+            FindCoordsOrElseExecuteFallbackAndWait(["dungFlag", "GotoDung", last[1]], fallback, 1)
+            Press(CheckIf(ScreenShot(), restartable_quest[-1][1]))
+            Sleep(1)
+            Press(CheckIf(ScreenShot(), "GotoDung"))
+
+        RestartableSequenceExecution(
+            lambda: mainEoT()
             )
-        Press(CheckIf(ScreenShot(), quest._EOT[-1][1]))
-        Sleep(1)
-        Press(CheckIf(ScreenShot(), "GotoDung"))
         return
     def StateCombat():
         if runtimeContext._TIME_COMBAT==0:
