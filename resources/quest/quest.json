@@ -107,7 +107,7 @@
         ],
         "_SPECIALJUNK":"fairy",
         "_SPECIALJUNK_CALLBACK":"fortress-B8F_trap",
-        "_TIPS":"本任务是前导任务: 反复刷要塞八层门口的两个怪并开箱, 直到开箱检测到\"妖精\"杂物.\n一旦检测到, 脚本会自动切换到\"[妖精]要塞八层陷阱\"并开始循环刷取, 之后不再回到本任务.\n启动前的具体准备(队伍/自动移动/标记)请按照后续任务\"[妖精]要塞八层陷阱\"的说明.\n\nThis is the lead task: keep farming the two enemies at the Fortress Zone 8 entrance and opening chests until a \"Faerie\" junk item is detected.\nOnce detected, the script automatically switches to \"[Faerie] Fortress Zone 8 Trap\" and starts the farming loop; it will not come back to this task.\nFor the required preparation (party, Auto-Moving, marker), follow the instructions of the follow-up task \"[Faerie] Fortress Zone 8 Trap\"."
+        "_TIPS":"本任务是前导任务: 反复刷要塞八层门口的两个怪并开箱, 直到开箱检测到\"妖精\"杂物.\n一旦检测到, 脚本会自动切换到\"[妖精]要塞八层陷阱\"并开始循环刷取, 之后不再回到本任务.\n前置条件: 必须通关第三章; 要塞八层右下区块必须是陷阱房.\n标记要求: 在要塞入口地图的x=13, y=34处做标记; 在8F地图的x=16, y=7处做标记.\n\nThis is the lead task: keep farming the two enemies at the Fortress Zone 8 entrance and opening chests until a \"Faerie\" junk item is detected.\nOnce detected, the script automatically switches to \"[Faerie] Fortress Zone 8 Trap\" and starts the farming loop; it will not come back to this task.\nPrerequisites: Chapter 3 must be cleared, and the bottom-right block of Fortress Zone 8 must be a trap room.\nMarkers: place a marker at x=13, y=34 on the Fortress entrance map, and another at x=16, y=7 on the 8F map."
     },
 
     "fortress-B8F_trap":{
@@ -134,10 +134,11 @@
     	
     "fortress-10F":{
         "_TYPE":"dungeon",
-        "questName":"[灯怪]要塞10层",
-        "questName_en_US": "[Lamp] Fortress Zone 10",
+        "questName":"[刷怪]要塞10层刷巨人",
+        "questName_en_US": "[Farm] Fortress Zone 10",
         "questCategory": "主线前三章",
         "questCategory_en_US": "Chapter 1,2 and 3",
+        "_FloorCheck": "stair_fortress10f",
         "_TARGETINFOLIST":[
             ["position","左下",[560,757]],
             ["Bharken2","左下",null]
