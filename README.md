@@ -546,8 +546,9 @@ wvdas 是一款面向手游《Wizardry Variants Daphne》（巫术 Variants Daph
       ["harken", "左上", null]
     ],
     "_EOT": [
-      ["press", "DH", ["EdgeOfTown", [1, 1]], 1],
-      ["press", "DH-R4", "input swipe 650 250 650 900", 1]
+      ["town", "EOT"],
+      ["L1", "DH"],
+      ["L2", "DH-R4", "input swipe 650 250 650 900"]
     ],
     "_RTT": ["City_DHI", "input swipe 54 1346 302 1571", [500, 1100]],
     "_TIPS": "这是一个示例任务。"
@@ -567,7 +568,6 @@ wvdas 是一款面向手游《Wizardry Variants Daphne》（巫术 Variants Daph
 | `_TARGETINFOLIST` | 地下城任务必填 | 任务点列表 |
 | `_EOT` | 地下城任务通常需要 | 从城镇进入地下城的流程 |
 | `_RTT` | 否 | 从地下城返回城镇的流程 |
-| `_preEOTcheck` | 否 | 进本前需要先点击的界面 |
 | `_FloorCheck` | 否 | 楼层检测模板名，可为字符串或列表 |
 | `_TIPS` | 否 | 任务提示，选择任务时弹窗显示 |
 | `_SPECIALDIALOGOPTION` | 否 | 特殊对话选项图片列表 |
@@ -609,14 +609,18 @@ wvdas 是一款面向手游《Wizardry Variants Daphne》（巫术 Variants Daph
 
 ### 进入与回城流程
 
-`_EOT` 中每一项的格式为：
+`_EOT` 是一个 `(层级, 参数...)` 数组列表。层级决定操作：
 
-```json
-["press", "目标图片", "找不到时的兜底动作", 重试间隔]
-```
+| 层级 | 数组格式 | 操作 |
+| --- | --- | --- |
+| `town` | `["town", "EOT"]` / `["town", "world"]` | 进入郊外 / 打开世界地图 |
+| `worldmap` | `["worldmap", "目标图片", "swipe 指令", [任意键坐标]]` | 在世界地图上定位并传送 |
+| `L1` | `["L1", "目标图片", "兜底动作"]` | 在一级菜单选择副本或区域 |
+| `L2` | `["L2", "目标图片", "兜底动作"]` | 在二级菜单选择楼层 |
 
+- `worldmap` 的第 3、4 项可省略；
 - 兜底动作可以是图片名、坐标、`"return"` 或 `input swipe ...`；
-- 最后一项也可以使用 `["press", "intoWorldMap", ["目标", "swipe 指令", [x, y]]]` 的形式通过世界地图进入。
+- 进入副本前的 `GotoDung` 确认由脚本统一处理，不需要写进 `_EOT`。
 
 `_RTT` 的格式为：
 

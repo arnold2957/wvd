@@ -119,7 +119,6 @@ class RuntimeContext:
 class FarmQuest:
     _TARGETINFOLIST = None
     _EOT = None
-    _preEOTcheck = None
     _FloorCheck = None
     _SPECIALDIALOGOPTION = None
     _SPECIALDIALOGOPTION_CALLBACK = None
@@ -1678,29 +1677,77 @@ def Factory():
     def StateEoT():
         runtimeContext._RESUMEAVAILABLE = False
 
-        if quest._preEOTcheck:
-            Press(CheckIf(ScreenShot(),quest._preEOTcheck))
-
         def mainEoT():
-            has_teleport = bool(quest._EOT) and quest._EOT[0][1] == "intoWorldMap"
-            if has_teleport:
-                TeleportFromCityToWorldLocation(*quest._EOT[0][2])
+            if not quest._EOT:
+                return
 
-            restartable_quest = quest._EOT[1:] if has_teleport else quest._EOT
-            for info in restartable_quest[:-1]:
-                if info[1]=="EVENT":
-                    FindCoordsOrElseExecuteFallbackAndWait(["openworldmap","dungFlag"], [[1,1],"EVENT",info[2]],2)
+            acts = {e[0]: e for e in quest._EOT}
+
+            while not setting._FORCESTOPING.is_set():
+                # 先把画面推进到至少包含一个可用于定位的 flag.
+                # 找不到时由该函数自己按 fallback 重试, 超过上限会重启游戏.
+                FindCoordsOrElseExecuteFallbackAndWait(
+                    ["dungFlag", "EoTreturn", "worldmapflag", "openworldmap",
+                     "returntotown", "returntotown_DH", "Inn", "EdgeOfTown", "intoWorldMap"],
+                    [[550, 1],"return",[550, 1]],
+                    1,
+                )
+                scn = ScreenShot()
+
+                # 终点
+                if CheckIf(scn, "dungFlag"):
+                    return
+
+                # 定位
+                if CheckIf(scn, "openworldmap") or CheckIf(scn, "returntotown") or CheckIf(scn, "returntotown_DH"):
+                    level = "L1"
+                elif CheckIf(scn, "EoTreturn"):
+                    level = "L2"
+                elif CheckIf(scn, "worldmapflag"):
+                    level = "worldmap"
+                elif CheckIf(scn, "Inn") or CheckIf(scn, "EdgeOfTown") or CheckIf(scn, "intoWorldMap"):
+                    level = "town"
                 else:
-                    pos = FindCoordsOrElseExecuteFallbackAndWait(info[1], info[2], info[3])
-                    if info[0]=="press":
-                        Press(pos)
+                    continue
 
-            last = restartable_quest[-1]
-            fallback = [last[2], [1, 1]] if (isinstance(last[2], str) or _is_coord(last[2])) else [*last[2], [1, 1]]
-            FindCoordsOrElseExecuteFallbackAndWait(["dungFlag", "GotoDung", last[1]], fallback, 1)
-            Press(CheckIf(ScreenShot(), restartable_quest[-1][1]))
-            Sleep(1)
-            Press(CheckIf(ScreenShot(), "GotoDung"))
+                logger.info(_("当前层级: {a}".format(a=level)))
+
+                entry = acts.get(level)
+
+                # 行动: 层级决定操作
+                if entry:
+                    if level == "town":
+                        if entry[1] == "world":
+                            Press(FindCoordsOrElseExecuteFallbackAndWait(
+                                "intoWorldMap",
+                                    ["closePartyInfo",
+                                     "closePartyInfo_waterway",
+                                     "closePartyInfo_fortress",
+                                     "return",[550, 1]],
+                                1))
+                        elif entry[1] == "EOT":
+                            Press(FindCoordsOrElseExecuteFallbackAndWait(
+                                "EdgeOfTown", ["return",[550, 1]], 1))
+
+                    elif level == "worldmap":
+                        TeleportFromCityToWorldLocation(
+                            entry[1],
+                            entry[2] if len(entry) > 2 else [1, 1],
+                            entry[3] if len(entry) > 3 else [550, 1],
+                        )
+
+                    elif level in ("L1", "L2"):
+                        Press(FindCoordsOrElseExecuteFallbackAndWait(
+                            entry[1],
+                            entry[2] if len(entry) > 2 else [1, 1],
+                            1,
+                        ))
+
+                # 进本确认
+                Press(CheckIf(ScreenShot(), "GotoDung"))
+
+                # 等待动画结束
+                Sleep(1)
 
         RestartableSequenceExecution(
             lambda: mainEoT()
@@ -2810,8 +2857,9 @@ def Factory():
                     lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre"))
 
                 quest._EOT = [
-                    ["press","COS/COS",["EdgeOfTown",[1,1]],1],
-                    ["press","COS/COSB2F",[1,1],1]
+                    ["town", "EOT"],
+                    ["L1", "COS/COS"],
+                    ["L2", "COS/COSB2F"]
                 ]
                 RestartableSequenceExecution(
                     lambda: StateEoT()
@@ -3050,8 +3098,10 @@ def Factory():
                     runtimeContext._COUNTERDUNG+=1
 
                     quest._EOT = [
-                        ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-                        ["press","fortressb7f",[1,1],1]]
+                        ["town", "EOT"],
+                        ["L1", "impregnableFortress"],
+                        ["L2", "fortressb7f"]
+                    ]
                     RestartableSequenceExecution(
                         lambda: StateEoT()
                         )
@@ -3279,8 +3329,9 @@ def Factory():
 
                     logger.info(_("第四步: 前往第四章7F, 9F, 并抵达9F目标位置..."))
                     quest._EOT = [
-                        ["press","DH",["EdgeOfTown",[1,1]],1],
-                        ["press","DH-R7","input swipe 650 900 650 250",1]
+                        ["town", "EOT"],
+                        ["L1", "DH"],
+                        ["L2", "DH-R7", "input swipe 650 900 650 250"]
                     ]
                     RestartableSequenceExecution(
                         lambda: StateEoT()
@@ -3296,7 +3347,7 @@ def Factory():
 
                     logger.info(_("第五步: 退出副本..."))
                     RestartableSequenceExecution(
-                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returnText","return","leaveDung","returntotown","blessing",[1,1],],2)
+                        lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returnText","return","leaveDung","returntotown","returntotown_DH","blessing",[1,1],],2)
                         )
 
 
@@ -3503,9 +3554,11 @@ def Factory():
                 counter = 0
                 start_time = time.time()
                 quest._FloorCheck = "stair_fortress3f"
-                quest._EOT =[["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-                             ["press","fortressb3f","input swipe 650 250 650 900",1]
-                            ]
+                quest._EOT = [
+                    ["town", "EOT"],
+                    ["L1", "impregnableFortress"],
+                    ["L2", "fortressb3f", "input swipe 650 250 650 900"]
+                ]
                 quest._SPECIALDIALOGOPTION = ["sandman/sandman_1",
                                               "sandman/sandman_2",
                                               "sandman/sandman_3",
@@ -3647,7 +3700,9 @@ def Factory():
                         FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","return",3)
                 def goToFishing():
                     quest._EOT = [
-                        ["press","DH-R6",["EdgeOfTown","DH","input swipe 650 250 650 900"],1]
+                        ["town", "EOT"],
+                        ["L1", "DH", "input swipe 650 250 650 900"],
+                        ["L2", "DH-R6", "input swipe 650 250 650 900"]
                     ]
                     RestartableSequenceExecution(
                         lambda: StateEoT()

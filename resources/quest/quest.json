@@ -11,8 +11,9 @@
             ["harken"]
         ],
         "_EOT":[
-            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","Dist","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","TradeWaterway"],
+            ["L2","Dist","input swipe 650 250 650 900"]
         ]
     },
 
@@ -29,8 +30,9 @@
             ["harken",null,null]
         ],
         "_EOT":[
-            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","shiphold",[1,1],1]
+            ["town","EOT"],
+            ["L1","TradeWaterway"],
+            ["L2","shiphold"]
         ]
     },
 
@@ -45,8 +47,9 @@
             ["leaveDung"]
         ],
         "_EOT":[
-            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","shiphold",[1,1],1]
+            ["town","EOT"],
+            ["L1","TradeWaterway"],
+            ["L2","shiphold"]
         ],
         "_SPECIALJUNK":"fairy",
         "_SPECIALJUNK_CALLBACK":"shiphold-fairy",
@@ -67,8 +70,9 @@
             ["position","左上",[82, 556]]
         ],
         "_EOT":[
-            ["press","TradeWaterway",["EdgeOfTown",[1,1]],1],
-            ["press","shiphold",[1,1],1]
+            ["town","EOT"],
+            ["L1","TradeWaterway"],
+            ["L2","shiphold"]
         ],
         "_TIPS":"本任务是后续任务, 负责循环刷取.\n通常由\"[妖精]水路船一(前导任务)\"触发一次后自动切换过来, 也可以直接启动本任务.\n\nThis is the follow-up task and performs the farming loop.\nIt is normally entered automatically after the lead task triggers once, but can also be started directly."
     },
@@ -84,8 +88,9 @@
             ["harken","左下",null]
         ],
         "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressb1f","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","impregnableFortress"],
+            ["L2","fortressb1f","input swipe 650 250 650 900"]
         ]
     },
 
@@ -102,8 +107,9 @@
             ["position","左下",[720,1241]]
         ],
         "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressEntrance","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","impregnableFortress"],
+            ["L2","fortressEntrance","input swipe 650 250 650 900"]
         ],
         "_SPECIALJUNK":"fairy",
         "_SPECIALJUNK_CALLBACK":"fortress-B8F_trap",
@@ -126,8 +132,9 @@
             ["stair_fortressGate","左下", [720,1027]]
         ],
         "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressEntrance","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","impregnableFortress"],
+            ["L2","fortressEntrance","input swipe 650 250 650 900"]
         ],
         "_TIPS":"本任务是后续任务, 负责循环刷取: 反复刷门口的两只怪物和陷阱房的怪物.\n通常由\"[妖精]要塞八层门口\"检测到妖精杂物后自动切换过来, 也可以直接启动本任务.\n\n要塞8刷小精灵的准备流程:\n这是不回城的队伍, 因此推荐忍者盗贼面具+物理长矛/弓箭+王女或者夏莉莉奶.\n在\"设置setting\"\"自动移动auto-moving\"中关闭所有选项.\n\nThis is the follow-up task and performs the farming loop: repeatedly farm the two enemies at the entrance and the enemies in the trap room.\nIt is normally entered automatically after \"[Faerie] Fortress Zone 8\" detects the Faerie junk, but can also be started directly.\n\nPreparation for farming Faeries in Fortress Zone 8:\nSince this party does not return to town, Ninja, Rogue and Masked One, plus a physical spear/bow and Princess or Sheliri as healer, are recommended.\nIn \"Settings\" > \"Auto-Moving\", turn off all options."
     },
@@ -144,8 +151,9 @@
             ["Bharken2","左下",null]
         ],
         "_EOT":[
-            ["press","impregnableFortress",["EdgeOfTown",[1,1]],1],
-            ["press","fortressb10f","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","impregnableFortress"],
+            ["L2","fortressb10f","input swipe 650 900 650 250"]
         ]
     },
 
@@ -164,8 +172,9 @@
             ["harken", "右上","stair_DH_R4"]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R4","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R4","input swipe 650 250 650 900"]
         ]
     },
 
@@ -184,8 +193,9 @@
             ["harken", "左上",null]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R6","input swipe 650 250 650 900",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R6","input swipe 650 250 650 900"]
         ]
     },
 
@@ -208,8 +218,9 @@
             ["harken", "右上",null]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R7","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R7","input swipe 650 900 650 250"]
         ]
     },
 
@@ -225,8 +236,9 @@
             ["harken", "右上",null]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R7","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R7","input swipe 650 900 650 250"]
         ]
     },
 
@@ -252,8 +264,9 @@
             ["harken", "左上",null]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R9","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R9","input swipe 650 900 650 250"]
         ]
     },
 
@@ -271,8 +284,9 @@
             ["harken", "左上",null]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-R9","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R9","input swipe 650 900 650 250"]
         ]
     },
 
@@ -290,8 +304,9 @@
             ["Bharken", "右上","stair_DH_CG"]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-Church","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-Church","input swipe 650 900 650 250"]
         ]
     },
     
@@ -308,8 +323,9 @@
             ["Bharken", "右上","stair_DH_CG"]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-Church","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-Church","input swipe 650 900 650 250"]
         ]
     },
 
@@ -324,8 +340,9 @@
             ["Mark_auto"]
         ],
         "_EOT":[
-            ["press","DH",["EdgeOfTown",[1,1]],1],
-            ["press","DH-Church","input swipe 650 900 650 250",1]
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-Church","input swipe 650 900 650 250"]
         ],
         "_TIPS":"本任务作者[@XX](不出矮人王100意志好个体不改名)\n1. 进入雪地-“教会区域”，设置唯一标记点，位置为X=26, Y=6\n2. 该脚本需要较高练度，特定角色，特定技能，不解决装备，角色和配队导致的不稳定刷取流程。\n3. （可选）查看如何全自动挂机白巨人视频教程，现在马上三连关注该UP：\n【辟邪除妖】XX教你如何全自动无伤带走教会红色白巨人 思路分享 巫术 Wizardry Variants Daphne】 https://www.bilibili.com/video/BV1jqjw6CEWX/\n\nAuthor: [@XX]\n1. Go to the DeepSnow Hinterland. - \"Church area\" and set a single marker at X=26, Y=6.\n2. This script requires high investment plus specific characters and skills; it does not fix unstable runs caused by equipment, characters or party composition.\n3. (Optional) Video tutorial on fully automatic Giant farming (in Chinese): https://www.bilibili.com/video/BV1jqjw6CEWX/"
     },
@@ -343,11 +360,12 @@
             ["position","右上",[870,300]],
             ["leaveDung"]
         ],
-        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/ZONE1",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/ZONE1"],
+            ["L2","FFXI/ZONE1"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
         "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
@@ -363,11 +381,12 @@
             ["chest_auto"],
             ["position","右上",[496,447]]
         ],
-        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/ZONE2",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/ZONE2"],
+            ["L2","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -384,11 +403,12 @@
             ["position","右下",[865,917]],
             ["position","右上",[496,447]]
         ],
-        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/ZONE2",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/ZONE2"],
+            ["L2","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -405,11 +425,12 @@
             ["chest","右下",[[20, 893, 709, 329],[635, 1052, 66, 54],[29, 1004, 67, 46]]],
             ["leaveDung"]
         ],
-        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/ZONE3",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/ZONE3"],
+            ["L2","FFXI/ZONE3"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -430,8 +451,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/zone5",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/zone5"],
+            ["L2","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -449,8 +472,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/zone5",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/zone5"],
+            ["L2","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -468,8 +493,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/zone5",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/zone5"],
+            ["L2","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -487,8 +514,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/zone5",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/zone5"],
+            ["L2","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -507,8 +536,10 @@
         ],
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/zone5",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/zone5"],
+            ["L2","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -523,11 +554,12 @@
             ["chest_auto"],
             ["position","左下",[720,1135]]
         ],
-        "_preEOTcheck":"HSR/HSR",
         "_EOT":
         [
-            ["press","intoWorldMap",["HSR/HSR","input swipe 400 400 500 500"],1],
-            ["press","HSR/AGMM1F",[1,1],1]
+            ["town","world"],
+            ["worldmap","HSR/HSR","input swipe 400 400 500 500"],
+            ["L1","HSR/AGMM1F"],
+            ["L2","HSR/AGMM1F"]
         ],
         "_TIPS":"该任务从第四章出发.\nThis quest departs from Chapter 4, Deepsnow Hinterlands."
     },
@@ -542,11 +574,12 @@
             ["chest_auto"],
             ["position","左下", [186,1028]]
         ],
-        "_preEOTcheck":"IWO/IWO",
         "_EOT":
         [
-            ["press","intoWorldMap",["IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],1],
-            ["press","IWO/IWOB1F",["IWO/IWO",[1,1]],1]
+            ["town","world"],
+            ["worldmap","IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],
+            ["L1","IWO/IWOB1F","IWO/IWO"],
+            ["L2","IWO/IWOB1F","IWO/IWO"]
         ],
         "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
@@ -561,11 +594,12 @@
             ["chest_auto"],
             ["position","右下", [500, 815]]
         ],
-        "_preEOTcheck":"IWO/IWO",
         "_EOT":
         [
-            ["press","intoWorldMap",["IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],1],
-            ["press","IWO/IWOB2F",["IWO/IWO",[1,1]],1]
+            ["town","world"],
+            ["worldmap","IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],
+            ["L1","IWO/IWOB2F","IWO/IWO"],
+            ["L2","IWO/IWOB2F","IWO/IWO"]
         ],
         "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
@@ -577,8 +611,9 @@
         "questCategory": "任务洞窟",
         "questCategory_en_US": "Request Caves",
         "_EOT":[
-            ["press","malice_malice",["EdgeOfTown",[1,1]],1],
-            ["press","malice_B3F",[1,1],1]
+            ["town","EOT"],
+            ["L1","malice_malice"],
+            ["L2","malice_B3F"]
         ],
         "_TARGETINFOLIST":
         [
@@ -596,10 +631,11 @@
             ["chest_auto"],
             ["harken",[[100,1200,700,100],[700,800,100,800],[400,100,400,1200],[100,800,700,800],[400,1200,400,100]]]
         ],
-        "_preEOTcheck":"fordraig/B3F",
         "_EOT":[
-            ["press","intoWorldMap",["fordraig/labyrinthOfFordraig","input swipe 450 150 500 150"],2],
-            ["press","fordraig/B3F",["fordraig/labyrinthOfFordraig",[1,1]],1]
+            ["town","world"],
+            ["worldmap","fordraig/labyrinthOfFordraig","input swipe 450 150 500 150"],
+            ["L1","fordraig/B3F","fordraig/labyrinthOfFordraig"],
+            ["L2","fordraig/B3F","fordraig/labyrinthOfFordraig"]
         ]
     },
 
@@ -613,9 +649,9 @@
 	        ["chest_auto"],
             ["SSC/SSC_quit","左下","default"]
         ],
-        "_preEOTcheck":"SSC/SSC",
         "_EOT":[
-            ["press","intoWorldMap",["SSC/SSC","input swipe 827 1187 527 1421"],1]
+            ["town","world"],
+            ["worldmap","SSC/SSC","input swipe 827 1187 527 1421"]
         ]
     },
 
@@ -629,10 +665,10 @@
             ["chest"],
             ["LBC/LBC_quit"]
         ],
-        "_preEOTcheck":"LBC/LBC",
         "_EOT":
         [
-            ["press","intoWorldMap",["LBC/LBC","input swipe 400 400 400 500"],1]
+            ["town","world"],
+            ["worldmap","LBC/LBC","input swipe 400 400 400 500"]
         ]
     },
 
@@ -646,11 +682,12 @@
             ["chest_auto"],
             ["position","右下",[766,974]]
         ],
-        "_preEOTcheck":"AWD/AWD",
         "_EOT":
         [
-            ["press","intoWorldMap",["AWD/AWD","input swipe 400 400 500 500"],1],
-            ["press","AWD/AWD2F",[1,1],1]
+            ["town","world"],
+            ["worldmap","AWD/AWD","input swipe 400 400 500 500"],
+            ["L1","AWD/AWD2F"],
+            ["L2","AWD/AWD2F"]
         ]
     },
     "AWD-noGorgon":{
@@ -664,11 +701,12 @@
             ["position","右上",[766,930]],
             ["harken","右下"]
         ],
-        "_preEOTcheck":"AWD/AWD",
         "_EOT":
         [
-            ["press","intoWorldMap",["AWD/AWD","input swipe 400 400 500 500"],1],
-            ["press","AWD/AWD1F",[1,1],1]
+            ["town","world"],
+            ["worldmap","AWD/AWD","input swipe 400 400 500 500"],
+            ["L1","AWD/AWD1F"],
+            ["L2","AWD/AWD1F"]
         ]
     },
 
@@ -690,9 +728,9 @@
             ["chest","右下",null],
             ["GHB/GHB_quit","左下","default"]
         ],
-        "_preEOTcheck":"GHB/GHB",
         "_EOT":[
-            ["press","intoWorldMap",["GHB/GHB","input swipe 400 500 450 550"],1]
+            ["town","world"],
+            ["worldmap","GHB/GHB","input swipe 400 500 450 550"]
         ]
     },
 
@@ -712,8 +750,9 @@
             ["harken","左下",null]
         ],
         "_EOT":[
-            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
-            ["press","COS/COSB2F",[1,1],1]
+            ["town","EOT"],
+            ["L1","COS/COS"],
+            ["L2","COS/COSB2F"]
         ]
     },
 
@@ -728,8 +767,9 @@
             ["harken","左下",null]
         ],
         "_EOT":[
-            ["press","COS/COS",["EdgeOfTown",[1,1]],1],
-            ["press","COS/COSB2F",[1,1],1]
+            ["town","EOT"],
+            ["L1","COS/COS"],
+            ["L2","COS/COSB2F"]
         ]
     },
 
@@ -746,8 +786,9 @@
             ["position","左下",[133,1241]]
         ],
         "_EOT":[
-            ["press","DOF",["EdgeOfTown","input swipe 650 250 650 900"],1],
-            ["press","DOFB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOF","input swipe 650 250 650 900"],
+            ["L2","DOFB1F"]
         ]
     },
 
@@ -762,8 +803,9 @@
             ["position","左上",[719,713]]
         ],
         "_EOT":[
-            ["press","DOF",["EdgeOfTown","input swipe 650 250 650 900"],1],
-            ["press","DOFB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOF","input swipe 650 250 650 900"],
+            ["L2","DOFB1F"]
         ]
     },
 
@@ -778,8 +820,9 @@
         ["DOW_quit",[[700,1200,100,100]],null]
         ],
         "_EOT":[
-            ["press","DOW",["EdgeOfTown",[1,1]],1],
-            ["press","DOWB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOW"],
+            ["L2","DOWB1F"]
         ]
     },
 
@@ -794,8 +837,9 @@
             ["position","左上",[34,822]]
         ],
         "_EOT":[
-            ["press","DOW",["EdgeOfTown",[1,1]],1],
-            ["press","DOWB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOW"],
+            ["L2","DOWB1F"]
         ]
     },
     
@@ -806,8 +850,9 @@
         "questCategory": "矿石",
         "questCategory_en_US": "Ore",
         "_EOT":[
-            ["press","DOL",["EdgeOfTown",[1,1]],1],
-            ["press","DOLB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOL"],
+            ["L2","DOLB1F"]
         ],
         "_TARGETINFOLIST":
         [
@@ -825,8 +870,9 @@
         "questCategory": "矿石",
         "questCategory_en_US": "Ore",
         "_EOT":[
-            ["press","DOL",["EdgeOfTown",[1,1]],1],
-            ["press","DOLB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOL"],
+            ["L2","DOLB1F"]
         ],
         "_TARGETINFOLIST":
         [
@@ -842,8 +888,9 @@
         "questCategory": "矿石",
         "questCategory_en_US": "Ore",
         "_EOT":[
-            ["press","DOS",["EdgeOfTown",[1,1]],1],
-            ["press","DOSB1F",[1,1],1]
+            ["town","EOT"],
+            ["L1","DOS"],
+            ["L2","DOSB1F"]
         ],
         "_TARGETINFOLIST":
         [
@@ -866,11 +913,12 @@
             ["position","右下",[555,1235]],
             ["position","右下",[178,1240]]
         ],
-        "_preEOTcheck":"LMG/LMG",
         "_EOT":
         [
-            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
-            ["press","LMG/LMG1F",[1,1],1]
+            ["town","world"],
+            ["worldmap","LMG/LMG","input swipe 690 590 690 690"],
+            ["L1","LMG/LMG1F"],
+            ["L2","LMG/LMG1F"]
         ]
     },
     "LMG-FT":{
@@ -885,11 +933,12 @@
             ["position","右下",[555,1235]],
             ["position","右下",[178,1240]]
         ],
-        "_preEOTcheck":"LMG/LMG",
         "_EOT":
         [
-            ["press","intoWorldMap",["LMG/LMG","input swipe 690 590 690 690"],1],
-            ["press","LMG/FTB1F",[1,1],1]
+            ["town","world"],
+            ["worldmap","LMG/LMG","input swipe 690 590 690 690"],
+            ["L1","LMG/FTB1F"],
+            ["L2","LMG/FTB1F"]
         ]
     },
 
@@ -989,11 +1038,12 @@
         "questCategory": "矿石",
         "questCategory_en_US": "Ore",
         "_TYPE":"quest",
-        "_preEOTcheck":"FFXI/GCN",
         "_EOT":
         [
-            ["press","intoWorldMap",["FFXI/GCN","input swipe 690 590 690 690"],1],
-            ["press","FFXI/ZONE2",[1,1],1]
+            ["town","world"],
+            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["L1","FFXI/ZONE2"],
+            ["L2","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
 
