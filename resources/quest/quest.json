@@ -364,11 +364,9 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/ZONE1"],
-            ["L2","FFXI/ZONE1"]
+            ["L1","FFXI/ZONE1"]
         ],
-        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]],
-        "_TIPS":"该任务在小村子住宿. 主要不要开\"住豪华房\"和\"6小时重置队伍\"."
+        "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
     
     "FFXI-2F":{
@@ -385,8 +383,7 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/ZONE2"],
-            ["L2","FFXI/ZONE2"]
+            ["L1","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -407,8 +404,7 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/ZONE2"],
-            ["L2","FFXI/ZONE2"]
+            ["L1","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -429,8 +425,7 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/ZONE3"],
-            ["L2","FFXI/ZONE3"]
+            ["L1","FFXI/ZONE3"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -438,7 +433,7 @@
 
     "FFXI-5F-4Elite":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 4精英",
+        "questName":"[恶名]FFXI 5F 最高难度 4精英",
         "questName_en_US": "[Elite] FFXI 5F 4Elite",
         "questCategory": "FFXI联动",
         "questCategory_en_US": "FFXI Cave",
@@ -453,15 +448,14 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/zone5"],
-            ["L2","FFXI/zone5"]
+            ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-mid":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 中部2精英",
+        "questName":"[恶名]FFXI 5F 高难度 中部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Mid",
         "questCategory": "FFXI联动",
         "questCategory_en_US": "FFXI Cave",
@@ -474,15 +468,14 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/zone5"],
-            ["L2","FFXI/zone5"]
+            ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-bottom":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 底部2精英",
+        "questName":"[恶名]FFXI 5F 中等难度 底部2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Bottom",
         "questCategory": "FFXI联动",
         "questCategory_en_US": "FFXI Cave",
@@ -495,15 +488,14 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/zone5"],
-            ["L2","FFXI/zone5"]
+            ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
 
     "FFXI-5F-2Elite-left":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 左侧2精英",
+        "questName":"[恶名]FFXI 5F 中等难度 左侧2精英",
         "questName_en_US": "[Elite+Chest] FFXI 5F 2Elite Left",
         "questCategory": "FFXI联动",
         "questCategory_en_US": "FFXI Cave",
@@ -516,8 +508,7 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/zone5"],
-            ["L2","FFXI/zone5"]
+            ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },
@@ -526,7 +517,7 @@
 
     "FFXI-5F-Elite":{
         "_TYPE":"dungeon",
-        "questName":"[恶名]FFXI 5F 单恶魔",
+        "questName":"[恶名]FFXI 5F 低难度 单恶魔",
         "questName_en_US": "[Elite+Chest] FFXI 5F Single Elite",
         "questCategory": "FFXI联动",
         "questCategory_en_US": "FFXI Cave",
@@ -538,8 +529,7 @@
         [
             ["town","world"],
             ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
-            ["L1","FFXI/zone5"],
-            ["L2","FFXI/zone5"]
+            ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
     },

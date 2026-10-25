@@ -1720,10 +1720,10 @@ def Factory():
                         if entry[1] == "world":
                             Press(FindCoordsOrElseExecuteFallbackAndWait(
                                 "intoWorldMap",
-                                    ["closePartyInfo",
-                                     "closePartyInfo_waterway",
-                                     "closePartyInfo_fortress",
-                                     "return",[550, 1]],
+                                ["closePartyInfo",
+                                    "closePartyInfo_waterway",
+                                    "closePartyInfo_fortress",
+                                    "return",[550, 1]],
                                 1))
                         elif entry[1] == "EOT":
                             Press(FindCoordsOrElseExecuteFallbackAndWait(
@@ -1737,11 +1737,12 @@ def Factory():
                         )
 
                     elif level in ("L1", "L2"):
-                        Press(FindCoordsOrElseExecuteFallbackAndWait(
-                            entry[1],
+                        FindCoordsOrElseExecuteFallbackAndWait(
+                            [entry[1],"dungFlag","GotoDung"],
                             entry[2] if len(entry) > 2 else [1, 1],
                             1,
-                        ))
+                        )
+                        Press(CheckIf(ScreenShot(), entry[1]))
 
                 # 进本确认
                 Press(CheckIf(ScreenShot(), "GotoDung"))
