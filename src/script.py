@@ -1689,7 +1689,7 @@ def Factory():
                 FindCoordsOrElseExecuteFallbackAndWait(
                     ["dungFlag", "EoTreturn", "worldmapflag", "openworldmap",
                      "returntotown", "returntotown_DH", "Inn", "EdgeOfTown", "intoWorldMap"],
-                    [[1, 1],"return",[1, 1],[1, 1],[1,1],],
+                    ["return",[1, 1],"return",[1, 1],[1, 1]],
                     2,
                 )
                 scn = ScreenShot()
