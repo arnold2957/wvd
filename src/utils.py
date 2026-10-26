@@ -166,7 +166,7 @@ def LoadImage(path):
 
 def SaveImage(scn, name=None, prefix = None):
     if not name:
-        name = datetime.now().strftime('%H%M%S.%f')[:-3]
+        name = datetime.now().strftime('%y%m%d-%H:%M:%S.%f')[:-7]
     if not name.endswith(".png"):
         name = f"{name}.png"
     if prefix:

@@ -1689,8 +1689,8 @@ def Factory():
                 FindCoordsOrElseExecuteFallbackAndWait(
                     ["dungFlag", "EoTreturn", "worldmapflag", "openworldmap",
                      "returntotown", "returntotown_DH", "Inn", "EdgeOfTown", "intoWorldMap"],
-                    [[550, 1],"return",[550, 1]],
-                    1,
+                    [[1, 1],"return",[1, 1],[1, 1],[1,1],],
+                    2,
                 )
                 scn = ScreenShot()
 
@@ -1743,12 +1743,11 @@ def Factory():
                             1,
                         )
                         Press(CheckIf(ScreenShot(), entry[1]))
-
-                # 进本确认
-                Press(CheckIf(ScreenShot(), "GotoDung"))
+                        Sleep(1)
+                        Press(CheckIf(ScreenShot(), "GotoDung"))
 
                 # 等待动画结束
-                Sleep(1)
+                Sleep(1)                
 
         RestartableSequenceExecution(
             lambda: mainEoT()
@@ -3798,7 +3797,7 @@ def Factory():
                     for i in range(40):
                         DeviceShell(f"input swipe 250 1200 850 1200 100")
             case "test":
-                TeleportFromCityToWorldLocation("City_DHI", "input swipe 54 1346 302 1571")
+                SaveImage(ScreenShot())
                 pass
                 
                     

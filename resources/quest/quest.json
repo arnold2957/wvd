@@ -363,7 +363,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/ZONE1"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -382,7 +382,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -403,7 +403,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/ZONE2"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -424,7 +424,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/ZONE3"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -447,7 +447,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -467,7 +467,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -487,7 +487,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -507,7 +507,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -528,7 +528,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/zone5"]
         ],
         "_RTT": ["City_RoyalCityLuknalia","input swipe 400 400 500 300",[500,1100]]
@@ -1031,7 +1031,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","FFXI/GCN","input swipe 690 590 690 690"],
+            ["worldmap","FFXI/GCN","input swipe 740 1000 740 1300"],
             ["L1","FFXI/ZONE2"],
             ["L2","FFXI/ZONE2"]
         ],
