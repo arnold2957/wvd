@@ -3697,6 +3697,8 @@ def Factory():
                         Sleep(2)
                         Press([196, 1153])
                         Sleep(2)
+                        Press([464, 1386])
+                        Sleep(2)
                         FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","return",3)
                 def goToFishing():
                     quest._EOT = [
