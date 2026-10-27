@@ -526,9 +526,10 @@ class ConfigPanelApp(tk.Toplevel):
         self.bind_class('TCombobox', '<Button-5>', BLOCK_WHEEL)
 
         self.adb_active = False
+        self._closing_loguru = False # loguru会在窗口关闭后依旧向已关闭的窗口发送信息导致死锁, 因此通知loguru
 
         # 关闭时退出整个程序
-        self.protocol("WM_DELETE_WINDOW", self.controller.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.controller.on_close)
 
         # --- 任务状态 ---
         self.quest_active = False
@@ -635,12 +636,16 @@ class ConfigPanelApp(tk.Toplevel):
 
         # 定义 sink 函数（直接操作 Tkinter 控件，loguru 的 enqueue=True 会保证消息按队列顺序传递）
         def log_sink(message):
+            if self._closing_loguru:
+                return
             self.log_display.configure(state='normal')
             self.log_display.insert(tk.END, message)
             self.log_display.see(tk.END)
             self.log_display.configure(state='disabled')
 
         def summary_sink(message):
+            if self._closing_loguru:
+                return
             self.summary_log_display.configure(state='normal')
             self.summary_log_display.delete(1.0, tk.END)
             self.summary_log_display.insert(tk.END, message)

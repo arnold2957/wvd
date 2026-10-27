@@ -1,7 +1,7 @@
 from gui import *
 import argparse
 
-__version__ = '3.0.11' 
+__version__ = '3.1.0'
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -36,6 +36,20 @@ class AppController(tk.Tk):
     def run_in_thread(self, target_func, *args):
         thread = threading.Thread(target=target_func, args=args, daemon=True)
         thread.start()
+
+    def on_close(self):
+        if self.main_window and self.main_window._closing_loguru:
+            return  # 如果已经在关闭过程中，直接返回，避免重复操作
+
+        logger.info("窗口已关闭, 程序即将退出.")
+
+        if self.main_window:
+            # 通知 GUI 日志线程停止操作 Tk 控件, 并立刻隐藏窗口.
+            self.main_window._closing_loguru = True
+            self.main_window.withdraw()
+        # 延迟销毁, 给已经在排队的跨线程 Tk 调用留出收尾时间.
+        self.after(200, self.destroy)
+
     def schedule_periodic_update_check(self):
         # 如果当前没有在检查或下载，则启动一个新的检查
         if not self.is_checking_for_update:
@@ -58,7 +72,7 @@ class AppController(tk.Tk):
         while 1:
             if not self.quest_threading.is_alive():
                 Farm = Factory()
-                self.quest_threading = Thread(target=Farm, args=(self.quest_setting,))
+                self.quest_threading = Thread(target=Farm, args=(self.quest_setting,), daemon=True)
                 self.quest_threading.start()
                 break
         if self.main_window:
@@ -73,19 +87,18 @@ class AppController(tk.Tk):
             # --- 这是处理更新逻辑的核心部分 ---
             match command:
                 case 'start_quest':
-                    self.quest_setting = value                    
+                    self.quest_setting = value
                     self.quest_setting._MSGQUEUE = self.msg_queue
-                    self.quest_setting._FORCESTOPING = Event()
+                    GlobalStopEvent.clear()
                     Farm = Factory()
-                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,))
+                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,), daemon=True)
                     self.quest_threading.start()
                     logger.info(f'启动任务\"{self.quest_setting.FARM_TARGET_TEXT}\"...')
 
                 case 'stop_quest':
                     logger.info('停止任务...')
-                    if hasattr(self, 'quest_threading') and self.quest_threading.is_alive():
-                        if hasattr(self.quest_setting, '_FORCESTOPING'):
-                            self.quest_setting._FORCESTOPING.set()
+                    if self.quest_threading and self.quest_threading.is_alive():
+                        GlobalStopEvent.set()
                 
                 case 'switch_quest':
                     self.switch_quest(value)
@@ -141,8 +154,8 @@ class AppController(tk.Tk):
                         subprocess.Popen([script_path], shell=True, creationflags=CREATE_NO_WINDOW)
                     else:
                         os.system(script_path)
-                    
-                    self.destroy()
+
+                    self.on_close()
                     
                 case 'no_update_found':
                     # （可选）可以给个安静的提示，或什么都不做

@@ -10,6 +10,7 @@ import time
 import numpy as np
 import glob
 import gettext
+import threading
 from loguru import logger
 from datetime import datetime
 
@@ -22,6 +23,27 @@ from datetime import datetime
 ############################################
 # Windows 下隐藏子进程的控制台窗口, 避免打包为 --noconsole 后闪现 cmd 黑框.
 CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+############################################
+# 全局停止开关与可中断等待.
+GlobalStopEvent = threading.Event()
+
+class StopRequested(BaseException):
+    """用户要求停止任务时抛出.
+
+    继承 BaseException, 避免被各处的 except Exception 当成普通错误吞掉.
+    由 Farm() 最外层统一捕获并执行收尾.
+    """
+
+def Sleep(t=1):
+    # 原实现: time.sleep(t)
+    # 等价性: 停止信号未设置时, Event.wait(timeout=t) 会一直阻塞到超时并返回 False,
+    #         与 time.sleep(t) 的等待效果相同.
+    # 停止信号已设置(或等待期间被设置)时立即返回 True, 抛出 StopRequested.
+    if GlobalStopEvent.wait(timeout=t):
+        raise StopRequested()
+
+############################################
 
 LOGS_FOLDER_NAME = "logs"
 os.makedirs(LOGS_FOLDER_NAME, exist_ok=True)
