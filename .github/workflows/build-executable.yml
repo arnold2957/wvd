@@ -56,8 +56,10 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir --noconsole `
+          --collect-all webview `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
+          --add-data "ui-redesign.html;." `
           src/main.py -n wvd
         Write-Host "Build completed successfully."
 

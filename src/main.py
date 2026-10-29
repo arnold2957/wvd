@@ -1,211 +1,225 @@
 from gui import *
-import argparse
+from utils import HardExit
 
-__version__ = '3.1.0'
+import argparse
+import os
+import queue
+import subprocess
+import sys
+import threading
+import time
+
+__version__ = '3.2.0-beta'
 OWNER = "arnold2957"
 REPO = "wvd"
 
-class AppController(tk.Tk):
+
+class AppController:
+    """应用控制器.
+
+    不再继承 tk.Tk: 窗口由 gui.ConfigPanelApp 里的 pywebview 创建,
+    后台消息队列由一个普通线程持续消费.
+    """
+
     def __init__(self, headless, config_path):
-        super().__init__()
-        self.withdraw()
+        self.headless = headless
+        self._stop = threading.Event()
         self.msg_queue = queue.Queue()
         self.main_window = None
+
         if not headless:
-            if not self.main_window:
-                self.main_window = ConfigPanelApp(self,
-                                                  __version__,
-                                                  self.msg_queue)
+            self.main_window = ConfigPanelApp(__version__, self.msg_queue)
         else:
-            HeadlessActive(config_path,
-                           self.msg_queue)
-            
+            HeadlessActive(config_path, self.msg_queue)
+
         self.quest_threading = None
         self.quest_setting = None
 
-        self.is_checking_for_update = False 
+        self.is_checking_for_update = False
         self.updater = AutoUpdater(
             msg_queue=self.msg_queue,
             github_user=OWNER,
             github_repo=REPO,
-            current_version=__version__
+            current_version=__version__,
         )
-        self.schedule_periodic_update_check()
-        self.check_queue()
 
-    def run_in_thread(self, target_func, *args):
-        thread = threading.Thread(target=target_func, args=args, daemon=True)
-        thread.start()
+        self._queue_thread = threading.Thread(target=self._queue_loop, daemon=True)
+        self._queue_thread.start()
 
-    def on_close(self):
-        if self.main_window and self.main_window._closing_loguru:
-            return  # 如果已经在关闭过程中，直接返回，避免重复操作
+        if not headless:
+            self._schedule_thread = threading.Thread(
+                target=self._schedule_periodic_update_check, daemon=True)
+            self._schedule_thread.start()
 
-        logger.info("窗口已关闭, 程序即将退出.")
-
-        if self.main_window:
-            # 通知 GUI 日志线程停止操作 Tk 控件, 并立刻隐藏窗口.
-            self.main_window._closing_loguru = True
-            self.main_window.withdraw()
-        # 延迟销毁, 给已经在排队的跨线程 Tk 调用留出收尾时间.
-        self.after(200, self.destroy)
-
-    def schedule_periodic_update_check(self):
-        # 如果当前没有在检查或下载，则启动一个新的检查
-        if not self.is_checking_for_update:
-            # print("调度器：正在启动一小时一次的后台更新检查...")
-            self.is_checking_for_update = True  # 设置标志，防止重复
-            self.run_in_thread(self.updater.check_for_updates)
-            self.is_checking_for_update = False
+    # ------------------------------------------------------------------
+    def run(self):
+        if self.headless:
+            # 无头模式没有窗口, 主线程保持存活, 让任务线程继续运行.
+            while not self._stop.is_set():
+                self._stop.wait(1)
         else:
-            # print("调度器：上一个检查/下载任务尚未完成，跳过本次检查。")
-            None
-        self.after(1000000, self.schedule_periodic_update_check)
+            self.main_window.run()  # webview.start(), 关闭所有窗口后返回
+        HardExit(0)
+
+    def _schedule_periodic_update_check(self):
+        # 先让窗口完成首帧渲染, 避免更新检查与 WebView2 启动抢资源.
+        self._stop.wait(3)
+        while not self._stop.is_set():
+            if not self.is_checking_for_update:
+                self.is_checking_for_update = True
+                try:
+                    self.updater.check_for_updates()
+                except Exception:
+                    logger.exception("检查更新失败")
+                finally:
+                    self.is_checking_for_update = False
+            self._stop.wait(1000)
 
     def switch_quest(self, target):
         """把当前任务切换为 target(FARM_TARGET), 并重启任务线程."""
+        if self.quest_setting is None:
+            return
         quest_name = QUEST_DATA.get(target, {}).get("questName", target)
         logger.info(f'切换任务到"{quest_name}"({target})...')
         self.quest_setting.FARM_TARGET = target
         self.quest_setting.FARM_TARGET_TEXT = quest_name
         self.quest_setting._COUNTERDUNG = 0
-        while 1:
-            if not self.quest_threading.is_alive():
+        for underscore in range(50):
+            if self.quest_threading is None or not self.quest_threading.is_alive():
                 Farm = Factory()
-                self.quest_threading = Thread(target=Farm, args=(self.quest_setting,), daemon=True)
+                self.quest_threading = threading.Thread(
+                    target=Farm, args=(self.quest_setting,), daemon=True)
                 self.quest_threading.start()
                 break
+            time.sleep(0.1)
+        else:
+            logger.error("旧任务线程仍在运行, 本次任务切换已取消.")
+            return
         if self.main_window:
             self.main_window.turn_to_quest(target)
 
-    def check_queue(self):
-        """处理来自AutoUpdater和其他服务的消息"""
+    # ------------------------------------------------------------------
+    def _queue_loop(self):
+        while not self._stop.is_set():
+            try:
+                message = self.msg_queue.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            try:
+                self._handle_message(message)
+            except Exception:
+                logger.exception("处理后台消息失败")
+
+    def _handle_message(self, message):
+        command, value = message
+
+        match command:
+            case 'start_quest':
+                self.quest_setting = value
+                self.quest_setting._MSGQUEUE = self.msg_queue
+                GlobalStopEvent.clear()
+                Farm = Factory()
+                self.quest_threading = threading.Thread(
+                    target=Farm, args=(self.quest_setting,), daemon=True)
+                self.quest_threading.start()
+                logger.info(f'启动任务\"{self.quest_setting.FARM_TARGET_TEXT}\"...')
+
+            case 'stop_quest':
+                logger.info('停止任务...')
+                if self.quest_threading and self.quest_threading.is_alive():
+                    GlobalStopEvent.set()
+
+            case 'switch_quest':
+                self.switch_quest(value)
+
+            case 'update_available':
+                update_data = value
+                version = update_data['version']
+                if self.main_window:
+                    self.main_window.show_update_notice(
+                        version, self.updater.download)
+                    self.main_window.save_config()
+
+            case 'download_started':
+                if self.main_window:
+                    self.main_window.push_event(
+                        {"type": "download_started", "total": value})
+
+            case 'progress':
+                if self.main_window:
+                    self.main_window.push_event(
+                        {"type": "download_progress", "value": value})
+
+            case 'download_complete':
+                if self.main_window:
+                    self.main_window.push_event({"type": "download_complete"})
+
+            case 'error':
+                logger.error(str(value))
+                if self.main_window:
+                    self.main_window.push_event(
+                        {"type": "error", "message": str(value)})
+
+            case 'restart_ready':
+                script_path = value
+                if self.main_window:
+                    self.main_window.push_event({"type": "restart_ready"})
+                threading.Timer(1.2, lambda: self._restart(script_path)).start()
+
+            case 'no_update_found':
+                logger.debug("未发现更新。")
+
+    @staticmethod
+    def _restart(script_path):
         try:
-            message = self.msg_queue.get_nowait()
-            command, value = message
-            
-            # --- 这是处理更新逻辑的核心部分 ---
-            match command:
-                case 'start_quest':
-                    self.quest_setting = value
-                    self.quest_setting._MSGQUEUE = self.msg_queue
-                    GlobalStopEvent.clear()
-                    Farm = Factory()
-                    self.quest_threading = Thread(target=Farm,args=(self.quest_setting,), daemon=True)
-                    self.quest_threading.start()
-                    logger.info(f'启动任务\"{self.quest_setting.FARM_TARGET_TEXT}\"...')
+            if sys.platform == "win32":
+                subprocess.Popen([script_path], shell=True,
+                                 creationflags=CREATE_NO_WINDOW)
+            else:
+                os.system(script_path)
+        except Exception:
+            logger.exception("重启失败")
+        HardExit(0)
 
-                case 'stop_quest':
-                    logger.info('停止任务...')
-                    if self.quest_threading and self.quest_threading.is_alive():
-                        GlobalStopEvent.set()
-                
-                case 'switch_quest':
-                    self.switch_quest(value)
-
-                case 'update_available':
-                    # 在面板上显示提示
-                    update_data = value
-                    version = update_data['version']
-                    if self.main_window:
-                        self.main_window.find_update.grid()
-                        self.main_window.update_text.grid()
-                        self.main_window.LATEST_VERSION.set(version)
-                        self.main_window.button_auto_download.grid()
-                        self.main_window.button_manual_download.grid()
-                        self.main_window.update_sep.grid()
-                        self.main_window.save_config()
-                        width, height = map(int, self.main_window.geometry().split('+')[0].split('x'))
-                        self.main_window.geometry(f'{width}x{height+50}')
-
-                        self.main_window.button_auto_download.config(command=lambda:self.run_in_thread(self.updater.download))          
-                case 'download_started':
-                    # 控制器决定创建并显示进度条窗口
-                    if not hasattr(self, 'progress_window') or not self.progress_window.winfo_exists():
-                        self.progress_window = Progressbar(self.main_window,title="下载中...",max_size = value)
-
-                case 'progress':
-                    # 控制器更新进度条UI
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.update_progress(value)
-                        self.update()
-                        None
-
-                case 'download_complete':
-                    # 控制器关闭进度条并显示成功信息
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.destroy()
-
-                case 'error':
-                    # 控制器处理错误显示
-                    if hasattr(self, 'progress_window') and self.progress_window.winfo_exists():
-                        self.progress_window.destroy()
-                    messagebox.showerror("错误", value, parent=self.main_window)
-
-                case 'restart_ready':
-                    script_path = value
-                    messagebox.showinfo(
-                        "更新完成",
-                        "新版本已准备就绪，应用程序即将重启！",
-                        parent=self.main_window
-                    )
-                    
-                    if sys.platform == "win32":
-                        subprocess.Popen([script_path], shell=True, creationflags=CREATE_NO_WINDOW)
-                    else:
-                        os.system(script_path)
-
-                    self.on_close()
-                    
-                case 'no_update_found':
-                    # （可选）可以给个安静的提示，或什么都不做
-                    print("UI: 未发现更新。")
-
-        except queue.Empty:
-            pass
-        finally:
-            # 持续监听
-            self.after(100, self.check_queue)
 
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description='WvDAS命令行参数')
-    
-    # 添加-headless标志参数
+
     parser.add_argument(
-        '-headless', 
-        '--headless', 
-        action='store_true',  # 检测到参数即标记为True
-        help='以无头模式运行程序'
+        '-headless',
+        '--headless',
+        action='store_true',
+        help='以无头模式运行程序',
     )
-    
-    # 添加可选的config_path参数
+
     parser.add_argument(
-        '-config', 
-        '--config', 
-        type=str,  # 自动转换为字符串
-        default=None,  # 默认值设为None
-        help='配置文件路径 (例如: c:/config.json)'
+        '-config',
+        '--config',
+        type=str,
+        default=None,
+        help='配置文件路径 (例如: c:/config.json)',
     )
-    
+
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
 
     controller = AppController(args.headless, args.config)
-    
-    controller.mainloop()
+    controller.run()
 
-def HeadlessActive(config_path,msg_queue):
+
+def HeadlessActive(config_path, msg_queue):
     RegisterConsoleHandler()
 
     setting = FarmConfig()
     setting = LoadSettingFromDict(LoadConfig())
     msg_queue.put(('start_quest', setting))
 
-
     logger.info(f"WvDAS 巫术daphne自动刷怪 v{__version__} @德德Dellyla(B站)")
+
 
 if __name__ == "__main__":
     main()

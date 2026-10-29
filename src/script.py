@@ -22,6 +22,7 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "ADB_ADRESS",               tk.StringVar,  "127.0.0.1:16384"],
             ["GENERAL",   "LAST_VERSION",             tk.StringVar,  None],
             ["GENERAL",   "LATEST_VERSION",           tk.StringVar,  None],
+            ["GENERAL",   "DARK_THEME",               tk.BooleanVar, False],
             ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  ""],
             ["GENERAL",   "FARM_TARGET",              tk.StringVar,  None],
             ["GENERAL",   "KARMA_ADJUST",             tk.StringVar,  "+0"],
@@ -45,6 +46,7 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "LANGUAGE_SCRIPT",                        tk.StringVar, "zh_CN"],
             ["GENERAL",   "LANGUAGE_GAME",                          tk.StringVar, "en_US"],
             ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar, None],
+            ["GENERAL",   "WEBSITE_ORG_TIME_OLD",                   tk.StringVar, None],
             ["GENERAL",   "AM_REFRESH_TIME",                        tk.StringVar, None],
 
             ["TEMPLATE",   "TASK_POINT_STRATEGY",                   dict,          {}],
@@ -84,6 +86,9 @@ class FarmConfig:
         # 当访问不存在的属性时，抛出AttributeError
         raise AttributeError(_("FarmConfig对象没有属性'%s'") % name)
 class RuntimeContext:
+    #### 特殊事件
+    _EVENT_COUNTERS = None
+
     #### 模拟器信息
     _RUNNING_EMU_PID = None # 全局变量
     #### 统计信息
@@ -115,6 +120,13 @@ class RuntimeContext:
     TASK_STEP_INDEX = 0
     _LAST_BAGCLEAR = 0
     _SKIP_SCREENSHOT_WARNING = False # 截图返回是否包含错误代码.
+
+    @staticmethod
+    def record_special_event(name):
+        # 只挂在本轮 RuntimeContext 上
+        if RuntimeContext._EVENT_COUNTERS is None:
+            RuntimeContext._EVENT_COUNTERS = {}
+        RuntimeContext._EVENT_COUNTERS[name] = RuntimeContext._EVENT_COUNTERS.get(name, 0) + 1
 class FarmQuest:
     _TARGETINFOLIST = None
     _EOT = None
@@ -1044,18 +1056,14 @@ def Factory():
             return True
         if Press(CheckIf(scn,"retry")):
             logger.info(_("发现并点击了\"重试\". 你遇到了网络波动."))
+            runtimeContext.record_special_event(_("网络波动"))
             return True
         if pos:=(CheckIf(scn,"retry_blank")):
             Press([pos[0], pos[1]+103])
             logger.info(_("发现并点击了\"重试\". 你遇到了网络波动."))
+            runtimeContext.record_special_event(_("网络波动"))
             return True
         return False
-    def AddImportantInfo(str):
-        nonlocal runtimeContext
-        if runtimeContext._IMPORTANTINFO == "":
-            runtimeContext._IMPORTANTINFO = _("👆向上滑动查看重要信息👆\n")
-        time_str = datetime.now().strftime("%Y%m%d-%H%M%S") 
-        runtimeContext._IMPORTANTINFO = " {a} {b}\n{c}".format(a = time_str, b=str, c=runtimeContext._IMPORTANTINFO)
     ##################################################################
     def _is_coord(x):
         return (isinstance(x, (list, tuple))
@@ -1128,6 +1136,7 @@ def Factory():
         return None
     def restartGame(skip_screenshot = False, force_restart_EMU = False):
         nonlocal runtimeContext
+        runtimeContext.record_special_event(_("重启游戏"))
         runtimeContext._COMBATSPD = False # 重启会重置2倍速, 所以重置标识符以便重新打开.
         runtimeContext._TIME_CHEST = 0
         runtimeContext._TIME_COMBAT = 0 # 因为重启了, 所以清空战斗和宝箱计时器.
@@ -1276,9 +1285,37 @@ def Factory():
                 summary_text += f"箱子效率{round(runtimeContext._TOTALTIME/runtimeContext._COUNTERCHEST,2)}秒/箱.\n累计开箱{runtimeContext._COUNTERCHEST}次,开箱平均耗时{round(runtimeContext._TIME_CHEST_TOTAL/runtimeContext._COUNTERCHEST,2)}秒.\n"
             if runtimeContext._COUNTERCOMBAT > 0:
                 summary_text += _("累计战斗{a}次.战斗平均用时{b}秒.".format(a=runtimeContext._COUNTERCOMBAT, b=round(runtimeContext._TIME_COMBAT_TOTAL/runtimeContext._COUNTERCOMBAT,2)))
-            logger.info("{a}{b}".format(a=runtimeContext._IMPORTANTINFO, b=summary_text),summary=True)
+        else:
+            summary_text = _("已完成{a}次\"{b}\"地下城.\n总计{c}秒.\n".format(
+                a=runtimeContext._COUNTERDUNG,
+                b=setting.FARM_TARGET_TEXT,
+                c=round(runtimeContext._TOTALTIME, 2)))
+
+        summary_data = {
+            "total_time": round(runtimeContext._TOTALTIME, 2),
+            "complete_times": runtimeContext._COUNTERDUNG,
+            "col_2_text": _("宝箱"),
+            "col_2_counter": runtimeContext._COUNTERCHEST,
+            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+            "col_3_text": _("战斗"),
+            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+        }
+        summary_events = dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {})
+
+        logger.info(
+            "{b}".format(b=summary_text),
+            summary=True,
+            summary_data=summary_data,
+            summary_events=summary_events,
+        )
         # 圈数计时器
         runtimeContext._LAPTIME = time.time()
+
+        # "本次执行完毕后停止": 在一轮任务结束时设置全局停止事件.
+        if StopAfterRunEvent.is_set():
+            logger.info(_("本次执行完毕, 按设置停止任务."))
+            GlobalStopEvent.set()
 
     def TeleportFromCityToWorldLocation(target, swipe, press_any_key = [550,1]):
         nonlocal runtimeContext
@@ -1427,6 +1464,7 @@ def Factory():
 
     def RiseAgainReset(reason):
         nonlocal runtimeContext
+        runtimeContext.record_special_event(_("面具死亡"))
         runtimeContext._SUICIDE = False # 死了 自杀成功 设置为false
         runtimeContext._RECOVERAFTERREZ = True
         if reason == "chest":
@@ -1434,7 +1472,6 @@ def Factory():
         else:
             runtimeContext._COUNTERCOMBAT -=1
         logger.info(_("快快请起."))
-        AddImportantInfo(_("面具死了, 但是再起."))
         Press([450,750])
         Sleep(10)
 
@@ -1452,6 +1489,7 @@ def Factory():
         raise SystemExit
     def IdentifyState():
         nonlocal setting # 修改因果
+        nonlocal runtimeContext # 特殊事件
         counter = 0
         while 1:
             screen = ScreenShot()
@@ -1483,7 +1521,7 @@ def Factory():
             screen = ScreenShot()
 
             if CheckIf(screen,"someonedead"):
-                AddImportantInfo(_("尝试复活队友..."))
+                runtimeContext.record_special_event(_("复活队友"))
                 ReloadStrategy()
                 Sleep(1)
                 for underscore in range(5):
@@ -1590,7 +1628,7 @@ def Factory():
                         new_str = f"+{num}"
 
                     logger.info(_("即将进行善恶值调整. 剩余次数:{a}".format(a=new_str)))
-                    AddImportantInfo(_("新的善恶:{a}".format(a=new_str)))
+                    runtimeContext.record_special_event(_("善恶变化"))
                     setting.KARMA_ADJUST = new_str
                     SetOneVarInGeneralConfig("KARMA_ADJUST",setting.KARMA_ADJUST)
                     Sleep(2)
@@ -1599,9 +1637,9 @@ def Factory():
                     if Press(CheckIf(screen, "dialogueChoices/"+op)):
                         Sleep(2)
                         if op == "adventurersbones":
-                            AddImportantInfo(_("购买了骨头."))
+                            runtimeContext.record_special_event(_("购买了骨头"))
                         if op == "halfBone":
-                            AddImportantInfo(_("购买了尸油."))
+                            runtimeContext.record_special_event(_("购买了尸油"))
                         return IdentifyState()
                     
                 if pos_b:=CheckIf(screen,"blessing"):
@@ -3824,7 +3862,6 @@ def Factory():
         nonlocal quest
         nonlocal setting # 初始化
         nonlocal runtimeContext
-        
 
         setting = set
         runtimeContext = RuntimeContext()
@@ -3838,6 +3875,8 @@ def Factory():
 
             quest = LoadQuest(setting.FARM_TARGET)
             if quest:
+                runtimeContext._LAPTIME = time.time()
+
                 if quest._TYPE =="dungeon":
                     DungeonFarm()
                 else:
