@@ -1345,6 +1345,7 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
+        Sleep(1)
         pos = FindCoordsOrElseExecuteFallbackAndWait(target,[swipe,press_any_key],1)
 
         # 现在已经确保了可以看见target, 那么确保可以点击成功
@@ -1494,7 +1495,7 @@ def Factory():
                 Sleep(2)
                 return IdentifyState()
 
-            if CheckIf(screen,"returntoTown"):
+            if CheckIf(screen,"returntoTown") or CheckIf(screen,"returntoTown_DH"):
                 if  (
                         setting.ACTIVE_REST and                             # 激活休息
                         runtimeContext._MEET_CHEST_OR_COMBAT and            # 遇到宝箱或战斗
@@ -1511,10 +1512,12 @@ def Factory():
                     return State.EoT,DungeonState.Quit,screen
 
             if CheckIf(screen, "worldmapflag"):
-                for underscore in range(3):
-                    Press([100,1500])
-                    Sleep(0.5)
-                Press([250,1500])
+                if not runtimeContext._ZOOMWORLDMAP:
+                    for underscore in range(3):
+                        Press([100,1500])
+                        Sleep(0.5)
+                    Press([250,1500])
+                    runtimeContext._ZOOMWORLDMAP = True
                 # 由于定位流程包含了返回键, 有时会退出到大地图, 因此强制执行RTT流程, 不管是否需要住宿.
                 # if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                 if quest._RTT:
@@ -1739,17 +1742,18 @@ def Factory():
                                     "closePartyInfo_fortress",
                                     "return",[550, 1]],
                                 1))
+                            Sleep(2.5)
                         elif entry[1] == "EOT":
                             Press(FindCoordsOrElseExecuteFallbackAndWait(
                                 "EdgeOfTown", ["return",[550, 1]], 1))
-
+                            Sleep(1)
                     elif level == "worldmap":
                         TeleportFromCityToWorldLocation(
                             entry[1],
                             entry[2] if len(entry) > 2 else [1, 1],
                             entry[3] if len(entry) > 3 else [550, 1],
                         )
-
+                        Sleep(1)
                     elif level in ("L1", "L2"):
                         FindCoordsOrElseExecuteFallbackAndWait(
                             [entry[1],"dungFlag","GotoDung"],
