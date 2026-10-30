@@ -11,6 +11,9 @@ QQ 官方要求：发送主动群消息时机器人必须保持 WebSocket 在线
     QQ_BOT_GROUP_OPENID  目标群的 group_openid
     VERSION              本次发布的版本号 (来自 src/main.py 的 __version__)
     QQ_BOT_SANDBOX       可选, true 时连接沙箱环境 (机器人未上线时使用)
+    QQ_BOT_AT_ALL        可选, true/false 强制开启或关闭 @所有人
+                         不设置时: 正式版本 @所有人, beta 版本不 @
+                         (要求机器人是群管理员, 每群每天仅 1 次; 失败会自动降级为普通消息)
 
 消息规则:
     - 版本号包含 beta  ->  "测试版本{版本号}已经发布!"
@@ -71,7 +74,15 @@ def main():
     app_secret = os.environ.get("QQ_BOT_APP_SECRET", "").strip()
     group_openid = os.environ.get("QQ_BOT_GROUP_OPENID", "").strip()
     sandbox = os.environ.get("QQ_BOT_SANDBOX", "").strip().lower() in {"1", "true", "yes", "on"}
-    debug = os.environ.get("QQ_BOT_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
+
+    at_all_setting = os.environ.get("QQ_BOT_AT_ALL", "").strip().lower()
+    if at_all_setting in {"1", "true", "yes", "on"}:
+        at_all = True
+    elif at_all_setting in {"0", "false", "no", "off"}:
+        at_all = False
+    else:
+        # 默认: 正式版本 @所有人, beta 版本不 @
+        at_all = "beta" not in version.lower()
 
     missing = [
         name
@@ -105,13 +116,26 @@ def main():
 
     class NotifyClient(botpy.Client):
         async def on_ready(self):
-            try:
+            async def send(content):
                 await self.api.post_group_message(
                     group_openid=group_openid,
                     msg_type=0,
-                    content=message,
+                    content=content,
                 )
-                log("QQ 群通报发送成功")
+
+            try:
+                if at_all:
+                    try:
+                        # 每天每群只能 @所有人 一次, 失败时降级为普通消息
+                        await send(f"<qqbot-at-everyone />\n{message}")
+                        log("QQ 群通报发送成功 (已 @所有人)")
+                    except Exception as error:  # noqa: BLE001
+                        log(f"带 @所有人 发送失败, 改为普通消息重试: {error}")
+                        await send(message)
+                        log("QQ 群通报发送成功 (未 @所有人)")
+                else:
+                    await send(message)
+                    log("QQ 群通报发送成功")
                 code = 0
             except Exception as error:  # noqa: BLE001
                 log(f"QQ 群通报失败: {error}")
@@ -132,8 +156,7 @@ def main():
     client = NotifyClient(
         intents=botpy.Intents(public_messages=True),
         is_sandbox=sandbox,
-        # 默认关闭 botpy 自身日志; QQ_BOT_DEBUG=true 时打开, 便于排查连接问题
-        bot_log=debug,
+        bot_log=False,
     )
 
     try:
