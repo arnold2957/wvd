@@ -92,10 +92,8 @@ echo.
 pyinstaller %CONSOLE_FLAG% --onedir ^
     --paths=src ^
     --collect-submodules=ppadb ^
-    --collect-all webview ^
     --add-data "resources;resources/" ^
     --add-data "locale;locale/" ^
-    --add-data "ui-redesign.html;." ^
     src/main.py -n %APP_NAME%
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed.
