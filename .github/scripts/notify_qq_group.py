@@ -71,6 +71,7 @@ def main():
     app_secret = os.environ.get("QQ_BOT_APP_SECRET", "").strip()
     group_openid = os.environ.get("QQ_BOT_GROUP_OPENID", "").strip()
     sandbox = os.environ.get("QQ_BOT_SANDBOX", "").strip().lower() in {"1", "true", "yes", "on"}
+    debug = os.environ.get("QQ_BOT_DEBUG", "").strip().lower() in {"1", "true", "yes", "on"}
 
     missing = [
         name
@@ -131,7 +132,8 @@ def main():
     client = NotifyClient(
         intents=botpy.Intents(public_messages=True),
         is_sandbox=sandbox,
-        bot_log=False,
+        # 默认关闭 botpy 自身日志; QQ_BOT_DEBUG=true 时打开, 便于排查连接问题
+        bot_log=debug,
     )
 
     try:
