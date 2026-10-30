@@ -3813,8 +3813,13 @@ def Factory():
                         continue
 
                     Press([250,1200])
-                    for i in range(40):
-                        DeviceShell(f"input swipe 250 1200 850 1200 100")
+                    DeviceShell(f"input motionevent DOWN 243 1200")
+                    Sleep(0.2)
+                    for i in range(15):
+                        for j in range(12):
+                            DeviceShell(f"input motionevent MOVE 243 {1100-j*100}")
+                            Sleep(0.02)
+                    DeviceShell(f"input motionevent UP 243 1200")
             case "test":
                 SaveImage(ScreenShot())
                 pass
