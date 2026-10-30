@@ -147,6 +147,7 @@ jobs:
         QQ_BOT_SANDBOX: ${{ vars.QQ_BOT_SANDBOX }}
         QQ_BOT_AT_ALL: ${{ vars.QQ_BOT_AT_ALL }}
         QQ_BOT_SEND_FILE: ${{ vars.QQ_BOT_SEND_FILE }}
+        RELEASE_ZIP_PATH: dist/wvd_${{ steps.extract-version.outputs.version }}.zip
         RELEASE_ZIP_URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.extract-version.outputs.version }}/wvd_${{ steps.extract-version.outputs.version }}.zip
         VERSION: ${{ steps.extract-version.outputs.version }}
       run: |
