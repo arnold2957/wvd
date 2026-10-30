@@ -136,6 +136,7 @@ jobs:
     #   QQ_BOT_SANDBOX=true  when the bot is not published yet
     #   QQ_BOT_AT_ALL=true/false  override @everyone behavior
     #                             (default: formal releases @everyone, beta does not)
+    #   QQ_BOT_SEND_FILE=false     disable sending the release zip as a group file
     - name: Notify QQ group
       if: success()
       continue-on-error: true
@@ -145,6 +146,8 @@ jobs:
         QQ_BOT_GROUP_OPENID: ${{ secrets.QQ_BOT_GROUP_OPENID }}
         QQ_BOT_SANDBOX: ${{ vars.QQ_BOT_SANDBOX }}
         QQ_BOT_AT_ALL: ${{ vars.QQ_BOT_AT_ALL }}
+        QQ_BOT_SEND_FILE: ${{ vars.QQ_BOT_SEND_FILE }}
+        RELEASE_ZIP_URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.extract-version.outputs.version }}/wvd_${{ steps.extract-version.outputs.version }}.zip
         VERSION: ${{ steps.extract-version.outputs.version }}
       run: |
         python -m pip install --quiet qq-botpy

@@ -14,6 +14,8 @@ QQ 官方要求：发送主动群消息时机器人必须保持 WebSocket 在线
     QQ_BOT_AT_ALL        可选, true/false 强制开启或关闭 @所有人
                          不设置时: 正式版本 @所有人, beta 版本不 @
                          (要求机器人是群管理员, 每群每天仅 1 次; 失败会自动降级为普通消息)
+    RELEASE_ZIP_URL      可选, 发布包的公开下载地址; 设置后会把这个文件发到群里
+    QQ_BOT_SEND_FILE     可选, false 时不再发送群文件 (默认发送)
 
 消息规则:
     - 版本号包含 beta  ->  "测试版本{版本号}已经发布!"
@@ -84,6 +86,10 @@ def main():
         # 默认: 正式版本 @所有人, beta 版本不 @
         at_all = "beta" not in version.lower()
 
+    release_zip_url = os.environ.get("RELEASE_ZIP_URL", "").strip()
+    send_file_setting = os.environ.get("QQ_BOT_SEND_FILE", "").strip().lower()
+    send_file = send_file_setting not in {"0", "false", "no", "off"} and bool(release_zip_url)
+
     missing = [
         name
         for name, value in (
@@ -136,10 +142,25 @@ def main():
                 else:
                     await send(message)
                     log("QQ 群通报发送成功")
-                code = 0
             except Exception as error:  # noqa: BLE001
                 log(f"QQ 群通报失败: {error}")
                 code = 1
+            else:
+                code = 0
+
+                # 发送群文件: 由 QQ 平台下载 RELEASE_ZIP_URL 并转发, 失败不影响文字通报
+                if send_file:
+                    try:
+                        await self.api.post_group_file(
+                            group_openid=group_openid,
+                            file_type=4,
+                            url=release_zip_url,
+                            srv_send_msg=True,
+                        )
+                        log("群文件发送成功")
+                    except Exception as error:  # noqa: BLE001
+                        log(f"群文件发送失败 (文字通报已发送): {error}")
+
             sys.stdout.flush()
             sys.stderr.flush()
             os._exit(code)
