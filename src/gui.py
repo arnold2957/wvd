@@ -1,6 +1,6 @@
 """pywebview 版图形界面.
 
-界面直接使用项目根目录的 ``ui-redesign.html``. 本模块负责:
+界面直接使用同目录下的 ``ui.html``. 本模块负责:
 
 * 读取 / 保存配置 (沿用 config.json 的原有结构)
 * 启动 / 停止脚本任务
@@ -327,12 +327,9 @@ class ConfigPanelApp:
             except Exception:
                 pass
 
-        html_path = ResourcePath("ui-redesign.html")
-        try:
-            with open(html_path, "r", encoding="utf-8") as f:
-                html = f.read()
-        except OSError:
-            html = "<h1>ui-redesign.html not found</h1>"
+        html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
 
         self._window = webview.create_window(
             self.TITLE,

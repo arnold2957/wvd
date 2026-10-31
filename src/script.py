@@ -1291,23 +1291,20 @@ def Factory():
                 b=setting.FARM_TARGET_TEXT,
                 c=round(runtimeContext._TOTALTIME, 2)))
 
-        summary_data = {
-            "total_time": round(runtimeContext._TOTALTIME, 2),
-            "complete_times": runtimeContext._COUNTERDUNG,
-            "col_2_text": _("宝箱"),
-            "col_2_counter": runtimeContext._COUNTERCHEST,
-            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
-            "col_3_text": _("战斗"),
-            "col_3_counter": runtimeContext._COUNTERCOMBAT,
-            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
-        }
-        summary_events = dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {})
-
         logger.info(
             "{b}".format(b=summary_text),
             summary=True,
-            summary_data=summary_data,
-            summary_events=summary_events,
+            summary_data={
+                "total_time": round(runtimeContext._TOTALTIME, 2),
+                "complete_times": runtimeContext._COUNTERDUNG,
+                "col_2_text": _("宝箱"),
+                "col_2_counter": runtimeContext._COUNTERCHEST,
+                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                "col_3_text": _("战斗"),
+                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+            },
+            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
         )
         # 圈数计时器
         runtimeContext._LAPTIME = time.time()
@@ -2586,6 +2583,7 @@ def Factory():
         nonlocal runtimeContext
         match setting.FARM_TARGET:
             case "7000G":
+                total_time = 0
                 while 1:
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
@@ -2656,10 +2654,25 @@ def Factory():
                         lambda: stepMain()
                         )
                     costtime = time.time()-starttime
-                    logger.info(_("第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps.".format(a=runtimeContext._COUNTERDUNG, b=costtime, c=7000/costtime)),
-                                summary=True)
+                    total_time += costtime
+                    logger.info(
+                        _("第{a}次\"7000G\"完成. 该次花费时间{b:.2f}, 每秒收益:{c:.2f}Gps.".format(a=runtimeContext._COUNTERDUNG, b=costtime, c=7000/costtime)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("金币"),
+                            "col_2_counter": 7000 * runtimeContext._COUNTERDUNG,
+                            "col_2_total_time": round(total_time, 2),
+                            "col_3_text": "-",
+                            "col_3_counter": 0,
+                            "col_3_total_time": 0,
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "fordraig":
                 quest._SPECIALDIALOGOPTION = ["fordraig/thedagger","fordraig/InsertTheDagger"]
+                total_time = 0
                 while 1:
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
@@ -2725,8 +2738,22 @@ def Factory():
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",[1,1],1)
 
                     costtime = time.time()-starttime
-                    logger.info(_("第{a}次\"鸟剑\"完成. 该次花费时间{b:.2f}.".format(a=runtimeContext._COUNTERDUNG, b=costtime)),
-                            summary=True)
+                    total_time += costtime
+                    logger.info(
+                        _("第{a}次\"鸟剑\"完成. 该次花费时间{b:.2f}.".format(a=runtimeContext._COUNTERDUNG, b=costtime)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("宝箱"),
+                            "col_2_counter": runtimeContext._COUNTERCHEST,
+                            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "repelEnemyForces":
                 if not setting.ACTIVE_REST:
                     logger.info(_("注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1."))
@@ -2736,6 +2763,7 @@ def Factory():
                     setting.REST_INTERVEL = 1
                 logger.info(_("注意, 该流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!"))
                 counter = 0
+                total_time = 0
                 while 1:
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
@@ -2791,8 +2819,22 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
                     )
                     counter+=1
-                    logger.info(_("第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒.".format(a=counter, b=setting.REST_INTERVEL, c=counter*setting.REST_INTERVEL*2), c=(time.time()-t)),
-                                    summary=True)
+                    total_time += time.time()-t
+                    logger.info(
+                        _("第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒.".format(a=counter, b=setting.REST_INTERVEL, c=counter*setting.REST_INTERVEL*2)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": counter,
+                            "col_2_text": "-",
+                            "col_2_counter": 0,
+                            "col_2_total_time": 0,
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": counter * setting.REST_INTERVEL * 2,
+                            "col_3_total_time": 0,
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "darkLight":
                 gameFrozen_StateNoneScreenHistory = []
                 dungState = None
@@ -2926,8 +2968,21 @@ def Factory():
                         raise StopRequested()
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次三牛完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    summary=True)
+                        logger.info(
+                            _("第{a}次三牛完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                            summary=True,
+                            summary_data={
+                                "total_time": round(runtimeContext._TOTALTIME, 2),
+                                "complete_times": runtimeContext._COUNTERDUNG,
+                                "col_2_text": _("宝箱"),
+                                "col_2_counter": runtimeContext._COUNTERCHEST,
+                                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                                "col_3_text": _("战斗"),
+                                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                            },
+                            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                        )
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
 
@@ -2989,8 +3044,21 @@ def Factory():
                         raise StopRequested()
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次忍洞完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    summary=True)
+                        logger.info(
+                            _("第{a}次忍洞完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                            summary=True,
+                            summary_data={
+                                "total_time": round(runtimeContext._TOTALTIME, 2),
+                                "complete_times": runtimeContext._COUNTERDUNG,
+                                "col_2_text": _("宝箱"),
+                                "col_2_counter": runtimeContext._COUNTERCHEST,
+                                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                                "col_3_text": _("战斗"),
+                                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                            },
+                            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                        )
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
@@ -3055,8 +3123,21 @@ def Factory():
                         raise StopRequested()
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次约定之剑完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    summary=True)
+                        logger.info(
+                            _("第{a}次约定之剑完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                            summary=True,
+                            summary_data={
+                                "total_time": round(runtimeContext._TOTALTIME, 2),
+                                "complete_times": runtimeContext._COUNTERDUNG,
+                                "col_2_text": _("宝箱"),
+                                "col_2_counter": runtimeContext._COUNTERCHEST,
+                                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                                "col_3_text": _("战斗"),
+                                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                            },
+                            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                        )
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
                     RestartableSequenceExecution(
@@ -3143,8 +3224,21 @@ def Factory():
                         raise StopRequested()
                     if runtimeContext._LAPTIME!= 0:
                         runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + time.time() - runtimeContext._LAPTIME
-                        logger.info(_("第{a}次巨人完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
-                                    summary=True)
+                        logger.info(
+                            _("第{a}次巨人完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒.".format(a=runtimeContext._COUNTERDUNG, b=round(time.time()-runtimeContext._LAPTIME,2),c=runtimeContext._COUNTERCHEST, d=runtimeContext._COUNTERCOMBAT, e=round(runtimeContext._TOTALTIME,2))),
+                            summary=True,
+                            summary_data={
+                                "total_time": round(runtimeContext._TOTALTIME, 2),
+                                "complete_times": runtimeContext._COUNTERDUNG,
+                                "col_2_text": _("宝箱"),
+                                "col_2_counter": runtimeContext._COUNTERCHEST,
+                                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                                "col_3_text": _("战斗"),
+                                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                            },
+                            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                        )
                     runtimeContext._LAPTIME = time.time()
                     runtimeContext._COUNTERDUNG+=1
 
@@ -3248,8 +3342,21 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            summary=True)
+                    logger.info(
+                        _("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("宝箱"),
+                            "col_2_counter": runtimeContext._COUNTERCHEST,
+                            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "Scorpionesses_plus_6_hands":
                 total_time = 0
                 while 1:
@@ -3348,8 +3455,21 @@ def Factory():
                         
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            summary=True)
+                    logger.info(
+                        _("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("宝箱"),
+                            "col_2_counter": runtimeContext._COUNTERCHEST,
+                            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "FloralHoney":
                 total_time = 0
                 while 1:
@@ -3404,8 +3524,21 @@ def Factory():
 
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"华蜜\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            summary=True)
+                    logger.info(
+                        _("第{a}次\"华蜜\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("宝箱"),
+                            "col_2_counter": runtimeContext._COUNTERCHEST,
+                            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "steeltrail":
                 total_time = 0
                 while 1:
@@ -3436,8 +3569,21 @@ def Factory():
                             )
                     costtime = time.time()-starttime
                     total_time = total_time + costtime
-                    logger.info(_("第{a}次\"钢试炼\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
-                            summary=True)
+                    logger.info(
+                        _("第{a}次\"钢试炼\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=total_time, d=total_time/runtimeContext._COUNTERDUNG)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(total_time, 2),
+                            "complete_times": runtimeContext._COUNTERDUNG,
+                            "col_2_text": _("宝箱"),
+                            "col_2_counter": runtimeContext._COUNTERCHEST,
+                            "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                            "col_3_text": _("战斗"),
+                            "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                            "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "lovesleep":
                 logger.info(_("开始睡觉."))
                 t = time.time()
@@ -3449,7 +3595,21 @@ def Factory():
                             )
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
-                    logger.info(_("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),summary=True)
+                    logger.info(
+                        _("完成了{a}次旅店休息.\n总计用时{c:.2f}s.\n平均用时{d:.2f}s.").format(a=counter+1, c=time.time()-t, d=(time.time()-t)/(counter+1)),
+                        summary=True,
+                        summary_data={
+                            "total_time": round(time.time()-t, 2),
+                            "complete_times": counter+1,
+                            "col_2_text": "-",
+                            "col_2_counter": 0,
+                            "col_2_total_time": 0,
+                            "col_3_text": "-",
+                            "col_3_counter": 0,
+                            "col_3_total_time": 0,
+                        },
+                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                    )
             case "FFXI-Org":
                 counter = {
                     "全改" : 0,
@@ -3469,6 +3629,7 @@ def Factory():
                 start_time = time.time()
                 # reunionParty("FFXI/FFXIStone")
                 resetBag = False
+                trips = 0
                 while 1:
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
@@ -3591,12 +3752,29 @@ def Factory():
                         reunionParty("FFXI/FFXIStone")
                         resetBag = False
 
+                    trips += 1
                     output_str = ""
                     for k,v in counter.items():
                         if v>0:
                             output_str += f"{k}:{v}个,"
                     output_str += f"\n累计用时:{(time.time()-start_time):.2f}."
-                    logger.info(output_str,summary=True)
+                    summary_events = dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {})
+                    summary_events.update({k: v for k, v in counter.items() if v > 0})
+                    logger.info(
+                        output_str,
+                        summary=True,
+                        summary_data={
+                            "total_time": round(time.time()-start_time, 2),
+                            "complete_times": trips,
+                            "col_2_text": "-",
+                            "col_2_counter": 0,
+                            "col_2_total_time": 0,
+                            "col_3_text": "-",
+                            "col_3_counter": 0,
+                            "col_3_total_time": 0,
+                        },
+                        summary_events=summary_events,
+                    )
             case "sandman":
                 sandman_complete = False
                 
@@ -3657,7 +3835,21 @@ def Factory():
                                                         chapter = "cursedwheel_impregnableFortress")
                             )
                         counter+=1
-                        logger.info(f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",summary = True)
+                        logger.info(
+                            f"已完成{counter}次沙人缘.\n用时{time.time()-start_time:.2f}秒.",
+                            summary=True,
+                            summary_data={
+                                "total_time": round(time.time()-start_time, 2),
+                                "complete_times": counter,
+                                "col_2_text": _("宝箱"),
+                                "col_2_counter": runtimeContext._COUNTERCHEST,
+                                "col_2_total_time": round(runtimeContext._TIME_CHEST_TOTAL, 2),
+                                "col_3_text": _("战斗"),
+                                "col_3_counter": runtimeContext._COUNTERCOMBAT,
+                                "col_3_total_time": round(runtimeContext._TIME_COMBAT_TOTAL, 2),
+                            },
+                            summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+                        )
                         break
             case "fishing":
                 start_time = time.time()
@@ -3841,7 +4033,25 @@ def Factory():
                         total_time = total_time + time.time() - t
                         t = 0
                         info = CollectFishInfo(scn)
-                        logger.info(f"已完成近端钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{(time.time()-start_time)/fish:.2f}秒.\n{info}", summary = True)
+                        summary_events = dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {})
+                        for size, fishes in fishinfo.items():
+                            for fish_name, count in fishes.items():
+                                summary_events[f"{size}{fish_name}"] = count
+                        logger.info(
+                            f"已完成近端钓鱼{fish}次, 失败{failed_fishing}次.\n累计用时{time.time()-start_time:.2f}秒, 平均每条鱼用时{(time.time()-start_time)/fish:.2f}秒.\n{info}",
+                            summary=True,
+                            summary_data={
+                                "total_time": round(time.time()-start_time, 2),
+                                "complete_times": fish,
+                                "col_2_text": "-",
+                                "col_2_counter": 0,
+                                "col_2_total_time": 0,
+                                "col_3_text": "-",
+                                "col_3_counter": 0,
+                                "col_3_total_time": 0,
+                            },
+                            summary_events=summary_events,
+                        )
                         SaveImage(scn=scn)
                         Sleep(5)
                         continue

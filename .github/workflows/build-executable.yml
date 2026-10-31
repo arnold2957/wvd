@@ -59,7 +59,7 @@ jobs:
           --collect-all webview `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
-          --add-data "ui-redesign.html;." `
+          --add-data "src/ui.html;." `
           src/main.py -n wvd
         Write-Host "Build completed successfully."
 
