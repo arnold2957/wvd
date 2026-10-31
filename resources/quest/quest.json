@@ -988,7 +988,8 @@
         "questName_en_US": "[Bounty] Scorps.",
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
-        "_TYPE":"quest"
+        "_TYPE":"quest",
+        "_TIPS":"请在蝎女处打上标记."
     },
 
     "Scorpionesses_plus_6_hands":{
@@ -996,7 +997,8 @@
         "questName_en_US": "[Bounty] Scorps. + Six-Limbed",
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
-        "_TYPE":"quest"
+        "_TYPE":"quest",
+        "_TIPS":"请在蝎女和牛头人处打上标记."
     },
 
     "FloralHoney":{

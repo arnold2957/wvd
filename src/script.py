@@ -3191,8 +3191,8 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B2FTemple","GotoDung",[1,1]],1),
                     )
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("position","左下",[505,760]),
-                                             TargetInfo("position","左上",[506,821])]),
+                        lambda:StateDungeon([TargetInfo("mark_auto"),
+                                             TargetInfo("leaveDung")])
                         )
                     
                     logger.info(_("第六步: 提交悬赏"))
@@ -3273,8 +3273,8 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B2FTemple","GotoDung",[1,1]],1),
                     )
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("position","左下",[505,760]),
-                                             TargetInfo("position","左上",[506,821])]),
+                        lambda:StateDungeon([TargetInfo("mark_auto"),
+                                             TargetInfo("leaveDung")])
                         )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
@@ -3284,8 +3284,8 @@ def Factory():
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B5FWarpedOnesNest","GotoDung",[1,1]],1),
                     )
                     RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("position","左上",[454,662]),
-                                             TargetInfo("position","左上",[135,714])]),
+                        lambda:StateDungeon([TargetInfo("mark_auto"),
+                                             TargetInfo("leaveDung")])
                         )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
