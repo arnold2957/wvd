@@ -27,52 +27,52 @@ msgstr "Skill Strategy Group"
 #: D:/Desktop/andsimscripts/src/script.py:34
 #: D:/Desktop/andsimscripts/src/script.py:1575
 msgid "左上技能"
-msgstr "Top-Left Skill"
+msgstr "Top-Left"
 
 #: D:/Desktop/andsimscripts/src/gui.py:171
 #: D:/Desktop/andsimscripts/src/script.py:1575
 msgid "右上技能"
-msgstr "Top-Right Skill"
+msgstr "Top-Right"
 
 #: D:/Desktop/andsimscripts/src/gui.py:171
 #: D:/Desktop/andsimscripts/src/script.py:1575
 msgid "左下技能"
-msgstr "Bottom-Left Skill"
+msgstr "Bottom-Left"
 
 #: D:/Desktop/andsimscripts/src/gui.py:171
 #: D:/Desktop/andsimscripts/src/script.py:1575
 msgid "右下技能"
-msgstr "Bottom-Right Skill"
+msgstr "Bottom-Right"
 
 #: D:/Desktop/andsimscripts/src/gui.py:171
 #: D:/Desktop/andsimscripts/src/gui.py:409
 #: D:/Desktop/andsimscripts/src/script.py:1729
 msgid "防御"
-msgstr "defend"
+msgstr "Defend"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "左上角色"
-msgstr "Top-Left Char."
+msgstr "Top-Left"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "中上角色"
-msgstr "Top-Mid Char."
+msgstr "Top-Center"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "右上角色"
-msgstr "Top-Right Char."
+msgstr "Top-Right"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "左下角色"
-msgstr "Bottom-Left Char."
+msgstr "Bottom-Left"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "右下角色"
-msgstr "Bottom-Right Char."
+msgstr "Bottom-Right"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 msgid "中下角色"
-msgstr "Bottom-Mid Char."
+msgstr "Bottom-Center"
 
 #: D:/Desktop/andsimscripts/src/gui.py:172
 #: D:/Desktop/andsimscripts/src/gui.py:371
@@ -160,7 +160,7 @@ msgstr "Default"
 #: D:/Desktop/andsimscripts/src/gui.py:353
 #: D:/Desktop/andsimscripts/src/gui.py:409
 msgid "双击自动"
-msgstr "Double Tap Auto"
+msgstr "Double tap"
 
 #: D:/Desktop/andsimscripts/src/gui.py:366
 msgid "等级"
@@ -264,7 +264,7 @@ msgstr ""
 
 #: D:/Desktop/andsimscripts/src/gui.py:804
 msgid "目标"
-msgstr "TASK"
+msgstr "Target"
 
 #: D:/Desktop/andsimscripts/src/gui.py:816
 msgid "任务类别:"
@@ -295,7 +295,7 @@ msgstr "Clear"
 
 #: D:/Desktop/andsimscripts/src/gui.py:940
 msgid "探索"
-msgstr "EXPLORE"
+msgstr "Explore"
 
 #: D:/Desktop/andsimscripts/src/gui.py:950
 msgid "开箱人选:"
@@ -390,7 +390,7 @@ msgstr ""
 
 #: D:/Desktop/andsimscripts/src/gui.py:1054
 msgid "战斗"
-msgstr "COMBAT"
+msgstr "Combat"
 
 #: D:/Desktop/andsimscripts/src/gui.py:1059
 msgid "请先选择任务目标"
@@ -443,7 +443,7 @@ msgstr "Refreshed task point UI. Number of task points: %s"
 
 #: D:/Desktop/andsimscripts/src/gui.py:1290
 msgid "战斗方案"
-msgstr "COMBAT PLAN"
+msgstr "Combat plans"
 
 #: D:/Desktop/andsimscripts/src/gui.py:1295
 msgid "战斗方案会在每次重启游戏, 以及任意角色死亡后重置."
@@ -488,7 +488,7 @@ msgstr "Mausoleum is refreshed! Click Here to Switch."
 
 #: D:/Desktop/andsimscripts/src/gui.py:1509
 msgid "高级"
-msgstr "ADVANCED"
+msgstr "Advanced"
 
 #: D:/Desktop/andsimscripts/src/gui.py:1522
 msgid "没有火的时候自动找王女要钱"
@@ -2031,3 +2031,621 @@ msgstr "P Debra_alt"
 msgid "P 黛波拉_sp"
 msgstr "P Debra_sp"
 
+
+msgid "方案"
+msgstr "Plan"
+
+msgid "个角色"
+msgstr "characters"
+
+msgid "暂无角色配置"
+msgstr "No characters configured"
+
+msgid "＋ 新增角色"
+msgstr "+ Add character"
+
+msgid "该策略需要在进入地下城时进行重置。"
+msgstr "Reset this plan when entering a dungeon."
+
+msgid "[高级] 该策略需要在战斗开始前进行重置。确保你了解「重复上一次」功能，否则请勿开启。"
+msgstr "[Advanced] Reset this plan before each battle. Make sure you understand \"Repeat last\"; otherwise leave it off."
+
+msgid "[高级] 该策略释放任一技能即视为完成。"
+msgstr "[Advanced] Casting any skill marks this plan complete."
+
+msgid "角色"
+msgstr "Character"
+
+msgid "技能"
+msgstr "Skill"
+
+msgid "%s 个角色"
+msgstr "%s character(s)"
+
+msgid "全自动战斗无需配置角色技能"
+msgstr "Auto battle needs no character skills"
+
+msgid "—"
+msgstr "—"
+
+msgid "任务提示"
+msgstr "Quest notice"
+
+msgid "我了解了"
+msgstr "Got it"
+
+msgid "当前游戏语言: {0}"
+msgstr "Current game language: {0}"
+
+msgid "Wizardry Variants Daphne · 自动挂机"
+msgstr "Wizardry Variants Daphne · Auto script"
+
+msgid "选择本次要执行的任务类别与具体任务目标。"
+msgstr "Choose the task category and target for this run."
+
+msgid "设备"
+msgstr "Device"
+
+msgid "连接设备与 ADB，设置脚本与游戏使用的语言。"
+msgstr "Connect the device and ADB, and set the script and game languages."
+
+msgid "开箱、恢复、旅店休息与队伍重置等探索相关设置。"
+msgstr "Chest opening, recovery, inn rest and party reset options."
+
+msgid "为当前任务指定全程与任务点使用的战斗策略。"
+msgstr "Assign combat strategies for the whole run and each task point."
+
+msgid "配置每个角色的技能槽位、等级与执行顺序。"
+msgstr "Configure each character's skill slot, level and execution order."
+
+msgid "日常 / 周常"
+msgstr "Daily / Weekly"
+
+msgid "游戏内每日与每周例行事项的自动化设置。"
+msgstr "Automation for in-game daily and weekly routines."
+
+msgid "0 火策略、剧情跳跃、住宿偏好与容错阈值。"
+msgstr "Zero-fire strategy, story jumps, lodging preference and recovery thresholds."
+
+msgid "常用网站"
+msgstr "Links"
+
+msgid "官方、商店、攻略与社区入口。"
+msgstr "Official site, store, guides and community."
+
+msgid "日常"
+msgstr "Daily"
+
+msgid "网站"
+msgstr "Links"
+
+msgid "当前任务"
+msgstr "Current task"
+
+msgid "未选择"
+msgstr "Not selected"
+
+msgid "任务定制配置 · 未启用"
+msgstr "Task config · Off"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "脚本，启动！"
+msgstr "Start script!"
+
+msgid "连接设置"
+msgstr "Connection"
+
+msgid "启动脚本前需要先连接模拟器"
+msgstr "Connect the emulator before starting the script"
+
+msgid "模拟器路径"
+msgstr "Emulator path"
+
+msgid "尚未选择模拟器可执行文件"
+msgstr "No emulator executable selected"
+
+msgid "未设置"
+msgstr "Not set"
+
+msgid "ADB 地址"
+msgstr "ADB address"
+
+msgid "模拟器编号"
+msgstr "Emulator index"
+
+msgid "地址可以只填端口，失焦后会自动补全为 127.0.0.1:端口；输入多个端口时会自动选用最大值。"
+msgstr "You may enter only the port; it will expand to 127.0.0.1:port on focus loss. If multiple ports are entered, the largest is used."
+
+msgid "语言"
+msgstr "Language"
+
+msgid "需与模拟器内游戏语言保持一致"
+msgstr "Must match the language used in the game"
+
+msgid "简体中文"
+msgstr "Simplified Chinese"
+
+msgid "脚本界面语言"
+msgstr "Script UI language"
+
+msgid "游戏内语言"
+msgstr "In-game language"
+
+msgid "修改界面语言后需要重启脚本才能生效。游戏语言不一致会导致 OCR 与图片识别失败。"
+msgstr "Restart the script after changing the UI language. A mismatched game language will break OCR and image recognition."
+
+msgid "警告"
+msgstr "Warning"
+
+msgid "设置的模拟器路径可能不正确。\n如果你遇到无法启动模拟器，请尝试重新设置路径。"
+msgstr "The emulator path may be incorrect.\nIf the emulator fails to start, try setting the path again."
+
+msgid "已设置"
+msgstr "Set"
+
+msgid "任务选择"
+msgstr "Task selection"
+
+msgid "选择类别后会自动筛选任务目标"
+msgstr "Choosing a category filters the targets automatically"
+
+msgid "任务类别"
+msgstr "Category"
+
+msgid "任务目标"
+msgstr "Target"
+
+msgid "任务定制配置"
+msgstr "Task-specific config"
+
+msgid "仅对当前选择的任务生效"
+msgstr "Applies only to the selected task"
+
+msgid "用任务定制的配置文件覆盖默认配置"
+msgstr "Override the default config with a task-specific file"
+
+msgid "可单独设置该任务每个任务点的战斗策略，不影响全局默认值。"
+msgstr "Set a combat strategy for each task point without changing global defaults."
+
+msgid "官网每周宝石"
+msgstr "Weekly official gems"
+
+msgid "下载更新"
+msgstr "Update available"
+
+msgid "当前版本 v%s"
+msgstr "Current v%s"
+
+msgid "手动下载"
+msgstr "Download manually"
+
+msgid "下载更新 · v%s"
+msgstr "Update · v%s"
+
+msgid "发现新版本 v%s"
+msgstr "New version v%s"
+
+msgid "开箱"
+msgstr "Chests"
+
+msgid "开箱人选"
+msgstr "Chest opener"
+
+msgid "跳过额外检测，连续点击开锁。"
+msgstr "Skip extra checks and click the lock repeatedly."
+
+msgid "自动恢复"
+msgstr "Auto recovery"
+
+msgid "战斗结束后进行恢复"
+msgstr "Recover after battle"
+
+msgid "开箱后进行恢复"
+msgstr "Recover after opening chests"
+
+msgid "进入地下城时进行恢复"
+msgstr "Recover when entering a dungeon"
+
+msgid "住宿后首次进入地下城时进行恢复"
+msgstr "Recover on first dungeon entry after resting"
+
+msgid "旅店与队伍"
+msgstr "Inn & party"
+
+msgid "完成"
+msgstr "Completed"
+
+msgid "次后休息"
+msgstr "runs, rest"
+
+msgid "时长设置超过范围, 自动调整到合理区间."
+msgstr "Interval out of range; adjusted automatically."
+
+msgid "启用定时重置队伍"
+msgstr "Reset party on a timer"
+
+msgid "重新召集酒馆第一个队伍，以便清理背包和调整站位。"
+msgstr "Reassemble the first tavern party to clear the bag and adjust positions."
+
+msgid "每"
+msgstr "Every"
+
+msgid "小时"
+msgstr "hours"
+
+msgid "善恶调整"
+msgstr "Karma adjustment"
+
+msgid "遇到伏击 / 无视事件时"
+msgstr "On ambush / ignore events"
+
+msgid "还需 %s 点"
+msgstr "%s points remaining"
+
+msgid "战斗策略"
+msgstr "Combat strategy"
+
+msgid "请先选择任务目标。"
+msgstr "Select a task target first."
+
+msgid "全程策略"
+msgstr "Overall strategy"
+
+msgid "未单独指定的任务点都会使用该策略"
+msgstr "Used by any task point without its own strategy"
+
+msgid "任务点策略"
+msgstr "Task point strategies"
+
+msgid "当前任务为地下城任务"
+msgstr "Current task is a dungeon"
+
+msgid "%s 个任务点"
+msgstr "%s task points"
+
+msgid "当前未启用任务点策略。选择上方的「自定义任务点策略」后，下面的配置才会生效。"
+msgstr "Task point strategies are off. Select \"Custom task point strategies\" above to enable them."
+
+msgid "%s · %s"
+msgstr "%s · %s"
+
+msgid "＋ 添加新技能配置"
+msgstr "+ Add new skill plan"
+
+msgid "战斗方案会在每次重启游戏，以及任意角色死亡后重置。每个角色可以配置技能槽位、技能等级和执行顺序。"
+msgstr "Combat plans reset after each game restart and whenever any character dies. Each character can have a skill slot, level and execution order."
+
+msgid "共 %s 组方案"
+msgstr "%s plans"
+
+msgid "每周例行"
+msgstr "Weekly routine"
+
+msgid "每周 / 每两周重置"
+msgstr "Resets weekly / fortnightly"
+
+msgid "每周可领取 50 钻"
+msgstr "50 gems available weekly"
+
+msgid "领取（旧）"
+msgstr "Claim (old)"
+
+msgid "领取（新）"
+msgstr "Claim (new)"
+
+msgid "灵庙刷新"
+msgstr "Temple refresh"
+
+msgid "双周刷新，可一键切换到月常任务「炉壶灵庙」。"
+msgstr "Refreshes fortnightly; switch to the monthly \"Furnace Temple\" quest in one click."
+
+msgid "自动切换"
+msgstr "Switch now"
+
+msgid "官网宝石每周可领取一次；灵庙任务每两周刷新一次。"
+msgstr "Official gems can be claimed once per week; the temple quest refreshes every two weeks."
+
+msgid "记录"
+msgstr "History"
+
+msgid "上次领取宝石"
+msgstr "Last gem claim"
+
+msgid "上次切换灵庙"
+msgstr "Last temple switch"
+
+msgid "本周已领取"
+msgstr "Claimed this week"
+
+msgid "本周宝石已领取 · 点击可再次打开官网"
+msgstr "Gems claimed this week · click to reopen the store"
+
+msgid "本周待领取"
+msgstr "Unclaimed this week"
+
+msgid "本周 50 钻待领取 · 点击直接打开官网"
+msgstr "50 gems waiting this week · click to open the store"
+
+msgid "本期已切换"
+msgstr "Switched this period"
+
+msgid "本期待切换"
+msgstr "Pending this period"
+
+msgid "0 火策略"
+msgstr "Zero-fire strategy"
+
+msgid "再起之火耗尽时自动切换"
+msgstr "Switch automatically when fire runs out"
+
+msgid "尝试挖矿"
+msgstr "Try mining"
+
+msgid "尝试刷钱"
+msgstr "Try money farming"
+
+msgid "尝试钓鱼"
+msgstr "Try fishing"
+
+msgid "优先级：挖矿 → 刷钱 → 钓鱼。三项均未启用时，脚本会等待约 2 小时后重启游戏以重新点火。"
+msgstr "Priority: mining → money farming → fishing. If all are off, the script waits about 2 hours and restarts the game to relight the fire."
+
+msgid "剧情与跳跃"
+msgstr "Story & jumps"
+
+msgid "跳跃到第三章结局「凯旋」"
+msgstr "Jump to Chapter 3 ending \"Triumph\""
+
+msgid "跳跃到第四章结局「美丽矿石的真相」"
+msgstr "Jump to Chapter 4 ending \"The Truth of Beautiful Ore\""
+
+msgid "容错阈值"
+msgstr "Recovery thresholds"
+
+msgid "定位失败后重启游戏"
+msgstr "Restart game after location failures"
+
+msgid "次"
+msgstr "times"
+
+msgid "重启游戏后重启模拟器"
+msgstr "Restart emulator after game restarts"
+
+msgid "官方网站"
+msgstr "Official site"
+
+msgid "游戏公告、活动与更新情报"
+msgstr "Announcements, events and updates"
+
+msgid "官方商店（旧）"
+msgstr "Official store (old)"
+
+msgid "每周领取 50 钻的旧版入口"
+msgstr "Legacy entry for the weekly 50 gems"
+
+msgid "Web Store（新）"
+msgstr "Web Store (new)"
+
+msgid "新版网页商店与领取入口"
+msgstr "New web store and claim page"
+
+msgid "官方 X / 动态"
+msgstr "Official X / news"
+
+msgid "官方账号、维护与最新动态"
+msgstr "Official account, maintenance and news"
+
+msgid "攻略 Wiki"
+msgstr "Guide Wiki"
+
+msgid "角色、装备与任务资料"
+msgstr "Characters, equipment and quest data"
+
+msgid "待添加"
+msgstr "To be added"
+
+msgid "项目 GitHub"
+msgstr "Project GitHub"
+
+msgid "源码、Issue 与 Releases"
+msgstr "Source, issues and releases"
+
+msgid "版本变更与已知问题"
+msgstr "Changelog and known issues"
+
+msgid "问题反馈"
+msgstr "Feedback"
+
+msgid "提交 Bug 与功能建议"
+msgstr "Report bugs and suggest features"
+
+msgid "%s 链接待补充"
+msgstr "%s link coming soon"
+
+msgid "点击卡片会在系统默认浏览器中打开对应网站；带「待添加」的条目可在后续补充实际链接。"
+msgstr "Click a card to open the site in your default browser. Items marked \"To be added\" will be filled in later."
+
+msgid "运行日志"
+msgstr "Run log"
+
+msgid "摘要"
+msgstr "Summary"
+
+msgid "新摘要"
+msgstr "New summary"
+
+msgid "未选择任务"
+msgstr "No task selected"
+
+msgid "平均用时"
+msgstr "Avg time"
+
+msgid "宝箱"
+msgstr "Chests"
+
+msgid "累计用时"
+msgstr "Total time"
+
+msgid "总时长"
+msgstr "Elapsed"
+
+msgid "重 要 信 息"
+msgstr "I M P O R T A N T"
+
+msgid "日志自动滚动已恢复"
+msgstr "Log auto-scroll resumed"
+
+msgid "日志自动滚动已暂停"
+msgstr "Log auto-scroll paused"
+
+msgid "停止脚本"
+msgstr "Stop script"
+
+msgid "运行中"
+msgstr "Running"
+
+msgid "请先启动脚本，再设置本次执行完毕后停止。"
+msgstr "Start the script before setting it to stop after this run."
+
+msgid "已设置：本次执行完毕后停止。"
+msgstr "Stop after this run is set."
+
+msgid "已设置：本次执行完毕后停止"
+msgstr "Stop after this run is set"
+
+msgid "已取消：本次执行完毕后停止。"
+msgstr "Stop after this run is cancelled."
+
+msgid "已取消：本次执行完毕后停止"
+msgstr "Stop after this run is cancelled"
+
+msgid "本次执行已完成，正在停止脚本。"
+msgstr "This run is complete; stopping the script."
+
+msgid "任务定制配置 · 已启用"
+msgstr "Task config · On"
+
+msgid "你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去钓鱼.\n\n事已至此, 先钓鱼吧.\n"
+msgstr "Your party has exhausted all revival fire.\nBefore running out, your party achieved:\n\n%s\n\nBut that's fine — at least you can still go fishing.\n\nWell then, let's fish.\n"
+
+msgid "你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去挖矿.\n\n只要能有全改, 管他什么方法呢.\n"
+msgstr "Your party has exhausted all revival fire.\nBefore running out, your party achieved:\n\n%s\n\nBut that's fine — at least you can still go mining.\n\nAs long as we get full reforges, who cares how.\n"
+
+msgid "任务已切换"
+msgstr "Task switched"
+
+msgid "已切换到任务：%s"
+msgstr "Switched to task: %s"
+
+msgid "每完成"
+msgstr "After every"
+
+msgid "设 置 中 心"
+msgstr "S E T T I N G S"
+
+msgid "本次执行完毕后停止"
+msgstr "Stop after this run"
+
+msgid "暂停滚动"
+msgstr "Pause scrolling"
+
+msgid "清空日志"
+msgstr "Clear log"
+
+msgid "删除"
+msgstr "Delete"
+
+msgid "恢复滚动"
+msgstr "Resume scrolling"
+
+msgid "日志已清空。"
+msgstr "Log cleared."
+
+msgid "初始化界面失败"
+msgstr "Failed to initialize the UI."
+
+msgid "重启游戏"
+msgstr "Restart game"
+
+msgid "面具死亡"
+msgstr "Masked one fell"
+
+msgid "复活队友"
+msgstr "Revive teammate"
+
+msgid "善恶变化"
+msgstr "Karma changed"
+
+msgid "购买了骨头"
+msgstr "Purchased bones"
+
+msgid "购买了尸油"
+msgstr "Purchased corpse oil"
+
+msgid "网络波动"
+msgstr "Network fluctuation"
+
+msgid "本次执行完毕, 按设置停止任务."
+msgstr "This run is complete; stopping as configured."
+
+msgid "截图数据无效"
+msgstr "Invalid screenshot data"
+
+msgid "截图数据无效, 跳过楼层检测."
+msgstr "Invalid screenshot data; skipping floor detection."
+
+msgid "模板名列表为空, 跳过楼层检测."
+msgstr "Template list is empty; skipping floor detection."
+
+msgid "楼层名匹配失败: 所有模板均因尺寸不一致被跳过."
+msgstr "Floor name match failed: all templates were skipped due to size mismatch."
+
+msgid "创建任务点列表."
+msgstr "Creating task point list."
+
+msgid "第二步: 前往第四章主城..."
+msgstr "Step 2: Travel to the Chapter 4 main city..."
+
+msgid "第三步: 接取悬赏..."
+msgstr "Step 3: Accept the bounty..."
+
+msgid "第四步: 前往第四章7F, 9F, 并抵达9F目标位置..."
+msgstr "Step 4: Travel to Chapter 4 7F and 9F, then reach the target position on 9F..."
+
+msgid "第五步: 退出副本..."
+msgstr "Step 5: Exit the dungeon..."
+
+msgid "ADB设备未连接"
+msgstr "ADB device is not connected"
+
+msgid "处理已完成的宝箱事件."
+msgstr "Handling completed chest event."
+
+msgid "处理已完成的战斗事件."
+msgstr "Handling completed combat event."
+
+msgid "由于面板配置, 在休息后进行恢复."
+msgstr "Recover after resting, per the panel settings."
+
+msgid "连续点击resume超过20次, 疑似卡住. 重启游戏."
+msgstr "Clicked resume more than 20 times; looks stuck. Restarting the game."
+
+msgid "看起来你没有选择任何0火的替代选项. 那么就等两个小时吧."
+msgstr "It looks like no zero-fire fallback is selected. Waiting about two hours."
+
+#, python-format
+msgid "wvdas v%s"
+msgstr "wvdas v%s"
+
+#, python-format
+msgid "已切换到月常任务：%s"
+msgstr "Switched to the monthly quest: %s"
+
+msgid "没有可用的更新"
+msgstr "No update available"
+
+#, python-format
+msgid "启动任务\"%s\"..."
+msgstr "Starting task \"%s\"..."

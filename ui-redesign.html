@@ -1,0 +1,3010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wvdas</title>
+<style>
+  :root{
+    --ink:#1b2433;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:#fff;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  button{font-family:inherit}
+
+  /* ================= 窗口 ================= */
+  /* 现在本身就是原生窗口, 不再模拟设计稿里的圆角卡片 + 投影. */
+  .app{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    min-height:0;
+    background:#fff;
+    border-radius:0;
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:none;
+  }
+  .titlebar{
+    flex:0 0 42px;height:42px;background:#f3f3f3;
+    border-bottom:1px solid #e2e6ee;
+    display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;
+    color:#1f2937;user-select:none;
+  }
+  .brand{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.2px}
+  .brand .mark{
+    width:20px;height:20px;border-radius:6px;
+    background:linear-gradient(135deg,#6ea8fe,#8b5cf6);
+    display:grid;place-items:center;color:#fff;font-size:10.5px;font-weight:800;
+    box-shadow:0 2px 8px rgba(110,168,254,.35);
+  }
+  .title-sep{width:1px;height:14px;background:#dbe1ea}
+  .title-sub{font-size:11px;color:#7b879b;letter-spacing:.3px}
+  .win-controls{margin-left:auto;display:flex;align-items:center;gap:2px}
+  .win-btn{
+    width:34px;height:28px;border-radius:7px;border:0;background:transparent;
+    color:#6b7688;display:grid;place-items:center;cursor:pointer;transition:.15s;
+  }
+  .win-btn:hover{background:rgba(15,23,42,.06);color:#17202e}
+  .win-btn.close:hover{background:#e5484d;color:#fff}
+
+  .app-body{
+    flex:1;min-height:0;
+    display:grid;
+    grid-template-columns:104px minmax(0,650px) minmax(0,1fr);
+  }
+
+  /* ================= 最左侧导航 ================= */
+  .sidebar{
+    background:#f3f3f3;
+    display:flex;flex-direction:column;
+    padding:12px 0 10px;
+    border-right:1px solid #e2e6ee;
+  }
+  .nav-group{padding:0 8px;display:flex;flex-direction:column;gap:3px}
+  /* 所有导航项同级: 分组之间也只保留与组内相同的 3px 间距 */
+  .nav-group + .nav-group{margin-top:3px}
+  .nav-item{
+    position:relative;
+    display:flex;align-items:center;gap:8px;
+    height:40px;padding:0 10px;border-radius:10px;
+    color:#5f6b80;font-size:12px;letter-spacing:.3px;
+    cursor:pointer;background:transparent;border:1px solid transparent;
+    text-align:left;transition:.16s;white-space:nowrap;
+  }
+  .nav-item span{white-space:nowrap}
+  .nav-item svg{flex:0 0 18px;width:18px;height:18px;opacity:.8;transition:.16s}
+  .nav-item:hover{background:rgba(15,23,42,.045);color:#17202e}
+  .nav-item:hover svg{opacity:1}
+  .nav-item.active{
+    background:#e8efff;
+    color:#2f5fd8;border-color:#d6e2ff;
+    box-shadow:none;
+  }
+  .nav-item.active::before{
+    content:"";position:absolute;left:-1px;top:9px;bottom:9px;width:3px;border-radius:3px;
+    background:#3f6ee8;
+  }
+  .nav-item.active svg{opacity:1;color:#3f6ee8}
+  .side-footer{
+    margin-top:auto;margin-left:8px;margin-right:8px;
+    padding:10px 10px 0;border-top:1px solid #e2e6ee;
+  }
+  .version{font-size:9.5px;color:#98a2b3;letter-spacing:.4px}
+
+  /* ================= 中间设置栏 ================= */
+  .main{background:#fff;display:flex;flex-direction:column;min-width:0;min-height:0}
+  .main-header{
+    padding:20px 26px 14px;
+    display:flex;align-items:flex-start;gap:16px;
+    border-bottom:1px solid #e6eaf2;
+    background:#fff;
+  }
+  .eyebrow{font-size:9.5px;letter-spacing:2px;color:#8a94a8;font-weight:700;margin-bottom:5px}
+  .main-title{font-size:21px;font-weight:700;margin:0;letter-spacing:.3px;color:#17202e}
+  .main-desc{font-size:12px;color:#77839a;margin:5px 0 0;line-height:1.55;max-width:560px}
+  .current-task{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:9px;font-size:10.5px;color:#8b96a9;min-width:0}
+  .current-task .k{flex:0 0 auto;letter-spacing:.4px}
+  .task-badge{
+    flex:0 0 auto;display:inline-flex;align-items:center;height:20px;padding:0 8px;
+    border-radius:999px;font-size:9.5px;font-weight:700;letter-spacing:.2px;
+    background:#fff4e5;border:1px solid #f5d7a8;color:#a15c00;white-space:nowrap;
+  }
+  .task-badge.off{background:#f3f3f3;border-color:#e2e6ee;color:#7b879b}
+  .current-task .v{
+    display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    padding:2px 8px;border-radius:6px;background:#eef3ff;color:#3f68d9;font-weight:600;
+  }
+  .header-chips{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:2px}
+  .chip.log-toggle{display:none;cursor:pointer;font-family:inherit;transition:.15s}
+  .chip.log-toggle:hover{background:#eef3ff;border-color:#cfdcff;color:#3f68d9}
+  .log-toggle svg{width:12px;height:12px}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10.5px;padding:5px 9px;border-radius:999px;
+    background:#fff;border:1px solid #e3e8f1;color:#5c6a83;white-space:nowrap;
+  }
+  .chip.status.ready{color:#157f45;background:#effbf4;border-color:#d3f2e0}
+  .chip.status.running{color:#a35a05;background:#fff8eb;border-color:#fbe7c2}
+  .chip.status.unset{color:#d64545;background:#fff1f1;border-color:#f7d4d4}
+
+  .content{flex:1;overflow-y:auto;padding:16px 26px 24px;scroll-behavior:smooth;scrollbar-gutter:stable}
+  .content::-webkit-scrollbar{width:9px}
+  .content::-webkit-scrollbar-track{background:transparent}
+  .content::-webkit-scrollbar-thumb{background:#d5dce9;border-radius:8px;border:2px solid #fff}
+  .content::-webkit-scrollbar-thumb:hover{background:#c3cdde}
+
+  .panel{display:none}
+  .panel.active{display:block;animation:rise .22s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{
+    background:#fff;border:1px solid #e6eaf2;border-radius:14px;
+    padding:15px 18px;margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(23,32,46,.03);
+  }
+  .card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:5px}
+  .card-title{font-size:13.5px;font-weight:700;color:#1e2838;letter-spacing:.2px}
+  .card-sub{font-size:10.5px;color:#98a2b3}
+  .card-sub.right{margin-left:auto}
+
+  .row{
+    display:flex;align-items:center;gap:16px;
+    padding:10px 0;min-height:46px;
+    border-bottom:1px dashed #edf0f6;
+  }
+  .row:last-child{border-bottom:0;padding-bottom:10px}
+  .row:first-of-type{padding-top:9px}
+  .label{font-size:12.5px;color:#4a5568;flex:1;min-width:0;line-height:1.4}
+  .label small{display:block;font-size:10.5px;color:#9aa5b8;margin-top:3px;line-height:1.45;word-break:break-all}
+  .control{flex:0 0 auto;display:flex;align-items:center;gap:8px}
+
+  select,input[type=text],input[type=number]{
+    height:34px;border:1px solid #dbe1ec;border-radius:9px;background:#fff;
+    padding:0 10px;font-size:12px;color:#263244;font-family:inherit;outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  select{
+    appearance:none;-webkit-appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23818da3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+    padding-right:30px;
+  }
+  select:hover,input:hover{border-color:#c8d2e4}
+  select:focus,input:focus{border-color:#9db9ff;box-shadow:0 0 0 3px rgba(79,124,255,.12)}
+  .w-sm{width:64px}
+  .w-md{width:150px}
+  .w-lg{width:220px}
+  .w-xl{width:268px}
+
+  .switch{position:relative;display:inline-block;width:38px;height:21px;flex:0 0 auto;cursor:pointer;vertical-align:middle}
+  .switch input{opacity:0;width:0;height:0;position:absolute}
+  .switch .track{position:absolute;inset:0;background:#d7dde9;border-radius:999px;transition:.18s}
+  .switch .track::after{
+    content:"";position:absolute;width:17px;height:17px;left:2px;top:2px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:.18s;
+  }
+  .switch input:checked + .track{background:#4f7cff}
+  .switch input:checked + .track::after{transform:translateX(17px)}
+  .switch input:focus-visible + .track{box-shadow:0 0 0 3px rgba(79,124,255,.2)}
+  .theme-label{font-size:11px;color:#6b7688;white-space:nowrap;cursor:pointer;margin-left:8px}
+  .theme-switch{margin:0 8px 0 6px}
+  .theme-switch .track{background:#e3e7ee}
+  .theme-switch input:checked + .track{background:#1f2937}
+  .theme-switch input:focus-visible + .track{box-shadow:0 0 0 3px rgba(31,41,55,.18)}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;
+    border-radius:999px;font-size:10.5px;font-weight:600;white-space:nowrap;
+  }
+  .pill.green{background:#e9f9ef;color:#128a4b}
+  .pill.gray{background:#f3f3f3;color:#7b8699}
+  .pill.blue{background:#edf3ff;color:#3f68d9}
+  .pill.amber{background:#fff7e6;color:#b26a00}
+  .pill.red{background:#fff1f1;color:#d64545}
+
+  .btn{
+    height:34px;padding:0 14px;border-radius:9px;font-size:12px;font-weight:600;
+    border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;
+    justify-content:center;gap:7px;transition:.15s;white-space:nowrap;text-decoration:none;
+  }
+  .btn-primary{background:#3f6ee8;color:#fff;box-shadow:none}
+  .btn-primary:hover{background:#3561d6;filter:none;transform:none}
+  .btn-primary:active{background:#2e55c2}
+  .btn-ghost{background:#fff;border-color:#dde3ee;color:#4a5568}
+  .btn-ghost:hover{background:#f3f3f3;border-color:#c8d2e4}
+  .btn-soft{background:#eef3ff;color:#3e63d8;border-color:#dce6ff}
+  .btn-soft:hover{background:#e4ecff}
+  .btn-danger-soft{background:#fff1f1;color:#d64545;border-color:#ffdcdc}
+  .btn-danger-soft:hover{background:#ffe8e8}
+  .btn-attn{background:#f25a4b;color:#fff;box-shadow:none}
+  .btn-attn:hover{background:#e04b3c;filter:none;transform:none}
+  .btn-attn:active{background:#cf4134}
+  .btn-rose{background:#d64d86;color:#fff;box-shadow:none}
+  .btn-rose:hover{background:#c23f76;filter:none;transform:none}
+  .btn-rose:active{background:#ad3568}
+  .btn-sm{height:30px;padding:0 11px;font-size:11px;border-radius:8px}
+
+  .hint{
+    display:flex;gap:8px;align-items:flex-start;
+    background:#f3f3f3;border:1px solid #e3e7ee;border-left:3px solid #7ba0ff;
+    border-radius:8px;padding:9px 11px;font-size:10.5px;color:#5d6b85;line-height:1.6;margin-top:10px;
+  }
+  .hint svg{flex:0 0 14px;width:14px;height:14px;margin-top:1px;color:#6f95f5}
+
+  .inline-num{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#5a6579}
+  .inline-num input{width:54px;text-align:center;height:32px}
+
+  /* 战斗方案表格 */
+  .plan-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px}
+  .plan-table th{
+    text-align:left;font-size:10px;letter-spacing:.8px;color:#98a2b3;font-weight:700;
+    padding:6px 8px;border-bottom:1px solid #edf0f6;
+  }
+  .plan-table td{padding:8px;border-bottom:1px dashed #edf0f6;color:#4a5568}
+  .plan-table tr:last-child td{border-bottom:0}
+  .plan-table .pos{font-weight:600;color:#263244;width:64px}
+  .plan-table .lv{width:64px;color:#77839a}
+  .plan-name{
+    display:inline-flex;align-items:center;gap:7px;font-weight:600;color:#343f52;
+  }
+  .plan-badge{font-size:9.5px;padding:2px 6px;border-radius:5px;background:#eef3ff;color:#3f68d9;font-weight:700}
+  .plan-card-head{display:flex;align-items:center;gap:8px}
+  .plan-card-head .icon-btn{color:#9aa5b8}
+  .plan-card-head .icon-btn:hover{background:#f3f3f3;color:#4a5568}
+  .plan-collapsed{
+    display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0;
+  }
+  .plan-collapsed .chev{color:#9aa5b8;transition:.18s}
+  .plan-collapsed:hover .chev{color:#4a5568;transform:translateX(2px)}
+  .muted{color:#98a2b3;font-size:11px}
+
+  .daily-actions{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 2px}
+  .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin-top:4px}
+  .status-item{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:6px 0;border-bottom:1px dashed #edf0f6}
+  .status-item:last-child{border-bottom:0}
+  .status-item .k{color:#7b879b}
+  .status-item .v{color:#3b4658;font-weight:600}
+
+  /* 常用网站 */
+  .link-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .link-card{
+    display:flex;align-items:flex-start;gap:11px;width:100%;
+    background:#fff;border:1px solid #e6eaf2;border-radius:12px;
+    padding:12px;cursor:pointer;text-align:left;font-family:inherit;
+    transition:.15s;min-width:0;
+  }
+  .link-card:hover{border-color:#b9ccff;background:#f8faff}
+  .link-icon{
+    flex:0 0 34px;width:34px;height:34px;border-radius:9px;
+    background:#eef3ff;color:#3f68d9;display:grid;place-items:center;
+    font-size:12px;font-weight:700;letter-spacing:.2px;
+  }
+  .link-body{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}
+  .link-name{font-size:12px;font-weight:700;color:#1f2937}
+  .link-desc{font-size:10.5px;color:#7b879b;line-height:1.45}
+  .link-url{
+    font-size:9.5px;color:#98a2b3;letter-spacing:.2px;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .link-arrow{color:#b0bacb;flex:0 0 auto;margin-top:2px;transition:.15s}
+  .link-card:hover .link-arrow{color:#3f6ed8}
+
+  /* 目标页底部提醒 cell */
+  .notice-stack{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .notice-cell{
+    display:flex;align-items:flex-start;gap:12px;min-width:0;
+    background:#fff;border:1px solid #e6eaf2;border-radius:12px;padding:12px 14px;
+  }
+  .notice-gem,.notice-update,.notice-temple{background:#fdf0f6;border-color:#f3d6e3}
+  .notice-gem .notice-icon,.notice-update .notice-icon,.notice-temple .notice-icon{
+    background:#fff;border-color:#f5c2d8;color:#b4235f;
+  }
+  .notice-update .notice-notes-list{border-top-color:#f3d6e3}
+  .notice-cell.notice-link{
+    width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;
+    text-decoration:none;transition:.15s;
+  }
+  .notice-gem.notice-link:hover,.notice-temple.notice-link:hover{background:#fce4ef;border-color:#e58ab1}
+  .notice-icon{
+    flex:0 0 34px;width:34px;height:34px;border-radius:9px;
+    background:#fff;border:1px solid #e2e6ee;color:#3f68d9;
+    display:grid;place-items:center;
+  }
+  .notice-icon svg{width:18px;height:18px}
+  .notice-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .notice-title{font-size:12px;font-weight:700;color:#1f2937;line-height:1.4}
+  .notice-sub{font-size:9.5px;color:#98a2b3;margin-top:2px}
+  .notice-desc{font-size:10px;color:#7b879b;line-height:1.5;margin-top:2px}
+  .notice-update-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .notice-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}
+  .notice-notes-list{
+    margin-top:10px;padding-top:9px;border-top:1px solid #e6eaf2;
+    font-size:10px;color:#5d6b85;line-height:1.65;
+  }
+  .notice-notes-title{font-size:9px;color:#8b96a9;letter-spacing:.4px;margin-bottom:3px}
+  .notice-notes-list ul{margin:0;padding-left:16px}
+  .notice-notes-list li{margin:2px 0}
+  .notice-arrow{color:#b0bacb;flex:0 0 auto;margin-top:8px;transition:.15s}
+  .notice-gem.notice-link:hover .notice-arrow,.notice-temple.notice-link:hover .notice-arrow{color:#b4235f}
+
+  /* 底部启动栏 */
+  .runbar{
+    flex:0 0 auto;padding:12px 26px 14px;border-top:1px solid #e3e8f1;
+    background:#fff;
+    display:flex;align-items:center;gap:14px;
+  }
+  .run-btn{
+    flex:1;height:46px;border-radius:9px;border:0;
+    background:#3f6ee8;color:#fff;
+    font-size:14.5px;font-weight:700;letter-spacing:1px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    box-shadow:none;
+    transition:background .15s;
+  }
+  .run-btn:hover{background:#3561d6;box-shadow:none;transform:none;filter:none}
+  .run-btn:active{background:#2e55c2;transform:none}
+  .run-btn:focus-visible{outline:2px solid #9db9ff;outline-offset:2px}
+  .run-btn svg{width:18px;height:18px}
+  .run-btn .i-stop{display:none}
+  .run-btn.running{background:#e5484d;box-shadow:none}
+  .run-btn.running:hover{background:#d93c42}
+  .run-btn.running .i-play{display:none}
+  .run-btn.running .i-stop{display:block}
+  .run-aux{
+    flex:0 0 46px;width:46px;height:46px;border-radius:9px;
+    background:#fff;border:1px solid #d8dfeb;color:#5f6b80;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;
+    box-shadow:none;
+  }
+  .run-aux:hover{background:#f3f3f3;border-color:#c8d2e4;color:#17202e}
+  .run-aux:focus-visible{outline:2px solid #9db9ff;outline-offset:2px}
+  .run-aux.armed{background:#fff4e5;border-color:#f3d6a8;color:#a15c00}
+  .run-aux svg{width:18px;height:18px}
+
+  /* ================= 右侧：日志 + 常驻摘要 ================= */
+  .rightpane{
+    background:#fff;display:flex;flex-direction:column;min-width:0;min-height:0;
+    color:#3b4658;border-left:1px solid #e2e6ee;
+  }
+  .logpane{display:flex;flex-direction:column;min-height:0;min-width:0;flex:1 1 auto;background:#fff}
+  .log-head{padding:16px 16px 9px;display:flex;align-items:center;gap:8px}
+  .log-title{font-size:13px;font-weight:700;color:#1f2937;letter-spacing:.5px}
+  .log-actions{margin-left:auto;display:flex;gap:4px}
+  .icon-btn{
+    width:26px;height:26px;border-radius:7px;border:0;background:transparent;color:#7b879b;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;
+  }
+  .icon-btn:hover{background:rgba(15,23,42,.06);color:#17202e}
+  .icon-btn svg{width:14px;height:14px}
+
+  .log-body{
+    flex:1;overflow-y:auto;padding:4px 14px 12px;
+    font-family:"Cascadia Code",Consolas,"SFMono-Regular",Menlo,monospace;
+    font-size:12px;line-height:1.8;scrollbar-gutter:stable;
+  }
+  .log-body::-webkit-scrollbar{width:8px}
+  .log-body::-webkit-scrollbar-track{background:#fff}
+  .log-body::-webkit-scrollbar-thumb{background:#d3d9e4;border-radius:8px;border:2px solid #fff}
+  .ll{display:flex;gap:8px;padding:1px 0}
+  .ll .t{color:#98a2b3;flex:0 0 auto}
+  .ll .tag{flex:0 0 32px;font-weight:700;font-size:9.5px;letter-spacing:.2px;padding-top:2px}
+  .tag.info{color:#2f6fed}
+  .tag.ok{color:#128a4b}
+  .tag.warn{color:#a16207}
+  .tag.err{color:#d64545}
+  .ll .m{color:#3b4658;min-width:0;word-break:break-word;white-space:pre-wrap}
+  .ll .m b{color:#17202e;font-weight:600}
+  .ll.sys .m{color:#7b879b}
+
+  /* 摘要常驻显示。缩略图模式只需隐藏 .sidebar 与 .logpane，保留 .summarypane 即可自然过渡 */
+  .summarypane{
+    position:relative;flex:0 0 auto;background:#f3f3f3;border-top:1px solid #e2e6ee;
+    padding:13px 14px 14px;
+  }
+  /* 持续状态条：不做动画，不会自己消失 */
+  .summarypane::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:3px;
+    background:transparent;pointer-events:none;
+  }
+  .summarypane.state-new::before{background:#3f6ee8}
+  .summarypane.state-changed::before{background:#d99a2b}
+  .summary-head{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;gap:12px;margin-bottom:9px;
+  }
+  .summary-info{min-width:0}
+  .summary-title-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;min-width:0}
+  .summary-task{
+    margin-top:4px;font-size:10.5px;line-height:1.45;
+    color:#3b4658;font-weight:600;min-width:0;
+    white-space:normal;word-break:break-word;
+  }
+  .summary-title-wrap{display:flex;align-items:center;gap:8px;min-width:0}
+  .summary-title{font-size:13px;letter-spacing:1px;color:#59657b;font-weight:700}
+  .sum-state{
+    display:none;align-items:center;height:19px;padding:0 8px;border-radius:999px;
+    font-size:9px;font-weight:700;letter-spacing:.3px;white-space:nowrap;
+  }
+  .sum-state.state-new{background:#eef4ff;color:#2f5fd8;border:1px solid #d6e2ff}
+  .sum-state.state-changed{background:#fff4e5;color:#a15c00;border:1px solid #f5d7a8}
+  .summarypane.state-new .sum-state.state-new{display:inline-flex}
+  .summarypane.state-changed .sum-state.state-changed{display:inline-flex}
+  .sum-time{font-size:22px;font-weight:700;color:#17202e;font-variant-numeric:tabular-nums;letter-spacing:.4px;line-height:1}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .stat{
+    background:#fff;border:1px solid #dfe4ec;border-radius:8px;
+    padding:8px 10px;display:flex;flex-direction:column;justify-content:space-between;gap:4px;
+  }
+  .stat .nums{display:flex;align-items:baseline;justify-content:space-between;gap:8px;line-height:1}
+  .stat .v{font-size:17px;font-weight:700;color:#17202e;font-variant-numeric:tabular-nums;line-height:1.1}
+  .stat .avg-val{
+    font-size:12.5px;font-weight:600;color:#17202e;letter-spacing:.2px;
+    font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap;
+  }
+  .stat .avg-val.empty{color:#98a2b3;font-weight:500}
+  .stat .meta{
+    display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;
+    gap:1px 6px;font-size:9px;color:#7b879b;line-height:1.2;
+  }
+  .stat .meta .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .meta .avg-label{white-space:nowrap}
+  /* 特殊事件：悬停展开明细 */
+  .stat.special{position:relative;cursor:help;outline:none}
+  .stat.special:focus-visible{box-shadow:0 0 0 2px rgba(110,168,254,.55)}
+  .stat.special .detail-hint{
+    color:#3f6ed8;border-bottom:1px dotted rgba(63,110,216,.45);white-space:nowrap;transition:.15s;
+  }
+  .stat.special:hover .detail-hint,.stat.special:focus-visible .detail-hint{
+    color:#2f5fd8;border-bottom-color:rgba(47,95,216,.7);
+  }
+  .tooltip{
+    position:absolute;right:-2px;bottom:calc(100% + 9px);width:222px;
+    background:#fff;border:1px solid #dbe1ec;border-radius:10px;
+    padding:10px 12px;box-shadow:0 16px 36px rgba(23,32,46,.18);
+    opacity:0;visibility:hidden;transform:translateY(4px);transition:.16s;
+    z-index:60;pointer-events:none;text-align:left;
+  }
+  .tooltip::after{
+    content:"";position:absolute;right:16px;bottom:-5px;width:8px;height:8px;
+    background:#fff;border-right:1px solid #dbe1ec;
+    border-bottom:1px solid #dbe1ec;transform:rotate(45deg);
+  }
+  /* 没有特殊事件时, 悬停不显示任何内容 */
+  .stat.special.empty .tooltip{display:none!important}
+  .stat.special.empty .detail-hint{visibility:hidden}
+  .stat.special:hover .tooltip,.stat.special:focus-visible .tooltip{
+    opacity:1;visibility:visible;transform:none;
+  }
+  .tt-title{font-size:9.5px;letter-spacing:1px;color:#7b879b;font-weight:700;margin-bottom:6px}
+  .tt-row{
+    display:flex;justify-content:space-between;gap:12px;
+    font-size:10.5px;color:#4a5568;padding:3px 0;
+    border-bottom:1px dashed #edf0f6;
+  }
+  .tt-row:last-of-type{border-bottom:0}
+  .tt-row b{color:#17202e;font-weight:600}
+  .tt-total{
+    display:flex;justify-content:space-between;margin-top:5px;padding-top:7px;
+    border-top:1px solid #e8ecf3;font-size:10.5px;color:#7b879b;
+  }
+  .tt-total b{color:#17202e}
+
+  /* toast */
+  .toast{
+    position:absolute;left:50%;bottom:92px;transform:translate(-50%,10px);
+    background:#fff;border:1px solid #dbe1ec;color:#1f2937;font-size:12px;
+    padding:9px 16px;border-radius:10px;
+    box-shadow:0 12px 30px rgba(23,32,46,.18);opacity:0;pointer-events:none;
+    transition:.25s;z-index:30;max-width:80%;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* 统一 tooltip */
+  .ui-tip{
+    position:fixed;z-index:200;pointer-events:none;
+    background:#fff;border:1px solid #dbe1ec;border-radius:8px;
+    padding:6px 9px;font-size:10.5px;line-height:1.4;color:#1f2937;
+    box-shadow:0 10px 24px rgba(23,32,46,.16);
+    white-space:nowrap;opacity:0;transform:translateY(2px);
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  .ui-tip.show{opacity:1;transform:none}
+
+  .log-close{display:none}
+  .log-close:hover{background:#ffecec;color:#d64545}
+
+  @media (max-width:1180px){
+    .app-body{grid-template-columns:104px minmax(0,650px) minmax(0,1fr)}
+    .main-header{padding-left:20px;padding-right:20px}
+    .content{padding-left:20px;padding-right:20px}
+    .runbar{padding-left:20px;padding-right:20px}
+  }
+
+  /* 窄窗口：日志收成右侧抽屉，摘要仍固定在右栏 */
+  @media (max-width:980px){
+    .app-body{grid-template-columns:104px minmax(0,1fr) 252px}
+    .logpane{
+      display:none;
+      position:absolute;top:42px;right:0;bottom:0;width:min(356px,88vw);
+      z-index:20;background:#fff;box-shadow:-24px 0 48px rgba(23,32,46,.16);
+      border-left:1px solid #e2e6ee;
+    }
+    .app.show-log .logpane{display:flex}
+    .chip.log-toggle{display:inline-flex}
+    .log-close{display:grid}
+    .nav-item{padding:0 8px}
+    .main-header{padding-left:18px;padding-right:18px}
+    .content{padding-left:18px;padding-right:18px}
+    .runbar{padding-left:18px;padding-right:18px}
+    .title-sub,.title-sep{display:none}
+  }
+
+  @media (max-width:620px){
+    .app{width:100vw;height:100vh;border-radius:0}
+    .app-body{grid-template-columns:100px minmax(0,1fr) 196px}
+    .main-header{padding:16px 16px 12px}
+    .content{padding:12px 16px 18px}
+    .runbar{padding:10px 16px 12px}
+    .header-chips{flex-direction:row;align-items:center;margin-left:8px;padding-top:0}
+    .header-chips .chip:not(.log-toggle){display:none}
+    .main-title{font-size:19px}
+    .main-desc{font-size:11.5px}
+    .row{gap:10px}
+    .control{max-width:58%}
+    .control select{max-width:100%}
+    .card{padding:14px 15px;border-radius:12px}
+    .card-head{flex-wrap:wrap;gap:5px 10px}
+    .btn{padding:0 11px}
+    .plan-table{font-size:10.5px}
+    .link-grid{grid-template-columns:1fr}
+    .notice-cell{flex-wrap:wrap}
+    .notice-update-head{flex-wrap:wrap}
+    .notice-actions{width:auto;margin-left:0}
+  }
+
+  /* ===== pywebview / 动态内容 ===== */
+  .hidden{display:none !important}
+  .titlebar,.titlebar .brand,.titlebar .title-sub{cursor:default}
+  .plan-table select{height:30px;font-size:11.5px;padding:0 8px;min-width:100px}
+  .plan-table td{vertical-align:middle}
+  .plan-table .ctl{width:46px;text-align:right}
+  .plan-option-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:10.5px;line-height:1.5;color:#77839a}
+  .plan-option-row .switch{margin-top:0;flex:0 0 auto}
+  .plan-option-row > span{flex:1;min-width:0}
+  .plan-empty{font-size:10.5px;color:#98a2b3;padding:6px 0 2px}
+  .plan-card.collapsed .plan-body{display:none}
+  .plan-collapsed{cursor:pointer}
+  .plan-title{cursor:pointer}
+  .plan-card-head{cursor:pointer}
+  .plan-card .plan-chev svg{transition:transform .18s ease}
+  /* 收起时向下(v), 展开时向上(^) */
+  .plan-card:not(.collapsed) .plan-chev svg{transform:rotate(180deg)}
+  .update-progress-wrap{margin-top:9px}
+  .update-progress{height:6px;border-radius:999px;background:#f3d6e3;overflow:hidden}
+  .update-progress span{display:block;height:100%;width:0;border-radius:999px;background:#d64d86;transition:width .2s}
+  .update-progress-label{font-size:9.5px;color:#98a2b3;margin-top:4px}
+  .record-value{font-size:11.5px;color:#3b4658;font-weight:600}
+  .stack-gap{display:flex;flex-direction:column;gap:10px}
+  .plan-table td .ctl-btn{width:24px;height:24px;border-radius:6px}
+
+  /* ===== 应用内弹窗 (替代浏览器原生 alert/confirm/prompt) ===== */
+  .modal-mask{
+    position:fixed;inset:0;z-index:500;
+    background:rgba(15,23,42,.38);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;opacity:0;pointer-events:none;
+    transition:opacity .16s ease;
+  }
+  .modal-mask.show{opacity:1;pointer-events:auto}
+  .modal{
+    width:min(460px,100%);max-height:min(72vh,620px);
+    background:#fff;border:1px solid #e2e6ee;border-radius:14px;
+    box-shadow:0 24px 60px rgba(23,32,46,.24);
+    display:flex;flex-direction:column;overflow:hidden;
+    font-size:12.5px;color:#263244;
+    transform:translateY(8px) scale(.99);
+    transition:transform .16s ease;
+  }
+  .modal-mask.show .modal{transform:none}
+  .modal-head{padding:17px 18px 0;display:flex;align-items:flex-start;gap:10px}
+  .modal-title{font-size:14px;font-weight:700;color:#1e2838;line-height:1.45}
+  .modal-body{
+    padding:10px 18px 4px;overflow:auto;white-space:pre-wrap;
+    line-height:1.7;color:#4a5568;font-size:12px;word-break:break-word;
+    scrollbar-gutter:stable;
+  }
+  .modal-body input{
+    width:100%;height:36px;border:1px solid #dbe1ec;border-radius:9px;
+    padding:0 10px;font-size:12.5px;color:#263244;font-family:inherit;
+    outline:none;margin-top:10px;background:#fff;
+  }
+  .modal-body input:focus{
+    border-color:#9db9ff;box-shadow:0 0 0 3px rgba(79,124,255,.12);
+  }
+  .modal-foot{
+    padding:15px 18px 16px;display:flex;justify-content:flex-end;gap:8px;
+  }
+  .modal .btn:focus{outline:2px solid #9db9ff;outline-offset:2px}
+  @media (max-height:640px){.modal{max-height:88vh}}
+  /* ===== 深色模式 ===== */
+  body.dark{
+    --ink:#e6ebf2;
+    color:#e6ebf2;
+    background:#0f141b;
+    color-scheme:dark;
+  }
+  body.dark .app,
+  body.dark .main,
+  body.dark .main-header,
+  body.dark .runbar,
+  body.dark .rightpane,
+  body.dark .logpane{background:#0f141b}
+  body.dark .titlebar{background:#141b24;border-bottom-color:#263140;color:#dbe3ee}
+  body.dark .title-sep{background:#334052}
+  body.dark .title-sub{color:#8b99ab}
+  body.dark .win-btn{color:#9aa7b8}
+  body.dark .win-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+  body.dark .theme-label{color:#c3ccd9}
+  body.dark .sidebar{background:#141b24;border-right-color:#263140}
+  body.dark .nav-item{color:#9aa7b8}
+  body.dark .nav-item:hover{background:rgba(255,255,255,.06);color:#e6ebf2}
+  body.dark .nav-item.active{background:#1e2a3c;color:#9db9ff;border-color:#2c3d55}
+  body.dark .nav-item.active::before{background:#5b8cff}
+  body.dark .nav-item.active svg{color:#9db9ff}
+  body.dark .side-footer{border-top-color:#263140}
+  body.dark .version{color:#7c8a9d}
+  body.dark .main-header{border-bottom-color:#263140}
+  body.dark .eyebrow{color:#7c8a9d}
+  body.dark .main-title{color:#e6ebf2}
+  body.dark .main-desc{color:#8b99ab}
+  body.dark .current-task{color:#8b99ab}
+  body.dark .current-task .v{background:#1b2a44;color:#9db9ff}
+  body.dark .task-badge{background:#33260f;border-color:#5c451f;color:#f5b45a}
+  body.dark .task-badge.off{background:#1b2330;border-color:#2a3546;color:#8b99ab}
+  body.dark .chip{background:#151c26;border-color:#2a3546;color:#9aa7b8}
+  body.dark .chip.log-toggle:hover{background:#1f2a3a;border-color:#35435a;color:#9db9ff}
+  body.dark .chip.status.ready{background:#12301f;border-color:#1f5c3a;color:#4ade80}
+  body.dark .chip.status.running{background:#33260f;border-color:#5c451f;color:#f5b45a}
+  body.dark .chip.status.unset{background:#3a1a1a;border-color:#5e2a2a;color:#f87171}
+  body.dark .card{background:#151c26;border-color:#263140;box-shadow:none}
+  body.dark .card-title{color:#e6ebf2}
+  body.dark .card-sub{color:#8b99ab}
+  body.dark .row{border-bottom-color:#222c39}
+  body.dark .label{color:#c3ccd9}
+  body.dark .label small{color:#8b99ab}
+  body.dark .content::-webkit-scrollbar-thumb{background:#334052;border-color:#0f141b}
+  body.dark .content::-webkit-scrollbar-thumb:hover{background:#40506a}
+  body.dark select,
+  body.dark input[type=text],
+  body.dark input[type=number],
+  body.dark .modal-body input{background-color:#0f141b;border-color:#334052;color:#e6ebf2}
+  body.dark select{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8b6c8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+  body.dark select:hover,body.dark input:hover{border-color:#46566d}
+  body.dark .switch .track{background:#3a4658}
+  body.dark .switch input:checked + .track{background:#4f7cff}
+  body.dark .theme-switch .track{background:#3a4658}
+  body.dark .theme-switch input:checked + .track{background:#e6ebf2}
+  body.dark .theme-switch input:checked + .track::after{background:#1f2937}
+  body.dark .pill.green{background:#12301f;color:#4ade80}
+  body.dark .pill.gray{background:#1b2330;color:#8b99ab}
+  body.dark .pill.blue{background:#1b2a44;color:#9db9ff}
+  body.dark .pill.amber{background:#33260f;color:#f5b45a}
+  body.dark .pill.red{background:#3a1a1a;color:#f87171}
+  body.dark .btn-ghost{background:#151c26;border-color:#334052;color:#c3ccd9}
+  body.dark .btn-ghost:hover{background:#1f2a3a;border-color:#46566d}
+  body.dark .btn-soft{background:#1b2a44;color:#9db9ff;border-color:#2c3d55}
+  body.dark .btn-soft:hover{background:#22344f}
+  body.dark .btn-danger-soft{background:#3a1a1a;color:#f87171;border-color:#5e2a2a}
+  body.dark .btn-danger-soft:hover{background:#452020}
+  body.dark .hint{background:#151c26;border-color:#263140;border-left-color:#5b8cff;color:#a8b4c4}
+  body.dark .hint svg{color:#7ba0ff}
+  body.dark .inline-num{color:#a8b4c4}
+  body.dark .plan-table th{color:#8b99ab;border-bottom-color:#263140}
+  body.dark .plan-table td{color:#b7c2d0;border-bottom-color:#222c39}
+  body.dark .plan-table .pos{color:#e6ebf2}
+  body.dark .plan-table .lv{color:#8b99ab}
+  body.dark .plan-name{color:#dbe3ee}
+  body.dark .plan-badge{background:#1b2a44;color:#9db9ff}
+  body.dark .plan-card-head .icon-btn{color:#8b99ab}
+  body.dark .plan-card-head .icon-btn:hover{background:#1f2a3a;color:#e6ebf2}
+  body.dark .plan-collapsed .chev{color:#8b99ab}
+  body.dark .plan-collapsed:hover .chev{color:#e6ebf2}
+  body.dark .plan-option-row{color:#8b99ab}
+  body.dark .plan-empty{color:#8b99ab}
+  body.dark .muted{color:#8b99ab}
+  body.dark .status-item{border-bottom-color:#222c39}
+  body.dark .status-item .k{color:#8b99ab}
+  body.dark .status-item .v{color:#dbe3ee}
+  body.dark .record-value{color:#dbe3ee}
+  body.dark .link-card{background:#151c26;border-color:#263140}
+  body.dark .link-card:hover{background:#1a2434;border-color:#3f6ed8}
+  body.dark .link-icon{background:#1b2a44;color:#9db9ff}
+  body.dark .link-name{color:#e6ebf2}
+  body.dark .link-desc{color:#9aa7b8}
+  body.dark .link-url{color:#7c8a9d}
+  body.dark .link-arrow{color:#5c6b80}
+  body.dark .link-card:hover .link-arrow{color:#9db9ff}
+  body.dark .notice-cell{background:#151c26;border-color:#263140}
+  body.dark .notice-gem,body.dark .notice-update,body.dark .notice-temple{background:#2a1a24;border-color:#4a2a3a}
+  body.dark .notice-gem .notice-icon,body.dark .notice-update .notice-icon,body.dark .notice-temple .notice-icon{background:#1b1118;border-color:#5b3448;color:#f0a6c6}
+  body.dark .notice-gem.notice-link:hover,body.dark .notice-temple.notice-link:hover{background:#341d2b;border-color:#7a4460}
+  body.dark .notice-title{color:#e6ebf2}
+  body.dark .notice-desc{color:#b9a3b0}
+  body.dark .notice-sub{color:#9c8794}
+  body.dark .notice-icon{background:#1b1118;border-color:#5b3448;color:#f0a6c6}
+  body.dark .notice-notes-list{border-top-color:#4a2a3a;color:#c3ccd9}
+  body.dark .notice-notes-title{color:#9c8794}
+  body.dark .notice-arrow{color:#7a5b6a}
+  body.dark .notice-update .notice-notes-list{border-top-color:#4a2a3a}
+  body.dark .update-progress{background:#3a2431}
+  body.dark .update-progress-label{color:#9c8794}
+  body.dark .runbar{border-top-color:#263140}
+  body.dark .run-aux{background:#151c26;border-color:#334052;color:#9aa7b8}
+  body.dark .run-aux:hover{background:#1f2a3a;border-color:#46566d;color:#e6ebf2}
+  body.dark .run-aux.armed{background:#33260f;border-color:#5c451f;color:#f5b45a}
+  body.dark .rightpane{border-left-color:#263140;color:#b7c2d0}
+  body.dark .log-title{color:#e6ebf2}
+  body.dark .icon-btn{color:#8b99ab}
+  body.dark .icon-btn:hover{background:rgba(255,255,255,.07);color:#e6ebf2}
+  body.dark .log-body::-webkit-scrollbar-track{background:#0f141b}
+  body.dark .log-body::-webkit-scrollbar-thumb{background:#334052;border-color:#0f141b}
+  body.dark .ll .t{color:#7c8a9d}
+  body.dark .tag.info{color:#7ba0ff}
+  body.dark .tag.ok{color:#4ade80}
+  body.dark .tag.warn{color:#f5b45a}
+  body.dark .tag.err{color:#f87171}
+  body.dark .ll .m{color:#b7c2d0}
+  body.dark .ll .m b{color:#e6ebf2}
+  body.dark .ll.sys .m{color:#8b99ab}
+  body.dark .log-close:hover{background:#3a1a1a;color:#f87171}
+  body.dark .summarypane{background:#151c26;border-top-color:#263140}
+  body.dark .summary-task{color:#c3ccd9}
+  body.dark .summary-title{color:#9aa7b8}
+  body.dark .sum-time{color:#e6ebf2}
+  body.dark .stat{background:#1b2330;border-color:#2a3546}
+  body.dark .stat .v,body.dark .stat .avg-val{color:#e6ebf2}
+  body.dark .stat .avg-val.empty{color:#7c8a9d}
+  body.dark .stat .meta{color:#8b99ab}
+  body.dark .stat.special .detail-hint{color:#9db9ff;border-bottom-color:rgba(157,185,255,.45)}
+  body.dark .stat.special:hover .detail-hint,body.dark .stat.special:focus-visible .detail-hint{color:#c3d4ff;border-bottom-color:rgba(195,212,255,.7)}
+  body.dark .sum-state.state-new{background:#1b2a44;color:#9db9ff;border-color:#2c3d55}
+  body.dark .sum-state.state-changed{background:#33260f;color:#f5b45a;border-color:#5c451f}
+  body.dark .tooltip{background:#1b2330;border-color:#334052;box-shadow:0 16px 36px rgba(0,0,0,.55)}
+  body.dark .tooltip::after{background:#1b2330;border-color:#334052}
+  body.dark .tt-title{color:#8b99ab}
+  body.dark .tt-row{color:#b7c2d0;border-bottom-color:#2a3546}
+  body.dark .tt-row b{color:#e6ebf2}
+  body.dark .tt-total{border-top-color:#2a3546;color:#8b99ab}
+  body.dark .tt-total b{color:#e6ebf2}
+  body.dark .toast{background:#1b2330;border-color:#334052;color:#e6ebf2;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+  body.dark .ui-tip{background:#1b2330;border-color:#334052;color:#e6ebf2;box-shadow:0 10px 24px rgba(0,0,0,.55)}
+  body.dark .modal-mask{background:rgba(0,0,0,.58)}
+  body.dark .modal{background:#151c26;border-color:#2a3546;color:#dbe3ee;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+  body.dark .modal-title{color:#e6ebf2}
+  body.dark .modal-body{color:#b7c2d0}
+
+  /* ===== 缩略模式 ===== */
+  .compact-body{position:relative;display:none;padding:0;gap:0;background:#fff;align-items:stretch}
+  body.dark .compact-body{background:#0f141b}
+  body.compact .app-body{display:none}
+  body.compact .compact-body{display:flex}
+  .compact-left{flex:0 0 370px;width:370px;min-width:0;padding:12px 16px;display:flex;flex-direction:column;gap:16px;justify-content:center}
+  .compact-right{flex:1;min-width:0}
+  body.compact .compact-left .row{position:relative;top:-4px;border-bottom:0;padding:0;min-height:0;gap:12px}
+  body.compact .compact-left .row .label{flex:0 0 auto;white-space:nowrap}
+  body.compact .compact-left .row .control{flex:1;min-width:0}
+  body.compact .compact-left .row select{width:100%;max-width:none}
+  body.compact .compact-left .runbar{border:0;background:transparent;padding:0;gap:16px}
+  body.compact .compact-left .runbar .run-btn{flex:1}
+
+  body.compact #logSummary{border-top:0;border-radius:0}
+  body.compact #logSummary .summary-head{display:none}
+  body.compact #logSummary::before{display:none}
+  body.compact .toast{bottom:12px}
+  body.compact #targetSelect{pointer-events:none;cursor:default}
+  body.compact #targetSelect:disabled{opacity:1;background:#f3f3f3;color:#7b879b}
+  body.dark.compact #targetSelect:disabled{background:#1b2330;color:#8b99ab}
+
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- 标题栏 -->
+  <div class="titlebar pywebview-drag-region">
+    <div class="brand pywebview-drag-region"><span class="mark">W</span>wvdas</div>
+    <div class="title-sep"></div>
+    <div class="title-sub pywebview-drag-region">Wizardry Variants Daphne · 自动挂机</div>
+    <div class="win-controls">
+      <label class="theme-label" for="darkModeToggle">深色模式</label>
+      <label class="switch theme-switch" title="深色模式">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="track"></span>
+      </label>
+      <button class="win-btn" id="compactMode" title="缩略模式" aria-label="缩略模式">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14"/></svg>
+      </button>
+      <button class="win-btn" id="winMin" title="最小化">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+      </button>
+      <button class="win-btn" id="winMax" title="最大化">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      </button>
+      <button class="win-btn close" id="winClose" title="关闭">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="compact-body" id="compactBody">
+    <div class="compact-left" id="compactLeft"></div>
+    <div class="compact-right" id="compactRight"></div>
+  </div>
+
+  <div class="app-body">
+
+    <!-- ============ 最左侧窄侧边栏 ============ -->
+    <aside class="sidebar">
+      <div class="nav-group">
+        <button class="nav-item active" data-panel="target"
+          data-title="目标"
+          data-desc="选择本次要执行的任务类别与具体任务目标。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+          <span>目标</span>
+        </button>
+        <button class="nav-item" data-panel="emu"
+          data-title="设备"
+          data-desc="连接设备与 ADB，设置脚本与游戏使用的语言。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+          <span>设备</span>
+        </button>
+        <button class="nav-item" data-panel="explore"
+          data-title="探索"
+          data-desc="开箱、恢复、旅店休息与队伍重置等探索相关设置。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+          <span>探索</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-item" data-panel="combat"
+          data-title="战斗"
+          data-desc="为当前任务指定全程与任务点使用的战斗策略。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6"/><path d="M14 6h4v4"/><path d="m6 12 6 6"/><path d="m4 20 4-4"/></svg>
+          <span>战斗</span>
+        </button>
+        <button class="nav-item" data-panel="plans"
+          data-title="战斗方案"
+          data-desc="配置每个角色的技能槽位、等级与执行顺序。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1.5 1.5L7 5"/><path d="m3 12 1.5 1.5L7 11"/><path d="m3 18 1.5 1.5L7 17"/></svg>
+          <span>方案</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-item" data-panel="daily"
+          data-title="日常 / 周常"
+          data-desc="游戏内每日与每周例行事项的自动化设置。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+          <span>日常</span>
+        </button>
+        <button class="nav-item" data-panel="advanced"
+          data-title="高级"
+          data-desc="0 火策略、剧情跳跃、住宿偏好与容错阈值。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+          <span>高级</span>
+        </button>
+        <button class="nav-item" data-panel="links"
+          data-title="常用网站"
+          data-desc="官方、商店、攻略与社区入口。">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>
+          <span>网站</span>
+        </button>
+      </div>
+
+      <div class="side-footer">
+        <div class="version" id="appVersion">wvdas</div>
+      </div>
+    </aside>
+
+    <!-- ============ 中间设置栏 ============ -->
+    <main class="main">
+      <div class="main-header">
+        <div>
+          <h1 class="main-title" id="pageTitle">目标</h1>
+          <p class="main-desc" id="pageDesc">选择本次要执行的任务类别与具体任务目标。</p>
+          <div class="current-task">
+            <span class="k">当前任务</span>
+            <span class="v" id="currentTaskText">未选择</span>
+            <span class="task-badge off" id="taskCustomBadge">任务定制配置 · 未启用</span>
+          </div>
+        </div>
+        <div class="header-chips">
+          <button class="chip log-toggle" id="logToggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+            运行日志
+          </button>
+          <span class="chip status ready" id="statusChip"><span id="statusText">就绪</span></span>
+        </div>
+      </div>
+
+      <div class="content" id="content">
+
+        <!-- ===== 模拟器 ===== -->
+        <section class="panel" id="panel-emu">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">连接设置</div>
+              <div class="card-sub">启动脚本前需要先连接模拟器</div>
+            </div>
+            <div class="row">
+              <div class="label">模拟器路径
+                <small id="emuPathText">尚未选择模拟器可执行文件</small>
+              </div>
+              <div class="control">
+                <span class="pill red" id="emuStatus">未设置</span>
+                <button class="btn btn-ghost" id="chooseEmuPath">修改</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">ADB 地址</div>
+              <div class="control"><input type="text" class="w-md" id="adbAddress"></div>
+            </div>
+            <div class="row">
+              <div class="label">模拟器编号</div>
+              <div class="control"><input type="number" class="w-sm" id="emuIndex" data-config="EMU_INDEX" data-numeric="1" min="0"></div>
+            </div>
+            <div class="hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>地址可以只填端口，失焦后会自动补全为 <b>127.0.0.1:端口</b>；输入多个端口时会自动选用最大值。</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">语言</div>
+              <div class="card-sub">需与模拟器内游戏语言保持一致</div>
+            </div>
+            <div class="row">
+              <div class="label">脚本界面语言</div>
+              <div class="control">
+                <select class="w-md" id="langScript">
+                  <option value="zh_CN">简体中文</option>
+                  <option value="en_US">English</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">游戏内语言</div>
+              <div class="control">
+                <select class="w-md" id="langGame">
+                  <option value="zh_CN">简体中文</option>
+                  <option value="en_US">English</option>
+                </select>
+              </div>
+            </div>
+            <div class="hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>修改界面语言后需要重启脚本才能生效。游戏语言不一致会导致 OCR 与图片识别失败。</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 目标 ===== -->
+        <section class="panel active" id="panel-target">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">任务选择</div>
+              <div class="card-sub">选择类别后会自动筛选任务目标</div>
+            </div>
+            <div class="row">
+              <div class="label">任务类别</div>
+              <div class="control">
+                <select class="w-lg" id="categorySelect">
+                  <option>最新任务</option>
+                  <option>主线前三章</option>
+                  <option>主线第四章</option>
+                  <option>任务洞窟</option>
+                  <option>FFXI 联动</option>
+                  <option>矿石</option>
+                  <option selected>月常</option>
+                  <option>其他</option>
+                  <option>自定义</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">任务目标</div>
+              <div class="control">
+                <select class="w-xl" id="targetSelect"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">任务定制配置</div>
+              <div class="card-sub">仅对当前选择的任务生效</div>
+            </div>
+            <div class="row">
+              <div class="label">用任务定制的配置文件覆盖默认配置
+                <small>可单独设置该任务每个任务点的战斗策略，不影响全局默认值。</small>
+              </div>
+              <div class="control">
+                <label class="switch"><input type="checkbox" id="taskSpecificToggle"><span class="track"></span></label>
+                <button class="btn btn-danger-soft btn-sm" id="clearTaskSpecific">清除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 视情况追加：官网宝石 / 灵庙刷新 / 版本更新 -->
+          <div class="notice-stack">
+            <a class="notice-cell notice-link notice-gem" id="gemNoticeNew" href="https://webstore.wizardry.info/">
+              <span class="notice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 9-7 9-7-9z"/><path d="M5 12h14"/></svg>
+              </span>
+              <span class="notice-body">
+                <span class="notice-title">官网每周宝石 · 新网站</span>
+                <span class="notice-desc">本周 50 钻待领取 · webstore.wizardry.info</span>
+              </span>
+              <svg class="notice-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </a>
+
+            <a class="notice-cell notice-link notice-gem" id="gemNoticeOld" href="https://store.wizardry.info/">
+              <span class="notice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 9-7 9-7-9z"/><path d="M5 12h14"/></svg>
+              </span>
+              <span class="notice-body">
+                <span class="notice-title">官网每周宝石 · 旧网站</span>
+                <span class="notice-desc">本周 50 钻待领取 · store.wizardry.info</span>
+              </span>
+              <svg class="notice-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </a>
+
+            <button class="notice-cell notice-link notice-temple" id="amNotice" type="button">
+              <span class="notice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></svg>
+              </span>
+              <span class="notice-body">
+                <span class="notice-title">灵庙刷新 · 双周</span>
+                <span class="notice-desc" id="amNoticeDesc">本期待切换 · 炉壶灵庙</span>
+              </span>
+              <svg class="notice-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <div class="notice-cell notice-update hidden" id="updateNotice">
+              <span class="notice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+              </span>
+              <div class="notice-body">
+                <div class="notice-update-head">
+                  <div>
+                    <div class="notice-title" id="updateTitle">下载更新</div>
+                    <div class="notice-sub" id="updateCurrent">当前版本</div>
+                  </div>
+                  <div class="notice-actions">
+                    <button class="btn btn-rose btn-sm" id="autoDownload">自动下载</button>
+                    <button class="btn btn-ghost btn-sm" id="manualDownload">手动下载</button>
+                  </div>
+                </div>
+                <div class="update-progress-wrap hidden" id="updateProgressWrap">
+                  <div class="update-progress"><span id="updateProgressBar"></span></div>
+                  <div class="update-progress-label" id="updateProgressLabel"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 探索 ===== -->
+        <section class="panel" id="panel-explore">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">开箱</div>
+            </div>
+            <div class="row">
+              <div class="label">开箱人选</div>
+              <div class="control">
+                <select class="w-md" id="chestOpener" data-config="WHO_WILL_OPEN_IT" data-numeric="1">
+                  <option value="0">随机</option>
+                  <option value="1">左上</option>
+                  <option value="2">中上</option>
+                  <option value="3">右上</option>
+                  <option value="4">左下</option>
+                  <option value="5">中下</option>
+                  <option value="6">右下</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">快速开箱
+                <small>跳过额外检测，连续点击开锁。</small>
+              </div>
+              <div class="control"><label class="switch"><input type="checkbox" id="quickChest" data-config="QUICK_DISARM_CHEST"><span class="track"></span></label></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">自动恢复</div>
+            </div>
+            <div class="row">
+              <div class="label">战斗结束后进行恢复</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="recoverCombat" data-config="DO_COMBAT_RECOVER"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">开箱后进行恢复</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="recoverChest" data-config="DO_CHEST_RECOVER"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">进入地下城时进行恢复</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="recoverBeginning" data-config="RECOVER_WHEN_BEGINNING"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">住宿后首次进入地下城时进行恢复</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="recoverAfterRest" data-config="RECOVER_AFTER_REST"><span class="track"></span></label></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">旅店与队伍</div>
+            </div>
+            <div class="row">
+              <div class="label">启用旅店休息</div>
+              <div class="control">
+                <span class="inline-num">完成 <input type="number" id="restInterval" data-config="REST_INTERVEL" data-numeric="1" min="1"> 次后休息</span>
+                <label class="switch"><input type="checkbox" id="activeRest" data-config="ACTIVE_REST"><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">启用定时重置队伍
+                <small>重新召集酒馆第一个队伍，以便清理背包和调整站位。</small>
+              </div>
+              <div class="control">
+                <span class="inline-num">每 <input type="number" id="reassembleInterval" data-config="RE_ASSEMBLE_PARTY_INTERVAL" data-numeric="1" min="1" max="12"> 小时</span>
+                <label class="switch"><input type="checkbox" id="reassembleParty" data-config="RE_ASSEMBLE_PARTY"><span class="track"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">善恶调整</div>
+            </div>
+            <div class="row">
+              <div class="label">遇到善恶事件时</div>
+              <div class="control">
+                <select class="w-lg" id="karmaSelect">
+                  <option value="+0">维持现状</option>
+                  <option value="+17">恶 → 中立，中立 → 善</option>
+                  <option value="-17">善 → 中立，中立 → 恶</option>
+                </select>
+                <span class="pill gray" id="karmaPill">还需 +0 点</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 战斗 ===== -->
+        <section class="panel" id="panel-combat">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">全程策略</div>
+              <div class="card-sub">未单独指定的任务点都会使用该策略</div>
+            </div>
+            <div class="row">
+              <div class="label" id="overallStrategyLabel">战斗策略</div>
+              <div class="control">
+                <select class="w-lg" id="overallStrategy"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card hidden" id="taskPointsCard">
+            <div class="card-head">
+              <div class="card-title">任务点策略</div>
+              <div class="card-sub right" id="taskPointsCount"></div>
+            </div>
+            <div class="hint" id="taskPointsHint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>当前未启用任务点策略。选择上方的「自定义任务点策略」后，本模块才会生效。</span>
+            </div>
+            <div id="taskPointsRows"></div>
+            <div class="hint hidden" id="taskPointsFooterHint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>战斗方案会在每次重启游戏以及任意角色死亡后重置；任务点完成后会自动切换到下一点配置。</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 战斗方案 ===== -->
+        <section class="panel" id="panel-plans">
+          <div class="card" style="padding-bottom:12px">
+            <div class="card-head" style="align-items:center">
+              <div class="card-title">技能配置组</div>
+              <div class="card-sub" id="plansCount">共 0 组方案</div>
+              <button class="btn btn-primary btn-sm" id="addPlanBtn" style="margin-left:auto">＋ 添加新技能配置</button>
+            </div>
+            <div class="hint" style="margin-top:8px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>战斗方案会在每次重启游戏，以及任意角色死亡后重置。每个角色可以配置技能槽位、技能等级和执行顺序。</span>
+            </div>
+          </div>
+
+          <div id="plansContainer"></div>
+        </section>
+
+        <!-- ===== 日常 / 周常 ===== -->
+        <section class="panel" id="panel-daily">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">每周例行</div>
+              <div class="card-sub">每周 / 每两周重置</div>
+            </div>
+            <div class="row">
+              <div class="label">官网每周宝石
+                <small>每周可领取 50 钻</small>
+              </div>
+              <div class="control">
+                <span class="pill gray" id="gemStatus">—</span>
+                <button class="btn btn-ghost btn-sm" id="gemOld">领取（旧）</button>
+                <button class="btn btn-ghost btn-sm" id="gemNew">领取（新）</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">灵庙刷新
+                <small>双周刷新，可一键切换到月常任务「炉壶灵庙」。</small>
+              </div>
+              <div class="control">
+                <span class="pill gray" id="amStatus">—</span>
+                <button class="btn btn-ghost btn-sm" id="amSwitch">自动切换</button>
+              </div>
+            </div>
+            <div class="hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>官网宝石每周可领取一次；灵庙任务每两周刷新一次。</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">记录</div>
+            </div>
+            <div class="row">
+              <div class="label">上次领取宝石（新）</div>
+              <div class="control"><span class="record-value" id="gemRecordNew">—</span></div>
+            </div>
+            <div class="row">
+              <div class="label">上次领取宝石（旧）</div>
+              <div class="control"><span class="record-value" id="gemRecordOld">—</span></div>
+            </div>
+            <div class="row">
+              <div class="label">上次切换灵庙</div>
+              <div class="control"><span class="record-value" id="amRecord">—</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 高级 ===== -->
+        <section class="panel" id="panel-advanced">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">0 火策略</div>
+              <div class="card-sub">再起之火耗尽时自动切换</div>
+            </div>
+            <div class="row">
+              <div class="label">尝试挖矿</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="zeroDigging" data-config="ACTIVE_DIGGING"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">尝试刷钱</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="zeroBegMoney" data-config="ACTIVE_BEG_MONEY"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">尝试钓鱼</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="zeroFishing" data-config="ACTIVE_FISHING"><span class="track"></span></label></div>
+            </div>
+            <div class="hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>优先级：挖矿 → 刷钱 → 钓鱼。三项均未启用时，脚本会等待约 2 小时后重启游戏以重新点火。</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">剧情与跳跃</div>
+            </div>
+            <div class="row">
+              <div class="label">跳跃到第三章结局「凯旋」</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="storyTriumph" data-config="ACTIVE_TRIUMPH"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">跳跃到第四章结局「美丽矿石的真相」</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="storyOre" data-config="ACTIVE_BEAUTIFUL_ORE"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">尝试调整因果</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="storyCsc" data-config="ACTIVE_CSC"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">重启后尝试绕过空气墙</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="bypassWall" data-config="BYPASS_THE_WALL"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">住豪华房</div>
+              <div class="control"><label class="switch"><input type="checkbox" id="royalsuiteRest" data-config="ACTIVE_ROYALSUITE_REST"><span class="track"></span></label></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">容错阈值</div>
+            </div>
+            <div class="row">
+              <div class="label">定位失败后重启游戏</div>
+              <div class="control">
+                <span class="inline-num"><input type="number" id="maxTryLimit" data-config="MAX_TRY_LIMIT" data-numeric="1" min="25"> 次</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">重启游戏后重启模拟器</div>
+              <div class="control">
+                <span class="inline-num"><input type="number" id="maxCrashLimit" data-config="MAX_CRASH_LIMIT" data-numeric="1" min="10"> 次</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 常用网站 ===== -->
+        <section class="panel" id="panel-links">
+          <div class="link-grid">
+            <button class="link-card" data-url="https://wizardry.info/">
+              <div class="link-icon">官</div>
+              <div class="link-body">
+                <div class="link-name">官方网站</div>
+                <div class="link-desc">游戏公告、活动与更新情报</div>
+                <div class="link-url">wizardry.info</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://store.wizardry.info/">
+              <div class="link-icon">店</div>
+              <div class="link-body">
+                <div class="link-name">官方商店（旧）</div>
+                <div class="link-desc">每周领取 50 钻的旧版入口</div>
+                <div class="link-url">store.wizardry.info</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://webstore.wizardry.info/">
+              <div class="link-icon">新</div>
+              <div class="link-body">
+                <div class="link-name">Web Store（新）</div>
+                <div class="link-desc">新版网页商店与领取入口</div>
+                <div class="link-url">webstore.wizardry.info</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://x.com/">
+              <div class="link-icon">X</div>
+              <div class="link-body">
+                <div class="link-name">官方 X / 动态</div>
+                <div class="link-desc">官方账号、维护与最新动态</div>
+                <div class="link-url">x.com</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://wizdaphne.huijiwiki.com/">
+              <div class="link-icon">WK</div>
+              <div class="link-body">
+                <div class="link-name">攻略 Wiki</div>
+                <div class="link-desc">角色、装备与任务资料</div>
+                <div class="link-url">wizdaphne.huijiwiki.com</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://github.com/arnold2957/wvd">
+              <div class="link-icon">GH</div>
+              <div class="link-body">
+                <div class="link-name">项目 GitHub</div>
+                <div class="link-desc">源码、Issue 与 Releases</div>
+                <div class="link-url">github.com/arnold2957/wvd</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://github.com/arnold2957/wvd/releases">
+              <div class="link-icon">变</div>
+              <div class="link-body">
+                <div class="link-name">更新日志</div>
+                <div class="link-desc">版本变更与已知问题</div>
+                <div class="link-url">github.com/arnold2957/wvd/releases</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://github.com/arnold2957/wvd/issues">
+              <div class="link-icon">Bug</div>
+              <div class="link-body">
+                <div class="link-name">问题反馈</div>
+                <div class="link-desc">提交 Bug 与功能建议</div>
+                <div class="link-url">github.com/arnold2957/wvd/issues</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+
+            <button class="link-card" data-url="https://afdian.com/a/dellyla">
+              <div class="link-icon">爱</div>
+              <div class="link-body">
+                <div class="link-name">赞助作者</div>
+                <div class="link-desc">支持项目开发</div>
+                <div class="link-url">afdian.com/a/dellyla</div>
+              </div>
+              <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </button>
+          </div>
+
+          <div class="hint" style="margin-top:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            <span>点击卡片会在系统默认浏览器中打开对应网站。</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 底部启动栏 -->
+      <div class="runbar">
+        <button class="run-btn" id="runBtn">
+          <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span id="runText">脚本，启动！</span>
+        </button>
+        <button class="run-aux" id="stopAfterRun" type="button"
+          title="本次执行完毕后停止" aria-label="本次执行完毕后停止" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4c4-2 8 2 12 0v8c-4 2-8-2-12 0"/></svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- ============ 右侧：日志 + 常驻摘要 ============ -->
+    <aside class="rightpane">
+      <section class="logpane">
+        <div class="log-head">
+          <span class="log-title">运行日志</span>
+          <div class="log-actions">
+            <button class="icon-btn" id="clearLog" title="清空日志">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6"/></svg>
+            </button>
+            <button class="icon-btn" id="pauseLog" title="暂停滚动">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6v12M15 6v12"/></svg>
+            </button>
+            <button class="icon-btn log-close" id="logClose" title="关闭日志">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="log-body" id="logBody"></div>
+      </section>
+
+      <!-- 默认：灰底白格、无状态条；state-changed / state-new 为持续状态 -->
+      <section class="summarypane" id="logSummary">
+        <div class="summary-head">
+          <div class="summary-info">
+            <div class="summary-title-wrap">
+              <span class="summary-title">摘要</span>
+              <span class="sum-state state-new">新摘要</span>
+              <span class="sum-state state-changed">任务已切换</span>
+            </div>
+            <div class="summary-task" id="summaryTask">未选择任务</div>
+          </div>
+          <span class="sum-time" id="sumTime">01:24:36</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="nums"><span class="v" id="statDungeon">-</span><span class="avg-val empty" id="avgDungeon">-</span></div>
+            <div class="meta"><span class="name">完成</span><span class="avg-label">平均用时</span></div>
+          </div>
+          <div class="stat">
+            <div class="nums"><span class="v" id="statCol2">-</span><span class="avg-val empty" id="avgCol2">-</span></div>
+            <div class="meta"><span class="name" id="nameCol2">-</span><span class="avg-label">平均用时</span></div>
+          </div>
+          <div class="stat">
+            <div class="nums"><span class="v" id="statCol3">-</span><span class="avg-val empty" id="avgCol3">-</span></div>
+            <div class="meta"><span class="name" id="nameCol3">-</span><span class="avg-label">平均用时</span></div>
+          </div>
+          <div class="stat special empty" id="eventStat" tabindex="0" aria-describedby="eventTooltip">
+            <div class="nums"><span class="v" id="statEvents">0</span><span class="avg-val empty">—</span></div>
+            <div class="meta"><span class="name">特殊事件</span><span class="detail-hint">悬停详情</span></div>
+            <div class="tooltip" id="eventTooltip" role="tooltip">
+              <div class="tt-title">特 殊 事 件 明 细</div>
+              <div id="eventTooltipRows"></div>
+              <div class="tt-total"><span>合计</span><b id="eventTooltipTotal">0</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================= 基础工具 ================= */
+  const $ = (s, root) => (root || document).querySelector(s);
+  const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmtHms = (s) => pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60);
+
+  let state = null;
+  let apiPromise = null;
+  let pollTimer = null;
+  let logAutoScroll = true;
+  let runStartedAt = null;
+  let runTimer = null;
+  let summaryTimer = null;
+  let downloadTotal = 0;
+  let lastOverall = "";
+  let toastTimer = null;
+  let compactMode = false;
+  const compactMoved = [];
+  const collapsedPlans = new Set();
+
+  function api() {
+    if (!apiPromise) {
+      apiPromise = new Promise((resolve) => {
+        if (window.pywebview && window.pywebview.api) {
+          resolve(window.pywebview.api);
+          return;
+        }
+        window.addEventListener("pywebviewready", () => resolve(window.pywebview.api), { once: true });
+      });
+    }
+    return apiPromise;
+  }
+
+  async function call(name) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    try {
+      const a = await api();
+      const fn = a[name];
+      if (typeof fn !== "function") throw new Error("API 不存在: " + name);
+      return await fn.apply(a, args);
+    } catch (err) {
+      console.error(name, err);
+      toast("操作失败：" + ((err && err.message) ? err.message : err));
+      return null;
+    }
+  }
+
+  /* ================= Toast ================= */
+  const toastEl = $("#toast");
+  function toast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
+  /* ================= 应用内弹窗 ================= */
+  function uiDialog(options) {
+    const opts = options || {};
+    return new Promise((resolve) => {
+      const mask = document.createElement("div");
+      mask.className = "modal-mask";
+      const modal = document.createElement("div");
+      modal.className = "modal";
+
+      const head = document.createElement("div");
+      head.className = "modal-head";
+      const title = document.createElement("div");
+      title.className = "modal-title";
+      title.textContent = opts.title || "提示";
+      head.appendChild(title);
+
+      const body = document.createElement("div");
+      body.className = "modal-body";
+      body.textContent = opts.message || "";
+
+      let input = null;
+      if (opts.input) {
+        input = document.createElement("input");
+        input.type = "text";
+        input.value = opts.value == null ? "" : String(opts.value);
+        body.appendChild(input);
+      }
+
+      const foot = document.createElement("div");
+      foot.className = "modal-foot";
+      let cancelBtn = null;
+      if (opts.cancelText !== null) {
+        cancelBtn = document.createElement("button");
+        cancelBtn.className = "btn btn-ghost";
+        cancelBtn.textContent = opts.cancelText || "取消";
+        foot.appendChild(cancelBtn);
+      }
+      const okBtn = document.createElement("button");
+      okBtn.className = "btn " + (opts.danger ? "btn-danger-soft" : "btn-primary");
+      okBtn.textContent = opts.okText || "确定";
+      foot.appendChild(okBtn);
+
+      modal.appendChild(head);
+      modal.appendChild(body);
+      modal.appendChild(foot);
+      mask.appendChild(modal);
+      document.body.appendChild(mask);
+
+      requestAnimationFrame(() => mask.classList.add("show"));
+
+      let closed = false;
+      function close(value) {
+        if (closed) return;
+        closed = true;
+        mask.classList.remove("show");
+        document.removeEventListener("keydown", onKey, true);
+        setTimeout(() => mask.remove(), 180);
+        resolve(value);
+      }
+
+      function onKey(event) {
+        // 弹窗打开时不要让全局快捷键(如 Ctrl+Enter 启停)继续响应.
+        event.stopPropagation();
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(opts.input ? null : false);
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          close(opts.input ? input.value : true);
+        }
+      }
+      document.addEventListener("keydown", onKey, true);
+
+      okBtn.addEventListener("click", () => close(opts.input ? input.value : true));
+      if (cancelBtn) cancelBtn.addEventListener("click", () => close(opts.input ? null : false));
+      mask.addEventListener("mousedown", (event) => {
+        if (event.target === mask) close(opts.input ? null : false);
+      });
+
+      setTimeout(() => {
+        if (input) {
+          input.focus();
+          input.select();
+        } else {
+          okBtn.focus();
+        }
+      }, 40);
+    });
+  }
+
+  function uiAlert(message, title) {
+    return uiDialog({ title: title || "提示", message: message, okText: "知道了", cancelText: null });
+  }
+
+  function uiConfirm(message, title, danger) {
+    return uiDialog({
+      title: title || "确认",
+      message: message,
+      okText: "确定",
+      cancelText: "取消",
+      danger: !!danger,
+    });
+  }
+
+  function uiPrompt(message, value, title) {
+    return uiDialog({
+      title: title || "输入",
+      message: message,
+      input: true,
+      value: value,
+      okText: "确定",
+      cancelText: "取消",
+    });
+  }
+
+  /* ================= 日志 ================= */
+  const logBody = $("#logBody");
+
+  function levelTag(level) {
+    switch (String(level || "").toUpperCase()) {
+      case "SUCCESS": return ["OK", "ok"];
+      case "WARNING": return ["WARN", "warn"];
+      case "ERROR":
+      case "CRITICAL": return ["ERR", "err"];
+      case "DEBUG": return ["DBG", "info"];
+      default: return ["INFO", "info"];
+    }
+  }
+
+  function renderLog(level, message, timeStr) {
+    if (!logBody) return;
+    message = String(message == null ? "" : message);
+    if (!message) return;
+    const line = document.createElement("div");
+    const isSys = String(level || "").toUpperCase() === "SYS";
+    line.className = "ll" + (isSys ? " sys" : "");
+    const tagInfo = isSys ? ["SYS", "info"] : levelTag(level);
+    const t = document.createElement("span");
+    t.className = "t";
+    t.textContent = "[" + (timeStr || new Date().toTimeString().slice(0, 8)) + "]";
+    const tag = document.createElement("span");
+    tag.className = "tag " + tagInfo[1];
+    tag.textContent = tagInfo[0];
+    const msg = document.createElement("span");
+    msg.className = "m";
+    msg.textContent = message;
+    line.appendChild(t);
+    line.appendChild(tag);
+    line.appendChild(msg);
+    logBody.appendChild(line);
+    while (logBody.children.length > 300) logBody.removeChild(logBody.firstChild);
+    if (logAutoScroll) logBody.scrollTop = logBody.scrollHeight;
+  }
+
+  /* ================= 状态 -> 控件 ================= */
+  const bindings = {
+    DARK_THEME: (v) => {
+      const on = !!v;
+      const toggle = $("#darkModeToggle");
+      if (toggle) toggle.checked = on;
+      document.body.classList.toggle("dark", on);
+    },
+    EMU_PATH: (v) => {
+      const has = !!v;
+      const path = $("#emuPathText");
+      if (path) path.textContent = has ? v : "尚未选择模拟器可执行文件";
+      const pill = $("#emuStatus");
+      if (pill) {
+        pill.classList.remove("green", "amber", "red", "gray");
+        pill.classList.add(has ? "green" : "red");
+        pill.textContent = has ? "已设置" : "未设置";
+      }
+      updateStatusChip();
+    },
+    ADB_ADRESS: (v) => { const el = $("#adbAddress"); if (el) el.value = v || ""; },
+    EMU_INDEX: (v) => { const el = $("#emuIndex"); if (el) el.value = v == null ? 0 : v; },
+    LANGUAGE_SCRIPT: (v) => { const el = $("#langScript"); if (el) el.value = v || "zh_CN"; },
+    LANGUAGE_GAME: (v) => { const el = $("#langGame"); if (el) el.value = v || "zh_CN"; },
+    QUICK_DISARM_CHEST: (v) => { const el = $("#quickChest"); if (el) el.checked = !!v; },
+    WHO_WILL_OPEN_IT: (v) => { const el = $("#chestOpener"); if (el) el.value = String(v == null ? 0 : v); },
+    DO_COMBAT_RECOVER: (v) => { const el = $("#recoverCombat"); if (el) el.checked = !!v; },
+    DO_CHEST_RECOVER: (v) => { const el = $("#recoverChest"); if (el) el.checked = !!v; },
+    RECOVER_WHEN_BEGINNING: (v) => { const el = $("#recoverBeginning"); if (el) el.checked = !!v; },
+    RECOVER_AFTER_REST: (v) => { const el = $("#recoverAfterRest"); if (el) el.checked = !!v; },
+    ACTIVE_REST: (v) => { const el = $("#activeRest"); if (el) el.checked = !!v; },
+    REST_INTERVEL: (v) => { const el = $("#restInterval"); if (el) el.value = v == null ? 1 : v; },
+    RE_ASSEMBLE_PARTY: (v) => { const el = $("#reassembleParty"); if (el) el.checked = !!v; },
+    RE_ASSEMBLE_PARTY_INTERVAL: (v) => { const el = $("#reassembleInterval"); if (el) el.value = v == null ? 6 : v; },
+    KARMA_ADJUST: (v) => {
+      const val = String(v == null ? "+0" : v);
+      const sel = $("#karmaSelect");
+      if (sel) {
+        let matched = false;
+        for (const option of sel.options) {
+          if (option.value === val || (val !== "" && option.value.replace("+", "") === val.replace("+", ""))) {
+            sel.value = option.value;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) sel.value = "+0";
+      }
+      const pill = $("#karmaPill");
+      if (pill) {
+        const display = val.startsWith("+") || val.startsWith("-") ? val : "+" + val;
+        pill.textContent = "还需 " + display + " 点";
+      }
+    },
+    ACTIVE_DIGGING: (v) => { const el = $("#zeroDigging"); if (el) el.checked = !!v; },
+    ACTIVE_BEG_MONEY: (v) => { const el = $("#zeroBegMoney"); if (el) el.checked = !!v; },
+    ACTIVE_FISHING: (v) => { const el = $("#zeroFishing"); if (el) el.checked = !!v; },
+    ACTIVE_TRIUMPH: (v) => { const el = $("#storyTriumph"); if (el) el.checked = !!v; },
+    ACTIVE_BEAUTIFUL_ORE: (v) => { const el = $("#storyOre"); if (el) el.checked = !!v; },
+    ACTIVE_CSC: (v) => { const el = $("#storyCsc"); if (el) el.checked = !!v; },
+    BYPASS_THE_WALL: (v) => { const el = $("#bypassWall"); if (el) el.checked = !!v; },
+    ACTIVE_ROYALSUITE_REST: (v) => { const el = $("#royalsuiteRest"); if (el) el.checked = !!v; },
+    MAX_TRY_LIMIT: (v) => { const el = $("#maxTryLimit"); if (el) el.value = v == null ? 25 : v; },
+    MAX_CRASH_LIMIT: (v) => { const el = $("#maxCrashLimit"); if (el) el.value = v == null ? 10 : v; },
+  };
+
+  function applyValues(values) {
+    if (!values) return;
+    Object.keys(bindings).forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(values, key)) {
+        try { bindings[key](values[key]); } catch (e) { console.error(key, e); }
+      }
+    });
+    syncDependentInputs();
+  }
+
+  function syncDependentInputs() {
+    const activeRest = $("#activeRest");
+    const restInput = $("#restInterval");
+    if (activeRest && restInput) restInput.disabled = !activeRest.checked;
+    const reassemble = $("#reassembleParty");
+    const reassembleInput = $("#reassembleInterval");
+    if (reassemble && reassembleInput) reassembleInput.disabled = !reassemble.checked;
+  }
+
+  function updateHeader() {
+    if (!state) return;
+    const text = state.targetText || "未选择";
+    const headerEl = $("#currentTaskText");
+    if (headerEl) {
+      headerEl.textContent = text.length > 32 ? text.slice(0, 31) + "…" : text;
+      headerEl.title = text;
+    }
+    const summary = $("#summaryTask");
+    if (summary) summary.textContent = text || "未选择任务";
+  }
+
+  function updateTaskBadge() {
+    const on = !!(state && state.taskSpecific);
+    const badge = $("#taskCustomBadge");
+    if (badge) {
+      badge.textContent = on ? "任务定制配置 · 已启用" : "任务定制配置 · 未启用";
+      badge.classList.toggle("off", !on);
+      badge.classList.toggle("task-badge-on", on);
+    }
+    // 从战斗页启用任务定制配置时, 目标页的开关也要同步.
+    const toggle = $("#taskSpecificToggle");
+    if (toggle) toggle.checked = on;
+  }
+
+  /* ================= 目标选择 ================= */
+  function renderTargets() {
+    if (!state) return;
+    const catSel = $("#categorySelect");
+    if (!catSel) return;
+    catSel.innerHTML = "";
+    (state.categories || []).forEach((cat) => {
+      const o = document.createElement("option");
+      o.value = cat.name;
+      o.textContent = cat.name;
+      catSel.appendChild(o);
+    });
+    if (state.category) catSel.value = state.category;
+    else if ((state.categories || []).length) catSel.value = state.categories[0].name;
+    renderTargetOptions(null, true);
+  }
+
+  /**
+   * 填充任务目标下拉框.
+   * preferred: 优先选中的目标文本; 为空时使用当前 state.targetText.
+   * keepCurrent: 当前目标不属于该分类时, 是否仍把它作为临时选项保留.
+   *              初次渲染需要保留(否则界面上看不到当前任务);
+   *              手动切换分类时不保留, 否则会误把旧任务重新选回来.
+   * 返回该分类下的目标文本列表.
+   */
+  function renderTargetOptions(preferred, keepCurrent) {
+    if (!state) return [];
+    const catSel = $("#categorySelect");
+    const targetSel = $("#targetSelect");
+    if (!targetSel) return [];
+    const cat = catSel ? catSel.value : state.category;
+    const data = (state.categories || []).find((c) => c.name === cat);
+    const targets = data ? data.targets : [];
+    const texts = targets.map((t) => t.text);
+    targetSel.innerHTML = "";
+
+    if (keepCurrent && state.targetText && !texts.includes(state.targetText)) {
+      const o = document.createElement("option");
+      o.value = state.targetText;
+      o.textContent = state.targetText;
+      targetSel.appendChild(o);
+    }
+    targets.forEach((t) => {
+      const o = document.createElement("option");
+      o.value = t.text;
+      o.textContent = t.text;
+      targetSel.appendChild(o);
+    });
+
+    const wanted = preferred == null ? state.targetText : preferred;
+    if (wanted && Array.from(targetSel.options).some((o) => o.value === wanted)) {
+      targetSel.value = wanted;
+    } else if (texts.length) {
+      targetSel.value = texts[0];
+    }
+    return texts;
+  }
+
+  async function selectTarget(text) {
+    if (!text) return;
+    const st = await call("select_target", text);
+    if (!st || !st.ok) return;
+    applyState(st, { plans: true });
+    renderTargets();
+    if (st.tip) {
+      renderLog("SYS", "任务提示：" + st.tip);
+      await uiAlert(st.tip, "任务提示");
+    }
+  }
+
+  /* ================= 战斗 / 任务点 ================= */
+  function renderCombat() {
+    if (!state) return;
+    const tp = state.taskPoints || {};
+    const overallSel = $("#overallStrategy");
+    if (overallSel) {
+      overallSel.innerHTML = "";
+      (tp.overallValues || []).forEach((value) => {
+        const o = document.createElement("option");
+        o.value = value;
+        o.textContent = value;
+        overallSel.appendChild(o);
+      });
+      overallSel.value = tp.overall || (tp.overallValues || [])[0] || "";
+      lastOverall = overallSel.value;
+    }
+
+    const label = $("#overallStrategyLabel");
+    if (label) label.style.color = tp.customMode ? "#98a2b3" : "";
+
+    const card = $("#taskPointsCard");
+    if (card) card.classList.toggle("hidden", !tp.isDungeon);
+
+    const hint = $("#taskPointsHint");
+    if (hint) hint.classList.toggle("hidden", !!tp.customMode);
+
+    const footerHint = $("#taskPointsFooterHint");
+    if (footerHint) footerHint.classList.toggle("hidden", !tp.customMode);
+
+    const count = $("#taskPointsCount");
+    if (count) count.textContent = tp.isDungeon ? ((tp.points || []).length + " 个任务点") : "";
+
+    const rows = $("#taskPointsRows");
+    if (!rows) return;
+    rows.classList.toggle("hidden", !tp.customMode);
+    rows.innerHTML = "";
+    (tp.points || []).forEach((point) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      const labelEl = document.createElement("div");
+      labelEl.className = "label";
+      labelEl.textContent = point.label;
+      const control = document.createElement("div");
+      control.className = "control";
+      const select = document.createElement("select");
+      select.className = "w-lg";
+      (tp.strategies || []).forEach((name) => {
+        const o = document.createElement("option");
+        o.value = name;
+        o.textContent = name;
+        select.appendChild(o);
+      });
+      if (tp.strategies && tp.strategies.includes(point.strategy)) {
+        select.value = point.strategy;
+      } else if (tp.strategies && tp.strategies.length) {
+        select.value = tp.strategies[0];
+      }
+      select.addEventListener("change", async (e) => {
+        const st = await call("set_task_point_strategy", point.index, e.target.value);
+        if (st && st.ok) applyState(st);
+      });
+      control.appendChild(select);
+      row.appendChild(labelEl);
+      row.appendChild(control);
+      rows.appendChild(row);
+    });
+  }
+
+  /* ================= 战斗方案 ================= */
+  function makeSelect(values, current, extra) {
+    const select = document.createElement("select");
+    const list = values || [];
+    (list || []).forEach((value) => {
+      const o = document.createElement("option");
+      o.value = value;
+      o.textContent = value;
+      select.appendChild(o);
+    });
+    // 旧配置里可能出现当前选项列表之外的值, 原样保留供用户查看/修改.
+    if (current && !list.includes(current)) {
+      const o = document.createElement("option");
+      o.value = current;
+      o.textContent = current;
+      select.insertBefore(o, select.firstChild);
+    }
+    select.value = current || (list[0] || "");
+    if (extra) Object.keys(extra).forEach((k) => select.setAttribute(k, extra[k]));
+    return select;
+  }
+
+  function planOptions(plan) {
+    return [
+      ["need_reload_when_dungeon_begins", "该策略需要在进入地下城时进行重置。"],
+      ["need_reload_when_combat_begins", "[高级] 该策略需要在战斗开始前进行重置。确保你了解「重复上一次」功能，否则请勿开启。"],
+      ["complete_one_as_all", "[高级] 该策略释放任一技能即视为完成。"],
+    ].map(([key, text]) => {
+      const row = document.createElement("div");
+      row.className = "plan-option-row";
+      const label = document.createElement("label");
+      label.className = "switch";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.dataset.option = key;
+      input.checked = !!plan[key];
+      const track = document.createElement("span");
+      track.className = "track";
+      label.appendChild(input);
+      label.appendChild(track);
+      const span = document.createElement("span");
+      span.textContent = text;
+      row.appendChild(label);
+      row.appendChild(span);
+      return row;
+    });
+  }
+
+  function buildPlanCard(plan, index) {
+    const opts = (state && state.options) || {};
+    const autoName = (state && state.autoGroupName) || "全自动战斗";
+    const fullAuto = plan.group_name === autoName;
+    const settings = plan.skill_settings || [];
+
+    const card = document.createElement("div");
+    card.className = "card plan-card" + (collapsedPlans.has(plan.group_name) ? " collapsed" : "");
+    card.dataset.index = String(index);
+
+    const head = document.createElement("div");
+    head.className = "plan-card-head";
+    // 点击标题、计数或空白区域都能展开/收起.
+    head.dataset.action = "collapse";
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "plan-name";
+    const badge = document.createElement("span");
+    badge.className = "plan-badge";
+    badge.textContent = fullAuto ? "自动" : "方案";
+    const title = document.createElement("span");
+    title.className = "plan-title";
+    title.textContent = plan.group_name;
+    title.dataset.action = "collapse";
+    nameWrap.appendChild(badge);
+    nameWrap.appendChild(title);
+
+    const count = document.createElement("span");
+    count.className = "muted";
+    count.textContent = settings.length + " 个角色";
+
+    const actions = document.createElement("div");
+    actions.style.cssText = "margin-left:auto;display:flex;gap:2px";
+
+    if (!fullAuto) {
+      const rename = document.createElement("button");
+      rename.className = "icon-btn";
+      rename.title = "重命名";
+      rename.dataset.action = "rename";
+      rename.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+      const del = document.createElement("button");
+      del.className = "icon-btn";
+      del.title = "删除";
+      del.dataset.action = "delete";
+      del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6"/></svg>';
+      actions.appendChild(rename);
+      actions.appendChild(del);
+    }
+    const chev = document.createElement("button");
+    chev.className = "icon-btn plan-chev";
+    chev.title = "展开 / 收起";
+    chev.dataset.action = "collapse";
+    chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>';
+    actions.appendChild(chev);
+
+    head.appendChild(nameWrap);
+    head.appendChild(count);
+    head.appendChild(actions);
+    card.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "plan-body";
+
+    if (fullAuto) {
+      const empty = document.createElement("div");
+      empty.className = "plan-empty";
+      empty.textContent = "全自动战斗无需配置角色技能。";
+      body.appendChild(empty);
+      card.appendChild(body);
+      return card;
+    }
+
+    planOptions(plan).forEach((row) => body.appendChild(row));
+
+    const table = document.createElement("table");
+    table.className = "plan-table";
+    table.innerHTML = "<thead><tr><th>角色</th><th>技能</th><th>等级</th><th></th></tr></thead>";
+    const tbody = document.createElement("tbody");
+
+    if (!settings.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 4;
+      td.className = "plan-empty";
+      td.textContent = "暂无角色配置";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    settings.forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+      tr.dataset.row = String(rowIndex);
+
+      const tdRole = document.createElement("td");
+      const roleSel = makeSelect(opts.roles || [], row.role_var, { "data-field": "role_var" });
+      tdRole.appendChild(roleSel);
+
+      const tdSkill = document.createElement("td");
+      const skillSel = makeSelect(opts.skills || [], row.skill_var, { "data-field": "skill_var" });
+      tdSkill.appendChild(skillSel);
+
+      const tdLevel = document.createElement("td");
+      const levelSel = makeSelect((opts.levels || []).map(String), String(row.skill_lvl), { "data-field": "skill_lvl" });
+      tdLevel.appendChild(levelSel);
+
+      const tdDel = document.createElement("td");
+      tdDel.className = "ctl";
+      const delBtn = document.createElement("button");
+      delBtn.className = "icon-btn ctl-btn";
+      delBtn.title = "删除角色";
+      delBtn.dataset.action = "del-row";
+      delBtn.dataset.row = String(rowIndex);
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      tdDel.appendChild(delBtn);
+
+      tr.appendChild(tdRole);
+      tr.appendChild(tdSkill);
+      tr.appendChild(tdLevel);
+      tr.appendChild(tdDel);
+
+      const lockSkills = opts.lockSkills || ["防御", "双击自动"];
+      const locked = lockSkills.includes(row.skill_var);
+      if (locked) {
+        // 目标列已从界面移除, 但仍保留配置字段, 保持与旧配置兼容.
+        row.target_var = (opts.targets || []).slice(-1)[0] || "不可用";
+        levelSel.disabled = true;
+      }
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    body.appendChild(table);
+
+    const foot = document.createElement("div");
+    foot.style.cssText = "margin-top:10px";
+    const addRow = document.createElement("button");
+    addRow.className = "btn btn-soft btn-sm";
+    addRow.dataset.action = "add-row";
+    addRow.textContent = "＋ 新增角色";
+    foot.appendChild(addRow);
+    body.appendChild(foot);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderPlans() {
+    if (!state) return;
+    const box = $("#plansContainer");
+    if (!box) return;
+    box.innerHTML = "";
+    (state.plans || []).forEach((plan, index) => {
+      box.appendChild(buildPlanCard(plan, index));
+    });
+    updatePlansCount();
+  }
+
+  function updatePlansCount() {
+    const el = $("#plansCount");
+    if (el && state) el.textContent = "共 " + (state.plans || []).length + " 组方案";
+  }
+
+  async function savePlans(rerender) {
+    if (!state) return;
+    const st = await call("save_plans", state.plans);
+    if (!st) return;
+    if (!st.ok) {
+      await uiAlert(st.error || "保存战斗方案失败", "保存失败");
+      return;
+    }
+    applyState(st);
+    if (rerender) renderPlans();
+  }
+
+  async function onPlanChange(event) {
+    const target = event.target;
+    const card = target.closest(".plan-card");
+    if (!card || !state) return;
+    const planIndex = parseInt(card.dataset.index, 10);
+    const plan = state.plans[planIndex];
+    if (!plan) return;
+
+    if (target.dataset.option) {
+      plan[target.dataset.option] = target.checked;
+      await savePlans(false);
+      return;
+    }
+
+    const field = target.dataset.field;
+    if (!field) return;
+    const tr = target.closest("tr");
+    if (!tr) return;
+    const rowIndex = parseInt(tr.dataset.row, 10);
+    const row = plan.skill_settings[rowIndex];
+    if (!row) return;
+
+    let value = target.value;
+    if (field === "skill_lvl") value = parseInt(value, 10) || 1;
+    row[field] = value;
+
+    if (field === "skill_var") {
+      const lockSkills = (state.options && state.options.lockSkills) || ["防御", "双击自动"];
+      const locked = lockSkills.includes(value);
+      const levelSel = tr.querySelector('[data-field="skill_lvl"]');
+      if (levelSel) levelSel.disabled = locked;
+      // 目标列已废弃, 但配置字段继续保留, 兼容旧方案/脚本.
+      const targets = (state.options && state.options.targets) || [];
+      const unavailable = targets.slice(-1)[0] || "不可用";
+      if (locked) {
+        row.target_var = unavailable;
+      } else if (row.target_var === unavailable) {
+        row.target_var = targets[0] || "";
+      }
+    }
+    await savePlans(false);
+  }
+
+  async function onPlanClick(event) {
+    const btn = event.target.closest("[data-action]");
+    if (!btn || !state) return;
+    const action = btn.dataset.action;
+    const card = btn.closest(".plan-card");
+    const planIndex = card ? parseInt(card.dataset.index, 10) : -1;
+    const plan = planIndex >= 0 ? state.plans[planIndex] : null;
+
+    if (action === "collapse" && plan) {
+      if (collapsedPlans.has(plan.group_name)) collapsedPlans.delete(plan.group_name);
+      else collapsedPlans.add(plan.group_name);
+      card.classList.toggle("collapsed");
+      return;
+    }
+
+    if (!plan) return;
+
+    if (action === "rename") {
+      const name = await uiPrompt("修改配置组名称:", plan.group_name, "重命名");
+      if (name === null) return;
+      const trimmed = name.trim();
+      if (!trimmed || trimmed === plan.group_name) return;
+      if (state.plans.some((p, i) => i !== planIndex && p.group_name === trimmed)) {
+        await uiAlert("名称 '" + trimmed + "' 已存在，请使用其他名称", "错误");
+        return;
+      }
+      plan.group_name = trimmed;
+      await savePlans(true);
+      return;
+    }
+
+    if (action === "delete") {
+      if (!await uiConfirm("确定要删除[" + plan.group_name + "]吗？", "确认删除", true)) return;
+      state.plans.splice(planIndex, 1);
+      await savePlans(true);
+      return;
+    }
+
+    if (action === "add-row") {
+      const opts = state.options || {};
+      plan.skill_settings.push({
+        role_var: (opts.roles || [])[0] || "",
+        skill_var: (opts.skills || [])[0] || "左上技能",
+        target_var: (opts.targets || []).slice(-1)[0] || "不可用",
+        freq_var: "",
+        skill_lvl: 1,
+      });
+      await savePlans(true);
+      return;
+    }
+
+    if (action === "del-row") {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      plan.skill_settings.splice(rowIndex, 1);
+      await savePlans(true);
+    }
+  }
+
+  /* ================= 日常 ================= */
+  function setPill(selector, text, tone) {
+    const el = $(selector);
+    if (!el) return;
+    el.classList.remove("green", "gray", "blue", "amber", "red");
+    el.classList.add(tone || "gray");
+    el.textContent = text;
+  }
+
+  function updateDaily(daily) {
+    if (!daily) return;
+    setPill("#gemStatus", daily.gemStatus, daily.gemTone);
+    setPill("#amStatus", daily.amStatus, daily.amTone);
+    // 新/旧官网分别处理: 点哪个就只隐藏哪个提醒.
+    const gemNew = $("#gemNoticeNew");
+    if (gemNew) gemNew.classList.toggle("hidden", !!daily.gemNewDone);
+    const gemOldNotice = $("#gemNoticeOld");
+    if (gemOldNotice) gemOldNotice.classList.toggle("hidden", !!daily.gemOldDone);
+    const amNotice = $("#amNotice");
+    if (amNotice) amNotice.classList.toggle("hidden", !!daily.amDone);
+    const amNoticeDesc = $("#amNoticeDesc");
+    if (amNoticeDesc) amNoticeDesc.textContent = daily.amStatus + " · 炉壶灵庙";
+
+    const gemRecordNew = $("#gemRecordNew");
+    if (gemRecordNew) gemRecordNew.textContent = daily.gemRecordNew;
+    const gemRecordOld = $("#gemRecordOld");
+    if (gemRecordOld) gemRecordOld.textContent = daily.gemRecordOld;
+    const amRecord = $("#amRecord");
+    if (amRecord) amRecord.textContent = daily.amRecord;
+
+    const gemOldBtn = $("#gemOld");
+    if (gemOldBtn) {
+      gemOldBtn.classList.toggle("btn-ghost", !!daily.gemOldDone);
+      gemOldBtn.classList.toggle("btn-attn", !daily.gemOldDone);
+    }
+    const gemNewBtn = $("#gemNew");
+    if (gemNewBtn) {
+      gemNewBtn.classList.toggle("btn-ghost", !!daily.gemNewDone);
+      gemNewBtn.classList.toggle("btn-attn", !daily.gemNewDone);
+    }
+    const am = $("#amSwitch");
+    if (am) {
+      am.classList.toggle("btn-ghost", !!daily.amDone);
+      am.classList.toggle("btn-attn", !daily.amDone);
+    }
+  }
+
+  /* ================= 更新 ================= */
+  function shortBytes(bytes) {
+    if (!bytes || bytes < 0) return "0 B";
+    if (bytes >= 1024 * 1024 * 1024) return (bytes / 1024 / 1024 / 1024).toFixed(2) + " GB";
+    if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + " MB";
+    if (bytes >= 1024) return (bytes / 1024).toFixed(2) + " KB";
+    return bytes + " B";
+  }
+
+  function showUpdate(ev) {
+    const card = $("#updateNotice");
+    if (card) card.classList.remove("hidden");
+    const title = $("#updateTitle");
+    if (title) title.textContent = "下载更新 · v" + ev.version;
+    const current = $("#updateCurrent");
+    if (current) current.textContent = "当前版本 v" + (ev.current || (state && state.version) || "");
+    if (state) state.update = { latest: ev.version };
+    showSummaryState("new", 4000);
+    toast("发现新版本 v" + ev.version);
+  }
+
+  function showDownloadProgress(value) {
+    const wrap = $("#updateProgressWrap");
+    if (wrap) wrap.classList.remove("hidden");
+    const bar = $("#updateProgressBar");
+    const label = $("#updateProgressLabel");
+    const percent = downloadTotal > 0 ? Math.min(100, Math.round(value / downloadTotal * 1000) / 10) : 0;
+    if (bar) bar.style.width = percent + "%";
+    if (label) {
+      label.textContent = shortBytes(value) +
+        (downloadTotal ? " / " + shortBytes(downloadTotal) : "") +
+        (downloadTotal ? " (" + percent + "%)" : "");
+    }
+  }
+
+  /* ================= 运行状态 ================= */
+  function updateRunTimer() {
+    // GUI 自己的运行计时器.
+    if (!runStartedAt) return;
+    const el = $("#sumTime");
+    if (el) el.textContent = fmtHms(Math.floor((Date.now() - runStartedAt) / 1000));
+  }
+
+  function fmtAvg(seconds) {
+    if (!seconds || seconds <= 0) return "-";
+    if (seconds < 60) return Number(seconds).toFixed(2);
+    const total = Math.round(seconds);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor(total % 3600 / 60);
+    const s = total % 60;
+    return h ? (h + ":" + pad(m) + ":" + pad(s)) : (pad(m) + ":" + pad(s));
+  }
+
+  function setStatValue(selector, value, isAvg) {
+    const el = $(selector);
+    if (!el) return;
+    el.textContent = value;
+    if (isAvg) el.classList.toggle("empty", value === "-");
+  }
+
+  function applyEvents(events) {
+    const entries = Object.entries(events || {})
+      .filter(([, count]) => Number(count) > 0);
+    const total = entries.reduce((sum, [, count]) => sum + Number(count || 0), 0);
+
+    const countEl = $("#statEvents");
+    if (countEl) countEl.textContent = String(total);
+
+    const rows = $("#eventTooltipRows");
+    if (rows) {
+      rows.innerHTML = "";
+      entries.forEach(([name, count]) => {
+        const row = document.createElement("div");
+        row.className = "tt-row";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = name;
+        const countNumber = document.createElement("b");
+        countNumber.textContent = "×" + count;
+        row.appendChild(nameEl);
+        row.appendChild(countNumber);
+        rows.appendChild(row);
+      });
+    }
+    const totalEl = $("#eventTooltipTotal");
+    if (totalEl) totalEl.textContent = String(total);
+
+    const stat = $("#eventStat");
+    if (stat) stat.classList.toggle("empty", entries.length === 0);
+  }
+
+  function applySummary(data, events) {
+    if (!data) return;
+    // 摘要里的 total_time 是脚本自己的计时, 以它为准修正 GUI 的伪计时器.
+    if (typeof data.total_time === "number" && runStartedAt) {
+      runStartedAt = Date.now() - Number(data.total_time) * 1000;
+      updateRunTimer();
+    }
+
+    const complete = Number(data.complete_times || 0);
+    const totalTime = Number(data.total_time || 0);
+    setStatValue("#statDungeon", String(complete), false);
+    setStatValue("#avgDungeon", complete > 0 ? fmtAvg(totalTime / complete) : "-", true);
+
+    const name2 = $("#nameCol2");
+    if (name2) name2.textContent = data.col_2_text || "-";
+    const counter2 = Number(data.col_2_counter || 0);
+    const total2 = Number(data.col_2_total_time || 0);
+    setStatValue("#statCol2", String(counter2), false);
+    setStatValue("#avgCol2", counter2 > 0 ? fmtAvg(total2 / counter2) : "-", true);
+
+    const name3 = $("#nameCol3");
+    if (name3) name3.textContent = data.col_3_text || "-";
+    const counter3 = Number(data.col_3_counter || 0);
+    const total3 = Number(data.col_3_total_time || 0);
+    setStatValue("#statCol3", String(counter3), false);
+    setStatValue("#avgCol3", counter3 > 0 ? fmtAvg(total3 / counter3) : "-", true);
+
+    applyEvents(events || {});
+  }
+
+  function resetSummaryCards() {
+    setStatValue("#statDungeon", "-", false);
+    setStatValue("#avgDungeon", "-", true);
+    const name2 = $("#nameCol2");
+    if (name2) name2.textContent = "-";
+    const name3 = $("#nameCol3");
+    if (name3) name3.textContent = "-";
+    setStatValue("#statCol2", "-", false);
+    setStatValue("#avgCol2", "-", true);
+    setStatValue("#statCol3", "-", false);
+    setStatValue("#avgCol3", "-", true);
+    applyEvents({});
+  }
+
+  function updateStatusChip(running) {
+    const chip = $("#statusChip");
+    const text = $("#statusText");
+    if (!chip || !text) return;
+    const isRunning = typeof running === "boolean" ? running : !!(state && state.running);
+    const hasEmu = !!(state && state.values && state.values.EMU_PATH);
+    chip.classList.toggle("running", isRunning);
+    chip.classList.toggle("ready", !isRunning && hasEmu);
+    chip.classList.toggle("unset", !isRunning && !hasEmu);
+    text.textContent = isRunning ? "运行中" : (hasEmu ? "就绪" : "未设置");
+  }
+
+  function setRunningUI(running, startedAt) {
+    const btn = $("#runBtn");
+    if (btn) btn.classList.toggle("running", !!running);
+    const text = $("#runText");
+    if (text) text.textContent = running ? "停止脚本" : "脚本，启动！";
+    updateStatusChip(!!running);
+
+    if (runTimer) {
+      clearInterval(runTimer);
+      runTimer = null;
+    }
+    if (running) {
+      const start = startedAt ? Number(startedAt) * 1000 : Date.now();
+      runStartedAt = start;
+      resetSummaryCards();
+      updateRunTimer();
+      runTimer = setInterval(updateRunTimer, 1000);
+    } else {
+      runStartedAt = null;
+    }
+  }
+
+  function syncStopAfter(on) {
+    if (state) state.stopAfter = !!on;
+    const btn = $("#stopAfterRun");
+    if (!btn) return;
+    btn.classList.toggle("armed", !!on);
+    btn.setAttribute("aria-pressed", String(!!on));
+  }
+
+  function syncStopAfterAvailability() {
+    const btn = $("#stopAfterRun");
+    if (!btn) return;
+    const isDungeon = !!(state && state.taskPoints && state.taskPoints.isDungeon);
+    btn.classList.toggle("hidden", !isDungeon);
+    if (!isDungeon && state && state.stopAfter) {
+      syncStopAfter(false);
+      call("set_stop_after", false);
+    }
+  }
+
+  async function toggleRun() {
+    if (!state) return;
+    if (state.running) {
+      const r = await call("stop_quest");
+      if (r) toast("正在停止…");
+    } else {
+      const r = await call("start_quest");
+      if (r && r.ok) {
+        state.running = true;
+        setRunningUI(true, r.startedAt);
+      }
+    }
+  }
+
+  function compactMove(node, parent) {
+    if (!node || !parent) return;
+    compactMoved.push({ node: node, parent: node.parentNode, next: node.nextSibling });
+    parent.appendChild(node);
+  }
+
+  function enterCompact() {
+    if (compactMode) return;
+    const bodyEl = $("#compactBody");
+    const left = $("#compactLeft");
+    const right = $("#compactRight");
+    if (!bodyEl || !left || !right) return;
+    compactMode = true;
+    document.body.classList.add("compact");
+    const targetSel = $("#targetSelect");
+    if (targetSel) targetSel.disabled = true;
+    const targetRow = targetSel ? targetSel.closest(".row") : null;
+    compactMove(targetRow, left);
+    compactMove($(".runbar"), left);
+    compactMove($("#logSummary"), right);
+    const titlebar = $(".titlebar");
+    const height = Math.ceil(bodyEl.getBoundingClientRect().height + (titlebar ? titlebar.getBoundingClientRect().height : 42));
+    call("set_compact", true, height);
+  }
+
+  function exitCompact() {
+    if (!compactMode) return;
+    compactMode = false;
+    const targetSel = $("#targetSelect");
+    if (targetSel) targetSel.disabled = false;
+    document.body.classList.remove("compact");
+    for (let i = compactMoved.length - 1; i >= 0; i -= 1) {
+      const item = compactMoved[i];
+      if (item.parent) item.parent.insertBefore(item.node, item.next || null);
+    }
+    compactMoved.length = 0;
+    call("set_compact", false);
+  }
+
+  function toggleCompact() {
+    if (compactMode) exitCompact();
+    else enterCompact();
+  }
+
+  /* ================= 事件轮询 ================= */
+  function showSummaryState(kind, ms) {
+    const pane = $("#logSummary");
+    if (!pane) return;
+    pane.classList.remove("state-new", "state-changed");
+    if (kind) pane.classList.add("state-" + kind);
+    clearTimeout(summaryTimer);
+    if (ms) summaryTimer = setTimeout(() => {
+      pane.classList.remove("state-new", "state-changed");
+    }, ms);
+  }
+
+  function handleEvent(ev) {
+    if (!ev || !ev.type) return;
+    switch (ev.type) {
+      case "log":
+        renderLog(ev.level, ev.message, ev.time);
+        break;
+      case "run_finished":
+        if (state) state.running = false;
+        syncStopAfter(false);
+        setRunningUI(false);
+        if (ev.state) applyState(ev.state);
+        break;
+      case "summary":
+        applySummary(ev.data, ev.events);
+        break;
+      case "update_available":
+        showUpdate(ev);
+        break;
+      case "download_started":
+        downloadTotal = Number(ev.total) || 0;
+        showDownloadProgress(0);
+        break;
+      case "download_progress":
+        showDownloadProgress(Number(ev.value) || 0);
+        break;
+      case "download_complete":
+        toast("更新下载完成");
+        break;
+      case "error":
+        toast(ev.message || "发生错误");
+        break;
+      case "restart_ready":
+        toast("更新完成，应用即将重启");
+        break;
+      case "task_switched":
+        showSummaryState("changed", 6000);
+        if (ev.message) toast(ev.message);
+        // 与旧界面一致: 只更新“当前任务”的显示, 不改动已保存的任务选择.
+        if (state && ev.text) {
+          state.targetText = ev.text;
+          updateHeader();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  async function pollLoop() {
+    const events = await call("poll");
+    if (Array.isArray(events)) events.forEach(handleEvent);
+    pollTimer = setTimeout(pollLoop, 250);
+  }
+
+  /* ================= 应用状态 ================= */
+  function applyState(st, options) {
+    options = options || {};
+    if (!state) state = {};
+    ["values", "targetText", "targetId", "category", "taskSpecific", "taskPoints",
+      "plans", "options", "daily", "update", "running", "startedAt", "version", "url",
+      "autoGroupName", "customStrategy", "categories", "languages", "stopAfter"].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(st, key)) state[key] = st[key];
+    });
+    if (!state.options && st.options) state.options = st.options;
+    applyValues(state.values || {});
+    updateHeader();
+    updateTaskBadge();
+    renderCombat();
+    updateDaily(state.daily);
+    updatePlansCount();
+    if (Object.prototype.hasOwnProperty.call(st, "stopAfter")) syncStopAfter(st.stopAfter);
+    syncStopAfterAvailability();
+    if (options.rerenderTargets) renderTargets();
+    if (options.plans) renderPlans();
+  }
+
+  /* ================= 静态交互 ================= */
+  function installStaticHandlers() {
+    // 侧边栏
+    const navItems = $$(".nav-item");
+    const panels = $$(".panel");
+    const pageTitle = $("#pageTitle");
+    const pageDesc = $("#pageDesc");
+    const content = $("#content");
+    navItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        navItems.forEach((n) => n.classList.toggle("active", n === item));
+        const id = item.dataset.panel;
+        panels.forEach((p) => p.classList.toggle("active", p.id === "panel-" + id));
+        if (pageTitle) pageTitle.textContent = item.dataset.title;
+        if (pageDesc) pageDesc.textContent = item.dataset.desc;
+        if (content) content.scrollTop = 0;
+        const app = $("#app");
+        if (app) app.classList.remove("show-log");
+      });
+    });
+
+    const appEl = $("#app");
+    const logToggle = $("#logToggle");
+    if (logToggle) logToggle.addEventListener("click", () => appEl.classList.toggle("show-log"));
+    const logClose = $("#logClose");
+    if (logClose) logClose.addEventListener("click", () => appEl.classList.remove("show-log"));
+
+    // 窗口按钮
+    const winMin = $("#winMin");
+    if (winMin) winMin.addEventListener("click", () => call("minimize_window"));
+    const winMax = $("#winMax");
+    if (winMax) winMax.addEventListener("click", () => call("toggle_maximize"));
+    const winClose = $("#winClose");
+    if (winClose) winClose.addEventListener("click", () => call("close_window"));
+    const compactBtn = $("#compactMode");
+    if (compactBtn) compactBtn.addEventListener("click", toggleCompact);
+    const darkToggle = $("#darkModeToggle");
+    if (darkToggle) darkToggle.addEventListener("change", async () => {
+      document.body.classList.toggle("dark", darkToggle.checked);
+      await call("save", { DARK_THEME: darkToggle.checked });
+    });
+
+    // 日志工具
+    const clearLog = $("#clearLog");
+    if (clearLog) clearLog.addEventListener("click", () => {
+      if (logBody) logBody.innerHTML = "";
+      renderLog("SYS", "日志已清空。");
+    });
+    const pauseLog = $("#pauseLog");
+    if (pauseLog) pauseLog.addEventListener("click", () => {
+      logAutoScroll = !logAutoScroll;
+      pauseLog.style.color = logAutoScroll ? "" : "#fbbf24";
+      toast(logAutoScroll ? "日志自动滚动已恢复" : "日志自动滚动已暂停");
+      if (logAutoScroll && logBody) logBody.scrollTop = logBody.scrollHeight;
+    });
+
+    // 运行
+    const runBtn = $("#runBtn");
+    if (runBtn) runBtn.addEventListener("click", toggleRun);
+    const stopAfter = $("#stopAfterRun");
+    if (stopAfter) stopAfter.addEventListener("click", async () => {
+      const next = !stopAfter.classList.contains("armed");
+      syncStopAfter(next);
+      const r = await call("set_stop_after", next);
+      if (!r || !r.ok) {
+        syncStopAfter(!next);
+        return;
+      }
+      toast(next ? "已设置：本次执行完毕后停止" : "已取消：本次执行完毕后停止");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        toggleRun();
+      }
+    });
+
+    // 通用配置控件
+    document.addEventListener("change", async (e) => {
+      const el = e.target;
+      const key = el.dataset ? el.dataset.config : null;
+      if (!key) return;
+      let value;
+      if (el.type === "checkbox") value = el.checked;
+      else if (el.dataset.numeric === "1") value = parseInt(el.value || "0", 10);
+      else value = el.value;
+      const st = await call("save", { [key]: value });
+      if (st && st.ok) applyState(st);
+    });
+
+    // 设备
+    const chooseEmu = $("#chooseEmuPath");
+    if (chooseEmu) chooseEmu.addEventListener("click", async () => {
+      const st = await call("choose_emu_path");
+      if (!st || !st.ok) return;
+      if (st.cancelled) return;
+      applyState(st);
+      if (st.warning) await uiAlert(st.warning, "提示");
+    });
+
+    const adb = $("#adbAddress");
+    if (adb) adb.addEventListener("change", async () => {
+      const st = await call("save", { ADB_ADRESS: adb.value });
+      if (st && st.ok) applyState(st);
+    });
+
+    const langScript = $("#langScript");
+    if (langScript) langScript.addEventListener("change", async () => {
+      const st = await call("set_language", "script", langScript.value);
+      if (st && st.ok) {
+        applyState(st);
+        if (st.message) await uiAlert(st.message, "提示");
+      }
+    });
+    const langGame = $("#langGame");
+    if (langGame) langGame.addEventListener("change", async () => {
+      const st = await call("set_language", "game", langGame.value);
+      if (st && st.ok) {
+        applyState(st);
+        if (st.message) await uiAlert(st.message, "提示");
+      }
+    });
+
+    // 任务
+    const catSel = $("#categorySelect");
+    if (catSel) catSel.addEventListener("change", async () => {
+      const previous = (state && state.targetText) || "";
+      const data = state && (state.categories || []).find((c) => c.name === catSel.value);
+      const texts = data ? data.targets.map((t) => t.text) : [];
+      // 当前目标还在新分类里就保持不变, 否则选择新分类的第一个目标.
+      const next = texts.includes(previous) ? previous : (texts[0] || "");
+      renderTargetOptions(next, false);
+      if (next && next !== previous) await selectTarget(next);
+    });
+    const targetSel = $("#targetSelect");
+    if (targetSel) targetSel.addEventListener("change", () => selectTarget(targetSel.value));
+
+    const taskSpecific = $("#taskSpecificToggle");
+    if (taskSpecific) taskSpecific.addEventListener("change", async () => {
+      const st = await call("set_task_specific", taskSpecific.checked);
+      if (st && st.ok) applyState(st);
+      else taskSpecific.checked = !taskSpecific.checked;
+    });
+    const clearSpecific = $("#clearTaskSpecific");
+    if (clearSpecific) clearSpecific.addEventListener("click", async () => {
+      if (!await uiConfirm("确定要清除当前任务的定制配置吗？", "确认清除", true)) return;
+      const st = await call("clear_task_specific");
+      if (st && st.ok) applyState(st);
+    });
+
+    // 战斗
+    const overall = $("#overallStrategy");
+    if (overall) overall.addEventListener("change", async () => {
+      const value = overall.value;
+      const tp = (state && state.taskPoints) || {};
+      if (value === tp.customLabel && !(state && state.taskSpecific)) {
+        const ok = await uiConfirm("自定义任务点策略需要使用任务专用的配置文件。是否立即启用任务专用配置？", "启用任务专用配置");
+        if (!ok) {
+          overall.value = lastOverall;
+          return;
+        }
+        const st = await call("set_overall_strategy", value, true);
+        if (st && st.ok) applyState(st);
+      } else {
+        const st = await call("set_overall_strategy", value, false);
+        if (st && st.ok) applyState(st);
+      }
+    });
+
+    // 方案
+    const addPlan = $("#addPlanBtn");
+    if (addPlan) addPlan.addEventListener("click", async () => {
+      if (!state) return;
+      const names = new Set((state.plans || []).map((p) => p.group_name));
+      let i = 1;
+      let name;
+      do { name = "策略配置 " + i++; } while (names.has(name));
+      state.plans.push({
+        group_name: name,
+        need_reload_when_dungeon_begins: false,
+        need_reload_when_combat_begins: false,
+        complete_one_as_all: false,
+        skill_settings: [],
+      });
+      await savePlans(true);
+    });
+    const plansBox = $("#plansContainer");
+    if (plansBox) {
+      plansBox.addEventListener("change", onPlanChange);
+      plansBox.addEventListener("click", onPlanClick);
+    }
+
+    // 日常
+    const gemOld = $("#gemOld");
+    if (gemOld) gemOld.addEventListener("click", async () => {
+      const st = await call("claim_gem", "https://store.wizardry.info/");
+      if (st && st.ok) applyState(st);
+    });
+    const gemNew = $("#gemNew");
+    if (gemNew) gemNew.addEventListener("click", async () => {
+      const st = await call("claim_gem", "https://webstore.wizardry.info/");
+      if (st && st.ok) applyState(st);
+    });
+    const gemNoticeNew = $("#gemNoticeNew");
+    if (gemNoticeNew) gemNoticeNew.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const st = await call("claim_gem", "https://webstore.wizardry.info/");
+      if (st && st.ok) {
+        applyState(st);
+        toast("已标记本周宝石为已领取");
+      }
+    });
+    const gemNoticeOld = $("#gemNoticeOld");
+    if (gemNoticeOld) gemNoticeOld.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const st = await call("claim_gem", "https://store.wizardry.info/");
+      if (st && st.ok) {
+        applyState(st);
+        toast("已标记本周宝石为已领取");
+      }
+    });
+    const switchMonthly = async () => {
+      const st = await call("switch_monthly");
+      if (st && st.ok) {
+        applyState(st, { plans: true });
+        renderTargets();
+        toast(st.message || "已切换灵庙任务");
+      }
+    };
+    const amSwitch = $("#amSwitch");
+    if (amSwitch) amSwitch.addEventListener("click", switchMonthly);
+    const amNotice = $("#amNotice");
+    if (amNotice) amNotice.addEventListener("click", switchMonthly);
+
+    // 更新
+    const autoDownload = $("#autoDownload");
+    if (autoDownload) autoDownload.addEventListener("click", async () => {
+      const r = await call("download_update");
+      if (r && r.ok) {
+        const wrap = $("#updateProgressWrap");
+        if (wrap) wrap.classList.remove("hidden");
+        toast("开始下载更新");
+      } else if (r && r.error) {
+        toast(r.error);
+      }
+    });
+    const manualDownload = $("#manualDownload");
+    if (manualDownload) manualDownload.addEventListener("click", () => {
+      const base = (state && state.url) || "https://github.com/arnold2957/wvd";
+      call("open_url", base + "/releases");
+    });
+
+    // 常用网站
+    $$(".link-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const url = card.dataset.url;
+        if (url) {
+          call("open_url", url);
+        } else {
+          const name = card.querySelector(".link-name");
+          toast((name ? name.textContent : "该") + " 链接待补充");
+        }
+      });
+    });
+  }
+
+  /* ================= 启动 ================= */
+  async function init() {
+    installStaticHandlers();
+    const st = await call("bootstrap");
+    if (!st || !st.ok) {
+      renderLog("ERROR", "无法读取配置。");
+      return;
+    }
+    state = st;
+    const versionEl = $("#appVersion");
+    if (versionEl) versionEl.textContent = "wvdas v" + st.version;
+    renderTargets();
+    applyState(st, { plans: true });
+    setRunningUI(!!st.running, st.startedAt);
+    if (!st.running) {
+      const sumTime = $("#sumTime");
+      if (sumTime) sumTime.textContent = "00:00:00";
+    }
+    if (st.update && st.update.latest) {
+      showUpdate({ version: st.update.latest, current: st.version });
+    }
+    renderLog("SYS", "界面已就绪。");
+    pollLoop();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

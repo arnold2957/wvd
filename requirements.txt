@@ -5,3 +5,4 @@ pyinstaller
 win10toast
 loguru
 babel
+pywebview==6.2.1
