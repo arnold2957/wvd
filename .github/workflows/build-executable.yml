@@ -56,6 +56,17 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir --noconsole `
+          --hidden-import clr `
+          --collect-all pythonnet `
+          --collect-all clr_loader `
+          --collect-all py7zr `
+          --hidden-import bcj `
+          --hidden-import inflate64 `
+          --hidden-import pyppmd `
+          --hidden-import multivolumefile `
+          --hidden-import Cryptodome `
+          --hidden-import brotli `
+          --hidden-import backports.zstd `
           --collect-all webview `
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
@@ -63,22 +74,39 @@ jobs:
           src/main.py -n wvd
         Write-Host "Build completed successfully."
 
-    - name: Compress build artifact to ZIP
+    - name: Compress build artifact to 7z
       shell: pwsh
       run: |
         $version = "${{ steps.extract-version.outputs.version }}"
         Copy-Item -Path './CHANGES_LOG.md' -Destination './dist/wvd/' -Force
-        Compress-Archive -Path ./dist/wvd/* -DestinationPath "./dist/wvd_$version.zip" -Force
-        Get-ChildItem "dist/wvd_$version.zip"
+
+        $sevenZip = "${env:ProgramFiles}\7-Zip\7z.exe"
+        if (-not (Test-Path $sevenZip)) {
+          $cmd = Get-Command 7z -ErrorAction SilentlyContinue
+          if ($cmd) { $sevenZip = $cmd.Source }
+        }
+        if (-not $sevenZip) { throw "7-Zip not found on runner" }
+
+        # 在 dist/wvd 目录内打包, 保证压缩包根目录就是程序文件 (不带 wvd/ 前缀)
+        # 使用 BCJ 而不是 7-Zip 在 -mx=9 时默认选择的 BCJ2: py7zr 无法解压 BCJ2,
+        # 两者压缩率几乎相同 (~0.5% 差异).
+        Push-Location ./dist/wvd
+        try {
+          & $sevenZip a -t7z -m0=BCJ -m1=LZMA2 -mx=9 -mmt=on "../wvd_$version.7z" ".\*"
+          if ($LASTEXITCODE -ne 0) { throw "7z failed with exit code $LASTEXITCODE" }
+        } finally {
+          Pop-Location
+        }
+        Get-ChildItem "dist/wvd_$version.7z"
 
     - name: Prepare Release Notes and Metadata
       id: prepare-release-meta
       shell: pwsh
       run: |
         $version = "${{ steps.extract-version.outputs.version }}"
-        $zipFileName = "wvd_$version.zip"
-        $zipPath = "dist/$zipFileName"
-        $md5 = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
+        $archiveFileName = "wvd_$version.7z"
+        $archivePath = "dist/$archiveFileName"
+        $md5 = (Get-FileHash -Path $archivePath -Algorithm MD5).Hash.ToLower()
         echo "md5=$md5" >> $env:GITHUB_OUTPUT
         echo "MD5: $md5"
         
@@ -91,7 +119,7 @@ jobs:
           version = $version
           md5 = $md5
           release_date = $date
-          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/$zipFileName"
+          download_url = "https://github.com/${{ github.repository }}/releases/download/$version/$archiveFileName"
           release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
         } | ConvertTo-Json
 
@@ -104,7 +132,7 @@ jobs:
         tag_name: ${{ steps.extract-version.outputs.version }}
         name: Release ${{ steps.extract-version.outputs.version }}
         body_path: dist/release_notes.md
-        files: dist/wvd_${{ steps.extract-version.outputs.version }}.zip
+        files: dist/wvd_${{ steps.extract-version.outputs.version }}.7z
 
     - name: Force set as prerelease
       if: ${{ steps.extract-version.outputs.is_prerelease == 'true' }}
@@ -138,7 +166,7 @@ jobs:
     #   QQ_BOT_SANDBOX=true  when the bot is not published yet
     #   QQ_BOT_AT_ALL=true/false  override @everyone behavior
     #                             (default: formal releases @everyone, beta does not)
-    #   QQ_BOT_SEND_FILE=false     disable sending the release zip as a group file
+    #   QQ_BOT_SEND_FILE=false     disable sending the release archive as a group file
     - name: Notify QQ group
       if: success()
       continue-on-error: true
@@ -149,8 +177,8 @@ jobs:
         QQ_BOT_SANDBOX: ${{ vars.QQ_BOT_SANDBOX }}
         QQ_BOT_AT_ALL: ${{ vars.QQ_BOT_AT_ALL }}
         QQ_BOT_SEND_FILE: ${{ vars.QQ_BOT_SEND_FILE }}
-        RELEASE_ZIP_PATH: dist/wvd_${{ steps.extract-version.outputs.version }}.zip
-        RELEASE_ZIP_URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.extract-version.outputs.version }}/wvd_${{ steps.extract-version.outputs.version }}.zip
+        RELEASE_ARCHIVE_PATH: dist/wvd_${{ steps.extract-version.outputs.version }}.7z
+        RELEASE_ARCHIVE_URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.extract-version.outputs.version }}/wvd_${{ steps.extract-version.outputs.version }}.7z
         VERSION: ${{ steps.extract-version.outputs.version }}
       run: |
         python -m pip install --quiet qq-botpy

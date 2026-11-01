@@ -197,11 +197,14 @@ class AutoUpdater():
 
     def _extract_archive(self, archive_path, target_dir):
         """解压压缩包"""
-        if archive_path.lower().endswith('.zip'):
-            # 使用Python内置zipfile模块解压
-            import zipfile
-            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-                zip_ref.extractall(target_dir)
+        if archive_path.lower().endswith('.7z'):
+            try:
+                import py7zr
+            except ImportError as exc:
+                raise Exception(
+                    "当前版本缺少 7z 解压组件 (py7zr)，请手动下载新版安装包") from exc
+            with py7zr.SevenZipFile(archive_path, 'r') as archive:
+                archive.extractall(target_dir)
         else:
             raise Exception(f"不支持的压缩格式: {os.path.splitext(archive_path)[1]}")
 

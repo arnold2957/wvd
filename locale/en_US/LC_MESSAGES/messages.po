@@ -2413,6 +2413,15 @@ msgstr "times"
 msgid "重启游戏后重启模拟器"
 msgstr "Restart emulator after game restarts"
 
+msgid "游戏启动后等待"
+msgstr "Wait after game launch"
+
+msgid "重启游戏后等待指定秒数，再检查启动日志。"
+msgstr "Wait this many seconds after restarting the game before checking the startup log."
+
+msgid "秒"
+msgstr "seconds"
+
 msgid "官方网站"
 msgstr "Official site"
 

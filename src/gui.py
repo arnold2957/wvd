@@ -13,7 +13,10 @@
 import copy
 import ctypes
 import os
+import platform
 import queue
+import re
+import sys
 import threading
 import webbrowser
 from datetime import date, datetime
@@ -196,6 +199,343 @@ def _kill_webview_children():
 
 
 # ============================================================
+# 启动前环境检查
+# ============================================================
+# pywebview 的 edgechromium 后端依赖三样东西, 任何一样缺失都会在
+# webview.start() 时直接崩溃 (通常是 Windows 弹窗后进程消失):
+#   1. pythonnet 的 Python.Runtime.dll (.NET Framework 4.6.2+)
+#   2. webview/lib 下的 WebView2 托管 DLL 与 WebView2Loader.dll
+#   3. 系统已安装 WebView2 Runtime
+# 这里在创建窗口之前先把它们查一遍, 失败时用原生 MessageBox 说明原因,
+# 而不是让用户面对一个没有任何提示的闪退.
+
+WEBVIEW2_CLIENT_GUID = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+WEBVIEW2_DOWNLOAD_URL = "https://developer.microsoft.com/microsoft-edge/webview2/"
+NETFX_DOWNLOAD_URL = "https://dotnet.microsoft.com/download/dotnet-framework/net48"
+MIN_NETFX_RELEASE = 394802  # .NET Framework 4.6.2
+
+_RUNTIME_FILE_INDEX = None
+
+
+def _read_reg_value(root, subkey, name):
+    """读取注册表值; 不存在或平台不支持时返回 None."""
+    try:
+        import winreg
+    except ImportError:
+        return None
+    try:
+        with winreg.OpenKey(root, subkey, 0, winreg.KEY_READ) as key:
+            value, _ = winreg.QueryValueEx(key, name)
+            return value
+    except OSError:
+        return None
+
+
+def _runtime_roots():
+    """返回打包后可能存放运行库文件的目录, 按优先级排序."""
+    roots = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        roots.append(meipass)
+    if getattr(sys, "frozen", False):
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        roots.append(exe_dir)
+        roots.append(os.path.join(exe_dir, "_internal"))
+    return list(dict.fromkeys(p for p in roots if p and os.path.isdir(p)))
+
+
+def _runtime_file_index():
+    """一次性索引打包目录中的文件名 -> 路径, 避免反复遍历."""
+    global _RUNTIME_FILE_INDEX
+    if _RUNTIME_FILE_INDEX is not None:
+        return _RUNTIME_FILE_INDEX
+    index = {}
+    for root in _runtime_roots():
+        for dirpath, dirnames, filenames in os.walk(root):
+            depth = dirpath[len(root):].count(os.sep)
+            if depth >= 6:
+                # WebView2Loader.dll 位于 webview/lib/runtimes/<arch>/native,
+                # 深度约为 5 层, 这里只停止继续下钻, 仍然索引当前目录.
+                dirnames[:] = []
+            for name in filenames:
+                index.setdefault(name.lower(), []).append(
+                    os.path.join(dirpath, name))
+    _RUNTIME_FILE_INDEX = index
+    return index
+
+
+def _runtime_files(name):
+    return _runtime_file_index().get(name.lower(), [])
+
+
+def _find_runtime_file(name):
+    paths = _runtime_files(name)
+    return paths[0] if paths else None
+
+
+def _netfx_release():
+    """返回已安装的 .NET Framework 4.x Release 值 (4.6.2 = 394802)."""
+    try:
+        import winreg
+    except ImportError:
+        return None
+    releases = []
+    for subkey in (
+        r"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full",
+        r"SOFTWARE\WOW6432Node\Microsoft\NET Framework Setup\NDP\v4\Full",
+    ):
+        value = _read_reg_value(winreg.HKEY_LOCAL_MACHINE, subkey, "Release")
+        if isinstance(value, int):
+            releases.append(value)
+    return max(releases) if releases else None
+
+
+def _webview2_version():
+    """返回已安装的 WebView2 Runtime 版本号, 未安装时返回 None."""
+    try:
+        import winreg
+    except ImportError:
+        return None
+    for root, subkey in (
+        (winreg.HKEY_LOCAL_MACHINE,
+         rf"SOFTWARE\Microsoft\EdgeUpdate\Clients\{WEBVIEW2_CLIENT_GUID}"),
+        (winreg.HKEY_LOCAL_MACHINE,
+         rf"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{WEBVIEW2_CLIENT_GUID}"),
+        (winreg.HKEY_CURRENT_USER,
+         rf"Software\Microsoft\EdgeUpdate\Clients\{WEBVIEW2_CLIENT_GUID}"),
+    ):
+        value = _read_reg_value(root, subkey, "pv")
+        if value and str(value) not in ("", "0.0.0.0"):
+            return str(value)
+
+    # 注册表被清理时, 再按安装目录兜底检测.
+    base = os.path.join(
+        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+        "Microsoft", "EdgeWebView", "Application")
+    try:
+        for name in os.listdir(base):
+            if re.match(r"^\d+\.\d+\.\d+\.\d+$", name):
+                return name
+    except OSError:
+        pass
+    return None
+
+
+def _try_load_clr():
+    """尝试加载 pythonnet, 返回 (错误信息, 是否回退到 coreclr)."""
+    try:
+        import clr  # noqa: F401
+        return None, False
+    except BaseException as first_error:
+        first_msg = f"{type(first_error).__name__}: {first_error}"
+
+    # 与 pywebview 的 edgechromium 后端一致: netfx 失败时回退 coreclr.
+    old_runtime = os.environ.get("PYTHONNET_RUNTIME")
+    os.environ["PYTHONNET_RUNTIME"] = "coreclr"
+    try:
+        import clr  # noqa: F401
+        return None, True
+    except BaseException as second_error:
+        if old_runtime is None:
+            os.environ.pop("PYTHONNET_RUNTIME", None)
+        else:
+            os.environ["PYTHONNET_RUNTIME"] = old_runtime
+        return (f"{first_msg}; coreclr 回退失败: "
+                f"{type(second_error).__name__}: {second_error}"), False
+
+
+def _fit_window_size(width=1158, height=820, margin=24):
+    """按显示器工作区收缩初始窗口, 避免高 DPI / 小屏幕下窗口超出屏幕.
+
+    返回 (宽, 高, 系统缩放比例). 尺寸使用 pywebview/WinForms 的逻辑像素.
+    """
+    if os.name != "nt":
+        return width, height, 1.0
+    try:
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        try:
+            user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+        scale = 1.0
+        try:
+            dpi = user32.GetDpiForSystem()
+            if dpi:
+                scale = dpi / 96.0
+        except Exception:
+            try:
+                hdc = user32.GetDC(0)
+                dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
+                user32.ReleaseDC(0, hdc)
+                if dpi:
+                    scale = dpi / 96.0
+            except Exception:
+                pass
+
+        rect = wintypes.RECT()
+        # SPI_GETWORKAREA: 主显示器去掉任务栏后的可用区域 (物理像素).
+        if user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):
+            avail_w = (rect.right - rect.left) / scale
+            avail_h = (rect.bottom - rect.top) / scale
+            fitted_w = max(640, min(int(width), int(avail_w) - margin))
+            fitted_h = max(200, min(int(height), int(avail_h) - margin))
+            return fitted_w, fitted_h, scale
+    except Exception:
+        logger.exception("计算窗口尺寸失败, 使用默认尺寸")
+    return width, height, 1.0
+
+
+def PreflightCheck():
+    """在创建窗口之前检查运行环境.
+
+    返回 dict: ok / fatal / warnings / actions / details / window_size.
+    """
+    report = {
+        "ok": True,
+        "fatal": [],
+        "warnings": [],
+        "actions": [],   # [(说明, 下载地址), ...]
+        "details": {},
+        "window_size": (1158, 820),
+    }
+
+    # 布局适配: 高 DPI 或小屏幕时缩小初始窗口.
+    fitted_w, fitted_h, scale = _fit_window_size()
+    report["details"]["dpi_scale"] = scale
+    report["window_size"] = (fitted_w, fitted_h)
+    if fitted_w != 1158 or fitted_h != 820:
+        report["warnings"].append(
+            f"屏幕可用区域较小或缩放为 {int(scale * 100)}%, "
+            f"窗口已自动调整为 {fitted_w}x{fitted_h}.")
+
+    if os.name != "nt":
+        return report
+
+    frozen = bool(getattr(sys, "frozen", False))
+
+    # ---- 1. 打包文件是否完整 ----
+    if frozen:
+        required = (
+            ("Python.Runtime.dll", "pythonnet 的 .NET 运行时库"),
+            ("Microsoft.Web.WebView2.Core.dll", "WebView2 托管库"),
+            ("Microsoft.Web.WebView2.WinForms.dll", "WebView2 WinForms 绑定"),
+        )
+        for name, desc in required:
+            if not _find_runtime_file(name):
+                report["fatal"].append(
+                    f"缺少 {name}（{desc}）。程序打包不完整，或被安全软件隔离/删除。")
+
+        is_64 = (sys.maxsize > 2 ** 32)
+        machine = platform.machine().lower()
+        if machine in ("arm64", "aarch64"):
+            arch_dir = "win-arm64"
+        else:
+            arch_dir = "win-x64" if is_64 else "win-x86"
+        loader_paths = _runtime_files("WebView2Loader.dll")
+        if not loader_paths:
+            report["fatal"].append(
+                "缺少 WebView2Loader.dll（WebView2 加载器），程序无法创建 WebView2 窗口。")
+        elif not any(f"\\{arch_dir}\\" in path.replace("/", "\\").lower()
+                     for path in loader_paths):
+            report["warnings"].append(
+                f"WebView2Loader.dll 的架构目录不是 {arch_dir}，"
+                "可能无法在当前 Python 上加载。")
+
+    # ---- 2. WebView2 Runtime ----
+    webview2 = _webview2_version()
+    report["details"]["webview2"] = webview2
+    if not webview2:
+        report["fatal"].append(
+            "未安装 Microsoft Edge WebView2 Runtime，界面引擎无法启动。")
+        report["actions"].append(("安装 WebView2 Runtime", WEBVIEW2_DOWNLOAD_URL))
+
+    # ---- 3. .NET Framework ----
+    netfx = _netfx_release()
+    report["details"]["netfx_release"] = netfx
+    if netfx is None:
+        report["warnings"].append("未检测到 .NET Framework 4.x，将尝试使用 .NET Core 运行时。")
+    elif netfx < MIN_NETFX_RELEASE:
+        report["warnings"].append(
+            f".NET Framework 版本过低（Release={netfx}，需要 4.6.2 及以上）。")
+
+    # ---- 4. 实际加载 pythonnet ----
+    # 前面的文件检查已经失败时不再尝试, 避免在已知缺失的环境里触发底层崩溃.
+    if not report["fatal"]:
+        clr_error, used_coreclr = _try_load_clr()
+        report["details"]["clr_coreclr"] = used_coreclr
+        if clr_error:
+            report["fatal"].append(
+                "无法初始化 .NET 运行时（Python.Runtime.dll / CLR 加载失败）：" + clr_error)
+            report["actions"].append(("安装 .NET Framework 4.8", NETFX_DOWNLOAD_URL))
+        elif used_coreclr:
+            report["warnings"].append("已回退到 .NET Core 运行时。")
+
+    report["ok"] = not report["fatal"]
+    return report
+
+
+def _native_message(title, text, flags):
+    """不依赖 WebView 的原生消息框, 界面引擎坏掉时也能显示."""
+    try:
+        return ctypes.windll.user32.MessageBoxW(0, text, title, flags)
+    except Exception:
+        return 0
+
+
+def ShowPreflightErrorAndExit(report):
+    """显示环境检查结果并退出进程."""
+    title = "wvdas 启动失败"
+    lines = ["程序运行环境检查未通过，界面无法启动。", ""]
+    for index, message in enumerate(report["fatal"], 1):
+        lines.append(f"{index}. {message}")
+    if report["warnings"]:
+        lines.append("")
+        lines.append("其他提示：")
+        lines.extend(f"· {w}" for w in report["warnings"])
+
+    actions = report.get("actions") or []
+    if actions:
+        lines.append("")
+        lines.append("可以安装以下组件后重试：")
+        lines.extend(f"· {label}：{url}" for label, url in actions)
+
+    lines.append("")
+    lines.append("详细诊断信息已写入 logs\\preflight_error.log。")
+
+    # 写一份独立诊断日志, 方便用户直接发出来排查.
+    try:
+        os.makedirs("logs", exist_ok=True)
+        with open(os.path.join("logs", "preflight_error.log"), "a", encoding="utf-8") as f:
+            f.write("=" * 60 + "\n")
+            f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+            f.write(f"fatal: {report['fatal']}\n")
+            f.write(f"warnings: {report['warnings']}\n")
+            f.write(f"details: {report['details']}\n")
+    except Exception:
+        pass
+    logger.error("启动前环境检查失败: " + "; ".join(report["fatal"]))
+
+    MB_ICONERROR = 0x10
+    MB_TOPMOST = 0x40000
+    if actions:
+        lines.append("")
+        lines.append(f"是否现在打开下载页面（{actions[0][0]}）？")
+        answer = _native_message(title, "\n".join(lines),
+                                 MB_ICONERROR | MB_TOPMOST | 0x4)  # MB_YESNO
+        if answer == 6:  # IDYES
+            try:
+                webbrowser.open(actions[0][1])
+            except Exception:
+                pass
+    else:
+        _native_message(title, "\n".join(lines), MB_ICONERROR | MB_TOPMOST)
+
+    HardExit(1)
+
+
+# ============================================================
 # 前端可调用的 API
 # ============================================================
 class WebBridge:
@@ -292,6 +632,19 @@ class ConfigPanelApp:
     CONFIG_KEYS = {row[1] for row in CONFIG_VAR_LIST}
 
     def __init__(self, version, msg_queue):
+        # 先确认 .NET / WebView2 可用, 否则 create_window 会直接让进程崩溃.
+        try:
+            self._preflight = PreflightCheck()
+        except Exception:
+            # 检查本身出错时不应阻止程序启动.
+            logger.exception("启动前环境检查出错, 已跳过")
+            self._preflight = {"ok": True, "warnings": [],
+                               "window_size": (1158, 820)}
+        if not self._preflight["ok"]:
+            ShowPreflightErrorAndExit(self._preflight)
+        for warning in self._preflight["warnings"]:
+            logger.warning(warning)
+
         self.URL = "https://github.com/arnold2957/wvd"
         self.version = version
         self.TITLE = _("wvdas v%s") % version
@@ -331,13 +684,14 @@ class ConfigPanelApp:
         with open(html_path, "r", encoding="utf-8") as f:
             html = f.read()
 
+        window_width, window_height = self._preflight["window_size"]
         self._window = webview.create_window(
             self.TITLE,
             html=html,
             js_api=WebBridge(self),
-            width=1158,
-            height=820,
-            min_size=(700, 160),
+            width=window_width,
+            height=window_height,
+            min_size=(min(700, window_width), 160),
             resizable=True,
             frameless=True,
             easy_drag=True,
@@ -362,7 +716,20 @@ class ConfigPanelApp:
         webview.settings["DRAG_REGION_DIRECT_TARGET_ONLY"] = True
         # 使用临时 profile: 启动速度与持久 profile 基本一致, 但关闭时不会
         # 长时间等待 WebView2 把用户数据刷回磁盘.
-        webview.start(debug=False)
+        try:
+            webview.start(debug=False)
+        except Exception:
+            # 启动前检查通过, 但界面引擎仍可能初始化失败 (例如 WebView2 文件损坏).
+            logger.exception("界面引擎启动失败")
+            _native_message(
+                "wvdas 启动失败",
+                "界面引擎（pywebview / WebView2）启动失败。\n\n"
+                "请查看 logs\\preflight_error.log 或 logs\\ 目录中最新的日志文件。\n"
+                "也可以尝试重新安装 Microsoft Edge WebView2 Runtime。\n\n"
+                f"下载地址：{WEBVIEW2_DOWNLOAD_URL}",
+                0x10 | 0x40000,  # MB_ICONERROR | MB_TOPMOST
+            )
+            HardExit(1)
 
     def shutdown(self):
         if self._closing:
@@ -528,6 +895,8 @@ class ConfigPanelApp:
             1, min(12, _to_int(self.values.get("RE_ASSEMBLE_PARTY_INTERVAL"), 6)))
         self.values["MAX_TRY_LIMIT"] = max(25, _to_int(self.values.get("MAX_TRY_LIMIT"), 25))
         self.values["MAX_CRASH_LIMIT"] = max(10, _to_int(self.values.get("MAX_CRASH_LIMIT"), 10))
+        self.values["STARTUP_WAIT_TIME"] = max(
+            1, min(120, _to_int(self.values.get("STARTUP_WAIT_TIME"), 10)))
 
         # 显示文本 -> 任务 ID. 找不到时保持 None, 与旧界面一致.
         target_text = self.values.get("FARM_TARGET_TEXT") or ""

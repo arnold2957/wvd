@@ -65,6 +65,7 @@ CONFIG_VAR_LIST = [
             ["TEMPLATE",   "ACTIVE_BEG_MONEY",                      tk.BooleanVar, False],
             ["TEMPLATE",   "MAX_TRY_LIMIT",                         tk.IntVar,     25],
             ["TEMPLATE",   "MAX_CRASH_LIMIT",                       tk.IntVar,     10],
+            ["TEMPLATE",   "STARTUP_WAIT_TIME",                     tk.IntVar,     10],
             ["TEMPLATE",   "REST_INTERVEL",                         tk.IntVar,     1],
             ["TEMPLATE",   "ACTIVE_CSC",                            tk.BooleanVar, True],
             ["TEMPLATE",   "BYPASS_THE_WALL",                       tk.BooleanVar, False],
@@ -1168,7 +1169,7 @@ def Factory():
         DeviceShell(f"am force-stop {package_name}")
         logger.info(_("巫术, 启动!"))
         logger.debug(DeviceShell(f"am start -n {mainAct}"))
-        Sleep(10)
+        Sleep(setting.STARTUP_WAIT_TIME)
         logs = DeviceShell("logcat -d | grep -i \"unable to initialize.*graphics api\"")
         if logs.strip():
             logger.error(_("检测到崩溃日志, 暂时不重启模拟器.{a}".format(a=logs)))
@@ -1774,10 +1775,11 @@ def Factory():
                                     "closePartyInfo_fortress",
                                     "return",[550, 1]],
                                 1))
+                            Sleep(2)
                         elif entry[1] == "EOT":
                             Press(FindCoordsOrElseExecuteFallbackAndWait(
                                 "EdgeOfTown", ["return",[550, 1]], 1))
-
+                            Sleep(2)
                     elif level == "worldmap":
                         TeleportFromCityToWorldLocation(
                             entry[1],
@@ -3937,12 +3939,10 @@ def Factory():
                         Sleep(10)
                     else:
                         logger.info("鱼饵还有, 不需要更换.")
-                        Sleep(2)
+                        Sleep(1)
                         Press([196, 1153])
                         Sleep(2)
-                        Press([464, 1386])
-                        Sleep(2)
-                        FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","return",3)
+                        FindCoordsOrElseExecuteFallbackAndWait("fishing/cast","fishing/closeChangeInfo",3)
                 def goToFishing():
                     quest._EOT = [
                         ["town", "EOT"],

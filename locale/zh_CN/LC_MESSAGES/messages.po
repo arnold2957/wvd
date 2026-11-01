@@ -1926,3 +1926,12 @@ msgstr ""
 msgid "P 黛波拉_sp"
 msgstr ""
 
+msgid "游戏启动后等待"
+msgstr ""
+
+msgid "重启游戏后等待指定秒数，再检查启动日志。"
+msgstr ""
+
+msgid "秒"
+msgstr ""
+

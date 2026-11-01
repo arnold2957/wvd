@@ -14,8 +14,8 @@ QQ 官方要求：发送主动群消息时机器人必须保持 WebSocket 在线
     QQ_BOT_AT_ALL        可选, true/false 强制开启或关闭 @所有人
                          不设置时: 正式版本 @所有人, beta 版本不 @
                          (要求机器人是群管理员, 每群每天仅 1 次; 失败会自动降级为普通消息)
-    RELEASE_ZIP_PATH     可选, 发布包的本地路径; 设置后走分片上传 (推荐)
-    RELEASE_ZIP_URL      可选, 发布包的公开下载地址; 没有本地文件时走 URL 上传
+    RELEASE_ARCHIVE_PATH  可选, 发布包的本地路径; 设置后走分片上传 (推荐)
+    RELEASE_ARCHIVE_URL   可选, 发布包的公开下载地址; 没有本地文件时走 URL 上传
     QQ_BOT_SEND_FILE     可选, false 时不再发送群文件 (默认发送)
 
 消息规则:
@@ -135,11 +135,11 @@ def main():
         # 默认: 正式版本 @所有人, beta 版本不 @
         at_all = "beta" not in version.lower()
 
-    release_zip_path = os.environ.get("RELEASE_ZIP_PATH", "").strip()
-    release_zip_url = os.environ.get("RELEASE_ZIP_URL", "").strip()
+    release_archive_path = os.environ.get("RELEASE_ARCHIVE_PATH", "").strip()
+    release_archive_url = os.environ.get("RELEASE_ARCHIVE_URL", "").strip()
     send_file_setting = os.environ.get("QQ_BOT_SEND_FILE", "").strip().lower()
     send_file = send_file_setting not in {"0", "false", "no", "off"} and bool(
-        release_zip_path or release_zip_url
+        release_archive_path or release_archive_url
     )
 
     missing = [
@@ -261,20 +261,20 @@ def main():
                 # 发送群文件, 失败不影响文字通报
                 if send_file:
                     try:
-                        if release_zip_path and os.path.exists(release_zip_path):
-                            await self.upload_group_file(release_zip_path)
+                        if release_archive_path and os.path.exists(release_archive_path):
+                            await self.upload_group_file(release_archive_path)
                             log("群文件发送成功 (分片上传)")
-                        elif release_zip_url:
+                        elif release_archive_url:
                             # URL 上传依赖 QQ 服务器下载该地址, 部分地址会报 40093007
                             await self.api.post_group_file(
                                 group_openid=group_openid,
                                 file_type=4,
-                                url=release_zip_url,
+                                url=release_archive_url,
                                 srv_send_msg=True,
                             )
                             log("群文件发送成功 (URL 上传)")
                         else:
-                            log(f"跳过群文件: 本地文件不存在 ({release_zip_path})")
+                            log(f"跳过群文件: 本地文件不存在 ({release_archive_path})")
                     except Exception as error:  # noqa: BLE001
                         log(f"群文件发送失败 (文字通报已发送): {error}")
 

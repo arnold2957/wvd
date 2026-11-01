@@ -567,7 +567,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],
+            ["worldmap","IWO/IWO","input swipe 800 1011 350 1017",[500,1100]],
             ["L1","IWO/IWOB1F","IWO/IWO"],
             ["L2","IWO/IWOB1F","IWO/IWO"]
         ],
@@ -576,7 +576,7 @@
     },
     "IWO_2":{
         "_TYPE":"dungeon",
-        "questName":"[宝箱]鬼洞2F",
+        "questName":"[宝箱]鬼洞2F 水路出发",
         "questName_en_US": "[Chest] Oni Island 2F",
         "questCategory": "任务洞窟",
         "questCategory_en_US": "Request Caves",
@@ -587,7 +587,7 @@
         "_EOT":
         [
             ["town","world"],
-            ["worldmap","IWO/IWO","input swipe 700 1100 500 1100",[500,1100]],
+            ["worldmap","IWO/IWO","input swipe 800 1011 350 1017",[500,1100]],
             ["L1","IWO/IWOB2F","IWO/IWO"],
             ["L2","IWO/IWOB2F","IWO/IWO"]
         ],

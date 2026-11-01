@@ -529,6 +529,15 @@
     .runbar{padding-left:20px;padding-right:20px}
   }
 
+  /* 高 DPI / 小屏幕下窗口被缩窄时, 让中间列让出空间给右侧日志与摘要 */
+  @media (max-width:1080px){
+    .app-body{grid-template-columns:96px minmax(0,1fr) minmax(238px,300px)}
+    .nav-item{padding:0 8px}
+    .main-header{padding-left:16px;padding-right:16px}
+    .content{padding-left:16px;padding-right:16px}
+    .runbar{padding-left:16px;padding-right:16px}
+  }
+
   /* 窄窗口：日志收成右侧抽屉，摘要仍固定在右栏 */
   @media (max-width:980px){
     .app-body{grid-template-columns:104px minmax(0,1fr) 252px}
@@ -813,6 +822,53 @@
   body.compact #targetSelect{pointer-events:none;cursor:default}
   body.compact #targetSelect:disabled{opacity:1;background:#f3f3f3;color:#7b879b}
   body.dark.compact #targetSelect:disabled{background:#1b2330;color:#8b99ab}
+
+  /* ===== 小屏 / 高 DPI 缩放：收紧纵向排版，避免内容被挤出窗口 ===== */
+  @media (max-height:760px){
+    .titlebar{flex-basis:36px;height:36px}
+    .main-header{padding-top:14px;padding-bottom:10px}
+    .content{padding-top:10px;padding-bottom:14px}
+    .log-head{padding:10px 14px 7px}
+    .summarypane{padding:10px 12px 11px}
+    .card{margin-bottom:10px}
+    .toast{bottom:70px}
+  }
+  @media (max-height:640px){
+    .main-desc{display:none}
+    .current-task{margin-top:4px}
+    .summarypane .stat-grid{gap:6px}
+  }
+
+  /* ===== 启动失败提示：界面引擎未就绪时也能看到原因 ===== */
+  .boot-guard{
+    position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:#f5f7fb;
+  }
+  .boot-guard[hidden]{display:none}
+  .boot-card{
+    width:min(620px,100%);max-height:88vh;overflow:auto;
+    background:#fff;border:1px solid #e2e6ee;border-radius:14px;
+    padding:22px 24px;box-shadow:0 18px 48px rgba(23,32,46,.14);
+    color:#1b2433;font-size:13px;line-height:1.7;
+  }
+  .boot-card h2{margin:0 0 10px;font-size:18px;color:#b4232b}
+  .boot-card p{margin:0 0 10px;color:#4a5568}
+  .boot-card pre{
+    margin:10px 0 14px;padding:10px 12px;border-radius:9px;
+    background:#f6f8fc;border:1px solid #e6eaf2;color:#5c6a83;
+    font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;
+  }
+  .boot-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .boot-actions button{
+    height:34px;padding:0 16px;border-radius:9px;border:1px solid #dbe1ec;
+    background:#fff;color:#263244;font-size:12.5px;cursor:pointer;
+  }
+  .boot-actions button.primary{background:#3f6ee8;border-color:#3f6ee8;color:#fff}
+  body.dark .boot-guard{background:#0b1016}
+  body.dark .boot-card{background:#151c26;border-color:#2a3546;color:#dbe3ee}
+  body.dark .boot-card p{color:#b7c2d0}
+  body.dark .boot-card pre{background:#111823;border-color:#2a3546;color:#9aa7b8}
+  body.dark .boot-actions button{background:#1b2330;border-color:#334052;color:#dbe3ee}
 
 </style>
 </head>
@@ -1351,6 +1407,14 @@
               <div class="card-title">容错阈值</div>
             </div>
             <div class="row">
+              <div class="label">游戏启动后等待
+                <small>重启游戏后等待指定秒数，再检查启动日志。</small>
+              </div>
+              <div class="control">
+                <span class="inline-num"><input type="number" id="startupWaitTime" data-config="STARTUP_WAIT_TIME" data-numeric="1" min="1" max="120"> 秒</span>
+              </div>
+            </div>
+            <div class="row">
               <div class="label">定位失败后重启游戏</div>
               <div class="control">
                 <span class="inline-num"><input type="number" id="maxTryLimit" data-config="MAX_TRY_LIMIT" data-numeric="1" min="25"> 次</span>
@@ -1398,12 +1462,12 @@
               <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
             </button>
 
-            <button class="link-card" data-url="https://x.com/">
+            <button class="link-card" data-url="https://x.com/Wizardry_Daphne">
               <div class="link-icon">X</div>
               <div class="link-body">
                 <div class="link-name">官方 X / 动态</div>
                 <div class="link-desc">官方账号、维护与最新动态</div>
-                <div class="link-url">x.com</div>
+                <div class="link-url">x.com/Wizardry_Daphne</div>
               </div>
               <svg class="link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
             </button>
@@ -1547,6 +1611,22 @@
   <div class="toast" id="toast"></div>
 </div>
 
+<!-- 界面引擎未就绪时的兜底提示：此时 Python 侧的检查可能都没来得及执行 -->
+<div class="boot-guard" id="bootGuard" hidden>
+  <div class="boot-card">
+    <h2>界面未能启动</h2>
+    <p>本地界面服务（pywebview / WebView2）没有响应。常见原因是缺少
+      <b>Microsoft Edge WebView2 Runtime</b> 或 <b>.NET Framework 4.6.2+</b>，
+      也可能是安全软件拦截了程序文件。</p>
+    <pre id="bootGuardDetail"></pre>
+    <p>请查看程序目录下的 <b>logs\preflight_error.log</b>，或 <b>logs\</b> 目录中最新的日志文件。</p>
+    <div class="boot-actions">
+      <button class="primary" id="bootRetry">重新加载界面</button>
+      <button id="bootCopy">复制诊断信息</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -1556,6 +1636,98 @@
   const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
   const pad = (n) => String(n).padStart(2, "0");
   const fmtHms = (s) => pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60);
+
+  /* ================= 启动看门狗 =================
+     pywebview 初始化 .NET / WebView2 失败时, 页面往往已经渲染但 JS API
+     永远不会注入, 表现为"窗口空白或按钮全部无响应". 这里等待一段时间,
+     仍然拿不到 pywebview.api 就明确提示原因, 而不是让用户以为程序卡死. */
+  const BOOT_TIMEOUT_MS = 15000;
+  const bootGuardEl = $("#bootGuard");
+  const bootDetailEl = $("#bootGuardDetail");
+  const bootStartedAt = Date.now();
+  let bootTimer = null;
+
+  function bootDiagnostics(reason) {
+    const lines = [
+      "原因：" + reason,
+      "页面尺寸：" + (window.innerWidth || 0) + "x" + (window.innerHeight || 0),
+      "设备像素比：" + (window.devicePixelRatio || 1),
+      "等待时间：" + Math.round((Date.now() - bootStartedAt) / 1000) + " 秒",
+      "pywebview 对象：" + (window.pywebview ? "存在" : "不存在"),
+      "WebView2 内核：" + (navigator.userAgent || "未知"),
+    ];
+    return lines.join("\n");
+  }
+
+  function showBootGuard(reason) {
+    if (!bootGuardEl) return;
+    if (bootDetailEl) bootDetailEl.textContent = bootDiagnostics(reason);
+    bootGuardEl.hidden = false;
+  }
+
+  function hideBootGuard() {
+    if (bootTimer) { clearTimeout(bootTimer); bootTimer = null; }
+    if (bootGuardEl) bootGuardEl.hidden = true;
+  }
+
+  function armBootGuard() {
+    if (window.pywebview && window.pywebview.api) { hideBootGuard(); return; }
+    bootTimer = setTimeout(() => {
+      if (!(window.pywebview && window.pywebview.api)) {
+        showBootGuard("等待本地界面服务超时");
+      }
+    }, BOOT_TIMEOUT_MS);
+  }
+
+  const bootRetry = $("#bootRetry");
+  if (bootRetry) bootRetry.addEventListener("click", () => location.reload());
+  const bootCopy = $("#bootCopy");
+  if (bootCopy) bootCopy.addEventListener("click", async () => {
+    const text = (bootDetailEl && bootDetailEl.textContent) || bootDiagnostics("未知");
+    try {
+      await navigator.clipboard.writeText(text);
+      bootCopy.textContent = "已复制";
+    } catch (err) {
+      // 剪贴板不可用时退化为选中文本, 方便用户手动 Ctrl+C.
+      const range = document.createRange();
+      if (bootDetailEl) {
+        range.selectNodeContents(bootDetailEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      bootCopy.textContent = "请按 Ctrl+C 复制";
+    }
+  });
+
+  window.addEventListener("pywebviewready", hideBootGuard, { once: true });
+  armBootGuard();
+
+  /* ================= 排版自检 =================
+     部分机器会因系统缩放 / 字体大小 / WebView2 渲染异常导致内容溢出.
+     这里量一次实际尺寸并写到日志, 方便用户反馈时定位问题. */
+  function checkLayout() {
+    const vw = window.innerWidth || 0;
+    const vh = window.innerHeight || 0;
+    const dpr = window.devicePixelRatio || 1;
+    const root = document.documentElement;
+    const overflowX = Math.max(0, (root.scrollWidth || 0) - (root.clientWidth || 0));
+    const overflowY = Math.max(0, (root.scrollHeight || 0) - (root.clientHeight || 0));
+    return { vw, vh, dpr, overflowX, overflowY };
+  }
+
+  function reportLayout(log) {
+    const info = checkLayout();
+    const detail = "界面尺寸 " + info.vw + "x" + info.vh +
+      "，缩放 " + Math.round(info.dpr * 100) + "%";
+    if (log) log("SYS", detail);
+    if (info.overflowX > 2) {
+      const message = "检测到界面横向溢出（" + info.overflowX + "px），" +
+        "可能是系统显示缩放或字体大小设置导致。";
+      if (log) log("WARN", message); else console.warn(message);
+    }
+    return info;
+  }
 
   let state = null;
   let apiPromise = null;
@@ -1826,6 +1998,7 @@
     ACTIVE_ROYALSUITE_REST: (v) => { const el = $("#royalsuiteRest"); if (el) el.checked = !!v; },
     MAX_TRY_LIMIT: (v) => { const el = $("#maxTryLimit"); if (el) el.value = v == null ? 25 : v; },
     MAX_CRASH_LIMIT: (v) => { const el = $("#maxCrashLimit"); if (el) el.value = v == null ? 10 : v; },
+    STARTUP_WAIT_TIME: (v) => { const el = $("#startupWaitTime"); if (el) el.value = v == null ? 10 : v; },
   };
 
   function applyValues(values) {
@@ -2999,7 +3172,14 @@
     if (st.update && st.update.latest) {
       showUpdate({ version: st.update.latest, current: st.version });
     }
+    hideBootGuard();
     renderLog("SYS", "界面已就绪。");
+    reportLayout(renderLog);
+    let layoutTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(layoutTimer);
+      layoutTimer = setTimeout(() => reportLayout(null), 400);
+    });
     pollLoop();
   }
 
