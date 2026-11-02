@@ -2483,8 +2483,8 @@ def Factory():
                         return DungeonState.Map
 
                     dungState = startAuto()
-                    if (dungState == DungeonState.Map):
-                        # 只有在少数情况下再继续执行.
+                    if (dungState != DungeonState.Map):
+                        # 只有在少数情况下再继续执行, 其他情况重新判定
                         continue
                     ########### 不是自动任务, 开始搜索
 
