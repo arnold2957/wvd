@@ -1776,12 +1776,12 @@ def Factory():
                                 ["closePartyInfo",
                                     "closePartyInfo_waterway",
                                     "closePartyInfo_fortress",
-                                    "return",[550, 1]],
+                                    [550, 1],[550, 1],],
                                 1))
                             Sleep(2)
                         elif entry[1] == "EOT":
                             Press(FindCoordsOrElseExecuteFallbackAndWait(
-                                "EdgeOfTown", ["return",[550, 1]], 1))
+                                "EdgeOfTown", [[550, 1],[550, 1]], 1))
                             Sleep(2)
                     elif level == "worldmap":
                         TeleportFromCityToWorldLocation(
