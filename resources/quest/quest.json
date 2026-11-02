@@ -178,6 +178,25 @@
         ]
     },
 
+    "DH-4f-no_floor_check":{
+        "_TYPE":"dungeon",
+        "questName":"[刷怪]深雪R4 没有楼层检测但是可能会串楼层",
+        "questName_en_US": "[Farm] Snow R4 No Floor Check But May Go Other Floors",
+        "questCategory": "主线第四章",
+        "questCategory_en_US": "Chapter 4",
+        "_TARGETINFOLIST":[
+            ["position","右上",[820,605]],
+            ["position","右上",[500,610]],
+            ["position","右上",[445,290]],
+            ["harken", "右上","stair_DH_R4"]
+        ],
+        "_EOT":[
+            ["town","EOT"],
+            ["L1","DH"],
+            ["L2","DH-R4","input swipe 650 250 650 900"]
+        ]
+    },
+
     "DH-6f":{
         "_TYPE":"dungeon",
         "questName":"[宝箱+刷怪]深雪R6",
@@ -899,7 +918,8 @@
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
         "_TARGETINFOLIST":[
-            ["position","右下",[178,1240]]
+            ["position","右下",[555,1235]],
+            ["leaveDung"]
         ],
         "_EOT":
         [
@@ -916,8 +936,6 @@
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
         "_TARGETINFOLIST":[
-            ["position","右下",[393,545]],
-            ["position","右下",[657,755]],
             ["position","右下",[555,1235]],
             ["position","右下",[178,1240]]
         ],
