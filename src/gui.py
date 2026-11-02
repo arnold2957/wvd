@@ -273,6 +273,110 @@ def _find_runtime_file(name):
     return paths[0] if paths else None
 
 
+# ---- Python.Runtime.dll 只读检查 ----
+# 文件存在不代表可更新: 被 Windows 安全机制或安全软件设成"只读",
+# 或目录权限不允许当前用户写入时, 自动更新会无法覆盖该 DLL.
+_FILE_ATTRIBUTE_READONLY = 0x00000001
+_INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
+
+
+def _has_readonly_attribute(path):
+    """返回文件是否带有 Windows 只读属性."""
+    if os.name != "nt":
+        return not os.access(path, os.W_OK)
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetFileAttributesW.argtypes = [ctypes.c_wchar_p]
+        kernel32.GetFileAttributesW.restype = ctypes.c_uint32
+        attrs = kernel32.GetFileAttributesW(str(path))
+        if attrs == _INVALID_FILE_ATTRIBUTES:
+            return False
+        return bool(attrs & _FILE_ATTRIBUTE_READONLY)
+    except Exception:
+        return False
+
+
+def _file_write_blocked(path):
+    """返回文件是否因只读属性/权限限制而无法写入.
+
+    其他进程占用导致的共享冲突不属于只读问题, 这里返回 False,
+    避免把"程序正在运行"误报成"文件被设为只读".
+    """
+    try:
+        with open(path, "r+b"):
+            pass
+        return False
+    except OSError as exc:
+        if getattr(exc, "winerror", None) in (32, 33):  # 共享冲突
+            return False
+        return isinstance(exc, PermissionError)
+
+
+def _python_runtime_unlock_steps(paths=()):
+    """Python.Runtime.dll 被设为只读时给用户的解除步骤."""
+    target = paths[0] if paths else os.path.join(
+        "<程序目录>", "Python.Runtime.dll")
+    target_dir = os.path.dirname(target)
+    more = len(paths) > 1
+    return [
+        "在文件资源管理器中打开以下位置，右键 Python.Runtime.dll →“属性”，"
+        "取消勾选“只读”，点击“确定”：\n" + target
+        + ("\n（上面列出了多个副本，请对每个路径重复此操作。）" if more else ""),
+        "或者以管理员身份打开命令提示符，执行："
+        f"attrib -R \"{target}\"。"
+        "如需批量解除整个目录的只读属性："
+        f"attrib -R /S /D \"{target_dir}\\*\"。",
+        "如果取消后很快又变回只读，通常是 Windows 安全中心（Microsoft "
+        "Defender）的“受控文件夹访问”/防火墙保护，或火绒、360 等安全软件"
+        "在保护程序目录：请把程序目录加入允许/排除列表，并查看"
+        "“保护历史记录”，处理后重试。",
+        "如果提示“拒绝访问”，请以管理员身份运行本程序，"
+        "或把程序解压到当前用户可写的目录（例如桌面或文档）。",
+        "如果是更新时提示该文件无法覆盖，请先完全退出 wvd.exe"
+        "（任务管理器，或命令提示符运行 taskkill /f /im wvd.exe），"
+        "再重新解压/安装更新包。",
+        "以上方法都无效时，重启电脑后再试。",
+    ]
+
+
+def _check_python_runtime_readonly(report):
+    """检查 Python.Runtime.dll 是否被设为只读/无法写入, 并写入 report."""
+    # 已经在本进程加载过 pythonnet 时不再探测, 避免把自身句柄误判为锁定.
+    if "clr" in sys.modules:
+        return
+
+    dll_paths = list(dict.fromkeys(_runtime_files("Python.Runtime.dll")))
+    report["details"]["python_runtime_dll"] = dll_paths
+    if not dll_paths:
+        return
+
+    readonly_paths = []
+    denied_paths = []
+    for path in dll_paths:
+        if _has_readonly_attribute(path):
+            readonly_paths.append(path)
+        elif _file_write_blocked(path):
+            denied_paths.append(path)
+
+    report["details"]["python_runtime_readonly"] = readonly_paths
+    report["details"]["python_runtime_write_denied"] = denied_paths
+
+    if readonly_paths:
+        report["notices"].append(
+            "python.runtime.dll（Python.Runtime.dll）被设置为“只读”，"
+            "自动更新将无法覆盖该文件，可能导致更新失败或版本混杂。\n"
+            "文件位置：\n" + "\n".join(readonly_paths))
+    if denied_paths:
+        report["notices"].append(
+            "python.runtime.dll（Python.Runtime.dll）当前不可写入，"
+            "可能是权限不足，或被 Windows 安全中心/安全软件拦截。\n"
+            "文件位置：\n" + "\n".join(denied_paths))
+
+    if readonly_paths or denied_paths:
+        report["unlock_steps"] = _python_runtime_unlock_steps(
+            list(dict.fromkeys(readonly_paths + denied_paths)))
+
+
 def _netfx_release():
     """返回已安装的 .NET Framework 4.x Release 值 (4.6.2 = 394802)."""
     try:
@@ -390,13 +494,16 @@ def _fit_window_size(width=1158, height=820, margin=24):
 def PreflightCheck():
     """在创建窗口之前检查运行环境.
 
-    返回 dict: ok / fatal / warnings / actions / details / window_size.
+    返回 dict: ok / fatal / warnings / actions / notices / unlock_steps /
+    details / window_size.
     """
     report = {
         "ok": True,
         "fatal": [],
         "warnings": [],
-        "actions": [],   # [(说明, 下载地址), ...]
+        "actions": [],        # [(说明, 下载地址), ...]
+        "notices": [],        # 需要用户确认但不阻止启动的提示
+        "unlock_steps": [],   # 文件只读/无法写入时的解除步骤
         "details": {},
         "window_size": (1158, 820),
     }
@@ -426,6 +533,10 @@ def PreflightCheck():
             if not _find_runtime_file(name):
                 report["fatal"].append(
                     f"缺少 {name}（{desc}）。程序打包不完整，或被安全软件隔离/删除。")
+
+        # 文件存在不代表可更新: 被设成只读或当前用户无写权限时,
+        # 自动更新会无法覆盖 Python.Runtime.dll.
+        _check_python_runtime_readonly(report)
 
         is_64 = (sys.maxsize > 2 ** 32)
         machine = platform.machine().lower()
@@ -484,6 +595,22 @@ def _native_message(title, text, flags):
         return 0
 
 
+def ShowPreflightNotices(report):
+    """显示不阻止启动但需要用户处理的提示."""
+    notices = report.get("notices") or []
+    if not notices:
+        return
+    lines = list(notices)
+    unlock_steps = report.get("unlock_steps") or []
+    if unlock_steps:
+        lines.append("")
+        lines.append("如何解除 python.runtime.dll 的只读锁定：")
+        lines.extend(f"{index}. {step}"
+                     for index, step in enumerate(unlock_steps, 1))
+    _native_message("wvdas 运行提示", "\n".join(lines),
+                    0x30 | 0x40000)  # MB_ICONWARNING | MB_TOPMOST
+
+
 def ShowPreflightErrorAndExit(report):
     """显示环境检查结果并退出进程."""
     title = "wvdas 启动失败"
@@ -501,6 +628,13 @@ def ShowPreflightErrorAndExit(report):
         lines.append("可以安装以下组件后重试：")
         lines.extend(f"· {label}：{url}" for label, url in actions)
 
+    unlock_steps = report.get("unlock_steps") or []
+    if unlock_steps:
+        lines.append("")
+        lines.append("如何解除 python.runtime.dll 的只读锁定：")
+        lines.extend(f"{index}. {step}"
+                     for index, step in enumerate(unlock_steps, 1))
+
     lines.append("")
     lines.append("详细诊断信息已写入 logs\\preflight_error.log。")
 
@@ -512,6 +646,7 @@ def ShowPreflightErrorAndExit(report):
             f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
             f.write(f"fatal: {report['fatal']}\n")
             f.write(f"warnings: {report['warnings']}\n")
+            f.write(f"unlock_steps: {report.get('unlock_steps')}\n")
             f.write(f"details: {report['details']}\n")
     except Exception:
         pass
@@ -644,6 +779,14 @@ class ConfigPanelApp:
             ShowPreflightErrorAndExit(self._preflight)
         for warning in self._preflight["warnings"]:
             logger.warning(warning)
+        for notice in self._preflight.get("notices") or []:
+            logger.warning(notice)
+        if self._preflight.get("unlock_steps"):
+            logger.warning("解除 python.runtime.dll 只读锁定的方法:")
+            for index, step in enumerate(
+                    self._preflight["unlock_steps"], 1):
+                logger.warning(f"  {index}. {step}")
+        ShowPreflightNotices(self._preflight)
 
         self.URL = "https://github.com/arnold2957/wvd"
         self.version = version

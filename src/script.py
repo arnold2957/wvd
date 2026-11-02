@@ -1345,6 +1345,7 @@ def Factory():
                 Sleep(0.5)
             Press([250,1500])
             runtimeContext._ZOOMWORLDMAP = True
+        Sleep(1)
         pos = FindCoordsOrElseExecuteFallbackAndWait([target,"openworldmap", "dungflag"],[swipe,press_any_key],1)
 
         if CheckIf(scn:=ScreenShot(), "dungflag"):
@@ -1530,7 +1531,7 @@ def Factory():
                 Sleep(2)
                 return IdentifyState()
 
-            if CheckIf(screen,"returntoTown"):
+            if CheckIf(screen,"returntoTown") or CheckIf(screen,"returntoTown_DH"):
                 if  (
                         setting.ACTIVE_REST and                             # 激活休息
                         runtimeContext._MEET_CHEST_OR_COMBAT and            # 遇到宝箱或战斗
@@ -1547,10 +1548,12 @@ def Factory():
                     return State.EoT,DungeonState.Quit,screen
 
             if CheckIf(screen, "worldmapflag"):
-                for underscore in range(3):
-                    Press([100,1500])
-                    Sleep(0.5)
-                Press([250,1500])
+                if not runtimeContext._ZOOMWORLDMAP:
+                    for underscore in range(3):
+                        Press([100,1500])
+                        Sleep(0.5)
+                    Press([250,1500])
+                    runtimeContext._ZOOMWORLDMAP = True
                 # 由于定位流程包含了返回键, 有时会退出到大地图, 因此强制执行RTT流程, 不管是否需要住宿.
                 # if setting.ACTIVE_REST and runtimeContext._MEET_CHEST_OR_COMBAT and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0):
                 if quest._RTT:
@@ -1786,6 +1789,7 @@ def Factory():
                             entry[2] if len(entry) > 2 else [1, 1],
                             entry[3] if len(entry) > 3 else [550, 1],
                         )
+                        Sleep(1)
 
                     elif level in ("L1", "L2"):
                         FindCoordsOrElseExecuteFallbackAndWait(
@@ -2456,7 +2460,7 @@ def Factory():
                             if tar == "chest_auto":
                                 if not CheckIf(MinusImage(lastscreen,90,90,90),"chest_auto_minus",[[811,340, 41, 30]]): # 精确匹配按钮是否可用
                                     logger.info('宝箱按钮不可用.')
-                                    return DungeonState.Dungeon
+                                    return DungeonState.Map
                                 
                             if tar in ["mark_auto","chest_auto"]:
                                 lastscreen = ScreenShot()
@@ -2473,12 +2477,14 @@ def Factory():
                             Sleep(1)
                             Press(CheckIf(lastscreen,"resume")) # 立刻按一次resume 以兼容暴风雪场景.
                             return StateMoving_CheckStop()
-                            
-                        return DungeonState.Dungeon
+                        else:
+                            return DungeonState.Map
+                        
+                        return DungeonState.Map
 
                     dungState = startAuto()
-                    if dungState == None:
-                        # 如果状态无效, 直接进入下一轮.
+                    if (dungState == DungeonState.Map):
+                        # 只有在少数情况下再继续执行.
                         continue
                     ########### 不是自动任务, 开始搜索
 

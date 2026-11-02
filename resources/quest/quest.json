@@ -571,7 +571,7 @@
             ["L1","IWO/IWOB1F","IWO/IWO"],
             ["L2","IWO/IWOB1F","IWO/IWO"]
         ],
-        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
+        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 1100",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
     },
     "IWO_2":{
@@ -591,7 +591,7 @@
             ["L1","IWO/IWOB2F","IWO/IWO"],
             ["L2","IWO/IWOB2F","IWO/IWO"]
         ],
-        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 700",[500,1100]],
+        "_RTT": ["City_portTownGrandLegion","input swipe 500 1100 700 1100",[500,1100]],
         "_TIPS":"该任务从第二章水路出发.\nThis quest departs from Trade Waterway (Chapter 2)."
     },
     "malice-B3F":{
@@ -642,7 +642,8 @@
         "_EOT":[
             ["town","world"],
             ["worldmap","SSC/SSC","input swipe 827 1187 527 1421"]
-        ]
+        ],
+        "_RTT": ["City_fortress","input swipe 556 1383 856 971"]
     },
 
     "LBC":{
@@ -898,9 +899,6 @@
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
         "_TARGETINFOLIST":[
-            ["position","右下",[393,545]],
-            ["position","右下",[657,755]],
-            ["position","右下",[555,1235]],
             ["position","右下",[178,1240]]
         ],
         "_EOT":
