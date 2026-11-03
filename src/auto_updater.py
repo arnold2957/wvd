@@ -205,8 +205,28 @@ class AutoUpdater():
                     "当前版本缺少 7z 解压组件 (py7zr)，请手动下载新版安装包") from exc
             with py7zr.SevenZipFile(archive_path, 'r') as archive:
                 archive.extractall(target_dir)
+            self._clear_motw(target_dir)
         else:
             raise Exception(f"不支持的压缩格式: {os.path.splitext(archive_path)[1]}")
+
+    @staticmethod
+    def _clear_motw(unpack_dir):
+        """清除 pythonnet 运行时 DLL 的 MOTW, 避免 CLR 加载被 Windows 阻止."""
+        if sys.platform != "win32":
+            return
+
+        runtime_dir = os.path.join(unpack_dir, "_internal", "pythonnet", "runtime")
+        if not os.path.isdir(runtime_dir):
+            return
+
+        dll_paths = [
+            os.path.join(runtime_dir, name)
+            for name in os.listdir(runtime_dir)
+            if name.lower().endswith(".dll")
+        ]
+        cleared = ClearMotw(dll_paths)
+        if cleared:
+            logger.info(f"已清除 {cleared} 个 pythonnet DLL 的 MOTW.")
 
     def _verify_md5(self, file_path, expected_md5):
         """验证文件MD5哈希值"""

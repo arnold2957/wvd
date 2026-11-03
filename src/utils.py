@@ -39,6 +39,29 @@ def HardExit(code=0):
     os._exit(code)
 
 ############################################
+def ClearMotw(paths):
+    """清除 Windows 文件的 MOTW (Zone.Identifier 数据流), 返回清除数量.
+
+    手动下载/解压的安装包可能带有 MOTW, 会让 Windows 阻止 pythonnet 加载 DLL.
+    """
+    if os.name != "nt":
+        return 0
+
+    cleared = 0
+    for path in dict.fromkeys(paths):
+        try:
+            os.remove(path + ":Zone.Identifier")
+            cleared += 1
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            # 卷不支持备用数据流时视为本来就没有 MOTW
+            if getattr(exc, "winerror", None) in (1, 50):
+                continue
+            logger.warning(f"清除 MOTW 失败: {path}: {exc}")
+    return cleared
+
+############################################
 # 全局停止开关与可中断等待.
 GlobalStopEvent = threading.Event()
 # 勾选"本次执行完毕后停止"时置位; 当前这一轮完成后由脚本置位 GlobalStopEvent.

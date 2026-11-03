@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-__version__ = '3.2.6.1'
+__version__ = '3.2.7'
 OWNER = "arnold2957"
 REPO = "wvd"
 
@@ -137,7 +137,8 @@ class AppController:
                 version = update_data['version']
                 if self.main_window:
                     self.main_window.show_update_notice(
-                        version, self.updater.download)
+                        version, self.updater.download,
+                        notes=update_data.get('notes', ''))
                     self.main_window.save_config()
 
             case 'download_started':

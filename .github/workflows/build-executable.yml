@@ -115,12 +115,18 @@ jobs:
         $releaseContent = "**Version**: {0}`n**MD5**: ``{1}```n**Build Date**: {2}" -f $version, $md5, $date
         $releaseContent | Out-File -FilePath dist/release_notes.md -Encoding utf8
 
+        # 客户端更新提示展示的内容: CHANGES_LOG.md 第一个 "###" 到第一个空行
+        python .github/scripts/notify.py notes dist/update_notes.txt
+        if ($LASTEXITCODE -ne 0) { throw "提取更新内容失败" }
+        $notes = (Get-Content -Path dist/update_notes.txt -Raw -Encoding utf8).TrimEnd()
+
         $releaseData = @{
           version = $version
           md5 = $md5
           release_date = $date
           download_url = "https://github.com/${{ github.repository }}/releases/download/$version/$archiveFileName"
           release_notes = "https://github.com/${{ github.repository }}/releases/tag/$version"
+          notes = $notes
         } | ConvertTo-Json
 
         New-Item -ItemType Directory -Path gh-pages -Force
@@ -182,4 +188,4 @@ jobs:
         VERSION: ${{ steps.extract-version.outputs.version }}
       run: |
         python -m pip install --quiet qq-botpy
-        python .github/scripts/notify_qq_group.py
+        python .github/scripts/notify.py send

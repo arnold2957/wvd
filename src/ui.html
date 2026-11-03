@@ -1152,6 +1152,10 @@
                     <button class="btn btn-ghost btn-sm" id="manualDownload">手动下载</button>
                   </div>
                 </div>
+                <div class="notice-notes-list hidden" id="updateNotes">
+                  <div class="notice-notes-title">更新内容</div>
+                  <ul id="updateNotesList"></ul>
+                </div>
                 <div class="update-progress-wrap hidden" id="updateProgressWrap">
                   <div class="update-progress"><span id="updateProgressBar"></span></div>
                   <div class="update-progress-label" id="updateProgressLabel"></div>
@@ -2561,6 +2565,23 @@
     return bytes + " B";
   }
 
+  function setUpdateNotes(notes) {
+    const wrap = $("#updateNotes");
+    const list = $("#updateNotesList");
+    const lines = (Array.isArray(notes) ? notes : String(notes || "").split(/\r?\n/))
+      .map(line => String(line).trim())
+      .filter(Boolean);
+    if (list) {
+      list.textContent = "";
+      lines.forEach(line => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        list.appendChild(li);
+      });
+    }
+    if (wrap) wrap.classList.toggle("hidden", lines.length === 0);
+  }
+
   function showUpdate(ev) {
     const card = $("#updateNotice");
     if (card) card.classList.remove("hidden");
@@ -2568,7 +2589,8 @@
     if (title) title.textContent = "下载更新 · v" + ev.version;
     const current = $("#updateCurrent");
     if (current) current.textContent = "当前版本 v" + (ev.current || (state && state.version) || "");
-    if (state) state.update = { latest: ev.version };
+    setUpdateNotes(ev.notes);
+    if (state) state.update = { latest: ev.version, notes: ev.notes || "" };
     showSummaryState("new", 4000);
     toast("发现新版本 v" + ev.version);
   }
@@ -3170,7 +3192,11 @@
       if (sumTime) sumTime.textContent = "00:00:00";
     }
     if (st.update && st.update.latest) {
-      showUpdate({ version: st.update.latest, current: st.version });
+      showUpdate({
+        version: st.update.latest,
+        current: st.version,
+        notes: st.update.notes || "",
+      });
     }
     hideBootGuard();
     renderLog("SYS", "界面已就绪。");

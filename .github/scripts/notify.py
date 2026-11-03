@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""发布版本通报到 QQ 群（QQ 机器人开放平台）。
+"""更新内容提取 + 发布版本通报到 QQ 群（QQ 机器人开放平台）。
 
-由 GitHub Actions 在构建成功后调用。
+两种用法:
+    python .github/scripts/notify.py notes [输出文件]
+        从 CHANGES_LOG.md 提取第一个 "###" 到第一个空行之间的内容.
+        省略输出文件时打印到标准输出.
+
+    python .github/scripts/notify.py send
+        发布版本通报到 QQ 群. 由 GitHub Actions 在构建成功后调用.
+
 QQ 官方要求：发送主动群消息时机器人必须保持 WebSocket 在线，
-因此本脚本会先用 qq-botpy 连接机器人服务，在 on_ready 里发送消息后退出。
+因此发送时会先用 qq-botpy 连接机器人服务，在 on_ready 里发送消息后退出。
 
-环境变量:
+环境变量 (send 使用):
     QQ_BOT_APP_ID        机器人 AppID       (开放平台 -> 开发设置)
     QQ_BOT_APP_SECRET    机器人 AppSecret   (开放平台 -> 开发设置)
     QQ_BOT_GROUP_OPENID  目标群的 group_openid
@@ -23,6 +30,7 @@ QQ 官方要求：发送主动群消息时机器人必须保持 WebSocket 在线
     - 正式版本         ->  CHANGES_LOG.md 中第一个 "###" 到第一个空行之间的内容
 """
 
+import argparse
 import asyncio
 import hashlib
 import os
@@ -31,12 +39,14 @@ import sys
 import threading
 import time
 import urllib.request
-from pathlib import Path
 
 CHANGES_LOG = "CHANGES_LOG.md"
 CONNECT_TIMEOUT_SECONDS = 90
 # upload_prepare 的 md5_10m 字段: 文件前 10002432 字节的 MD5
 MD5_PREFIX_BYTES = 10_002_432
+
+_HEADER = re.compile(r"^###[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+_BODY_END = re.compile(r"\r?\n\r?\n")
 
 
 def log(message):
@@ -52,29 +62,51 @@ def warn(message):
     log(f"::warning::{message}")
 
 
+def extract_latest_notes(path=CHANGES_LOG):
+    """返回 (版本标题, 更新内容行列表)."""
+    with open(path, "r", encoding="utf-8-sig") as file:
+        text = file.read()
+
+    header = _HEADER.search(text)
+    if not header:
+        raise RuntimeError(f"{path} 中找不到 '###' 开头的版本标题")
+
+    end = _BODY_END.search(text, header.end())
+    body = text[header.end():end.start()] if end else text[header.end():]
+
+    lines = [line.rstrip() for line in body.splitlines()]
+    lines = [line for line in lines if line.strip()]
+    return header.group(1).strip(), lines
+
+
+def write_notes(output=None):
+    """提取更新内容并写入文件 (或打印到标准输出)."""
+    try:
+        _header, lines = extract_latest_notes()
+    except Exception as error:  # noqa: BLE001 - 需要打印完整原因
+        log(f"生成更新内容失败: {error}")
+        return 1
+
+    text = "\n".join(lines)
+    if output:
+        with open(output, "w", encoding="utf-8", newline="\n") as file:
+            file.write(text)
+        log(f"更新内容已写入 {output}")
+    else:
+        log(text)
+    return 0
+
+
 def build_message(version):
     """根据版本类型生成通报内容。"""
     if "beta" in version.lower():
         return f"测试版本{version}已经发布!"
 
-    text = Path(CHANGES_LOG).read_text(encoding="utf-8-sig")
-
-    # 第一个 "###" 标题所在的整行
-    header = re.search(r"^###[ \t]*(.+?)[ \t]*$", text, re.MULTILINE)
-    if not header:
-        raise RuntimeError(f"{CHANGES_LOG} 中找不到 '###' 开头的版本标题")
-
-    # 从标题之后到第一个空行为止
-    end = text.find("\n\n", header.end())
-    if end == -1:
-        end = len(text)
-    body = text[header.end():end]
-
-    lines = [line.rstrip() for line in body.splitlines()]
-    lines = [line for line in lines if line.strip()]
+    # 第一个 "###" 标题到第一个空行之间的内容
+    header, lines = extract_latest_notes()
 
     # QQ 群消息是纯文本, 去掉 markdown 标题符号, 保留版本号
-    return "\n".join([header.group(1).strip(), *lines])
+    return "\n".join([header, *lines])
 
 
 def hash_file(path):
@@ -119,7 +151,7 @@ def put_part(url, data, attempts=3):
     raise last_error
 
 
-def main():
+def send_qq_notice():
     version = os.environ.get("VERSION", "").strip()
     app_id = os.environ.get("QQ_BOT_APP_ID", "").strip()
     app_secret = os.environ.get("QQ_BOT_APP_SECRET", "").strip()
@@ -285,6 +317,7 @@ def main():
     def on_timeout():
         log(f"QQ 群通报失败: 连接 QQ 机器人服务超时 ({CONNECT_TIMEOUT_SECONDS}s)")
         sys.stdout.flush()
+        sys.stderr.flush()
         os._exit(1)
 
     timer = threading.Timer(CONNECT_TIMEOUT_SECONDS, on_timeout)
@@ -304,6 +337,21 @@ def main():
         return 1
 
     return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="提取 CHANGES_LOG.md 更新内容, 或向 QQ 群发布版本通报")
+    subparsers = parser.add_subparsers(dest="command")
+    notes_parser = subparsers.add_parser("notes", help="提取最新版本的更新内容")
+    notes_parser.add_argument("output", nargs="?", help="输出文件路径; 省略时打印到标准输出")
+    subparsers.add_parser("send", help="发送 QQ 群通报")
+    args = parser.parse_args(argv)
+
+    if args.command == "notes":
+        return write_notes(args.output)
+    # 无子命令时保持旧行为: 直接发送通报
+    return send_qq_notice()
 
 
 if __name__ == "__main__":
