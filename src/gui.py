@@ -918,6 +918,9 @@ class ConfigPanelApp:
         self.values["REST_INTERVEL"] = max(0, _to_int(self.values.get("REST_INTERVEL"), 1))
         self.values["RE_ASSEMBLE_PARTY_INTERVAL"] = max(
             1, min(12, _to_int(self.values.get("RE_ASSEMBLE_PARTY_INTERVAL"), 6)))
+        self.values["MAXIMUM_TIME_INTERVALS_BETWEEN_RESTARTING_EMU"] = max(
+            1, min(12, _to_int(
+                self.values.get("MAXIMUM_TIME_INTERVALS_BETWEEN_RESTARTING_EMU"), 6)))
         self.values["MAX_TRY_LIMIT"] = max(25, _to_int(self.values.get("MAX_TRY_LIMIT"), 25))
         self.values["MAX_CRASH_LIMIT"] = max(10, _to_int(self.values.get("MAX_CRASH_LIMIT"), 10))
         self.values["STARTUP_WAIT_TIME"] = max(

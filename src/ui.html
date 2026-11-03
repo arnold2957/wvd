@@ -1430,6 +1430,15 @@
                 <span class="inline-num"><input type="number" id="maxCrashLimit" data-config="MAX_CRASH_LIMIT" data-numeric="1" min="10"> 次</span>
               </div>
             </div>
+            <div class="row">
+              <div class="label">启用定时重启模拟器
+                <small>距上次启动/重启模拟器超过指定时长后，在下次回城时强制重启，缓解模拟器长时间运行的内存泄漏。</small>
+              </div>
+              <div class="control">
+                <span class="inline-num">每 <input type="number" id="restartEmuInterval" data-config="MAXIMUM_TIME_INTERVALS_BETWEEN_RESTARTING_EMU" data-numeric="1" min="1" max="12"> 小时</span>
+                <label class="switch"><input type="checkbox" id="restartEmuEnabled" data-config="ACTIVE_RESTART_EMU"><span class="track"></span></label>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -2003,6 +2012,8 @@
     MAX_TRY_LIMIT: (v) => { const el = $("#maxTryLimit"); if (el) el.value = v == null ? 25 : v; },
     MAX_CRASH_LIMIT: (v) => { const el = $("#maxCrashLimit"); if (el) el.value = v == null ? 10 : v; },
     STARTUP_WAIT_TIME: (v) => { const el = $("#startupWaitTime"); if (el) el.value = v == null ? 10 : v; },
+    ACTIVE_RESTART_EMU: (v) => { const el = $("#restartEmuEnabled"); if (el) el.checked = !!v; },
+    MAXIMUM_TIME_INTERVALS_BETWEEN_RESTARTING_EMU: (v) => { const el = $("#restartEmuInterval"); if (el) el.value = v == null ? 6 : v; },
   };
 
   function applyValues(values) {

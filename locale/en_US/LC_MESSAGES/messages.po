@@ -2557,6 +2557,11 @@ msgstr "S E T T I N G S"
 msgid "本次执行完毕后停止"
 msgstr "Stop after this run"
 
+#: D:/Desktop/andsimscripts/src/script.py:2593
+#, python-brace-format
+msgid "距离上次重启模拟器已超过{a}小时, 强制重启模拟器."
+msgstr "The emulator has not been restarted for more than {a} hours; restarting it now."
+
 msgid "暂停滚动"
 msgstr "Pause scrolling"
 
