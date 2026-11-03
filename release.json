@@ -1,8 +1,8 @@
 {
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.7/wvd_3.2.7.7z",
-  "notes": "尝试修复Failed to resolve Python.Runtime.Loader.Initialize的问题.\n现在新版本更新提示会带有说明.",
+  "md5": "586ed2544d1e96ecfdaac6c0330278b2",
   "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.7",
-  "release_date": "2026-11-03 09:33:01",
-  "md5": "a36b7a3ef0932c0655448b64fb5ed339",
-  "version": "3.2.7"
+  "release_date": "2026-11-03 13:09:44",
+  "version": "3.2.7",
+  "notes": "新增了定时重启模拟器的设置, 启用该设置后, 脚本会确保模拟器在特定的时间段里重启至少一次. 该设置目前只在回城的时候触发.\n将摘要里的宝箱的平均时间从\"开锁的平均时间\"变为\"获得一个宝箱的平均时间\". 而战斗的平均不变, 依旧是\"一场战斗持续的时间\".",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.7/wvd_3.2.7.7z"
 }
