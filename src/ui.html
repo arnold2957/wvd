@@ -1244,7 +1244,7 @@
             <div class="row">
               <div class="label">遇到善恶事件时</div>
               <div class="control">
-                <select class="w-lg" id="karmaSelect">
+                <select class="w-lg" id="karmaSelect" data-config="KARMA_ADJUST">
                   <option value="+0">维持现状</option>
                   <option value="+17">恶 → 中立，中立 → 善</option>
                   <option value="-17">善 → 中立，中立 → 恶</option>
@@ -1993,7 +1993,12 @@
             break;
           }
         }
-        if (!matched) sel.value = "+0";
+        // 剩余次数还没有走完 (如 +16/-15) 时, 下拉框仍显示对应方向,
+        // 不要跳回"维持现状"让人误以为设置被重置.
+        if (!matched) {
+          if (val === "" || val === "0" || val === "+0") sel.value = "+0";
+          else sel.value = val.startsWith("-") ? "-17" : "+17";
+        }
       }
       const pill = $("#karmaPill");
       if (pill) {
@@ -2732,6 +2737,12 @@
     if (btn) btn.classList.toggle("running", !!running);
     const text = $("#runText");
     if (text) text.textContent = running ? "停止脚本" : "脚本，启动！";
+    // 运行期间不允许修改善恶趋向; 停止后恢复.
+    const karmaSelect = $("#karmaSelect");
+    if (karmaSelect) {
+      karmaSelect.disabled = !!running;
+      karmaSelect.title = running ? "脚本运行中不可修改，停止后可调整" : "";
+    }
     updateStatusChip(!!running);
 
     if (runTimer) {

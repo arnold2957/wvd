@@ -702,6 +702,9 @@ class ConfigPanelApp:
     CUSTOM_STRATEGY = "自定义任务点策略"
     FULL_AUTO = "全自动战斗"
     CONFIG_KEYS = {row[1] for row in CONFIG_VAR_LIST}
+    # 任务运行期间由脚本线程直接写入配置文件的字段:
+    # GUI 保存其他设置时不能用旧的内存值覆盖它们.
+    _RUNTIME_OWNED_KEYS = ("KARMA_ADJUST",)
 
     def __init__(self, version, msg_queue):
         # 与上次运行的版本不同, 说明刚刚更新过, 这时才需要清理 MOTW.
@@ -945,7 +948,7 @@ class ConfigPanelApp:
                     continue
                 self.values[key] = self._coerce_key(key, value)
             self._normalize_values()
-            self._save_internal()
+            self._save_internal(changed_keys=tuple(patch.keys()))
         return self._snapshot_with_ok()
 
     def save_config(self):
@@ -998,8 +1001,17 @@ class ConfigPanelApp:
                 break
         self.values["FARM_TARGET"] = farm_target
 
-    def _save_internal(self):
+    def _save_internal(self, changed_keys=()):
         existing_config = LoadRawConfigFromFile() or {}
+        # 脚本运行时会直接写入 config.json 的字段, GUI 内存中的副本可能过期.
+        # 未在本次操作中显式修改时, 以磁盘上的最新值为准, 避免覆盖脚本的写入.
+        disk_general = existing_config.get("GENERAL") or {}
+        for key in self._RUNTIME_OWNED_KEYS:
+            if key in changed_keys:
+                continue
+            if key in disk_general:
+                self.values[key] = disk_general[key]
+
         other_task_spec_config = {
             k: v for k, v in existing_config.items()
             if k not in ["GENERAL"] and isinstance(v, dict)

@@ -1632,23 +1632,32 @@ def Factory():
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
-                    if int(setting.KARMA_ADJUST) == 0:
+                    # KARMA_ADJUST 是仍需调整的善恶点数:
+                    #   正数 -> 选"无视" (+1), 负数 -> 选"伏击" (-2).
+                    #   到 0 即维持现状; 维持时若为 0, 先伏击(-2)并记 +2,
+                    #   之后用无视(+1)逐步回到 0.
+                    # 运行时只使用启动时的快照; 界面上的修改重启后才生效,
+                    # 因此这里不再读取 config.json.
+                    try:
+                        karma_remaining = int(str(setting.KARMA_ADJUST or "").strip() or 0)
+                    except (TypeError, ValueError):
+                        karma_remaining = 0
+
+                    if karma_remaining == 0:
                         Press(CheckIf(screen,"ambush"))
                         new_str = "+2"
-                    elif setting.KARMA_ADJUST.startswith("-"):
+                    elif karma_remaining < 0:
                         Press(CheckIf(screen,"ambush"))
-                        num = int(setting.KARMA_ADJUST)
-                        num = num + 2
-                        new_str = "{a}".format(a=num)
+                        num = karma_remaining + 2
+                        new_str = f"+{num}" if num >= 0 else str(num)
                     else:
                         Press(CheckIf(screen,"ignore"))
-                        num = int(setting.KARMA_ADJUST)
-                        num = num - 1
-                        new_str = f"+{num}"
+                        new_str = f"+{karma_remaining - 1}"
 
                     logger.info(_("即将进行善恶值调整. 剩余次数:{a}".format(a=new_str)))
                     runtimeContext.record_special_event(_("善恶变化"))
                     setting.KARMA_ADJUST = new_str
+                    # 立即写入 config.json; 不通知 UI, 停止脚本后再按配置刷新界面.
                     SetOneVarInGeneralConfig("KARMA_ADJUST",setting.KARMA_ADJUST)
                     Sleep(2)
 
