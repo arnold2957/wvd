@@ -274,22 +274,65 @@ def _find_runtime_file(name):
 
 
 def _clear_runtime_motw():
-    """清除 Python.Runtime.dll 所在目录内 DLL 的 MOTW.
+    """递归清除程序目录中可执行模块的 MOTW.
 
     手动下载/解压的安装包不会经过更新器, 这里在加载 CLR 前统一处理.
+    不在白名单里区分原生 DLL: 任何 .dll/.exe/.pyd 带上 MOTW 都可能被
+    Windows 阻止加载, 因此整个目录树都要扫一遍.
     """
-    dll_paths = list(dict.fromkeys(_runtime_files("Python.Runtime.dll")))
-    runtime_dirs = list(dict.fromkeys(os.path.dirname(p) for p in dll_paths))
+    roots = list(_runtime_roots())
+    if not getattr(sys, "frozen", False):
+        # 源码运行时 _runtime_roots() 为空, 退回到脚本所在目录.
+        roots.append(os.path.dirname(os.path.abspath(__file__)))
+
+    # 去掉被上层目录包含的根, 避免同一批文件被遍历多次 (如 _MEIPASS 与 _internal).
+    scan_roots = []
+    for root in sorted(dict.fromkeys(os.path.abspath(r) for r in roots), key=len):
+        if not any(root == other or root.startswith(other + os.sep)
+                   for other in scan_roots):
+            scan_roots.append(root)
+
     paths = []
-    for runtime_dir in runtime_dirs:
+    for root in scan_roots:
+        for dirpath, _dirnames, filenames in os.walk(root):
+            for name in filenames:
+                if name.lower().endswith((".dll", ".exe", ".pyd")):
+                    paths.append(os.path.join(dirpath, name))
+    return ClearMotw(paths)
+
+
+def _load_changelog():
+    """读取版本更新说明 (CHANGES_LOG.md) 中最新版本的一段, 用于启动弹窗.
+
+    与发布通报 (notify.py) 保持一致: 取第一个 "###" 标题到第一个空行
+    之间的内容, 而不是整份更新日志.
+    """
+    if getattr(sys, "frozen", False):
+        base_dir = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    candidates = [
+        os.path.join(base_dir, "CHANGES_LOG.md"),
+        os.path.join(os.getcwd(), "CHANGES_LOG.md"),
+    ]
+    text = ""
+    for path in dict.fromkeys(os.path.abspath(p) for p in candidates):
         try:
-            names = os.listdir(runtime_dir)
+            with open(path, "r", encoding="utf-8-sig") as f:
+                text = f.read()
+            break
         except OSError:
             continue
-        paths.extend(
-            os.path.join(runtime_dir, name)
-            for name in names if name.lower().endswith(".dll"))
-    return ClearMotw(paths)
+    if not text:
+        return ""
+
+    header = re.search(r"^###[ \t]*(.+?)[ \t]*$", text, re.MULTILINE)
+    if not header:
+        return ""
+    end = re.search(r"\r?\n\r?\n", text[header.end():])
+    body = text[header.end():header.end() + end.start()] if end else text[header.end():]
+    lines = [line.rstrip() for line in body.splitlines() if line.strip()]
+    return "\n".join([header.group(1).strip(), *lines])
 
 
 def _netfx_release():
@@ -406,8 +449,11 @@ def _fit_window_size(width=1158, height=820, margin=24):
     return width, height, 1.0
 
 
-def PreflightCheck():
+def PreflightCheck(version_changed=False):
     """在创建窗口之前检查运行环境.
+
+    version_changed 为 True 表示本次启动的版本与上次运行不同 (刚更新过),
+    此时才需要清理整个目录的 MOTW.
 
     返回 dict: ok / fatal / warnings / actions / details / window_size.
     """
@@ -482,11 +528,13 @@ def PreflightCheck():
     # ---- 4. 实际加载 pythonnet ----
     # 前面的文件检查已经失败时不再尝试, 避免在已知缺失的环境里触发底层崩溃.
     if not report["fatal"]:
-        # 手动下载/解压的包可能带 MOTW, 加载 CLR 前先清掉.
-        motw_cleared = _clear_runtime_motw()
-        if motw_cleared:
-            report["details"]["motw_cleared"] = motw_cleared
-            logger.info(f"已清除 {motw_cleared} 个运行时 DLL 的 MOTW.")
+        # 只有版本发生变化 (刚更新过) 时才清理: 手动下载/解压的新包会带 MOTW,
+        # 而平时启动不需要重复扫描整个目录.
+        if version_changed:
+            motw_cleared = _clear_runtime_motw()
+            if motw_cleared:
+                report["details"]["motw_cleared"] = motw_cleared
+                logger.info(f"已清除 {motw_cleared} 个可执行模块的 MOTW.")
         clr_error, used_coreclr = _try_load_clr()
         report["details"]["clr_coreclr"] = used_coreclr
         if clr_error:
@@ -656,9 +704,23 @@ class ConfigPanelApp:
     CONFIG_KEYS = {row[1] for row in CONFIG_VAR_LIST}
 
     def __init__(self, version, msg_queue):
+        # 与上次运行的版本不同, 说明刚刚更新过, 这时才需要清理 MOTW.
+        # 这里直接读原始配置, 以便在加载 CLR 之前就知道是否发生过版本更新.
+        try:
+            last_version = (LoadRawConfigFromFile() or {}).get(
+                "GENERAL", {}).get("LAST_VERSION")
+        except Exception:
+            last_version = None
+        version_changed = last_version != version
+
+        # 版本真正变过 (刚更新过) 时才需要展示更新说明;
+        # MOTW 清理也复用同一个判断, 与弹窗在同一时间点触发.
+        # 下载通知 (发现新版本可下载) 不会走到这里, 也不会触发清理.
+        self._changelog_text = _load_changelog() if version_changed else ""
+
         # 先确认 .NET / WebView2 可用, 否则 create_window 会直接让进程崩溃.
         try:
-            self._preflight = PreflightCheck()
+            self._preflight = PreflightCheck(version_changed=version_changed)
         except Exception:
             # 检查本身出错时不应阻止程序启动.
             logger.exception("启动前环境检查出错, 已跳过")
@@ -1052,6 +1114,8 @@ class ConfigPanelApp:
             snap["canonSkills"] = [_(c) for c in self.SKILL_CANON]
             snap["canonTargets"] = [_(c) for c in self.TARGET_CANON]
             snap["levels"] = list(self.SKILL_LEVELS)
+            # 仅在启动时的 bootstrap 里带一次, 用于版本更新说明弹窗.
+            snap["changelog"] = self._changelog_text
             snap["ok"] = True
             return snap
 

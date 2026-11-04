@@ -1595,15 +1595,15 @@
         <div class="stat-grid">
           <div class="stat">
             <div class="nums"><span class="v" id="statDungeon">-</span><span class="avg-val empty" id="avgDungeon">-</span></div>
-            <div class="meta"><span class="name">完成</span><span class="avg-label">平均用时</span></div>
+            <div class="meta"><span class="name">完成</span><span class="avg-label">平均用时（秒）</span></div>
           </div>
           <div class="stat">
             <div class="nums"><span class="v" id="statCol2">-</span><span class="avg-val empty" id="avgCol2">-</span></div>
-            <div class="meta"><span class="name" id="nameCol2">-</span><span class="avg-label">平均用时</span></div>
+            <div class="meta"><span class="name" id="nameCol2">-</span><span class="avg-label">平均用时（秒）</span></div>
           </div>
           <div class="stat">
             <div class="nums"><span class="v" id="statCol3">-</span><span class="avg-val empty" id="avgCol3">-</span></div>
-            <div class="meta"><span class="name" id="nameCol3">-</span><span class="avg-label">平均用时</span></div>
+            <div class="meta"><span class="name" id="nameCol3">-</span><span class="avg-label">平均用时（秒）</span></div>
           </div>
           <div class="stat special empty" id="eventStat" tabindex="0" aria-describedby="eventTooltip">
             <div class="nums"><span class="v" id="statEvents">0</span><span class="avg-val empty">—</span></div>
@@ -2630,12 +2630,8 @@
 
   function fmtAvg(seconds) {
     if (!seconds || seconds <= 0) return "-";
-    if (seconds < 60) return Number(seconds).toFixed(2);
-    const total = Math.round(seconds);
-    const h = Math.floor(total / 3600);
-    const m = Math.floor(total % 3600 / 60);
-    const s = total % 60;
-    return h ? (h + ":" + pad(m) + ":" + pad(s)) : (pad(m) + ":" + pad(s));
+    // 统一用秒显示, 不再使用 "分:秒" / "时:分:秒" 格式.
+    return String(Number(Number(seconds).toFixed(2)));
   }
 
   function setStatValue(selector, value, isAvg) {
@@ -3207,6 +3203,14 @@
         version: st.update.latest,
         current: st.version,
         notes: st.update.notes || "",
+      });
+    }
+    if (st.changelog) {
+      uiDialog({
+        title: "更新说明 · v" + st.version,
+        message: st.changelog,
+        okText: "知道了",
+        cancelText: null,
       });
     }
     hideBootGuard();

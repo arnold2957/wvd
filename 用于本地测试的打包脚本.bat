@@ -114,6 +114,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM 版本更新说明弹窗需要与 exe 同目录的 CHANGES_LOG.md.
+copy /Y "CHANGES_LOG.md" "dist\%APP_NAME%\" >nul
+
 echo.
 echo ============================================================
 echo [INFO] Build finished.
