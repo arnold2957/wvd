@@ -1,8 +1,8 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.9",
-  "md5": "2ee7989917e653c729d1ff3305593136",
-  "notes": "继续尝试修复Failed to resolve Python.Runtime.Loader.Initialize的问题.解决方案来自[@Yuee].\n摘要现在统一为秒, 并且进行了单位标注.",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.9/wvd_3.2.9.7z",
-  "version": "3.2.9",
-  "release_date": "2026-11-04 16:20:05"
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.10/wvd_3.2.10.7z",
+  "notes": "修复了善恶修改无法保存的问题.\n现在禁止在运行中修改善恶趋向调整.\n注意, 现在虽然可以在运行时修改面板, 但是对面板的修改不会立刻生效, 和过去一样, 只会在重新启动脚本后生效.",
+  "md5": "cd29acb36ef852dc8191a5f460f8dd82",
+  "release_date": "2026-11-04 16:51:48",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.10",
+  "version": "3.2.10"
 }
