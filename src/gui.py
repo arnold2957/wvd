@@ -48,6 +48,20 @@ def LoadConfig(specific='ALL'):
     raw_config = LoadRawConfigFromFile() or {}
     general_config = raw_config.get("GENERAL", {})
 
+    # 兼容旧字段名: KARMA_ADJUST 已重命名为 KARMA_ADJUST_REMAINING.
+    if "KARMA_ADJUST_REMAINING" not in general_config and "KARMA_ADJUST" in general_config:
+        general_config = dict(general_config)
+        general_config["KARMA_ADJUST_REMAINING"] = general_config["KARMA_ADJUST"]
+
+    # 旧配置没有 KARMA_MAINTAIN 时, 按剩余点数推断.
+    if "KARMA_MAINTAIN" not in general_config:
+        general_config = dict(general_config)
+        try:
+            karma_remaining = int(str(general_config.get("KARMA_ADJUST_REMAINING") or "0").strip() or 0)
+        except (TypeError, ValueError):
+            karma_remaining = 0
+        general_config["KARMA_MAINTAIN"] = karma_remaining == 0
+
     task_specific = general_config.get("TASK_SPECIFIC_CONFIG", False)
     farm_target = general_config.get("FARM_TARGET")
 
@@ -704,7 +718,7 @@ class ConfigPanelApp:
     CONFIG_KEYS = {row[1] for row in CONFIG_VAR_LIST}
     # 任务运行期间由脚本线程直接写入配置文件的字段:
     # GUI 保存其他设置时不能用旧的内存值覆盖它们.
-    _RUNTIME_OWNED_KEYS = ("KARMA_ADJUST",)
+    _RUNTIME_OWNED_KEYS = ("KARMA_ADJUST_REMAINING", "KARMA_MAINTAIN")
 
     def __init__(self, version, msg_queue):
         # 与上次运行的版本不同, 说明刚刚更新过, 这时才需要清理 MOTW.
@@ -957,14 +971,14 @@ class ConfigPanelApp:
             self._save_internal()
 
     def _normalize_values(self):
-        # KARMA_ADJUST: 正值补 '+'; 空值视作 +0.
-        karma = self.values.get("KARMA_ADJUST")
+        # KARMA_ADJUST_REMAINING: 正值补 '+'; 空值视作 +0.
+        karma = self.values.get("KARMA_ADJUST_REMAINING")
         karma = "" if karma is None else str(karma).strip()
         if karma in ("", "0"):
             karma = "+0"
         elif karma.isdigit():
             karma = "+" + karma
-        self.values["KARMA_ADJUST"] = karma
+        self.values["KARMA_ADJUST_REMAINING"] = karma
 
         # ADB 地址: 只填端口 / 逗号分隔多个端口时自动补全.
         adb = "" if self.values.get("ADB_ADRESS") is None else str(self.values["ADB_ADRESS"]).strip()
@@ -1554,8 +1568,10 @@ class ConfigPanelApp:
         with self._lock:
             self._quest_active = False
             self._run_started = None
-            if 'KARMA_ADJUST' in config:
-                self.values['KARMA_ADJUST'] = config['KARMA_ADJUST']
+            if 'KARMA_ADJUST_REMAINING' in config:
+                self.values['KARMA_ADJUST_REMAINING'] = config['KARMA_ADJUST_REMAINING']
+            if 'KARMA_MAINTAIN' in config:
+                self.values['KARMA_MAINTAIN'] = _to_bool(config['KARMA_MAINTAIN'])
         self.push_event({"type": "run_finished", "state": self._snapshot()})
 
     # ------------------------------------------------------------------

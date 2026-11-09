@@ -25,7 +25,8 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "DARK_THEME",               tk.BooleanVar, False],
             ["GENERAL",   "FARM_TARGET_TEXT",         tk.StringVar,  ""],
             ["GENERAL",   "FARM_TARGET",              tk.StringVar,  None],
-            ["GENERAL",   "KARMA_ADJUST",             tk.StringVar,  "+0"],
+            ["GENERAL",   "KARMA_ADJUST_REMAINING",   tk.StringVar,  "+0"],
+            ["GENERAL",   "KARMA_MAINTAIN",            tk.BooleanVar, True],
             ["GENERAL",   "TASK_SPECIFIC_CONFIG",     tk.BooleanVar, False],
             ["GENERAL",   "STRATEGY",                 list         , [{
                                                                         "group_name": _("柚子"),
@@ -1632,33 +1633,45 @@ def Factory():
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
-                    # KARMA_ADJUST 是仍需调整的善恶点数:
+                    # KARMA_ADJUST_REMAINING 是仍需调整的善恶点数:
                     #   正数 -> 选"无视" (+1), 负数 -> 选"伏击" (-2).
                     #   到 0 即维持现状; 维持时若为 0, 先伏击(-2)并记 +2,
                     #   之后用无视(+1)逐步回到 0.
+                    # KARMA_MAINTAIN 只用于界面显示: 用户选择非"维持"时为 False,
+                    # 剩余点数归零后恢复为 True; 维持循环中的 +1/+2 不会改变它.
                     # 运行时只使用启动时的快照; 界面上的修改重启后才生效,
                     # 因此这里不再读取 config.json.
-                    try:
-                        karma_remaining = int(str(setting.KARMA_ADJUST or "").strip() or 0)
-                    except (TypeError, ValueError):
-                        karma_remaining = 0
+                    karma_adjust_remaining = int(str(setting.KARMA_ADJUST_REMAINING or "").strip() or 0)
+                    karma_maintain = bool(setting.KARMA_MAINTAIN)
 
-                    if karma_remaining == 0:
+                    # 当剩余调整值变为0时, 调整结束
+                    if karma_adjust_remaining == 0:
+                        karma_maintain = True
+
+                    # 开始维持
+                    if karma_adjust_remaining == 0:
+                        # 选择伏击, 该改动会造成善恶-2, 因此需要在未来+2
                         Press(CheckIf(screen,"ambush"))
                         new_str = "+2"
-                    elif karma_remaining < 0:
+                    elif karma_adjust_remaining < 0:
                         Press(CheckIf(screen,"ambush"))
-                        num = karma_remaining + 2
+                        num = karma_adjust_remaining + 2
                         new_str = f"+{num}" if num >= 0 else str(num)
                     else:
                         Press(CheckIf(screen,"ignore"))
-                        new_str = f"+{karma_remaining - 1}"
+                        new_str = f"+{karma_adjust_remaining - 1}"
 
-                    logger.info(_("即将进行善恶值调整. 剩余次数:{a}".format(a=new_str)))
+                    logger.info(_("已经进行善恶值调整. {a} 剩余尚未进行的善恶变化: {b}").format(
+                        a=_("当前状态: 维持.") if karma_maintain else _(""),
+                        b= new_str))
                     runtimeContext.record_special_event(_("善恶变化"))
-                    setting.KARMA_ADJUST = new_str
+                    setting.KARMA_ADJUST_REMAINING = new_str
+                    setting.KARMA_MAINTAIN = karma_maintain
                     # 立即写入 config.json; 不通知 UI, 停止脚本后再按配置刷新界面.
-                    SetOneVarInGeneralConfig("KARMA_ADJUST",setting.KARMA_ADJUST)
+                    SetVarsInGeneralConfig({
+                        "KARMA_ADJUST_REMAINING": setting.KARMA_ADJUST_REMAINING,
+                        "KARMA_MAINTAIN": setting.KARMA_MAINTAIN,
+                    })
                     Sleep(2)
 
                 for op in DIALOG_OPTION_IMAGE_LIST:
@@ -2163,7 +2176,7 @@ def Factory():
     def StateChest():
         nonlocal runtimeContext
         availableChar = [0, 1, 2, 3, 4, 5]
-        disarm = [515,934]  # 527,920会按到接受死亡 450 1000会按到技能 445,1050还是会按到技能
+        disarm = [515,929]  # 527,920会按到接受死亡 515,930会按到技能 445,1050还是会按到技能
         haveBeenTried = False
 
         if runtimeContext._TIME_CHEST==0:
@@ -4030,7 +4043,7 @@ def Factory():
                             Sleep(0.02)
                     DeviceShell(f"input motionevent UP 243 1200")
             case "test":
-                SaveImage(ScreenShot())
+                Press([515,929])
                 pass
                 
                     

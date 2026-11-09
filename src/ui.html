@@ -1244,12 +1244,12 @@
             <div class="row">
               <div class="label">遇到善恶事件时</div>
               <div class="control">
-                <select class="w-lg" id="karmaSelect" data-config="KARMA_ADJUST">
+                <select class="w-lg" id="karmaSelect" data-config="KARMA_ADJUST_REMAINING">
                   <option value="+0">维持现状</option>
                   <option value="+17">恶 → 中立，中立 → 善</option>
                   <option value="-17">善 → 中立，中立 → 恶</option>
                 </select>
-                <span class="pill gray" id="karmaPill">还需 +0 点</span>
+                <span class="pill gray" id="karmaPill">维持现状</span>
               </div>
             </div>
           </div>
@@ -1981,31 +1981,6 @@
     REST_INTERVEL: (v) => { const el = $("#restInterval"); if (el) el.value = v == null ? 1 : v; },
     RE_ASSEMBLE_PARTY: (v) => { const el = $("#reassembleParty"); if (el) el.checked = !!v; },
     RE_ASSEMBLE_PARTY_INTERVAL: (v) => { const el = $("#reassembleInterval"); if (el) el.value = v == null ? 6 : v; },
-    KARMA_ADJUST: (v) => {
-      const val = String(v == null ? "+0" : v);
-      const sel = $("#karmaSelect");
-      if (sel) {
-        let matched = false;
-        for (const option of sel.options) {
-          if (option.value === val || (val !== "" && option.value.replace("+", "") === val.replace("+", ""))) {
-            sel.value = option.value;
-            matched = true;
-            break;
-          }
-        }
-        // 剩余次数还没有走完 (如 +16/-15) 时, 下拉框仍显示对应方向,
-        // 不要跳回"维持现状"让人误以为设置被重置.
-        if (!matched) {
-          if (val === "" || val === "0" || val === "+0") sel.value = "+0";
-          else sel.value = val.startsWith("-") ? "-17" : "+17";
-        }
-      }
-      const pill = $("#karmaPill");
-      if (pill) {
-        const display = val.startsWith("+") || val.startsWith("-") ? val : "+" + val;
-        pill.textContent = "还需 " + display + " 点";
-      }
-    },
     ACTIVE_DIGGING: (v) => { const el = $("#zeroDigging"); if (el) el.checked = !!v; },
     ACTIVE_BEG_MONEY: (v) => { const el = $("#zeroBegMoney"); if (el) el.checked = !!v; },
     ACTIVE_FISHING: (v) => { const el = $("#zeroFishing"); if (el) el.checked = !!v; },
@@ -2021,6 +1996,40 @@
     MAXIMUM_TIME_INTERVALS_BETWEEN_RESTARTING_EMU: (v) => { const el = $("#restartEmuInterval"); if (el) el.value = v == null ? 6 : v; },
   };
 
+  function renderKarmaDisplay(values) {
+    values = values || {};
+    const val = String(values.KARMA_ADJUST_REMAINING == null ? "+0" : values.KARMA_ADJUST_REMAINING);
+    // KARMA_MAINTAIN 为 True 时显示"维持现状"; 否则按剩余点数确定显示选项.
+    const maintain = !!values.KARMA_MAINTAIN;
+
+    const sel = $("#karmaSelect");
+    if (sel) {
+      if (maintain) {
+        sel.value = "+0";
+      } else {
+        let matched = false;
+        for (const option of sel.options) {
+          if (option.value === val || (val !== "" && option.value.replace("+", "") === val.replace("+", ""))) {
+            sel.value = option.value;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) sel.value = val.startsWith("-") ? "-17" : "+17";
+      }
+    }
+
+    const pill = $("#karmaPill");
+    if (pill) {
+      if (maintain) {
+        pill.textContent = "维持现状";
+      } else {
+        const display = val.startsWith("+") || val.startsWith("-") ? val : "+" + val;
+        pill.textContent = "还需 " + display + " 点";
+      }
+    }
+  }
+
   function applyValues(values) {
     if (!values) return;
     Object.keys(bindings).forEach((key) => {
@@ -2028,6 +2037,7 @@
         try { bindings[key](values[key]); } catch (e) { console.error(key, e); }
       }
     });
+    renderKarmaDisplay(values);
     syncDependentInputs();
   }
 
@@ -3011,6 +3021,15 @@
       if (el.type === "checkbox") value = el.checked;
       else if (el.dataset.numeric === "1") value = parseInt(el.value || "0", 10);
       else value = el.value;
+      // 善恶下拉框同时维护"维持"状态: 只有选择"维持现状"时 KARMA_MAINTAIN 才是 True.
+      if (key === "KARMA_ADJUST_REMAINING") {
+        const st = await call("save", {
+          KARMA_ADJUST_REMAINING: value,
+          KARMA_MAINTAIN: value === "+0",
+        });
+        if (st && st.ok) applyState(st);
+        return;
+      }
       const st = await call("save", { [key]: value });
       if (st && st.ok) applyState(st);
     });

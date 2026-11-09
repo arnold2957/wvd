@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-__version__ = '3.2.10'
+__version__ = '3.2.11'
 OWNER = "arnold2957"
 REPO = "wvd"
 

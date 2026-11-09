@@ -261,9 +261,13 @@ def LoadRawConfigFromFile(config_file_path = CONFIG_FILE):
         config_file_path = CONFIG_FILE
     return LoadJson((config_file_path))
 
-def SetOneVarInGeneralConfig(var, value):
+def SetVarsInGeneralConfig(values):
     data = LoadRawConfigFromFile()
-    data['GENERAL'][var] = value
+    general = data.get('GENERAL')
+    if not isinstance(general, dict):
+        general = {}
+        data['GENERAL'] = general
+    general.update(values)
     SaveConfigToFile(data)
 
 def GetOneVarInGeneralConfig(var, default_value):
