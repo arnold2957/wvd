@@ -1,8 +1,8 @@
 {
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.10/wvd_3.2.10.7z",
-  "notes": "修复了善恶修改无法保存的问题.\n现在禁止在运行中修改善恶趋向调整.\n注意, 现在虽然可以在运行时修改面板, 但是对面板的修改不会立刻生效, 和过去一样, 只会在重新启动脚本后生效.",
-  "md5": "cd29acb36ef852dc8191a5f460f8dd82",
-  "release_date": "2026-11-04 16:51:48",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.10",
-  "version": "3.2.10"
+  "version": "3.2.11",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.11",
+  "release_date": "2026-11-09 17:08:42",
+  "md5": "9d32bd4711fab506552586005427358e",
+  "notes": "优化了ui界面的善恶调整趋向的显示逻辑. 善恶的bug目前仍然尚不清楚, 可能需要更多测试.\n快速开箱的点击位置上移了5个像素, 以避免偶尔在开箱时进入战斗后快速开箱会无限打开技能详情的情况.",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.11/wvd_3.2.11.7z"
 }
