@@ -1,8 +1,8 @@
 {
-  "version": "3.2.11",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.11",
-  "release_date": "2026-11-09 17:08:42",
-  "md5": "9d32bd4711fab506552586005427358e",
-  "notes": "优化了ui界面的善恶调整趋向的显示逻辑. 善恶的bug目前仍然尚不清楚, 可能需要更多测试.\n快速开箱的点击位置上移了5个像素, 以避免偶尔在开箱时进入战斗后快速开箱会无限打开技能详情的情况.",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.11/wvd_3.2.11.7z"
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.12",
+  "version": "3.2.12",
+  "release_date": "2026-11-12 11:22:10",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.12/wvd_3.2.12.7z",
+  "notes": "现在在遇到善恶事件时, 如果只能匹配到善恶的其中一个选项而无法匹配到另一个选项, 脚本会直接停止. 这可能是由于游戏画质设置错误导致的, 如果你遇到这种情况, 烦请检查游戏设置.\n为蝎女重写了新悬赏, 同时删除了风暴六手+蝎女的任务. 英文版会在稍晚的时候发布.\n新悬赏模式下, 蝎女的效率大约为跑本70秒+战斗50秒.",
+  "md5": "fef17e93b434970092e344077a545260"
 }
