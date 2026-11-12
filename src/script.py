@@ -1633,6 +1633,11 @@ def Factory():
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
+                    SaveImage()
+                    if not (CheckIf(screen,"ambush") and CheckIf(screen,"ignore")):
+                        logger.error(_("错误. 无法进行善恶切换. 只能匹配善恶选项其中之一. 请提交该bug, 以及log中的错误截图."))
+                        SaveImage(screen,prefix="善恶")
+                        raise RuntimeError
                     # KARMA_ADJUST_REMAINING 是仍需调整的善恶点数:
                     #   正数 -> 选"无视" (+1), 负数 -> 选"伏击" (-2).
                     #   到 0 即维持现状; 维持时若为 0, 先伏击(-2)并记 +2,
@@ -1662,7 +1667,7 @@ def Factory():
                         new_str = f"+{karma_adjust_remaining - 1}"
 
                     logger.info(_("已经进行善恶值调整. {a} 剩余尚未进行的善恶变化: {b}").format(
-                        a=_("当前状态: 维持.") if karma_maintain else _(""),
+                        a=_("当前状态: 维持.") if karma_maintain else "",
                         b= new_str))
                     runtimeContext.record_special_event(_("善恶变化"))
                     setting.KARMA_ADJUST_REMAINING = new_str
@@ -3279,57 +3284,30 @@ def Factory():
                             lambda: StateInn()
                         )
             case "Scorpionesses":
+                if not CheckIf(ScreenShot(),"bounty/cursewheel"):
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                        lambda:Sleep(2),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1),
+                    )
+
                 while 1:
                     if GlobalStopEvent.is_set():
                         raise StopRequested()
 
                     starttime = time.time()
                     runtimeContext._COUNTERDUNG += 1
-
-                    if not setting.ACTIVE_BEAUTIFUL_ORE:
-                        if not setting.ACTIVE_TRIUMPH:                            
-                            logger.info(_("第一步: 时空跳跃..."))
-                            RestartableSequenceExecution(
-                                lambda: CursedWheelTimeLeap()
-                            )
-                            Sleep(10)
-                            logger.info(_("第二步: 返回要塞..."))
-                            RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returntotown","returnText","leaveDung","blessing",[1,1]],2)
-                                )
-                                
-                            logger.info(_("第三步: 前往王城..."))
-                            RestartableSequenceExecution(
-                                lambda:TeleportFromCityToWorldLocation("City_RoyalCityLuknalia","input swipe 450 150 500 150"),
-                                )
-                        else:
-                            logger.info(_("第一步: 时空跳跃..."))
-                            RestartableSequenceExecution(
-                                lambda: CursedWheelTimeLeap(chapter="cursedwheel_impregnableFortress", target="Triumph")
-                            )
-                            Sleep(10)
-                                
-                            logger.info(_("第三步: 前往王城..."))
-                            RestartableSequenceExecution(
-                                lambda:TeleportFromCityToWorldLocation("City_RoyalCityLuknalia","input swipe 450 150 500 150"),
-                                )
-
-                    elif setting.ACTIVE_BEAUTIFUL_ORE:
-                        logger.info(_("第一步: 时空跳跃..."))
-                        RestartableSequenceExecution(
-                            lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre")
-                        )
-                        Sleep(10)
-
-                    logger.info(_("第四步: 悬赏揭榜"))
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("cursedWheelTitle",["bounty/cursewheel",[1,1]],1),
+                        lambda:DeviceShell(f"input swipe 450 1200 450 200"),
                         lambda:Sleep(2),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","close","input swipe 600 1400 300 1400",[1,1]],1)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
-                        )
-
-                    logger.info(_("第五步: 击杀蝎女"))
+                        lambda:DeviceShell(f"input swipe 450 1200 450 200"),
+                        lambda:Sleep(2),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Scorpionesses","input swipe 50 1200 50 1300",1)),
+                        lambda:Sleep(1),
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/reset","bounty/Scorpionesses",1)),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1),
+                    )
                     RestartableSequenceExecution(
                         lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B2FTemple","GotoDung",[1,1]],1),
                     )
@@ -3337,131 +3315,24 @@ def Factory():
                         lambda:StateDungeon([TargetInfo("mark_auto"),
                                              TargetInfo("leaveDung")])
                         )
-                    
-                    logger.info(_("第六步: 提交悬赏"))
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
                     )
                     RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                        lambda:Sleep(2),
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1),
+                    )
+                    RestartableSequenceExecution(
+                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1))
                         )
                     RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
-                        )
-                    
-                    logger.info(_("第七步: 休息"))
-                    if ((runtimeContext._COUNTERDUNG-1) % (setting.REST_INTERVEL+1) == 0):
-                        RestartableSequenceExecution(
-                            lambda:StateInn()
-                            )
-                        
+                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
+                    )
                     costtime = time.time()-starttime
                     runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + costtime
                     logger.info(
                         _("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=runtimeContext._TOTALTIME, d=runtimeContext._TOTALTIME/runtimeContext._COUNTERDUNG)),
-                        summary=True,
-                        summary_data=DefaultSummaryDict(),
-                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
-                    )
-            case "Scorpionesses_plus_6_hands":
-                while 1:
-                    if GlobalStopEvent.is_set():
-                        raise StopRequested()
-
-                    starttime = time.time()
-                    runtimeContext._COUNTERDUNG += 1
-
-                    if not setting.ACTIVE_BEAUTIFUL_ORE:
-                        if not setting.ACTIVE_TRIUMPH:                            
-                            logger.info(_("第一步: 时空跳跃..."))
-                            RestartableSequenceExecution(
-                                lambda: CursedWheelTimeLeap()
-                            )
-                            Sleep(10)
-                            logger.info(_("第二步: 返回要塞..."))
-                            RestartableSequenceExecution(
-                                lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["returntotown","returnText","leaveDung","blessing",[1,1]],2)
-                                )
-                                
-                            logger.info(_("第三步: 前往王城..."))
-                            RestartableSequenceExecution(
-                                lambda:TeleportFromCityToWorldLocation("City_RoyalCityLuknalia","input swipe 450 150 500 150"),
-                                )
-                        else:
-                            logger.info(_("第一步: 时空跳跃..."))
-                            RestartableSequenceExecution(
-                                lambda: CursedWheelTimeLeap(chapter="cursedwheel_impregnableFortress", target="Triumph")
-                            )
-                            Sleep(10)
-                                
-                            logger.info(_("第三步: 前往王城..."))
-                            RestartableSequenceExecution(
-                                lambda:TeleportFromCityToWorldLocation("City_RoyalCityLuknalia","input swipe 450 150 500 150"),
-                                )
-
-                    elif setting.ACTIVE_BEAUTIFUL_ORE:
-                        logger.info(_("第一步: 时空跳跃..."))
-                        RestartableSequenceExecution(
-                            lambda: CursedWheelTimeLeap(chapter="cursedwheel_dhi", target="BeautifulOre")
-                        )
-                        Sleep(10)
-
-                    logger.info(_("第四步: 悬赏揭榜"))
-                    RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
-                        lambda:Sleep(2),
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Bounties",["guild","guildRequest","input swipe 600 1400 300 1400",[1,1]],1)),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
-                        )
-
-                    logger.info(_("第五步: 击杀蝎女"))
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B2FTemple","GotoDung",[1,1]],1),
-                    )
-                    RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("mark_auto"),
-                                             TargetInfo("leaveDung")])
-                        )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
-                    )
-                    logger.info(_("第5.5步: 击杀风暴六手"))
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B5FWarpedOnesNest","GotoDung",[1,1]],1),
-                    )
-                    RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("mark_auto"),
-                                             TargetInfo("leaveDung")])
-                        )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("guild",["return",[1,1]],1),
-                    )
-                    
-                    logger.info(_("第六步: 提交悬赏"))
-                    RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
-                        )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
-                        )
-                    
-                    RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1))
-                        )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("EdgeOfTown",["return","leave",[1,1]],1)
-                        )
-                    
-                    logger.info(_("第七步: 休息"))
-                    if ((runtimeContext._COUNTERDUNG-1) % (setting.REST_INTERVEL+1) == 0):
-                        RestartableSequenceExecution(
-                            lambda:StateInn()
-                            )
-                        
-                    costtime = time.time()-starttime
-                    runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + costtime
-                    logger.info(
-                        _("第{a}次\"悬赏:蝎女+六手\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=runtimeContext._TOTALTIME, d=runtimeContext._TOTALTIME/runtimeContext._COUNTERDUNG)),
                         summary=True,
                         summary_data=DefaultSummaryDict(),
                         summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
@@ -4043,9 +3914,7 @@ def Factory():
                             Sleep(0.02)
                     DeviceShell(f"input motionevent UP 243 1200")
             case "test":
-                Press([515,929])
                 pass
-                
                     
         ##########################
         if setting._FINISHINGCALLBACK:

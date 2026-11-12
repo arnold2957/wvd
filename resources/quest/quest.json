@@ -1007,15 +1007,6 @@
         "_TIPS":"请在蝎女处打上标记."
     },
 
-    "Scorpionesses_plus_6_hands":{
-        "questName":"[悬赏]蝎女+风暴六手",
-        "questName_en_US": "[Bounty] Scorps. + Six-Limbed",
-        "questCategory": "月常",
-        "questCategory_en_US": "Monthly Requests",
-        "_TYPE":"quest",
-        "_TIPS":"请在蝎女和牛头人处打上标记."
-    },
-
     "FloralHoney":{
         "questName":"[药]华蜜",
         "questName_en_US": "[Draught & Elixir] Floral Honey",
