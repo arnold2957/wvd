@@ -1633,7 +1633,7 @@ def Factory():
                         Sleep(7300)
                         restartGame()
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
-                    SaveImage()
+                    SaveImage(screen)
                     if not (CheckIf(screen,"ambush") and CheckIf(screen,"ignore")):
                         logger.error(_("错误. 无法进行善恶切换. 只能匹配善恶选项其中之一. 请提交该bug, 以及log中的错误截图."))
                         SaveImage(screen,prefix="善恶")
@@ -2588,6 +2588,79 @@ def Factory():
             logger.info(_("奇怪, 任务怎么已经接了."))
             FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave",[1,1]],1)
 
+    def QuestFarm_Bounty(name, target, chapter=None):
+        nonlocal runtimeContext
+        def resetBounty(target, chapter = None):
+            if not CheckIf(ScreenShot(),"bounty/cursewheel"):
+                RestartableSequenceExecution(
+                    lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                    lambda:Sleep(2),
+                    lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1),
+                )
+            if pos:=CheckIf(ScreenShot(),"bounty/CompletionReported"):
+                Sleep(1)
+                Press(pos)
+                FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
+                Sleep(1)
+            FindCoordsOrElseExecuteFallbackAndWait("cursedWheelTitle",["bounty/cursewheel",[1,1]],1)
+            if chapter:
+                Sleep(1)
+                Press([100,1400])
+                FindCoordsOrElseExecuteFallbackAndWait(chapter,["input swipe 600 1400 300 1400",[1,1]],1)
+                Sleep(1)
+                Press(CheckIf(ScreenShot(),chapter))
+                Sleep(1)
+            if not Press(CheckIf(ScreenShot(),target)):
+                DeviceShell(f"input swipe 450 1200 450 200")
+                Sleep(2)
+                DeviceShell(f"input swipe 450 1200 450 200")
+                Sleep(2)
+                Press(FindCoordsOrElseExecuteFallbackAndWait(target,"input swipe 450 1200 450 1300",1))
+            Sleep(1)
+            Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/reset",target,1))
+            FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+
+        while 1:
+            if GlobalStopEvent.is_set():
+                raise StopRequested()
+
+            starttime = time.time()
+            runtimeContext._COUNTERDUNG += 1
+            RestartableSequenceExecution(
+                lambda: resetBounty(target, chapter)
+            )
+            RestartableSequenceExecution(
+                lambda:StateEoT()
+            )
+            RestartableSequenceExecution(
+                lambda:StateDungeon([TargetInfo("mark_auto"),
+                                        TargetInfo("leaveDung")])
+                )
+            RestartableSequenceExecution(
+                lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+            )
+            RestartableSequenceExecution(
+                lambda:StateInn()
+                )
+            RestartableSequenceExecution(
+                lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                lambda:Sleep(2),
+                lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1),
+            )
+            Sleep(1)
+            Press(CheckIf(ScreenShot(),"bounty/CompletionReported"))
+            RestartableSequenceExecution(
+                lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
+            )
+            costtime = time.time()-starttime
+            runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + costtime
+            logger.info(
+                _("第{a}次\"{name}\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(name=name, a=runtimeContext._COUNTERDUNG,b=costtime, c=runtimeContext._TOTALTIME, d=runtimeContext._TOTALTIME/runtimeContext._COUNTERDUNG)),
+                summary=True,
+                summary_data=DefaultSummaryDict(),
+                summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
+            )
+
     def DungeonFarm():
         nonlocal runtimeContext
         state = None
@@ -3284,69 +3357,20 @@ def Factory():
                         lambda: StateInn()
                     )
             case "Scorpionesses":
-                def resetBounty():
-                    if not CheckIf(ScreenShot(),"bounty/cursewheel"):
-                        RestartableSequenceExecution(
-                            lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
-                            lambda:Sleep(2),
-                            lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1),
-                        )
-                    if pos:=CheckIf(ScreenShot(),"bounty/CompletionReported"):
-                        Press(pos)
-                        FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
-                        Sleep(1)
-                    FindCoordsOrElseExecuteFallbackAndWait("cursedWheelTitle",["bounty/cursewheel",[1,1]],1)
-                    DeviceShell(f"input swipe 450 1200 450 200")
-                    Sleep(2)
-                    DeviceShell(f"input swipe 450 1200 450 200")
-                    Sleep(2)
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/Scorpionesses","input swipe 50 1200 50 1300",1))
-                    Sleep(1)
-                    Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/reset","bounty/Scorpionesses",1))
-                    FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
-
-                while 1:
-                    if GlobalStopEvent.is_set():
-                        raise StopRequested()
-
-                    starttime = time.time()
-                    runtimeContext._COUNTERDUNG += 1
-                    RestartableSequenceExecution(
-                        lambda: resetBounty()
-                    )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("dungFlag",["EdgeOfTown","beginningAbyss","B2FTemple","GotoDung",[1,1]],1),
-                    )
-                    RestartableSequenceExecution(
-                        lambda:StateDungeon([TargetInfo("mark_auto"),
-                                             TargetInfo("leaveDung")])
-                        )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
-                    )
-                    RestartableSequenceExecution(
-                        lambda:StateInn()
-                        )
-                    RestartableSequenceExecution(
-                        lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
-                        lambda:Sleep(2),
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","input swipe 600 1400 300 1400","bounty/Bounties",[1,1]],1),
-                    )
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/CompletionReported",["guild","guildRequest","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1)
-                        )
-                    Press(CheckIf(ScreenShot(),"bounty/CompletionReported"))
-                    RestartableSequenceExecution(
-                        lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
-                    )
-                    costtime = time.time()-starttime
-                    runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + costtime
-                    logger.info(
-                        _("第{a}次\"悬赏:蝎女\"完成. \n该次花费时间{b:.2f}s.\n总计用时{c:.2f}s.\n平均用时{d:.2f}".format(a=runtimeContext._COUNTERDUNG,b=costtime, c=runtimeContext._TOTALTIME, d=runtimeContext._TOTALTIME/runtimeContext._COUNTERDUNG)),
-                        summary=True,
-                        summary_data=DefaultSummaryDict(),
-                        summary_events=dict(getattr(runtimeContext, "_EVENT_COUNTERS", {}) or {}),
-                    )
+                quest._EOT = [
+                    ["town","EOT"],
+                    ["L1","beginningAbyss"],
+                    ["L2","B2FTemple"]
+                ]
+                QuestFarm_Bounty(name="悬赏:蝎女",target="bounty/Scorpionesses")
+            case "WhoImperilHonor":
+                quest._EOT = [
+                    ["town","EOT"],
+                    ["L1","DH"],
+                    ["L2","DH-R9"]
+                ]
+                quest._SPECIALDIALOGOPTION = ["bounty/Slayhim"]
+                QuestFarm_Bounty(name="悬赏:威胁荣誉",target="bounty/WhoImperilHonor", chapter="bounty/DH")
             case "FloralHoney":
                 while 1:
                     if GlobalStopEvent.is_set():

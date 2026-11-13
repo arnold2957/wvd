@@ -1006,6 +1006,14 @@
         "_TYPE":"quest",
         "_TIPS":"请在蝎女处打上标记."
     },
+    "WhoImperilHonor":{
+        "questName":"[悬赏]威胁荣誉",
+        "questName_en_US": "[Bounty] Those Who Imperil Honor",
+        "questCategory": "月常",
+        "questCategory_en_US": "Monthly Requests",
+        "_TYPE":"quest",
+        "_TIPS":"请在目标位置处打上标记.\n推荐4个法师+一个单体的阵容.\n小怪大约3000hp, 死灵法师大约5000hp."
+    },
 
     "FloralHoney":{
         "questName":"[药]华蜜",
