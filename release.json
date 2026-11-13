@@ -1,8 +1,8 @@
 {
-  "release_date": "2026-11-13 03:56:14",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.14/wvd_3.2.14.7z",
-  "version": "3.2.14",
-  "md5": "659cfb5cab4e7dbd9d00053be8138136",
-  "notes": "修复了悬赏的若干重置时点导致的卡死错误.\n加入了新的悬赏任务\"威胁荣誉之图\". 该悬赏耗时大约3分钟, 能获得大约2000代币, 综合效率大约是蝎女的7倍.\n推荐夏莉莉+其他3法师+1单体的秒杀阵容. 除夏莉莉之外, 低配可以酌情选择叶卡秘术或者米拉娜法师等.\n修复了善恶环节的截图无法进行的问题.",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.14"
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.15",
+  "version": "3.2.15",
+  "md5": "028a7e7c83b21c06b20fca8072fea489",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.15/wvd_3.2.15.7z",
+  "release_date": "2026-11-13 07:14:20",
+  "notes": "修复了完成悬赏后的长时间黑屏会导致脚本流程混乱和卡死."
 }
