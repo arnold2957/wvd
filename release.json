@@ -1,8 +1,8 @@
 {
-  "notes": "加入了遗漏的悬赏蝎女的住宿环节.\n优化了悬赏蝎女的重置时点, 避免反复卡死在完成任务 时空跳跃等环节.\n加入了对英文版的悬赏蝎女的支持.",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.13/wvd_3.2.13.7z",
-  "release_date": "2026-11-12 17:01:20",
-  "version": "3.2.13",
-  "md5": "e37ee7b9eb456f57b89c56db6723c3a1",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.13"
+  "release_date": "2026-11-13 03:56:14",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.14/wvd_3.2.14.7z",
+  "version": "3.2.14",
+  "md5": "659cfb5cab4e7dbd9d00053be8138136",
+  "notes": "修复了悬赏的若干重置时点导致的卡死错误.\n加入了新的悬赏任务\"威胁荣誉之图\". 该悬赏耗时大约3分钟, 能获得大约2000代币, 综合效率大约是蝎女的7倍.\n推荐夏莉莉+其他3法师+1单体的秒杀阵容. 除夏莉莉之外, 低配可以酌情选择叶卡秘术或者米拉娜法师等.\n修复了善恶环节的截图无法进行的问题.",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.14"
 }
