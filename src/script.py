@@ -2592,8 +2592,9 @@ def Factory():
         nonlocal runtimeContext
         def resetBounty(target, chapter = None):
             if not CheckIf(ScreenShot(),"bounty/cursewheel"):
+                Sleep(2)
                 RestartableSequenceExecution(
-                    lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
+                    lambda:Press(FindCoordsOrElseExecuteFallbackAndWait(["bounty/cursewheel","guildRequest"],["guild",[1,1]],1)),
                     lambda:Sleep(2),
                     lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1),
                 )
