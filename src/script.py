@@ -2591,10 +2591,10 @@ def Factory():
     def QuestFarm_Bounty(name, target, chapter=None):
         nonlocal runtimeContext
         def resetBounty(target, chapter = None):
-            if not CheckIf(ScreenShot(),"bounty/cursewheel"):
-                Sleep(2)
+            FindCoordsOrElseExecuteFallbackAndWait(["guild","bounty/cursewheel"],[1,1],1)
+            if CheckIf(ScreenShot(),"guild"):
                 RestartableSequenceExecution(
-                    lambda:Press(FindCoordsOrElseExecuteFallbackAndWait(["bounty/cursewheel","guildRequest"],["guild",[1,1]],1)),
+                    lambda:Press(FindCoordsOrElseExecuteFallbackAndWait("guildRequest",["guild",[1,1]],1)),
                     lambda:Sleep(2),
                     lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",["guild","guildRequest","close","bounty/Bounties","input swipe 600 1400 300 1400",[1,1]],1),
                 )
@@ -2619,7 +2619,7 @@ def Factory():
                 Press(FindCoordsOrElseExecuteFallbackAndWait(target,"input swipe 450 1200 450 1300",1))
             Sleep(1)
             Press(FindCoordsOrElseExecuteFallbackAndWait("bounty/reset",target,1))
-            FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+            FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
 
         while 1:
             if GlobalStopEvent.is_set():
@@ -2638,7 +2638,7 @@ def Factory():
                                         TargetInfo("leaveDung")])
                 )
             RestartableSequenceExecution(
-                lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn","return",1)
+                lambda:FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
             )
             RestartableSequenceExecution(
                 lambda:StateInn()
