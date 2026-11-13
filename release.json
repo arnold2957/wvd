@@ -1,8 +1,8 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.15",
-  "version": "3.2.15",
-  "md5": "028a7e7c83b21c06b20fca8072fea489",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.15/wvd_3.2.15.7z",
-  "release_date": "2026-11-13 07:14:20",
-  "notes": "修复了完成悬赏后的长时间黑屏会导致脚本流程混乱和卡死."
+  "release_date": "2026-11-13 13:23:45",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.16",
+  "version": "3.2.16",
+  "notes": "修复了部分设备在悬赏跳跃的时候会卡住的问题.\n修复了悬赏流程中重启游戏会卡在退出游戏的问题.",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.16/wvd_3.2.16.7z",
+  "md5": "d8079b95ad743a625f5e48a7ff982f99"
 }
