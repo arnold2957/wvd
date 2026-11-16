@@ -1,8 +1,8 @@
 {
-  "release_date": "2026-11-13 13:23:45",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.16",
-  "version": "3.2.16",
-  "notes": "修复了部分设备在悬赏跳跃的时候会卡住的问题.\n修复了悬赏流程中重启游戏会卡在退出游戏的问题.",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.16/wvd_3.2.16.7z",
-  "md5": "d8079b95ad743a625f5e48a7ff982f99"
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.17/wvd_3.2.17.7z",
+  "md5": "fa2ed196f5723b36b3689f4f7ee0b917",
+  "release_date": "2026-11-16 12:37:31",
+  "version": "3.2.17",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.17",
+  "notes": "陵庙现已改为chest_auto自动宝箱.\n修复了普利修的名字错误.\n战斗角色新增了水王女和迪诺.\n添加了英文版的脚本. 可能还需要更多测试."
 }
