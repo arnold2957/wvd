@@ -29,21 +29,21 @@ CONFIG_VAR_LIST = [
             ["GENERAL",   "KARMA_MAINTAIN",            tk.BooleanVar, True],
             ["GENERAL",   "TASK_SPECIFIC_CONFIG",     tk.BooleanVar, False],
             ["GENERAL",   "STRATEGY",                 list         , [{
-                                                                        "group_name": _("柚子"),
+                                                                        "group_name": "柚子",
                                                                         "skill_settings": [
                                                                             {
-                                                                                "role_var": _("F 柚奈壬姬"),
-                                                                                "skill_var": _("左上技能"),
-                                                                                "target_var": _("不可用"),
+                                                                                "role_var": "F 柚奈壬姬",
+                                                                                "skill_var": "左上技能",
+                                                                                "target_var": "不可用",
                                                                                 "skill_lvl": 1
                                                                             }
                                                                         ]
                                                                     },
                                                                     {
-                                                                        "group_name": _("全自动战斗"),
+                                                                        "group_name": "全自动战斗",
                                                                         "skill_settings": []
                                                                     },]],
-            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar, _("全自动战斗")],
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar, "全自动战斗"],
             ["GENERAL",   "LANGUAGE_SCRIPT",                        tk.StringVar, "zh_CN"],
             ["GENERAL",   "LANGUAGE_GAME",                          tk.StringVar, "en_US"],
             ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar, None],
@@ -1212,10 +1212,10 @@ def Factory():
 
         # 如果不是特定任务配置，使用默认的全局策略
         if not setting.TASK_SPECIFIC_CONFIG:
-            strategy_key = setting.DEFAULT_OVERALL_STRATEGY
+            strategy_key = setting.DEFAULT_OVERALL_STRATEGY or "全自动战斗"
         else:
             overall = setting.TASK_POINT_STRATEGY.get("overall_strategy", "")
-            if overall == _("自定义任务点策略"):
+            if overall == "自定义任务点策略":
                 task_step_idx = getattr(runtimeContext, 'TASK_STEP_INDEX', 0)
                 strategy_key = setting.TASK_POINT_STRATEGY.get("task_point", {}).get(str(task_step_idx), "")
             else:
@@ -1898,13 +1898,18 @@ def Factory():
             Sleep(5)
             return
         def SkillLvlSelectAndDoubleCheck(skillPos,skilllvl, supportTarget):
-            skillPosDict = { _("左上技能"):[266,965],_("右上技能"):[640,965],_("左下技能"):[266,1054],_("右下技能"):[640,1054]}
+            skillPosDict = {"左上技能":[266,965],"右上技能":[640,965],"左下技能":[266,1054],"右下技能":[640,1054]}
             supportTargetDict = {"左上角色": [200,1200], "中上角色": [450,1200], "右上角色": [700,1200], "左下角色":[200,1400], "中下角色":[450,1400], "右下角色":[700,1400]}
-            
+
             # 打开详情界面
+            skillPosCoord = skillPosDict.get(skillPos)
+            if skillPosCoord is None:
+                logger.error(_("未知的技能位置: {a}, 使用自动战斗.").format(a=skillPos))
+                AutoThisChar()
+                return
             into_detail = False
             for underscore in range(3):
-                Press(skillPosDict[skillPos])
+                Press(skillPosCoord)
                 Sleep(1)
                 if CheckIf(ScreenShot(),"spellskill/skillDetail"):
                     into_detail = True
@@ -2005,7 +2010,7 @@ def Factory():
         if runtimeContext.CURRENT_STRATEGY == {}:
             logger.error(_("错误: 当前战斗策略内容为空. 使用全自动战斗."))
             aac = True
-        elif runtimeContext.CURRENT_STRATEGY.get("group_name","") ==_("全自动战斗"):
+        elif runtimeContext.CURRENT_STRATEGY.get("group_name","") == "全自动战斗":
             logger.info(_("当前战斗为\"全自动战斗\", 因此使用全自动战斗."))
             aac = True
         elif skill_settings == []:
@@ -2055,7 +2060,7 @@ def Factory():
             return
 
         # 5. 按照技能等级释放技能
-        if target_skill.get("skill_var") == _("防御"):
+        if target_skill.get("skill_var") == "防御":
             Press([513,1200])
             Sleep(0.1)
             Press([513,1200])
@@ -2305,7 +2310,7 @@ def Factory():
             targetInfoList.pop(0)
             runtimeContext.TASK_STEP_INDEX += 1
 
-            if setting.TASK_POINT_STRATEGY.get("overall_strategy", "") == _("自定义任务点策略"):
+            if setting.TASK_POINT_STRATEGY.get("overall_strategy", "") == "自定义任务点策略":
                 logger.info(f"由于面板设置, 切换到新任务点对应的策略.")
                 ReloadStrategy()
             return

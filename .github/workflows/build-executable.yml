@@ -53,6 +53,10 @@ jobs:
       run: |
         python -m babel.messages.frontend compile -d locale -D messages
 
+    - name: Generate localized UI
+      run: |
+        python .github/scripts/build_ui.py --lang en_US
+
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir --noconsole `
@@ -71,6 +75,7 @@ jobs:
           --add-data "resources;resources/" `
           --add-data "locale;locale/" `
           --add-data "src/ui.html;." `
+          --add-data "build/ui/ui.en_US.html;." `
           src/main.py -n wvd
         Write-Host "Build completed successfully."
 

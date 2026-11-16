@@ -41,6 +41,28 @@ def LoadSettingFromDict(input_dict):
         else:
             setattr(setting, attr_name, input_dict[attr_name])
 
+    # 兼容旧版英文配置: 方案 / 技能 / 目标名统一成规范中文后再交给脚本.
+    strategy = getattr(setting, "STRATEGY", None)
+    if isinstance(strategy, list):
+        for plan in strategy:
+            if not isinstance(plan, dict):
+                continue
+            plan["group_name"] = ConfigPanelApp._canon_strategy_name(
+                plan.get("group_name"))
+            for skill in plan.get("skill_settings", []) or []:
+                if not isinstance(skill, dict):
+                    continue
+                role = skill.get("role_var", "")
+                skill["role_var"] = CHAR_DISPLAY_TO_ID.get(role, role)
+                skill["skill_var"] = _canonical_of(
+                    skill.get("skill_var", ""), ConfigPanelApp.SKILL_CANON)
+                skill["target_var"] = _canonical_of(
+                    skill.get("target_var", ""), ConfigPanelApp.TARGET_CANON)
+    setting.DEFAULT_OVERALL_STRATEGY = ConfigPanelApp._canon_strategy_name(
+        getattr(setting, "DEFAULT_OVERALL_STRATEGY", None))
+    setting.TASK_POINT_STRATEGY = ConfigPanelApp._normalize_task_point_strategy(
+        getattr(setting, "TASK_POINT_STRATEGY", None))
+
     return setting
 
 
@@ -715,6 +737,8 @@ class ConfigPanelApp:
     LANGUAGES = [("zh_CN", "简体中文"), ("en_US", "English")]
     CUSTOM_STRATEGY = "自定义任务点策略"
     FULL_AUTO = "全自动战斗"
+    # 默认示例方案名. 配置里保存中文, 英文界面显示时再翻译.
+    DEFAULT_PLAN_NAMES = ("柚子",)
     CONFIG_KEYS = {row[1] for row in CONFIG_VAR_LIST}
     # 任务运行期间由脚本线程直接写入配置文件的字段:
     # GUI 保存其他设置时不能用旧的内存值覆盖它们.
@@ -784,7 +808,16 @@ class ConfigPanelApp:
             except Exception:
                 pass
 
-        html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        candidates = [os.path.join(base_dir, "ui.%s.html" % LANGUAGE_SCRIPT)]
+        if not getattr(sys, "frozen", False):
+            # 源码运行: 允许使用本地生成的 build/ui/ui.<lang>.html.
+            candidates.append(os.path.join(
+                os.path.dirname(base_dir), "build", "ui",
+                "ui.%s.html" % LANGUAGE_SCRIPT))
+        candidates.append(os.path.join(base_dir, "ui.html"))
+        html_path = next((p for p in candidates if os.path.exists(p)), candidates[-1])
+        logger.info("UI file: %s" % os.path.basename(html_path))
         with open(html_path, "r", encoding="utf-8") as f:
             html = f.read()
 
@@ -940,11 +973,16 @@ class ConfigPanelApp:
     @classmethod
     def _normalize_task_point_strategy(cls, value):
         if not isinstance(value, dict):
-            return {"overall_strategy": _(cls.FULL_AUTO), "task_point": {}}
+            return {"overall_strategy": cls.FULL_AUTO, "task_point": {}}
         result = dict(value)
-        result.setdefault("overall_strategy", _(cls.FULL_AUTO))
-        if not isinstance(result.get("task_point"), dict):
+        result["overall_strategy"] = cls._canon_strategy_name(
+            result.get("overall_strategy"))
+        task_point = result.get("task_point")
+        if not isinstance(task_point, dict):
             result["task_point"] = {}
+        else:
+            result["task_point"] = {
+                key: cls._canon_strategy_name(name) for key, name in task_point.items()}
         return result
 
     def _coerce_key(self, key, value):
@@ -1030,6 +1068,15 @@ class ConfigPanelApp:
             k: v for k, v in existing_config.items()
             if k not in ["GENERAL"] and isinstance(v, dict)
         }
+
+        # 界面里是当前语言的显示文本, 写盘前统一回译成规范中文:
+        # script 只按中文标识匹配技能 / 目标 / 方案.
+        self.values["DEFAULT_OVERALL_STRATEGY"] = self._canon_strategy_name(
+            self.values.get("DEFAULT_OVERALL_STRATEGY"))
+        self.values["TASK_POINT_STRATEGY"] = self._normalize_task_point_strategy(
+            self.values.get("TASK_POINT_STRATEGY"))
+        self.values["STRATEGY"] = self._plans_to_store(
+            self.values.get("STRATEGY") or [])
 
         new_general = {}
         other_items = {}
@@ -1167,10 +1214,33 @@ class ConfigPanelApp:
     # 战斗方案
     # ------------------------------------------------------------------
     @classmethod
-    def _normalize_group_name(cls, name):
+    def _canon_strategy_name(cls, name):
+        """把当前语言下的策略名还原成规范中文名.
+
+        配置统一保存规范中文, 这样切换界面语言后仍能匹配到同一个方案;
+        用户自定义的方案名保持原样.
+        """
         if name in (cls.FULL_AUTO, _(cls.FULL_AUTO)):
-            return _(cls.FULL_AUTO)
-        return name or _(cls.FULL_AUTO)
+            return cls.FULL_AUTO
+        if name in (cls.CUSTOM_STRATEGY, _(cls.CUSTOM_STRATEGY)):
+            return cls.CUSTOM_STRATEGY
+        for default_name in cls.DEFAULT_PLAN_NAMES:
+            if name in (default_name, _(default_name)):
+                return default_name
+        return name or cls.FULL_AUTO
+
+    @classmethod
+    def _display_strategy_name(cls, name):
+        """把规范策略名转成当前语言下的显示文本."""
+        canon = cls._canon_strategy_name(name)
+        if canon in (cls.FULL_AUTO, cls.CUSTOM_STRATEGY) or canon in cls.DEFAULT_PLAN_NAMES:
+            return _(canon)
+        return canon
+
+    @classmethod
+    def _normalize_group_name(cls, name):
+        """保存用的方案名 (规范中文)."""
+        return cls._canon_strategy_name(name)
 
     def _plans_for_js(self, plans):
         result = []
@@ -1198,7 +1268,7 @@ class ConfigPanelApp:
                     "skill_lvl": _to_int(setting.get("skill_lvl"), 1),
                 })
             result.append({
-                "group_name": self._normalize_group_name(plan.get("group_name")),
+                "group_name": self._display_strategy_name(plan.get("group_name")),
                 "need_reload_when_dungeon_begins": bool(
                     plan.get("need_reload_when_dungeon_begins", False)),
                 "need_reload_when_combat_begins": bool(
@@ -1271,22 +1341,27 @@ class ConfigPanelApp:
                 quest = None
 
         is_dungeon = bool(quest and getattr(quest, "_TYPE", None) == "dungeon")
-        strategies = self._strategy_names(values)
+        strategies = list(dict.fromkeys(self._strategy_names(values)))
+        display_strategies = [self._display_strategy_name(name) for name in strategies]
         custom_label = _(self.CUSTOM_STRATEGY)
         full_auto_label = _(self.FULL_AUTO)
 
         tps = self._normalize_task_point_strategy(values.get("TASK_POINT_STRATEGY"))
         if values.get("TASK_SPECIFIC_CONFIG"):
-            overall = tps.get("overall_strategy") or full_auto_label
+            overall = tps.get("overall_strategy")
         else:
-            overall = values.get("DEFAULT_OVERALL_STRATEGY") or full_auto_label
+            overall = values.get("DEFAULT_OVERALL_STRATEGY")
+        overall = self._canon_strategy_name(overall)
 
         if is_dungeon:
-            overall_values = (strategies + [custom_label]) if strategies else [custom_label]
+            overall_values = (display_strategies + [custom_label]
+                              if display_strategies else [custom_label])
         else:
-            overall_values = strategies if strategies else [full_auto_label]
-        if overall not in overall_values:
-            overall = full_auto_label if full_auto_label in overall_values else overall_values[0]
+            overall_values = display_strategies if display_strategies else [full_auto_label]
+        overall_display = self._display_strategy_name(overall)
+        if overall_display not in overall_values:
+            overall_display = (full_auto_label if full_auto_label in overall_values
+                               else overall_values[0])
 
         points = []
         if is_dungeon and quest and getattr(quest, "_TARGETINFOLIST", None):
@@ -1300,18 +1375,20 @@ class ConfigPanelApp:
                 saved = saved_points.get(str(idx))
                 if saved is None:
                     saved = saved_points.get(idx)
+                saved = self._canon_strategy_name(saved)
                 if saved not in strategies:
-                    saved = full_auto_label if full_auto_label in strategies else (
-                        strategies[0] if strategies else full_auto_label)
-                points.append({"index": idx, "label": label, "strategy": saved})
+                    saved = self.FULL_AUTO if self.FULL_AUTO in strategies else (
+                        strategies[0] if strategies else self.FULL_AUTO)
+                points.append({"index": idx, "label": label,
+                               "strategy": self._display_strategy_name(saved)})
 
         return {
             "isDungeon": is_dungeon,
             "points": points,
-            "strategies": strategies,
-            "overall": overall,
+            "strategies": display_strategies,
+            "overall": overall_display,
             "overallValues": overall_values,
-            "customMode": overall == custom_label,
+            "customMode": overall == self.CUSTOM_STRATEGY,
             "customLabel": custom_label,
             "fullAutoLabel": full_auto_label,
         }
@@ -1321,12 +1398,13 @@ class ConfigPanelApp:
         self.values["TASK_POINT_STRATEGY"] = tps
         if not self.values.get("TASK_SPECIFIC_CONFIG"):
             self.values["DEFAULT_OVERALL_STRATEGY"] = tps.get(
-                "overall_strategy", _(self.FULL_AUTO))
+                "overall_strategy", self.FULL_AUTO)
         self._save_internal()
 
     def set_overall_strategy(self, value, enable_custom=False):
+        value = self._canon_strategy_name(value)
         with self._lock:
-            if value == _(self.CUSTOM_STRATEGY) and not self.values.get("TASK_SPECIFIC_CONFIG"):
+            if value == self.CUSTOM_STRATEGY and not self.values.get("TASK_SPECIFIC_CONFIG"):
                 if not enable_custom:
                     return {"ok": False, "cancelled": True}
                 self._save_internal()
@@ -1339,6 +1417,7 @@ class ConfigPanelApp:
         return self._snapshot_with_ok()
 
     def set_task_point_strategy(self, index, value):
+        value = self._canon_strategy_name(value)
         with self._lock:
             tps = self._normalize_task_point_strategy(self.values.get("TASK_POINT_STRATEGY"))
             tps.setdefault("task_point", {})[str(index)] = value
@@ -1376,12 +1455,10 @@ class ConfigPanelApp:
                 specific_config["TASK_POINT_STRATEGY"])
         else:
             self.values["TASK_POINT_STRATEGY"] = {
-                "overall_strategy": _(self.FULL_AUTO), "task_point": {}}
+                "overall_strategy": self.FULL_AUTO, "task_point": {}}
 
-        tps = self._normalize_task_point_strategy(self.values.get("TASK_POINT_STRATEGY"))
-        if tps.get("overall_strategy") == self.FULL_AUTO:
-            tps["overall_strategy"] = _(self.FULL_AUTO)
-        self.values["TASK_POINT_STRATEGY"] = tps
+        self.values["TASK_POINT_STRATEGY"] = self._normalize_task_point_strategy(
+            self.values.get("TASK_POINT_STRATEGY"))
 
         self.values["TASK_SPECIFIC_CONFIG"] = bool(enabled)
         self._normalize_values()

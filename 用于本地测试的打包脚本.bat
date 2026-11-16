@@ -81,6 +81,17 @@ rd /s /q "dist"  2>nul
 rd /s /q "build" 2>nul
 del /q "%APP_NAME%.spec" 2>nul
 
+:: ---------- Generate localized UI ----------
+if exist "locale" (
+    echo [INFO] Generating localized UI...
+    python .github\scripts\build_ui.py --lang en_US
+    if errorlevel 1 (
+        echo [ERROR] UI generation failed.
+        pause
+        exit /b 1
+    )
+)
+
 :: ---------- Flags ----------
 set "CONSOLE_FLAG=--console"
 if "%USE_CONSOLE%"=="0" set "CONSOLE_FLAG=--noconsole"
@@ -107,6 +118,7 @@ pyinstaller %CONSOLE_FLAG% --onedir ^
     --add-data "resources;resources/" ^
     --add-data "locale;locale/" ^
     --add-data "src/ui.html;." ^
+    --add-data "build/ui/ui.en_US.html;." ^
     src/main.py -n %APP_NAME%
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed.

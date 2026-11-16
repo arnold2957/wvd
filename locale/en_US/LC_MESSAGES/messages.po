@@ -10,12 +10,12 @@ msgstr ""
 "POT-Creation-Date: 2026-09-21 22:58+0800\n"
 "PO-Revision-Date: 2026-09-22 00:46+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: en_US\n"
 "Language-Team: en_US <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: D:/Desktop/andsimscripts/src/gui.py:149
@@ -164,7 +164,7 @@ msgstr "Double tap"
 
 #: D:/Desktop/andsimscripts/src/gui.py:366
 msgid "等级"
-msgstr "lvl"
+msgstr "Level"
 
 #: D:/Desktop/andsimscripts/src/gui.py:375
 msgid "[默认]"
@@ -258,9 +258,7 @@ msgid ""
 "请确保模拟器内的游戏语言与此设置一致，建议重启脚本以加载对应的识别库。"
 msgstr ""
 "Game language settings have been saved.\n"
-"Please make sure the in-game language in the emulator matches this "
-"setting. Restarting the script is recommended to load the corresponding "
-"recognition library."
+"Please make sure the in-game language in the emulator matches this setting. Restarting the script is recommended to load the corresponding recognition library."
 
 #: D:/Desktop/andsimscripts/src/gui.py:804
 msgid "目标"
@@ -720,10 +718,8 @@ msgstr ""
 "\n"
 "\n"
 "***********\n"
-"Multiple emulators are already running, cannot identify PID. When a "
-"restart is needed, all emulators will be restarted.\n"
-"To avoid this, please close the target emulator and let this script start"
-" it automatically.\n"
+"Multiple emulators are already running, cannot identify PID. When a restart is needed, all emulators will be restarted.\n"
+"To avoid this, please close the target emulator and let this script start it automatically.\n"
 "\n"
 
 #: D:/Desktop/andsimscripts/src/script.py:442
@@ -828,8 +824,8 @@ msgstr "Screenshot data abnormal."
 #, python-brace-format
 msgid "数据长度校验失败: 头部声明 {a}x{b}x4={d}, 实际收到 {c}."
 msgstr ""
-"Data length validation failed: header declares {a}x{b}x4={d}, but "
-"received {c}."
+"Data length validation failed: header declares {a}x{b}x4={d}, but received "
+"{c}."
 
 #: D:/Desktop/andsimscripts/src/script.py:662
 msgid "截图数据不完整"
@@ -862,8 +858,7 @@ msgstr "Screenshot exception: {a}"
 #: D:/Desktop/andsimscripts/src/script.py:689
 msgid "ADB操作失败/数据错误, 尝试重启ADB或模拟器程序..."
 msgstr ""
-"ADB operation failed / data error, attempting to restart ADB or "
-"emulator..."
+"ADB operation failed / data error, attempting to restart ADB or emulator..."
 
 #: D:/Desktop/andsimscripts/src/script.py:692
 msgid ""
@@ -946,8 +941,8 @@ msgstr "Pass the floor validation. Now in the correct floor."
 #: D:/Desktop/andsimscripts/src/script.py:851
 msgid "目前处于错误的楼层中, 可能是由于错误点击导致的, 开始全地图搜索哈肯."
 msgstr ""
-"Now in the wrong floor. It may be caused by an accidental press. "
-"Searching Harken..."
+"Now in the wrong floor. It may be caused by an accidental press. Searching "
+"Harken..."
 
 #: D:/Desktop/andsimscripts/src/script.py:859
 #, python-brace-format
@@ -1096,7 +1091,8 @@ msgstr "It seems we've encountered something unusual..."
 
 #: D:/Desktop/andsimscripts/src/script.py:1414
 msgid "看起来你没有选择找王女要钱. 那么就等两个小时吧."
-msgstr "Looks like you didn't choose to beg the princess. Waiting two hours then."
+msgstr ""
+"Looks like you didn't choose to beg the princess. Waiting two hours then."
 
 #: D:/Desktop/andsimscripts/src/script.py:1432
 #, python-brace-format
@@ -1122,7 +1118,8 @@ msgstr "Several died, that's rough."
 
 #: D:/Desktop/andsimscripts/src/script.py:1461
 msgid "网络故障警报! 网络故障警报! 返回标题, 重复, 返回标题!"
-msgstr "Network failure alert! Returning to title, repeat, returning to title!"
+msgstr ""
+"Network failure alert! Returning to title, repeat, returning to title!"
 
 #: D:/Desktop/andsimscripts/src/script.py:1467
 msgid "看起来遇到了一些非同寻常的情况...重启游戏."
@@ -1148,8 +1145,7 @@ msgid ""
 "错误: 设定了高于1级的技能, 但并未检测到技能等级.\n"
 " 使用默认技能."
 msgstr ""
-"Error: A skill above level 1 was set, but the skill level was not "
-"detected.\n"
+"Error: A skill above level 1 was set, but the skill level was not detected.\n"
 " Using default skill."
 
 #: D:/Desktop/andsimscripts/src/script.py:1610
@@ -1162,7 +1158,8 @@ msgstr ""
 
 #: D:/Desktop/andsimscripts/src/script.py:1613
 msgid "错误: 我认为不可能发生这种情况. 请务必告诉我."
-msgstr "Error: I don't think this should be possible. Please be sure to tell me."
+msgstr ""
+"Error: I don't think this should be possible. Please be sure to tell me."
 
 #: D:/Desktop/andsimscripts/src/script.py:1619
 #, python-brace-format
@@ -1467,14 +1464,14 @@ msgstr "Run {a} of \"Fordraig Sword\" completed. Time: {b:.2f}s."
 #: D:/Desktop/andsimscripts/src/script.py:2433
 msgid "注意, \"休息间隔\"控制连续战斗多少次后回城. 当前未启用休息, 强制设置为1."
 msgstr ""
-"Note: \"Rest Interval\" controls how many combats before returning to "
-"town. Rest currently disabled, forcing to 1."
+"Note: \"Rest Interval\" controls how many combats before returning to town. "
+"Rest currently disabled, forcing to 1."
 
 #: D:/Desktop/andsimscripts/src/script.py:2436
 msgid "注意, \"休息间隔\"控制连续战斗多少次后回城. 当前值0为无效值, 最低为1."
 msgstr ""
-"Note: \"Rest Interval\" controls how many combats before returning to "
-"town. Current value 0 is invalid, minimum is 1."
+"Note: \"Rest Interval\" controls how many combats before returning to town. "
+"Current value 0 is invalid, minimum is 1."
 
 #: D:/Desktop/andsimscripts/src/script.py:2438
 msgid "注意, 该流程不包括时间跳跃和接取任务, 请确保接取任务后再开启!"
@@ -1508,15 +1505,15 @@ msgstr "Round {a} finished."
 #, python-brace-format
 msgid "第{a}x{b}轮\"击退敌势力\"完成, 共计{c}场战斗. 该次花费时间{c:.2f}秒."
 msgstr ""
-"Round {a}x{b} of \"Repel Enemy Forces\" completed. Total combats: {c}. "
-"Time: {d:.2f}s."
+"Round {a}x{b} of \"Repel Enemy Forces\" completed. Total combats: {c}. Time:"
+" {d:.2f}s."
 
 #: D:/Desktop/andsimscripts/src/script.py:2628
 #, python-brace-format
 msgid "第{a}次三牛完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
-"Run {a} of \"Three Oxen\" completed. Time: {b}s. Total chests opened: "
-"{c}, total combats: {d}, total time: {e}s."
+"Run {a} of \"Three Oxen\" completed. Time: {b}s. Total chests opened: {c}, "
+"total combats: {d}, total time: {e}s."
 
 #: D:/Desktop/andsimscripts/src/script.py:2634
 #: D:/Desktop/andsimscripts/src/script.py:2696
@@ -1566,8 +1563,8 @@ msgstr "Step 6: Defeat Three Oxen consecutively"
 #, python-brace-format
 msgid "第{a}次忍洞完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
-"Run {a} of \"Ninja Cave\" completed. Time: {b}s. Total chests opened: "
-"{c}, total combats: {d}, total time: {e}s."
+"Run {a} of \"Ninja Cave\" completed. Time: {b}s. Total chests opened: {c}, "
+"total combats: {d}, total time: {e}s."
 
 #: D:/Desktop/andsimscripts/src/script.py:2703
 msgid "第二步: 前往王城"
@@ -1593,8 +1590,8 @@ msgstr "Step 6: First chest"
 #, python-brace-format
 msgid "第{a}次约定之剑完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
-"Run {a} of \"Sword of Promise\" completed. Time: {b}s. Total chests "
-"opened: {c}, total combats: {d}, total time: {e}s."
+"Run {a} of \"Sword of Promise\" completed. Time: {b}s. Total chests opened: "
+"{c}, total combats: {d}, total time: {e}s."
 
 #: D:/Desktop/andsimscripts/src/script.py:2772
 msgid "第三步: 前往王城)"
@@ -1624,14 +1621,13 @@ msgstr "Step 9: Leave the cave"
 #, python-brace-format
 msgid "第{a}次巨人完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
-"Run {a} of \"Giant\" completed. Time: {b}s. Total chests opened: {c}, "
-"total combats: {d}, total time: {e}s."
+"Run {a} of \"Giant\" completed. Time: {b}s. Total chests opened: {c}, total "
+"combats: {d}, total time: {e}s."
 
 #: D:/Desktop/andsimscripts/src/script.py:2858
 msgid "跳过了巨人检测环节. 现在默认总是击杀灯怪."
 msgstr ""
-"Skipped giant detection. Defaulting to always kill the Monster with "
-"Lantern."
+"Skipped giant detection. Defaulting to always kill the Monster with Lantern."
 
 #: D:/Desktop/andsimscripts/src/script.py:2880
 #: D:/Desktop/andsimscripts/src/script.py:2895
@@ -1744,8 +1740,8 @@ msgstr ""
 #, python-brace-format
 msgid "第{a}次要塞小精灵完成. 本次用时:{b}秒. 累计开箱子{c}, 累计战斗{d}, 累计用时{e}秒."
 msgstr ""
-"Run {a} of \"Stronghold Pixie\" completed. Time: {b}s. Total chests "
-"opened: {c}, total combats: {d}, total time: {e}s."
+"Run {a} of \"Stronghold Pixie\" completed. Time: {b}s. Total chests opened: "
+"{c}, total combats: {d}, total time: {e}s."
 
 #: D:/Desktop/andsimscripts/src/utils.py:234
 msgid "配置已保存。"
@@ -2031,7 +2027,6 @@ msgstr "P Debra_alt"
 msgid "P 黛波拉_sp"
 msgstr "P Debra_sp"
 
-
 msgid "方案"
 msgstr "Plan"
 
@@ -2048,7 +2043,9 @@ msgid "该策略需要在进入地下城时进行重置。"
 msgstr "Reset this plan when entering a dungeon."
 
 msgid "[高级] 该策略需要在战斗开始前进行重置。确保你了解「重复上一次」功能，否则请勿开启。"
-msgstr "[Advanced] Reset this plan before each battle. Make sure you understand \"Repeat last\"; otherwise leave it off."
+msgstr ""
+"[Advanced] Reset this plan before each battle. Make sure you understand "
+"\"Repeat last\"; otherwise leave it off."
 
 msgid "[高级] 该策略释放任一技能即视为完成。"
 msgstr "[Advanced] Casting any skill marks this plan complete."
@@ -2105,7 +2102,8 @@ msgid "游戏内每日与每周例行事项的自动化设置。"
 msgstr "Automation for in-game daily and weekly routines."
 
 msgid "0 火策略、剧情跳跃、住宿偏好与容错阈值。"
-msgstr "Zero-fire strategy, story jumps, lodging preference and recovery thresholds."
+msgstr ""
+"Zero-fire strategy, story jumps, lodging preference and recovery thresholds."
 
 msgid "常用网站"
 msgstr "Links"
@@ -2132,7 +2130,7 @@ msgid "就绪"
 msgstr "Ready"
 
 msgid "脚本，启动！"
-msgstr "Start script!"
+msgstr "Wvdas, Start!"
 
 msgid "连接设置"
 msgstr "Connection"
@@ -2156,7 +2154,9 @@ msgid "模拟器编号"
 msgstr "Emulator index"
 
 msgid "地址可以只填端口，失焦后会自动补全为 127.0.0.1:端口；输入多个端口时会自动选用最大值。"
-msgstr "You may enter only the port; it will expand to 127.0.0.1:port on focus loss. If multiple ports are entered, the largest is used."
+msgstr ""
+"You may enter only the port; it will expand to 127.0.0.1:port on focus loss."
+" If multiple ports are entered, the largest is used."
 
 msgid "语言"
 msgstr "Language"
@@ -2174,13 +2174,19 @@ msgid "游戏内语言"
 msgstr "In-game language"
 
 msgid "修改界面语言后需要重启脚本才能生效。游戏语言不一致会导致 OCR 与图片识别失败。"
-msgstr "Restart the script after changing the UI language. A mismatched game language will break OCR and image recognition."
+msgstr ""
+"Restart the script after changing the UI language. A mismatched game "
+"language will break OCR and image recognition."
 
 msgid "警告"
 msgstr "Warning"
 
-msgid "设置的模拟器路径可能不正确。\n如果你遇到无法启动模拟器，请尝试重新设置路径。"
-msgstr "The emulator path may be incorrect.\nIf the emulator fails to start, try setting the path again."
+msgid ""
+"设置的模拟器路径可能不正确。\n"
+"如果你遇到无法启动模拟器，请尝试重新设置路径。"
+msgstr ""
+"The emulator path may be incorrect.\n"
+"If the emulator fails to start, try setting the path again."
 
 msgid "已设置"
 msgstr "Set"
@@ -2207,7 +2213,8 @@ msgid "用任务定制的配置文件覆盖默认配置"
 msgstr "Override the default config with a task-specific file"
 
 msgid "可单独设置该任务每个任务点的战斗策略，不影响全局默认值。"
-msgstr "Set a combat strategy for each task point without changing global defaults."
+msgstr ""
+"Set a combat strategy for each task point without changing global defaults."
 
 msgid "官网每周宝石"
 msgstr "Weekly official gems"
@@ -2267,7 +2274,8 @@ msgid "启用定时重置队伍"
 msgstr "Reset party on a timer"
 
 msgid "重新召集酒馆第一个队伍，以便清理背包和调整站位。"
-msgstr "Reassemble the first tavern party to clear the bag and adjust positions."
+msgstr ""
+"Reassemble the first tavern party to clear the bag and adjust positions."
 
 msgid "每"
 msgstr "Every"
@@ -2282,7 +2290,7 @@ msgid "遇到伏击 / 无视事件时"
 msgstr "On ambush / ignore events"
 
 msgid "还需 %s 点"
-msgstr "%s points remaining"
+msgstr "%s point(s) remaining"
 
 msgid "战斗策略"
 msgstr "Combat strategy"
@@ -2303,10 +2311,12 @@ msgid "当前任务为地下城任务"
 msgstr "Current task is a dungeon"
 
 msgid "%s 个任务点"
-msgstr "%s task points"
+msgstr "%s task point(s)"
 
 msgid "当前未启用任务点策略。选择上方的「自定义任务点策略」后，下面的配置才会生效。"
-msgstr "Task point strategies are off. Select \"Custom task point strategies\" above to enable them."
+msgstr ""
+"Task point strategies are off. Select \"Custom task point strategies\" above"
+" to enable them."
 
 msgid "%s · %s"
 msgstr "%s · %s"
@@ -2315,10 +2325,12 @@ msgid "＋ 添加新技能配置"
 msgstr "+ Add new skill plan"
 
 msgid "战斗方案会在每次重启游戏，以及任意角色死亡后重置。每个角色可以配置技能槽位、技能等级和执行顺序。"
-msgstr "Combat plans reset after each game restart and whenever any character dies. Each character can have a skill slot, level and execution order."
+msgstr ""
+"Combat plans reset after each game restart and whenever any character dies. "
+"Each character can have a skill slot, level and execution order."
 
 msgid "共 %s 组方案"
-msgstr "%s plans"
+msgstr "%s plan(s)"
 
 msgid "每周例行"
 msgstr "Weekly routine"
@@ -2339,13 +2351,17 @@ msgid "灵庙刷新"
 msgstr "Temple refresh"
 
 msgid "双周刷新，可一键切换到月常任务「炉壶灵庙」。"
-msgstr "Refreshes fortnightly; switch to the monthly \"Furnace Temple\" quest in one click."
+msgstr ""
+"Refreshes fortnightly; switch to the monthly \"Furnace Temple\" quest in one"
+" click."
 
 msgid "自动切换"
 msgstr "Switch now"
 
 msgid "官网宝石每周可领取一次；灵庙任务每两周刷新一次。"
-msgstr "Official gems can be claimed once per week; the temple quest refreshes every two weeks."
+msgstr ""
+"Official gems can be claimed once per week; the temple quest refreshes every"
+" two weeks."
 
 msgid "记录"
 msgstr "History"
@@ -2390,7 +2406,10 @@ msgid "尝试钓鱼"
 msgstr "Try fishing"
 
 msgid "优先级：挖矿 → 刷钱 → 钓鱼。三项均未启用时，脚本会等待约 2 小时后重启游戏以重新点火。"
-msgstr "Priority: mining → money farming → fishing. If all are off, the script waits about 2 hours and restarts the game to relight the fire."
+msgstr ""
+"Priority: mining → money farming → fishing. If all are off, the script waits"
+" about 2 hours, restarts the game, and retries the battle with the "
+"relightened fire."
 
 msgid "剧情与跳跃"
 msgstr "Story & jumps"
@@ -2417,7 +2436,7 @@ msgid "游戏启动后等待"
 msgstr "Wait after game launch"
 
 msgid "重启游戏后等待指定秒数，再检查启动日志。"
-msgstr "Wait this many seconds after restarting the game before checking the startup log."
+msgstr "Wait this many seconds after restarting the game before continuing."
 
 msgid "秒"
 msgstr "seconds"
@@ -2474,7 +2493,9 @@ msgid "%s 链接待补充"
 msgstr "%s link coming soon"
 
 msgid "点击卡片会在系统默认浏览器中打开对应网站；带「待添加」的条目可在后续补充实际链接。"
-msgstr "Click a card to open the site in your default browser. Items marked \"To be added\" will be filled in later."
+msgstr ""
+"Click a card to open the site in your default browser. Items marked \"To be "
+"added\" will be filled in later."
 
 msgid "运行日志"
 msgstr "Run log"
@@ -2536,11 +2557,45 @@ msgstr "This run is complete; stopping the script."
 msgid "任务定制配置 · 已启用"
 msgstr "Task config · On"
 
-msgid "你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去钓鱼.\n\n事已至此, 先钓鱼吧.\n"
-msgstr "Your party has exhausted all revival fire.\nBefore running out, your party achieved:\n\n%s\n\nBut that's fine — at least you can still go fishing.\n\nWell then, let's fish.\n"
+msgid ""
+"你的队伍已经耗尽了所有的再起之火.\n"
+"在耗尽再起之火前,\n"
+"你的队伍已经完成了如下了不起的壮举:\n"
+"\n"
+"%s\n"
+"\n"
+"不过没关系, 至少, 你还可以去钓鱼.\n"
+"\n"
+"事已至此, 先钓鱼吧.\n"
+msgstr ""
+"Your party has exhausted all revival fire.\n"
+"Before running out, your party achieved:\n"
+"\n"
+"%s\n"
+"\n"
+"But that's fine — at least you can still go fishing.\n"
+"\n"
+"Well then, let's fish.\n"
 
-msgid "你的队伍已经耗尽了所有的再起之火.\n在耗尽再起之火前,\n你的队伍已经完成了如下了不起的壮举:\n\n%s\n\n不过没关系, 至少, 你还可以去挖矿.\n\n只要能有全改, 管他什么方法呢.\n"
-msgstr "Your party has exhausted all revival fire.\nBefore running out, your party achieved:\n\n%s\n\nBut that's fine — at least you can still go mining.\n\nAs long as we get full reforges, who cares how.\n"
+msgid ""
+"你的队伍已经耗尽了所有的再起之火.\n"
+"在耗尽再起之火前,\n"
+"你的队伍已经完成了如下了不起的壮举:\n"
+"\n"
+"%s\n"
+"\n"
+"不过没关系, 至少, 你还可以去挖矿.\n"
+"\n"
+"只要能有全改, 管他什么方法呢.\n"
+msgstr ""
+"Your party has exhausted all revival fire.\n"
+"Before running out, your party achieved:\n"
+"\n"
+"%s\n"
+"\n"
+"But that's fine — at least you can still go mining.\n"
+"\n"
+"As long as we get full reforges, who cares how.\n"
 
 msgid "任务已切换"
 msgstr "Task switched"
@@ -2560,7 +2615,9 @@ msgstr "Stop after this run"
 #: D:/Desktop/andsimscripts/src/script.py:2593
 #, python-brace-format
 msgid "距离上次重启模拟器已超过{a}小时, 强制重启模拟器."
-msgstr "The emulator has not been restarted for more than {a} hours; restarting it now."
+msgstr ""
+"The emulator has not been restarted for more than {a} hours; restarting it "
+"now."
 
 msgid "暂停滚动"
 msgstr "Pause scrolling"
@@ -2614,7 +2671,8 @@ msgid "模板名列表为空, 跳过楼层检测."
 msgstr "Template list is empty; skipping floor detection."
 
 msgid "楼层名匹配失败: 所有模板均因尺寸不一致被跳过."
-msgstr "Floor name match failed: all templates were skipped due to size mismatch."
+msgstr ""
+"Floor name match failed: all templates were skipped due to size mismatch."
 
 msgid "创建任务点列表."
 msgstr "Creating task point list."
@@ -2626,7 +2684,9 @@ msgid "第三步: 接取悬赏..."
 msgstr "Step 3: Accept the bounty..."
 
 msgid "第四步: 前往第四章7F, 9F, 并抵达9F目标位置..."
-msgstr "Step 4: Travel to Chapter 4 7F and 9F, then reach the target position on 9F..."
+msgstr ""
+"Step 4: Travel to Chapter 4 7F and 9F, then reach the target position on "
+"9F..."
 
 msgid "第五步: 退出副本..."
 msgstr "Step 5: Exit the dungeon..."
@@ -2647,7 +2707,8 @@ msgid "连续点击resume超过20次, 疑似卡住. 重启游戏."
 msgstr "Clicked resume more than 20 times; looks stuck. Restarting the game."
 
 msgid "看起来你没有选择任何0火的替代选项. 那么就等两个小时吧."
-msgstr "It looks like no zero-fire fallback is selected. Waiting about two hours."
+msgstr ""
+"It looks like no zero-fire fallback is selected. Waiting about two hours."
 
 #, python-format
 msgid "wvdas v%s"
@@ -2663,3 +2724,317 @@ msgstr "No update available"
 #, python-format
 msgid "启动任务\"%s\"..."
 msgstr "Starting task \"%s\"..."
+
+msgid "深色模式"
+msgstr "Dark mode"
+
+msgid "缩略模式"
+msgstr "Compact mode"
+
+msgid "最小化"
+msgstr "Minimize"
+
+msgid "最大化"
+msgstr "Maximize"
+
+msgid "关闭"
+msgstr "Close"
+
+msgid "关闭日志"
+msgstr "Close log"
+
+msgid "地址可以只填端口，失焦后会自动补全为"
+msgstr "You may enter only the port; it will expand to"
+
+msgid "127.0.0.1:端口"
+msgstr "127.0.0.1:port"
+
+msgid "；输入多个端口时会自动选用最大值。"
+msgstr "; if multiple ports are entered, the largest is used."
+
+msgid "最新任务"
+msgstr "What's New"
+
+msgid "主线前三章"
+msgstr "Chapter 1,2 and 3"
+
+msgid "主线第四章"
+msgstr "Chapter 4"
+
+msgid "任务洞窟"
+msgstr "Request Caves"
+
+msgid "FFXI 联动"
+msgstr "FFXI Cave"
+
+msgid "矿石"
+msgstr "Ore"
+
+msgid "月常"
+msgstr "Monthly Requests"
+
+msgid "其他"
+msgstr "Other"
+
+msgid "自定义"
+msgstr "Custom"
+
+msgid "官网每周宝石 · 新网站"
+msgstr "Weekly official gems · New site"
+
+msgid "本周 50 钻待领取 · webstore.wizardry.info"
+msgstr "50 gems to claim this week · webstore.wizardry.info"
+
+msgid "官网每周宝石 · 旧网站"
+msgstr "Weekly official gems · Old site"
+
+msgid "本周 50 钻待领取 · store.wizardry.info"
+msgstr "50 gems to claim this week · store.wizardry.info"
+
+msgid "灵庙刷新 · 双周"
+msgstr "Temple refresh · Fortnightly"
+
+msgid "本期待切换 · 炉壶灵庙"
+msgstr "Switch available this period · Mausoleum Crucible"
+
+msgid "上次领取宝石（新）"
+msgstr "Last gem claim (new)"
+
+msgid "上次领取宝石（旧）"
+msgstr "Last gem claim (old)"
+
+msgid "已标记本周宝石为已领取"
+msgstr "Marked this week's gems as claimed"
+
+msgid "已切换灵庙任务"
+msgstr "Switched to the temple quest"
+
+msgid "当前版本"
+msgstr "Current version"
+
+msgid "更新内容"
+msgstr "Update notes"
+
+msgid "更新下载完成"
+msgstr "Update downloaded"
+
+msgid "更新完成，应用即将重启"
+msgstr "Update complete. The app will restart shortly."
+
+msgid "开始下载更新"
+msgstr "Starting update download"
+
+msgid "发生错误"
+msgstr "An error occurred"
+
+msgid "遇到善恶事件时"
+msgstr "On karma events"
+
+msgid "恶 → 中立，中立 → 善"
+msgstr "Evil → Neutral, Neutral → Good"
+
+msgid "善 → 中立，中立 → 恶"
+msgstr "Good → Neutral, Neutral → Evil"
+
+msgid "当前未启用任务点策略。选择上方的「自定义任务点策略」后，本模块才会生效。"
+msgstr ""
+"Task point strategy is not enabled. Select \"Custom Task Point Strategy\" "
+"above to use this section."
+
+msgid "战斗方案会在每次重启游戏以及任意角色死亡后重置；任务点完成后会自动切换到下一点配置。"
+msgstr ""
+"Combat plans reset after each game restart and whenever any character dies; "
+"after a task point is completed, the next point's config is applied "
+"automatically."
+
+msgid "共 0 组方案"
+msgstr "0 plans"
+
+msgid "启用定时重启模拟器"
+msgstr "Enable scheduled emulator restart"
+
+msgid "距上次启动/重启模拟器超过指定时长后，在下次回城时强制重启，缓解模拟器长时间运行的内存泄漏。"
+msgstr ""
+"If the emulator has been running since the last start/restart for longer "
+"than the specified time, force a restart on the next return to town to "
+"reduce memory leaks from long sessions."
+
+msgid "全自动战斗无需配置角色技能。"
+msgstr "Full Auto does not require character skill configuration."
+
+msgid "自动"
+msgstr "Auto"
+
+msgid "展开 / 收起"
+msgstr "Expand / collapse"
+
+msgid "删除角色"
+msgstr "Delete character"
+
+msgid "保存战斗方案失败"
+msgstr "Failed to save combat plans"
+
+msgid "保存失败"
+msgstr "Save failed"
+
+msgid "脚本运行中不可修改，停止后可调整"
+msgstr "Cannot be changed while the script is running; stop it to adjust."
+
+msgid "官"
+msgstr "OFF"
+
+msgid "店"
+msgstr "SHOP"
+
+msgid "新"
+msgstr "NEW"
+
+msgid "变"
+msgstr "LOG"
+
+msgid "爱"
+msgstr "Donate"
+
+msgid "赞助作者"
+msgstr "Support the author"
+
+msgid "支持项目开发"
+msgstr "Support project development"
+
+msgid "点击卡片会在系统默认浏览器中打开对应网站。"
+msgstr "Clicking a card opens the site in your default browser."
+
+msgid "该链接待补充"
+msgstr "This link is not available yet."
+
+msgid "平均用时（秒）"
+msgstr "Avg. time (s)"
+
+msgid "特殊事件"
+msgstr "Special events"
+
+msgid "悬停详情"
+msgstr "Hover for details"
+
+msgid "特 殊 事 件 明 细"
+msgstr "SPECIAL EVENT DETAILS"
+
+msgid "合计"
+msgstr "Total"
+
+msgid "界面未能启动"
+msgstr "UI failed to start"
+
+msgid "本地界面服务（pywebview / WebView2）没有响应。常见原因是缺少"
+msgstr ""
+"The local UI service (pywebview / WebView2) is not responding. A common "
+"cause is missing"
+
+msgid "或"
+msgstr "or"
+
+msgid ""
+"，\n"
+"      也可能是安全软件拦截了程序文件。"
+msgstr ", or security software may be blocking the program files."
+
+msgid "请查看程序目录下的"
+msgstr "See"
+
+msgid "，或"
+msgstr " in the program folder, or"
+
+msgid "目录中最新的日志文件。"
+msgstr "for the latest log file."
+
+msgid "重新加载界面"
+msgstr "Reload UI"
+
+msgid "复制诊断信息"
+msgstr "Copy diagnostics"
+
+msgid "等待本地界面服务超时"
+msgstr "Timed out waiting for the local UI service"
+
+msgid "已复制"
+msgstr "Copied"
+
+msgid "请按 Ctrl+C 复制"
+msgstr "Press Ctrl+C to copy"
+
+msgid "无法读取配置。"
+msgstr "Failed to read the config."
+
+msgid "界面已就绪。"
+msgstr "UI ready."
+
+msgid "确定"
+msgstr "OK"
+
+msgid "知道了"
+msgstr "Got it"
+
+msgid "确认"
+msgstr "Confirm"
+
+msgid "输入"
+msgstr "Input"
+
+msgid "存在"
+msgstr "present"
+
+msgid "不存在"
+msgstr "missing"
+
+msgid "未知"
+msgstr "unknown"
+
+msgid "正在停止…"
+msgstr "Stopping…"
+
+msgid "原因：%s"
+msgstr "Reason: %s"
+
+msgid "页面尺寸：%sx%s"
+msgstr "Page size: %sx%s"
+
+msgid "设备像素比：%s"
+msgstr "Device pixel ratio: %s"
+
+msgid "等待时间：%s 秒"
+msgstr "Wait time: %s s"
+
+msgid "pywebview 对象：%s"
+msgstr "pywebview object: %s"
+
+msgid "WebView2 内核：%s"
+msgstr "WebView2 runtime: %s"
+
+msgid "界面尺寸 %sx%s，缩放 %s%%"
+msgstr "UI size %sx%s, zoom %s%%"
+
+msgid "检测到界面横向溢出（%spx），可能是系统显示缩放或字体大小设置导致。"
+msgstr ""
+"Detected horizontal UI overflow (%spx). This may be caused by system display"
+" scaling or font size settings."
+
+msgid "API 不存在: %s"
+msgstr "API not found: %s"
+
+msgid "操作失败：%s"
+msgstr "Operation failed: %s"
+
+msgid "任务提示：%s"
+msgstr "Task tip: %s"
+
+msgid "%s · 炉壶灵庙"
+msgstr "%s · Mausoleum Crucible"
+
+msgid "更新说明 · v%s"
+msgstr "Update notes · v%s"
+
+msgid "确定要清除当前任务的定制配置吗？"
+msgstr "Clear the task-specific config for the current task?"
+
+msgid "确认清除"
+msgstr "Clear"

@@ -918,7 +918,7 @@
         "questCategory": "月常",
         "questCategory_en_US": "Monthly Requests",
         "_TARGETINFOLIST":[
-            ["position","右下",[555,1235]],
+            ["chest_auto"],
             ["leaveDung"]
         ],
         "_EOT":
