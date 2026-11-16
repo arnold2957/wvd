@@ -356,7 +356,8 @@
         "questCategory_en_US": "Chapter 4",
         "_FloorCheck": "stair_DH_CG",
         "_TARGETINFOLIST":[
-            ["Mark_auto"]
+            ["mark_auto"],
+            ["leaveDung"]
         ],
         "_EOT":[
             ["town","EOT"],
