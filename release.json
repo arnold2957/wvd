@@ -1,8 +1,8 @@
 {
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.17/wvd_3.2.17.7z",
-  "md5": "fa2ed196f5723b36b3689f4f7ee0b917",
-  "release_date": "2026-11-16 12:37:31",
-  "version": "3.2.17",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.17",
-  "notes": "陵庙现已改为chest_auto自动宝箱.\n修复了普利修的名字错误.\n战斗角色新增了水王女和迪诺.\n添加了英文版的脚本. 可能还需要更多测试."
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.18/wvd_3.2.18.7z",
+  "md5": "02170e9fa0e6465add742c69f22e5a17",
+  "release_date": "2026-11-16 12:54:57",
+  "notes": "修复了教会白巨人任务无法继续进行的问题.",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.18",
+  "version": "3.2.18"
 }
