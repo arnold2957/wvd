@@ -43,13 +43,15 @@ CONFIG_VAR_LIST = [
                                                                         "group_name": "全自动战斗",
                                                                         "skill_settings": []
                                                                     },]],
-            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar, "全自动战斗"],
-            ["GENERAL",   "LANGUAGE_SCRIPT",                        tk.StringVar, "zh_CN"],
-            ["GENERAL",   "LANGUAGE_GAME",                          tk.StringVar, "en_US"],
-            ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar, None],
-            ["GENERAL",   "WEBSITE_ORG_TIME_OLD",                   tk.StringVar, None],
-            ["GENERAL",   "AM_REFRESH_TIME",                        tk.StringVar, None],
-
+            ["GENERAL",   "DEFAULT_OVERALL_STRATEGY",               tk.StringVar,  "全自动战斗"],
+            ["GENERAL",   "LANGUAGE_SCRIPT",                        tk.StringVar,  "zh_CN"],
+            ["GENERAL",   "LANGUAGE_GAME",                          tk.StringVar,  "en_US"],
+            ["GENERAL",   "WEBSITE_ORG_TIME",                       tk.StringVar,  None],
+            ["GENERAL",   "WEBSITE_ORG_TIME_OLD",                   tk.StringVar,  None],
+            ["GENERAL",   "AM_REFRESH_TIME",                        tk.StringVar,  None],
+            ["GENERAL",   "GET_DAILY_SUPPLY",                       tk.BooleanVar, False],
+            ["GENERAL",   "ACTIVE_DAILY_MISSION",                   tk.BooleanVar, False],
+            
             ["TEMPLATE",   "TASK_POINT_STRATEGY",                   dict,          {}],
             ["TEMPLATE",   "QUICK_DISARM_CHEST",                    tk.BooleanVar, False],
             ["TEMPLATE",   "WHO_WILL_OPEN_IT",                      tk.IntVar,     0],
@@ -1255,6 +1257,52 @@ def Factory():
             return False
         last = runtimeContext.RESTART_EMU_TIMESTAMP
         return last is not None and (time.time() - last >= interval * 3600)
+    def GetDailyMissionReward():
+        FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave"],1)
+        position = None
+        if pos:=CheckIf(ScreenShot(),"daily/notice_mission",[[870, 1045, 10, 10]]):
+            position = pos
+        if pos:=CheckIf(ScreenShot(),"daily/notice_mission",[[719, 1471, 10, 10]]):
+            position = pos
+
+        if position is not None:
+            FindCoordsOrElseExecuteFallbackAndWait("daily/mission",[position],1)
+            while pos:=CheckIf(ScreenShot(),"daily/notice_mission_large",[[801, 630, 17, 17]]):
+                Press(pos)
+                Sleep(3)
+                FindCoordsOrElseExecuteFallbackAndWait("daily/mission",[1,1],1)
+        FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave"],1)
+
+    def ShouldGetDailySupply():
+        """是否到了领取补给的时间点."""
+        if not setting.GET_DAILY_SUPPLY:
+            return False
+        utc9_ts = time.time() + 9 * 3600
+        today = int(utc9_ts // 86400)
+        return getattr(ShouldGetDailySupply, "_last_day", None) != today
+    
+    def GetDailySupply():
+        def _get_daily_supply():
+            FindCoordsOrElseExecuteFallbackAndWait("Edit",["guild",[1,1]],1)
+            if pos:=CheckIf(ScreenShot(),"daily/notice",[[176, 941, 19, 19]]):
+                FindCoordsOrElseExecuteFallbackAndWait("daily/supply",[pos],1)
+                if pos1:=CheckIf(ScreenShot(),"daily/notice",[[282, 732, 19, 19]]):
+                    Press(pos1)
+                    _get_daily_supply()
+                if pos2:=CheckIf(ScreenShot(),"daily/notice",[[282, 860, 19, 19]]):
+                    Press(pos2)
+                    _get_daily_supply()
+            else:
+                logger.info(_("每日补给已领取完毕."))
+        RestartableSequenceExecution(
+            lambda: _get_daily_supply(),
+            lambda: FindCoordsOrElseExecuteFallbackAndWait("Inn",["return","leave"],1),
+            )
+        
+        utc9_ts = time.time() + 9 * 3600
+        today = int(utc9_ts // 86400)
+        ShouldGetDailySupply._last_day = today
+        
     def ShouldReassembleParty():
         """是否到了定时重置队伍的时间点."""
         if not setting.RE_ASSEMBLE_PARTY:
@@ -1549,6 +1597,7 @@ def Factory():
                             ((runtimeContext._COUNTERDUNG - 1) % (max(setting.REST_INTERVEL, 1)) == 0)  # 每隔 REST_INTERVEL 次触发
                         )
                         or ShouldReassembleParty()                          # 定时重置队伍
+                        or ShouldGetDailySupply()                           # 每日补给
                         or ShouldEmulatorRestart()                          # 定时重启模拟器
                     ):
                     FindCoordsOrElseExecuteFallbackAndWait("Inn",["return",[1,1]],1)
@@ -1579,6 +1628,7 @@ def Factory():
                             and ((runtimeContext._COUNTERDUNG-1) % (max(setting.REST_INTERVEL,1)) == 0)
                         )
                         or ShouldReassembleParty()
+                        or ShouldGetDailySupply()
                         or ShouldEmulatorRestart()
                     ):
                     Press(pos)
@@ -1765,6 +1815,10 @@ def Factory():
             ReassembleParty()
             interval = max(setting.RE_ASSEMBLE_PARTY_INTERVAL, 1)
             runtimeContext.REASSEMBLE_PARTY_PERIOD_INDEX = int(runtimeContext._TOTALTIME // (interval * 3600))
+        if ShouldGetDailySupply():
+            GetDailySupply()
+        if setting.ACTIVE_DAILY_MISSION:
+            GetDailyMissionReward()
         if not runtimeContext._MEET_CHEST_OR_COMBAT:
             logger.info(_("因为没有遇到战斗或宝箱, 跳过住宿."))
         elif not setting.ACTIVE_REST:

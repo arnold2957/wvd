@@ -1311,6 +1311,28 @@
         <section class="panel" id="panel-daily">
           <div class="card">
             <div class="card-head">
+              <div class="card-title">每日例行</div>
+            </div>
+            <div class="row">
+              <div class="label">领取每日任务奖励
+                <small>回城时自动进入每日任务页面，领取可领取的奖励。</small>
+              </div>
+              <div class="control"><label class="switch"><input type="checkbox" id="dailyMission" data-config="ACTIVE_DAILY_MISSION"><span class="track"></span></label></div>
+            </div>
+            <div class="row">
+              <div class="label">领取每日补给
+                <small>回城时自动前往公会领取每日补给；每天 00:00（JST）刷新。</small>
+              </div>
+              <div class="control"><label class="switch"><input type="checkbox" id="dailySupply" data-config="GET_DAILY_SUPPLY"><span class="track"></span></label></div>
+            </div>
+            <div class="hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              <span>启用后，脚本会在回城时自动领取每日任务奖励与公会补给；每日补给每天只领取一次。</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
               <div class="card-title">每周例行</div>
               <div class="card-sub">每周 / 每两周重置</div>
             </div>
@@ -1993,6 +2015,8 @@
     REST_INTERVEL: (v) => { const el = $("#restInterval"); if (el) el.value = v == null ? 1 : v; },
     RE_ASSEMBLE_PARTY: (v) => { const el = $("#reassembleParty"); if (el) el.checked = !!v; },
     RE_ASSEMBLE_PARTY_INTERVAL: (v) => { const el = $("#reassembleInterval"); if (el) el.value = v == null ? 6 : v; },
+    ACTIVE_DAILY_MISSION: (v) => { const el = $("#dailyMission"); if (el) el.checked = !!v; },
+    GET_DAILY_SUPPLY: (v) => { const el = $("#dailySupply"); if (el) el.checked = !!v; },
     ACTIVE_DIGGING: (v) => { const el = $("#zeroDigging"); if (el) el.checked = !!v; },
     ACTIVE_BEG_MONEY: (v) => { const el = $("#zeroBegMoney"); if (el) el.checked = !!v; },
     ACTIVE_FISHING: (v) => { const el = $("#zeroFishing"); if (el) el.checked = !!v; },
