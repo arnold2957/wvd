@@ -1,8 +1,8 @@
 {
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.2.18/wvd_3.2.18.7z",
-  "md5": "02170e9fa0e6465add742c69f22e5a17",
-  "release_date": "2026-11-16 12:54:57",
-  "notes": "修复了教会白巨人任务无法继续进行的问题.",
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.2.18",
-  "version": "3.2.18"
+  "notes": "现已加入领取每日补给和每日任务奖励.\n注意该功能难以测试, 因此可能会有若干问题, 欢迎反馈!",
+  "version": "3.3.0",
+  "release_date": "2026-11-20 12:59:32",
+  "md5": "cc6ff6f38a970fcf2f8ddd6b8195c40b",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.3.0",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.3.0/wvd_3.3.0.7z"
 }
