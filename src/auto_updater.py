@@ -221,16 +221,17 @@ class AutoUpdater():
     def _create_restart_script(self, unpack_dir):
         """创建重启脚本(跨平台), 并返回启动脚本的路径或指令."""
         if sys.platform == "win32":
-            script = f"""@echo off
-REM 等待原始程序退出
-timeout /t 2 /nobreak >nul
-
-REM 复制解压后的文件到当前目录
-xcopy /E /Y /Q "{unpack_dir}\\*" "."
-
-REM 启动新版本程序
-start "" "{os.path.basename(sys.argv[0])}"
-    """
+            # 注意: bat 内容会以系统 ANSI code page 写入 (繁中为 cp950),
+            # 不要在 bat 里放简体中文, 注释写在 Python 这边.
+            script = "\n".join([
+                "@echo off",
+                # 等待原始程序退出
+                "timeout /t 2 /nobreak >nul",
+                # 复制解压后的文件到当前目录
+                f'xcopy /E /Y /Q "{unpack_dir}\\*" "."',
+                # 启动新版本程序
+                f'start "" "{os.path.basename(sys.argv[0])}"',
+            ]) + "\n"
             with open("_update_restart.bat", "w") as f:
                 f.write(script)
             return "_update_restart.bat"
