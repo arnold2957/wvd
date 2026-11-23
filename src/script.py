@@ -1685,7 +1685,7 @@ def Factory():
                 if CheckIf(screen,"ambush") or CheckIf(screen,"ignore"):
                     SaveImage(screen)
                     if not (CheckIf(screen,"ambush") and CheckIf(screen,"ignore")):
-                        logger.error(_("错误. 无法进行善恶切换. 只能匹配善恶选项其中之一. 请提交该bug, 以及log中的错误截图."))
+                        logger.error(_("错误. 无法进行善恶切换. 只能匹配善恶选项其中之一. 请确保画质设置为\"中\"(速度优先)."))
                         SaveImage(screen,prefix="善恶")
                         raise RuntimeError
                     # KARMA_ADJUST_REMAINING 是仍需调整的善恶点数:
@@ -2565,6 +2565,13 @@ def Factory():
                         
                         if targetInfoList[0] and ((tar:=targetInfoList[0].target) in ["chest_auto","mark_auto", "leaveDung"]):
                             lastscreen = ScreenShot()
+
+                            if CheckIf(lastscreen,"mapFlag") and (not CheckIf(lastscreen,"leaveDung",[[720,250,150,180]])):
+                                logger.info(_("地图已经打开."))
+                                PressReturn()
+                                Sleep(1)
+                                lastscreen = ScreenShot()
+
                             if not Press(CheckIf(lastscreen,tar,[[720,250,150,180]])):
                                 Press(CheckIf(lastscreen,"mapflag"))
                                 Press([762,346]) # 认为是没有展开菜单
@@ -2710,7 +2717,7 @@ def Factory():
             Sleep(1)
             Press(CheckIf(ScreenShot(),"bounty/CompletionReported"))
             RestartableSequenceExecution(
-                lambda:FindCoordsOrElseExecuteFallbackAndWait("bounty/cursewheel",[1,1],1)
+                lambda:FindCoordsOrElseExecuteFallbackAndWait(["guild","bounty/cursewheel"],[1,1],1)
             )
             costtime = time.time()-starttime
             runtimeContext._TOTALTIME = runtimeContext._TOTALTIME + costtime
