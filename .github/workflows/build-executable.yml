@@ -39,6 +39,48 @@ jobs:
           exit 1
         }
 
+    # 判断本次推送是否更新了版本号 (与上一次提交比较 src/main.py 中的 __version__).
+    # 普通 PR 合并推送即使没有改版本号也照常构建, 但不会向 QQ 群发通报.
+    - name: Check if version was bumped
+      id: check-version
+      shell: pwsh
+      run: |
+        $version = "${{ steps.extract-version.outputs.version }}"
+        $before = "${{ github.event.before }}"
+        $changed = $false
+
+        function Test-TagExists {
+          $tag = git ls-remote --tags origin "refs/tags/$version"
+          return [bool]$tag
+        }
+
+        if ($before -and $before -notmatch '^0{40}$') {
+          git fetch --depth=1 origin $before 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            $oldContent = git show "${before}:src/main.py" 2>$null
+            if ($LASTEXITCODE -ne 0) { $oldContent = "" }
+            $pattern = '__version__\s*=\s*[''"](\d+\.\d+\.\d+(-[a-zA-Z0-9.-]*)?)[''"]'
+            $oldVersion = ([regex]::Match(($oldContent -join "`n"), $pattern)).Groups[1].Value
+            Write-Output "Previous version: $oldVersion"
+            if (-not $oldVersion) {
+              # 旧提交里读不到版本号时, 退化为按标签是否已存在判断
+              $changed = -not (Test-TagExists)
+            } else {
+              $changed = $oldVersion -ne $version
+            }
+          } else {
+            Write-Output "无法获取上一次提交 $before, 改为检查标签是否存在"
+            $changed = -not (Test-TagExists)
+          }
+        } else {
+          Write-Output "没有可比较的上一次提交, 改为检查标签是否存在"
+          $changed = -not (Test-TagExists)
+        }
+
+        if ($changed) { "version_changed=true" >> $env:GITHUB_OUTPUT }
+        else { "version_changed=false" >> $env:GITHUB_OUTPUT }
+        Write-Output "Version changed: $changed"
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -171,7 +213,8 @@ jobs:
         publish_dir: ./gh-pages
         keep_files: false
 
-    # Step 2: Notify the QQ group after a successful run.
+    # Step 2: Notify the QQ group only when this push actually bumps the version.
+    # Regular PR merges / code-only pushes still build and release, but stay silent.
     # Needs repository secrets: QQ_BOT_APP_ID, QQ_BOT_APP_SECRET, QQ_BOT_GROUP_OPENID.
     # Optional repository variables:
     #   QQ_BOT_SANDBOX=true  when the bot is not published yet
@@ -179,7 +222,7 @@ jobs:
     #                             (default: formal releases @everyone, beta does not)
     #   QQ_BOT_SEND_FILE=false     disable sending the release archive as a group file
     - name: Notify QQ group
-      if: success()
+      if: success() && steps.check-version.outputs.version_changed == 'true'
       continue-on-error: true
       env:
         QQ_BOT_APP_ID: ${{ secrets.QQ_BOT_APP_ID }}

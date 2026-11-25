@@ -219,41 +219,42 @@ class AutoUpdater():
         return hash_md5.hexdigest() == expected_md5
 
     def _create_restart_script(self, unpack_dir):
-        """创建重启脚本(跨平台), 并返回启动脚本的路径或指令."""
+        """Create a cross-platform restart script and return the launch script path or command."""
         if sys.platform == "win32":
             script = f"""@echo off
-REM 等待原始程序退出
-timeout /t 2 /nobreak >nul
+    REM Wait for the original program to exit
+    timeout /t 2 /nobreak >nul
 
-REM 复制解压后的文件到当前目录
-xcopy /E /Y /Q "{unpack_dir}\\*" "."
+    REM Copy the extracted files into the current directory
+    xcopy /E /Y /Q "{unpack_dir}\\*" "."
 
-REM 启动新版本程序
-start "" "{os.path.basename(sys.argv[0])}"
+    REM Start the new version of the program
+    start "" "{os.path.basename(sys.argv[0])}"
     """
-            with open("_update_restart.bat", "w") as f:
+            # Write as UTF-8 (ASCII-only content here) with CRLF line endings for .bat
+            with open("_update_restart.bat", "w", encoding="utf-8", newline="\r\n") as f:
                 f.write(script)
             return "_update_restart.bat"
         else:  # Linux/macOS
             script = f"""#!/bin/bash
-    # 等待原始程序退出
+    # Wait for the original program to exit
     sleep 2
 
-    # 移动解压后的文件到当前目录
+    # Move the extracted files into the current directory
     mv -f "{unpack_dir}"/* .
 
-    # 添加执行权限（如果需要）
+    # Add execute permission (if needed)
     chmod +x "{os.path.basename(sys.argv[0])}"
 
-    # 启动新版本程序
+    # Start the new version of the program
     nohup ./{os.path.basename(sys.argv[0])} >/dev/null 2>&1 &
 
-    # 清理临时文件
+    # Clean up temporary files
     rm -rf "__update_temp__"
 
-    # 删除自身
+    # Delete itself
     rm -- "$0"
     """
-            with open("_update_restart.sh", "w") as f:
+            with open("_update_restart.sh", "w", encoding="utf-8", newline="\n") as f:
                 f.write(script)
             return "nohup ./_update_restart.sh &"
