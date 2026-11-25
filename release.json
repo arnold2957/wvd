@@ -1,8 +1,8 @@
 {
   "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.3.1",
-  "release_date": "2026-11-23 04:30:49",
+  "md5": "6b5c6ac0da9f919d689c778edc3e5fb6",
+  "release_date": "2026-11-25 10:00:43",
   "download_url": "https://github.com/arnold2957/wvd/releases/download/3.3.1/wvd_3.3.1.7z",
   "notes": "加入了第四章6f的翻越栏杆的对话检测.\n修复了position后接mark_auto时无法衔接的问题.\n修复了在交悬赏时遇到意外会反复重启的问题.\n请确保脚本的画质, 不正确的画质设置可能导致对话选项无法识别.",
-  "version": "3.3.1",
-  "md5": "ae8253a10dfae1ed8d4dda4f38aefae8"
+  "version": "3.3.1"
 }
