@@ -1,8 +1,8 @@
 {
-  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.3.1",
-  "md5": "6b5c6ac0da9f919d689c778edc3e5fb6",
-  "release_date": "2026-11-25 10:00:43",
-  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.3.1/wvd_3.3.1.7z",
-  "notes": "加入了第四章6f的翻越栏杆的对话检测.\n修复了position后接mark_auto时无法衔接的问题.\n修复了在交悬赏时遇到意外会反复重启的问题.\n请确保脚本的画质, 不正确的画质设置可能导致对话选项无法识别.",
-  "version": "3.3.1"
+  "md5": "329e2e7ae5ba5fb78b46f51aaa4b7644",
+  "download_url": "https://github.com/arnold2957/wvd/releases/download/3.3.2/wvd_3.3.2.7z",
+  "notes": "修复了中文注释无法解码导致繁体中文无法更新的问题(PR #185).\n修复了缺乏中文捡骨头的图片的问题(PR #187).\n修复了pr也会触发qq群@所有人的问题. 现在只有版本更新才会启用机器人.",
+  "version": "3.3.2",
+  "release_date": "2026-11-25 11:38:21",
+  "release_notes": "https://github.com/arnold2957/wvd/releases/tag/3.3.2"
 }
